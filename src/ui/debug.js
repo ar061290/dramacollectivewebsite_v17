@@ -13,6 +13,7 @@ export function setupDebug({ stage }) {
     <div class="debug-panel__row">
       ${Object.entries(PHASES).map(([name, [a]]) => `<button type="button" data-debug-jump="${a}">${name}</button>`).join('')}
       <button type="button" data-debug-jump="1">end</button>
+      <button type="button" data-debug-parts aria-pressed="false">Show parts</button>
       <button type="button" data-debug-release>Follow scroll</button>
     </div>`;
   document.body.append(panel);
@@ -25,6 +26,15 @@ export function setupDebug({ stage }) {
     const jump = e.target.closest('[data-debug-jump]');
     if (jump) set(parseFloat(jump.dataset.debugJump));
     if (e.target.closest('[data-debug-release]')) stage.setSequenceOverride(null);
+    const parts = e.target.closest('[data-debug-parts]');
+    if (parts && stage.morph) {
+      // tint each part of the morph (mask gold, hand green, face blue, body grey); from the start
+      // of the morph, where the morph mesh is on stage, the statue shows its parts too
+      const on = parts.getAttribute('aria-pressed') !== 'true';
+      parts.setAttribute('aria-pressed', String(on));
+      stage.morph.uniforms.uShowParts.value = on ? 1 : 0;
+      stage.setSequenceOverride(stage.seqOverride ?? stage.state.seq);
+    }
   });
   const show = () => {
     const p = stage.seqOverride ?? stage.state.seq;

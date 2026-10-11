@@ -23,6 +23,7 @@ CustomEase.create('curtain', '.22,.61,.36,1'); // --ease-curtain from the design
 const ASSETS = {
   statue: new URL('../assets/models/statue-rig.glb', import.meta.url).href,
   logo: new URL('../assets/brand/mark.svg', import.meta.url).href,
+  logoParts: new URL('../assets/brand/mark-regions.json', import.meta.url).href,
   albedo: new URL('../assets/textures/ring-albedo.webp', import.meta.url).href,
   normal: new URL('../assets/textures/ring-normal.webp', import.meta.url).href,
 };
@@ -152,10 +153,13 @@ async function boot() {
 // The morph mesh is built once the hero is up, in a quiet moment (a few hundred milliseconds).
 async function prepareMorph() {
   try {
-    const svg = await (await fetch(ASSETS.logo)).text();
+    const [svg, parts] = await Promise.all([
+      fetch(ASSETS.logo).then((r) => r.text()),
+      fetch(ASSETS.logoParts).then((r) => r.json()).catch(() => null), // without it, the morph is whole-figure
+    ]);
     await new Promise((r) => (window.requestIdleCallback ? requestIdleCallback(r, { timeout: 1500 }) : setTimeout(r, 300)));
-    const morph = stage?.prepareMorph(svg);
-    if (morph) console.info(`morph ready: ${morph.triangles} triangles in ${morph.ms} ms`);
+    const morph = stage?.prepareMorph(svg, parts);
+    if (morph) console.info(`morph ready: ${morph.triangles} triangles in ${morph.ms} ms`, morph.parts);
   } catch (err) {
     console.warn('Morph unavailable; the statue holds its pose instead.', err);
   }

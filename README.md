@@ -5,7 +5,7 @@ The home page for the CHIREC Drama Collective: one page, a dark theatre before c
 1. she turns 180° to face you;
 2. as she turns, she brings the tragedy mask down beside her face;
 3. she turns her head away from it;
-4. her marble flows into the Collective's gold mark.
+4. her marble flows into the Collective's gold mark, part for part: her mask becomes the logo's mask, her hand and arm the hand that holds it, her face the profile face, and her robes the brush strokes, flames and crescent.
 
 The copy is placeholder for now; the structure (hero, five acts, footer) is v2's.
 
@@ -113,17 +113,31 @@ The curves are sampled as finely as the morph's triangle budget allows.
 
 ## The morph (`src/scene/morph.js`)
 
-The morph is one mesh with the same triangles in two shapes. It is not a cross-fade, and two meshes are never visible at once.
+The morph is one mesh with the same triangles in two shapes, changing part for part. It is not a cross-fade, and two meshes are never visible at once.
+
+| Statue | becomes | Logo |
+|---|---|---|
+| the mask in her hand | → | the logo's mask: the D-shaped frame around it, the eye, the nose and lips |
+| her hand and arm | → | the hand holding the mask, down its long wrist |
+| her head and neck | → | the profile face |
+| torso, robes, the other arm, plinth | → | the brush strokes, the flames, the crescent and the star |
+
+- **The statue's parts** come from the rig. The hand bone carries the hand and, above the grip, the mask; the arm bones join the hand; the head and neck bones are the face (`statueParts` in `morph.js`).
+- **The logo's parts** are polygons drawn over the trace in [`assets/brand/mark-regions.json`](assets/brand/mark-regions.json). In the mark, the mask is drawn as negative space, so its part is the frame and features around it. The face is the profile alone, so her nose becomes its nose.
+- **Checking the split.** `tools/logo/regions_preview.py` renders the logo coloured by part, and `tools/logo/components.py` lists its separate ink pieces. With `?debug`, "Show parts" tints both shapes during the morph (mask gold, hand green, face blue, body grey).
+- **Order and timing.** The mask changes first and almost as one piece, then the hand, then the face; the body follows on a wider swirl. The timings are in `MORPH.parts`.
+
+How it is built:
 
 - **Start shape.** Each triangle starts as one of the statue's triangles in its end pose. The positions are computed on the CPU from the same skeleton the GPU skins with. At the start of the morph phase the skinned statue is hidden and this mesh is shown. Measured on the canvas, the swap changes nothing: a mean difference of 0.000 per pixel, and at most 9/255 on any pixel, which is anti-aliasing noise.
-- **End shape.** Each triangle ends as one triangle of the logo, which is tessellated by longest-edge splits to exactly the statue's 160,000 triangles.
-- **Pairing.** Statue and logo triangles are paired by balanced recursive median splits of their centroids, each set normalised to its own bounds. Neighbours stay neighbours, and the figure's front becomes the logo's front. Each pair's corners are rotated to the best match, so triangles do not flip.
-- **Motion.** Each triangle has its own start, staggered outward from the mask with smooth noise. It travels on a gentle swirl about the turning axis (all one way, its strength varying smoothly) with a slight rise. The marble's colour, roughness, normal map and reflections turn to gold per triangle.
-- **Shaders.** The same vertex path runs in the colour pass, the shadow pass and the star-field silhouette pass. It is built about 0.35–0.6 s after the hero is up; until then the statue simply holds its end pose.
+- **End shape.** Within each part, the logo's triangles are tessellated by longest-edge splits to the statue part's triangle count. Where the logo part is the larger, the statue part is padded with copies of its own triangles, which start exactly on top of each other. The mask and the hand are padded about 3× and 7×, so they grow as they change. In total there are 179,889 triangles.
+- **Pairing.** Within each part, triangles are paired by balanced recursive median splits of their centroids, each set normalised to its own bounds. Her face looks to the screen's left at the end of the pose, as the logo's profile does, so nose goes to nose and crown to brow. Each pair's corners are rotated to the best match, so triangles do not flip.
+- **Motion.** Each triangle travels to its place with a slight rise (and, for the body, a swirl about the turning axis). The marble's colour, roughness, normal map and reflections turn to gold per triangle.
+- **Shaders.** The same vertex path runs in the colour pass, the shadow pass and the star-field silhouette pass. The mesh is built in about a second, after the hero is up; until then the statue simply holds its end pose.
 
-**What it looks like mid-way:** the marble comes apart into a flowing lace and reassembles as gold, rather than melting as one continuous skin. Both ends are exact. A single unbroken surface cannot become the logo, which has holes through it (the eyes, the gaps between the flames), so the surface has to part somewhere.
+The mask, hand and face move almost as solid pieces. The body comes apart into a flowing lace and reassembles as the brush strokes, flames and crescent, because one unbroken surface cannot become shapes with holes through them.
 
-Retune it with the `MORPH` constants (stagger, swirl, rise, gold colour and roughness) and `GOLD_ENV` in `Stage.js`.
+Retune it with the `MORPH` constants (part timings, swirl, rise, gold colour and roughness) and `GOLD_ENV` in `Stage.js`. Redraw the parts in `mark-regions.json`.
 
 ## Changing the copy
 
@@ -157,7 +171,7 @@ All as in v2:
 ## Performance and fallbacks
 
 - **Loading:** three.js, the 1.81 MB rig and the 48 KB logo trace load lazily behind the loader. The morph mesh is built in an idle moment after the intro.
-- **Geometry:** the skinned statue has 79,976 vertices and 160,000 triangles. The morph mesh has 480,000 vertices (160,000 independent triangles; about 31 MB of vertex data on the GPU). Only one of the two is drawn at a time.
+- **Geometry:** the skinned statue has 79,976 vertices and 160,000 triangles. The morph mesh has 539,667 vertices (179,889 independent triangles; about 37 MB of vertex data on the GPU). Only one of the two is drawn at a time.
 - **Rendering:**
   - DPR is capped at 2;
   - a frame is rendered only when something changed (while the logo holds, its idle drift keeps rendering);

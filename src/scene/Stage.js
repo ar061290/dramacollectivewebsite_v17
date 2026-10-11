@@ -302,20 +302,21 @@ export class Stage {
    * Build the morph from the logo's SVG (takes a few hundred milliseconds; call it once the hero is
    * up). Until it is ready the statue simply holds its end pose through the morph section.
    */
-  prepareMorph(svgText) {
+  prepareMorph(svgText, regions = null) {
     if (!this.skinned || this.morph || this.disposed) return null;
     const { arm, head } = this.tracks;
     this._applyPose(1, 1);
     const c = this.statue.center;
     const triangles = this.skinned.geometry.index.count / 3;
-    const logo = buildLogoGeometry(svgText, { center: c, radius: this.statue.radius - MORPH.lift - 0.02, maxTriangles: triangles * 0.8 });
-    logo.computeBoundingBox();
-    this.logoWidth = logo.boundingBox.max.x - logo.boundingBox.min.x;
+    // the logo's base triangles must fit every part's budget; the curves are sampled to suit
+    const logo = buildLogoGeometry(svgText, { center: c, radius: this.statue.radius - MORPH.lift - 0.02, regions, maxTriangles: triangles * 0.6 });
+    logo.geometry.computeBoundingBox();
+    this.logoWidth = logo.geometry.boundingBox.max.x - logo.geometry.boundingBox.min.x;
     // the change starts at the mask: a little above the hand
     const hand = this.skinned.skeleton.bones.find((b) => /^hand/.test(b.name));
     const origin = this.turntable.worldToLocal(hand.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.13, 0)));
     this.morph = buildMorph({ skinned: this.skinned, space: this.turntable, logo, center: c, origin });
-    logo.dispose();
+    logo.geometry.dispose();
     this.morph.mesh.layers.enable(STATUE_LAYER);
     this._applyPose(arm, head);
     this._lastSig = '';
