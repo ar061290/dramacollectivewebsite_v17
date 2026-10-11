@@ -1,13 +1,21 @@
 // The star cursor (and the constellation pen). Desktop, fine pointers only.
-// The star itself is a native cursor image set in CSS (layout.css), so the system draws it with no
+// Mostly the star is a native cursor image set in CSS (layout.css): the system draws it, with no
 // lag and pixel-exact clicks. This module switches it on, keeps the "Drag" hint beside it, and
-// tells the CSS (classes on <html>) two things about what is under the pointer:
+// tells the CSS (classes on <html>) what is under the pointer:
 //   is-over-text  selectable text: the star stretches into its tall text form
-//   is-on-box     a text box (where the sky is cleared, so the small star is harder to see): the
-//                 cursor image with a soft glow drawn into it, so the glow cannot lag
+//   is-over-link  a link or control: the star turns 45 degrees
+//   is-on-box     a text box, where the sky is cleared and the small star is harder to see: the
+//                 native cursor is hidden and the page draws the star itself, with a glow behind
+//                 it, as one piece (so the glow cannot trail the star), clipped to the box.
+//                 (A glow inside a native cursor image turns into a grey shadow on Windows, which
+//                 darkens the image's see-through pixels.)
+// The drawn cursor is placed on the earliest pointer event there is (pointerrawupdate, where the
+// browser has it), straight away, with no easing and no frame batching.
 
 const BOXES = '[data-mask], .curtain, .topbar__sheet';
-const NOT_TEXT = 'a, button, input, select, textarea, label, [role="button"], .cursor, .loader';
+const LINKS = 'a, button, label, [role="button"]';
+const NOT_TEXT = `${LINKS}, input, select, textarea, .cursor, .loader`;
+const R = 32; // half the glow's size (layout.css)
 
 /** True when a character of real text is under (x, y), not just the nearest caret position. */
 function overText(x, y, target) {
@@ -40,26 +48,52 @@ export function setupCursor() {
   const el = document.querySelector('.cursor');
   root.classList.add('has-cursor');
   if (!el) return () => root.classList.remove('has-cursor');
+  const glow = el.querySelector('.cursor__glow');
 
   let last = null, raf = 0;
+  let box = null, boxRect = null; // the text box under the pointer, and where it is
+
+  // clip the glow to the box: how far each of the box's edges cuts into the glow's square
+  const clip = (x, y) => {
+    if (!glow || !boxRect) return;
+    const b = boxRect;
+    const t = Math.max(0, b.top - (y - R)), l = Math.max(0, b.left - (x - R));
+    const btm = Math.max(0, y + R - b.bottom), rgt = Math.max(0, x + R - b.right);
+    glow.style.clipPath = `inset(${t}px ${rgt}px ${btm}px ${l}px)`;
+  };
+  const place = (x, y) => {
+    el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    clip(x, y);
+  };
+
+  // what is under the pointer: once a frame is plenty for this
   const update = () => {
     raf = 0;
     if (!last) return;
     const { x, y, target } = last;
     root.classList.toggle('is-over-text', overText(x, y, target));
-    root.classList.toggle('is-on-box', !!target?.closest?.(BOXES));
+    root.classList.toggle('is-over-link', !!target?.closest?.(LINKS));
+    box = target?.closest?.(BOXES) ?? null;
+    boxRect = box?.getBoundingClientRect() ?? null;
+    root.classList.toggle('is-on-box', !!box);
+    clip(x, y);
   };
   const look = () => { if (last && !raf) raf = requestAnimationFrame(update); };
+
+  const onRaw = (e) => {
+    if (e.pointerType === 'touch') return;
+    place(e.clientX, e.clientY);
+  };
   const onMove = (e) => {
     if (e.pointerType === 'touch') return;
     el.classList.add('is-visible');
-    el.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+    if (!rawEvents) place(e.clientX, e.clientY);
     last = { x: e.clientX, y: e.clientY, target: e.target };
     look();
   };
   const onLeave = () => {
     el.classList.remove('is-visible');
-    root.classList.remove('is-over-text', 'is-on-box');
+    root.classList.remove('is-over-text', 'is-over-link', 'is-on-box');
     last = null;
   };
   // scrolling moves the page under a still pointer: look again at what is there now
@@ -68,14 +102,17 @@ export function setupCursor() {
     last.target = document.elementFromPoint(last.x, last.y);
     look();
   };
+  const rawEvents = 'onpointerrawupdate' in window;
+  if (rawEvents) window.addEventListener('pointerrawupdate', onRaw, { passive: true });
   window.addEventListener('pointermove', onMove, { passive: true });
   window.addEventListener('scroll', onScroll, { passive: true });
   root.addEventListener('pointerleave', onLeave);
   return () => {
     cancelAnimationFrame(raf);
+    if (rawEvents) window.removeEventListener('pointerrawupdate', onRaw);
     window.removeEventListener('pointermove', onMove);
     window.removeEventListener('scroll', onScroll);
     root.removeEventListener('pointerleave', onLeave);
-    root.classList.remove('has-cursor', 'is-over-text', 'is-on-box');
+    root.classList.remove('has-cursor', 'is-over-text', 'is-over-link', 'is-on-box');
   };
 }
