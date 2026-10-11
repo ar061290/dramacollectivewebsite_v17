@@ -6,10 +6,10 @@
 // triangle is exactly one triangle of the extruded logo.
 //
 // Each part of the statue becomes the matching part of the logo:
-//   mask  the mask in her hand     -> the logo's mask (its frame, eye, nose and lips)
-//   hand  her hand and arm         -> the hand holding it, down its long wrist
-//   face  her head and neck        -> the profile face
-//   body  torso, robes, other arm  -> the brush strokes, the flames, the crescent and the star
+//   mask  the mask in her hand        -> the logo's mask (its frame, eye, nose and lips)
+//   hand  her hand and forearm        -> the hand holding it, down its long wrist
+//   face  her head and neck           -> the profile face
+//   body  torso, robes, arms, plinth  -> the brush strokes, the flames, the crescent and the star
 // The statue's parts come from the rig (which bone moves each vertex); the logo's from
 // assets/brand/mark-regions.json. Within each part:
 //   1. the logo part is tessellated (longest-edge splits) to the statue part's triangle count (or
@@ -17,8 +17,15 @@
 //   2. triangles are paired by balanced recursive median splits of their centroids, each set
 //      normalised to its own bounds: her nose becomes the profile's nose, the mask's eyes its eye;
 //   3. each pair's corners are rotated to the best match, so triangles do not flip on the way.
-// The mask changes first, then the hand, then the face, each travelling almost straight to its
-// place; the body follows on a wider swirl about the turning axis. The marble turns to gold as it goes.
+//
+// The logo is far larger than her head, so it does not form at its full size. It forms at her head
+// first, scaled and placed so that its mask, hand and face lie on hers (a least-squares fit of the
+// three parts' bounds, then a small shift per part for what one fit cannot place), just in front of
+// her: each part changes where it is, into its counterpart at about its own size. The mask changes
+// first, then the hand (her upper arm goes with it), then the face; the three gold parts hold for a
+// moment on the marble figure; then, as the robes stream on a wide swirl into the brush strokes,
+// flames and crescent, the parts close up into the logo's own layout and the logo grows out to its
+// place in the ring. The marble turns to gold as it goes.
 // Everything here runs once, in well under a second for 160k triangles.
 
 import * as THREE from 'three';
@@ -26,20 +33,39 @@ import { PARTS } from './logo.js';
 
 export const MORPH = {
   swirl: 1, // radians of turn about the axis at mid-flight, scaled per part and by smooth noise
-  lift: 0.06, // rise at mid-flight, statue units (counted in the ring clearance)
+  lift: 0.06, // rise at mid-flight, statue units (counted in the ring clearance); the mask, hand and
+  // face, changing in place at the logo's small size, rise in proportion
   gold: 0xcaa752, // gold-600, a shade deeper: as a metal it reads lighter than its swatch
   goldRoughness: 0.34,
-  // per part: when its triangles set off (a share of the morph), over how long, and how much they swirl
+  // per part, as shares of the morph: when its first triangles set off (start), how much later its
+  // last ones do (spread), how long each takes to arrive (travel), and how much they swirl. A part
+  // is complete at start + spread + travel.
   parts: {
-    // the mask, the hand and the face each move almost as one piece, in turn; the body flows after
-    mask: { start: 0.0, spread: 0.1, swirl: 0.08 },
-    hand: { start: 0.1, spread: 0.12, swirl: 0.1 },
-    face: { start: 0.2, spread: 0.12, swirl: 0.08 },
-    body: { start: 0.28, spread: 0.32, swirl: 0.8 },
+    // the mask, the hand and the face each change almost as one piece, in turn, where they are
+    // (0-0.18, 0.08-0.26, 0.16-0.38); the three hold on the marble figure; the body flows after
+    // them (0.46-1)
+    mask: { start: 0.0, spread: 0.04, travel: 0.14, swirl: 0.05 },
+    hand: { start: 0.08, spread: 0.04, travel: 0.14, swirl: 0.05 },
+    face: { start: 0.16, spread: 0.06, travel: 0.16, swirl: 0.05 },
+    body: { start: 0.46, spread: 0.26, travel: 0.28, swirl: 0.8 },
   },
+  // her upper arm belongs to the body (the logo's hand is the hand and the wrist), but it leaves
+  // with the hand, from the elbow up, so no stump is left at the elbow (0.14-0.42)
+  upperArm: { start: 0.14, spread: 0.08, travel: 0.2, swirl: 0.1 },
+  // the mask, hand and face, formed on hers, close up into the logo's own layout as the robes set off
+  settle: { from: 0.46, to: 0.62 },
+  // the logo forms at her head, then grows to its place in the ring
+  grow: { from: 0.55, to: 1 },
   maskFrom: 0.893, // on the hand bone, the mask is what lies above the grip (fraction of the statue's height)
 };
-MORPH.delayMax = Math.max(...Object.values(MORPH.parts).map((p) => p.start + p.spread));
+
+const smooth = (t) => t * t * (3 - 2 * t);
+const window01 = ({ from, to }, t) => smooth(Math.min(1, Math.max(0, (t - from) / (to - from))));
+
+/** How far the logo has grown from its place at her head (0) to its place in the ring (1), at morph `t`. */
+export function growAt(t) {
+  return window01(MORPH.grow, t);
+}
 
 /**
  * Posed positions and normals of a skinned mesh, in the space of `space` (an ancestor), computed
@@ -77,33 +103,37 @@ export function posedVertices(skinned, space) {
 
 /**
  * Which part of the statue each triangle belongs to (indices into PARTS), from the rig: the hand
- * bone carries the hand and, above the grip, the mask; the arm bones (upper arm, forearm) join the
- * hand, as the logo's hand runs down into a long wrist; the head and neck bones are the face;
- * everything else is the body.
+ * bone carries the hand and, above the grip, the mask; the forearm bones join the hand, as the
+ * logo's hand runs down into a long wrist (in the end pose her forearm runs down from the wrist to
+ * the elbow); the head and neck bones are the face; everything else, the upper arm included, is
+ * the body. `upperArm` marks the upper arm's triangles, which leave early (MORPH.upperArm).
  */
 export function statueParts(skinned) {
   const g = skinned.geometry;
   const index = g.index.array;
   const P = g.attributes.position, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight;
-  const role = skinned.skeleton.bones.map((b) => (/^hand/.test(b.name) ? 'hand' : /^(forearm|upper_arm)/.test(b.name) ? 'arm' : /^(head|neck)$/.test(b.name) ? 'face' : 'body'));
+  const role = skinned.skeleton.bones.map((b) => (/^hand/.test(b.name) ? 'hand' : /^forearm/.test(b.name) ? 'arm' : /^upper_arm/.test(b.name) ? 'upper' : /^(head|neck)$/.test(b.name) ? 'face' : 'body'));
   let lo = Infinity, hi = -Infinity;
   for (let i = 0; i < P.count; i++) { const y = P.getY(i); if (y < lo) lo = y; if (y > hi) hi = y; }
   const MASK = PARTS.indexOf('mask'), HAND = PARTS.indexOf('hand'), FACE = PARTS.indexOf('face'), BODY = PARTS.indexOf('body');
-  const vpart = new Uint8Array(P.count);
+  const vpart = new Uint8Array(P.count), vupper = new Uint8Array(P.count);
   for (let i = 0; i < P.count; i++) {
     let j = 0;
     for (let k = 1; k < 4; k++) if (SW.getComponent(i, k) > SW.getComponent(i, j)) j = k;
     const r = role[SI.getComponent(i, j)];
     vpart[i] = r === 'hand' ? ((P.getY(i) - lo) / (hi - lo) >= MORPH.maskFrom ? MASK : HAND)
       : r === 'arm' ? HAND : r === 'face' ? FACE : BODY;
+    vupper[i] = r === 'upper' ? 1 : 0;
   }
   const n = index.length / 3;
-  const part = new Uint8Array(n);
+  const part = new Uint8Array(n), upperArm = new Uint8Array(n);
   for (let t = 0; t < n; t++) {
-    const a = vpart[index[t * 3]], b = vpart[index[t * 3 + 1]], c = vpart[index[t * 3 + 2]];
+    const i0 = index[t * 3], i1 = index[t * 3 + 1], i2 = index[t * 3 + 2];
+    const a = vpart[i0], b = vpart[i1], c = vpart[i2];
     part[t] = a === b || a === c ? a : b === c ? b : a; // the majority, else the first corner
+    upperArm[t] = part[t] === BODY && vupper[i0] + vupper[i1] + vupper[i2] >= 2 ? 1 : 0;
   }
-  return part;
+  return { part, upperArm };
 }
 
 // ---- 1. tessellate a set of logo triangles to exactly `target` (split the longest edge first) ----
@@ -213,6 +243,64 @@ function match(ca, cb, n) {
   return pair;
 }
 
+// ---- 3. where the logo forms: at her head, its mask, hand and face on hers ----
+/**
+ * Lay the logo's mask, hand and face over the statue's: the uniform scale and shift (no turn) that
+ * best carry the bounds of each logo part onto the bounds of the matching statue part, as the viewer
+ * sees them (x, y; least squares over each box's centre and corners). One fit cannot place all three
+ * (in the logo the hand lies between the mask and the face; on her it lies under the mask), so each
+ * part also gets the small shift that puts its centre on hers, for while it forms. The logo stands
+ * just in front of her three parts (-z faces the viewer), so her marble chest does not cover it.
+ * Shifted or not, it stays inside the logo's own radius about `center`, so the ring clearance holds
+ * while it forms and grows.
+ * @param {{ p: number, a: THREE.Box3, b: THREE.Box3 }[]} boxes  per part (index into PARTS): the
+ *        statue part's bounds (a) and the logo part's (b), turntable space
+ * @param {THREE.Vector3} center  the full-size logo's centre (on the turning axis)
+ * @param {number} radius         the full-size logo's reach from `center` (its farthest vertex)
+ * @returns {{ at: THREE.Vector3, scale: number, shift: THREE.Vector3[] } | null}  where the logo's
+ *          centre sits and its scale, and the shift per part (zero for the body)
+ */
+function fitOverHead(boxes, center, radius) {
+  if (!boxes.length) return null;
+  const A = [], B = [];
+  for (const { a, b } of boxes) {
+    for (const [u, v] of [[0.5, 0.5], [0, 0], [1, 0], [0, 1], [1, 1]]) {
+      A.push([a.min.x + (a.max.x - a.min.x) * u, a.min.y + (a.max.y - a.min.y) * v]);
+      B.push([b.min.x + (b.max.x - b.min.x) * u, b.min.y + (b.max.y - b.min.y) * v]);
+    }
+  }
+  const mean = (S) => [0, 1].map((q) => S.reduce((sum, p) => sum + p[q], 0) / S.length);
+  const ma = mean(A), mb = mean(B);
+  let num = 0, den = 0;
+  for (let i = 0; i < A.length; i++) {
+    for (let q = 0; q < 2; q++) {
+      num += (A[i][q] - ma[q]) * (B[i][q] - mb[q]);
+      den += (B[i][q] - mb[q]) ** 2;
+    }
+  }
+  const scale = Math.min(1, Math.max(0.05, num / Math.max(1e-9, den)));
+  // the logo's centre goes where the fit carries it, level with the front of her three parts
+  const at = new THREE.Vector3(
+    ma[0] + scale * (center.x - mb[0]),
+    ma[1] + scale * (center.y - mb[1]),
+    Math.min(...boxes.map(({ a }) => a.min.z)),
+  );
+  // what the fit leaves over: each logo part's centre onto hers (x, y)
+  const shift = PARTS.map(() => new THREE.Vector3());
+  const ca = new THREE.Vector3(), cb = new THREE.Vector3();
+  let most = 0;
+  for (const { p, a, b } of boxes) {
+    a.getCenter(ca); b.getCenter(cb);
+    shift[p].set(ca.x - (at.x + scale * (cb.x - center.x)), ca.y - (at.y + scale * (cb.y - center.y)), 0);
+    most = Math.max(most, shift[p].length());
+  }
+  // every point of the logo lies within `radius` of `center`; keep it so at this scale, place and shift
+  const off = at.clone().sub(center);
+  const room = Math.max(0, radius * (1 - scale) - most);
+  if (off.length() > room) at.copy(center).addScaledVector(off, room / off.length());
+  return { at, scale, shift };
+}
+
 // ---- 4. smooth noise for the stagger ----
 function hash3(x, y, z) {
   let h = (x * 374761393 + y * 668265263 + z * 2147483647) | 0;
@@ -234,17 +322,19 @@ function valueNoise(x, y, z) {
 const VERTEX_HEAD = /* glsl */`
   attribute vec3 aPosB;
   attribute vec3 aNormB;
-  attribute vec2 aParams; // x: start delay, y: swirl strength
+  attribute vec3 aParams; // x: start delay, y: travel time, z: swirl strength
   attribute float aPart;
   varying float vPart;
   uniform float uMorph;
-  uniform float uDelayMax;
   uniform vec3 uCenter;
+  uniform vec4 uFit; // the logo's centre (xyz) and scale (w): at her head, growing to its place
+  uniform vec3 uShift[4]; // per part: from where the fit puts it onto hers, while it forms there
+  uniform float uSettle; // 1 while the parts lie on hers, 0 once they have closed up into the logo
   uniform float uSwirl;
   uniform float uLift;
   varying float vMorph;
   float morphS() {
-    float s = clamp((uMorph - aParams.x) / (1.0 - uDelayMax), 0.0, 1.0);
+    float s = clamp((uMorph - aParams.x) / aParams.y, 0.0, 1.0);
     return s * s * (3.0 - 2.0 * s);
   }
   vec3 swirl(vec3 v, float a) {
@@ -257,12 +347,16 @@ const BEGIN_VERTEX = /* glsl */`
   vMorph = mS;
   vPart = aPart;
   float bump = sin(3.14159265 * mS);
-  float turn = uSwirl * bump * aParams.y;
-  vec3 transformed = uCenter + swirl(mix(position, aPosB, mS) - uCenter, turn) + vec3(0.0, uLift * bump, 0.0);
+  float turn = uSwirl * bump * aParams.z;
+  // the logo as it stands now: a uniform scale and shift, so its normals (aNormB) need no transform
+  vec3 target = uFit.xyz + uFit.w * (aPosB - uCenter) + uSettle * uShift[int(aPart + 0.5)];
+  // the mask, hand and face change in place at the logo's small size: they rise in proportion
+  float lift = uLift * (aPart < 0.5 ? 1.0 : uFit.w) * bump;
+  vec3 transformed = uCenter + swirl(mix(position, target, mS) - uCenter, turn) + vec3(0.0, lift, 0.0);
 `;
 const BEGIN_NORMAL = /* glsl */`
   float nS = morphS();
-  vec3 objectNormal = swirl(normalize(mix(normal, aNormB, nS)), uSwirl * sin(3.14159265 * nS) * aParams.y);
+  vec3 objectNormal = swirl(normalize(mix(normal, aNormB, nS)), uSwirl * sin(3.14159265 * nS) * aParams.z);
   #ifdef USE_TANGENT
     vec3 objectTangent = vec3(tangent.xyz);
   #endif
@@ -301,7 +395,7 @@ export function buildMorph({ skinned, space, logo, center, origin }) {
   const index = g.index.array;
   const { pos, nor } = posedVertices(skinned, space);
   const uv = g.attributes.uv;
-  const sPart = statueParts(skinned);
+  const { part: sPart, upperArm } = statueParts(skinned);
   const LPall = logo.geometry.attributes.position.array, LNall = logo.geometry.attributes.normal.array;
 
   // triangles of each part, on both sides; a part missing on either side joins the body
@@ -314,9 +408,12 @@ export function buildMorph({ skinned, space, logo, center, origin }) {
     sets[BODY].a.push(...sets[p].a); sets[BODY].b.push(...sets[p].b);
     sets[p].a = []; sets[p].b = [];
   }
+  // without a hand of its own (no regions), the upper arm goes with the rest of the body
+  if (!sets[PARTS.indexOf('hand')].a.length) upperArm.fill(0);
 
   const report = {};
   const chunks = [];
+  const boxes = []; // the mask, hand and face on both sides, for the fit at her head
   let total = 0;
   for (let p = 0; p < PARTS.length; p++) {
     const { a, b } = sets[p];
@@ -337,30 +434,65 @@ export function buildMorph({ skinned, space, logo, center, origin }) {
         cb[i * 3 + q] = (LP[i * 9 + q] + LP[i * 9 + 3 + q] + LP[i * 9 + 6 + q]) / 3;
       }
     }
+    if (p !== BODY) {
+      const box = { p, a: new THREE.Box3(), b: new THREE.Box3() };
+      const v = new THREE.Vector3();
+      for (const t of a) for (let k = 0; k < 3; k++) box.a.expandByPoint(v.fromArray(pos, index[t * 3 + k] * 3));
+      for (let i = 0; i < b.length * 3; i++) box.b.expandByPoint(v.fromArray(P0, i * 3));
+      boxes.push(box);
+    }
     chunks.push({ p, N, A, LP, LN, ca, cb, pair: match(ca, cb, N) });
     report[PARTS[p]] = { statue: a.length, logo: b.length, triangles: N };
     total += N;
   }
 
+  // where the logo forms: fitted to her mask, hand and face (with none of those parts, as when
+  // mark-regions.json fails to load, at its own place and size: a whole-figure morph)
+  let radius = 0;
+  const logoBox = new THREE.Box3();
+  const v = new THREE.Vector3();
+  for (let i = 0; i < LPall.length; i += 3) {
+    radius = Math.max(radius, Math.hypot(LPall[i] - center.x, LPall[i + 1] - center.y, LPall[i + 2] - center.z));
+    logoBox.expandByPoint(v.fromArray(LPall, i));
+  }
+  const fit = fitOverHead(boxes, center, radius) ?? { at: center.clone(), scale: 1, shift: PARTS.map(() => new THREE.Vector3()) };
+  // what the stage's close-up frames: her mask, hand and face, and the gold ones forming on them
+  // (without parts, the logo where it forms)
+  const closeUp = new THREE.Box3();
+  for (const { p, a, b } of boxes) {
+    closeUp.union(a);
+    for (const end of [b.min, b.max]) closeUp.expandByPoint(v.copy(end).sub(center).multiplyScalar(fit.scale).add(fit.at).add(fit.shift[p]));
+  }
+  if (closeUp.isEmpty()) closeUp.copy(logoBox).translate(v.copy(fit.at).sub(center));
+
   // the soup
   const V = total * 3;
   const aPos = new Float32Array(V * 3), aNor = new Float32Array(V * 3), aUv = new Float32Array(V * 2);
-  const aPosB = new Float32Array(V * 3), aNormB = new Float32Array(V * 3), aParams = new Float32Array(V * 2);
+  const aPosB = new Float32Array(V * 3), aNormB = new Float32Array(V * 3), aParams = new Float32Array(V * 3);
   const aPart = new Float32Array(V);
   let out = 0;
   for (const { p, N, A, LP, LN, ca, cb, pair } of chunks) {
-    const cfg = MORPH.parts[PARTS[p]];
-    // stagger within the part: distance from the mask, plus smooth noise
-    let far = 1e-6;
-    const dist = new Float32Array(N);
+    // stagger within the part: distance from the mask (the upper arm: height, from the elbow up),
+    // plus smooth noise, stretched so that its first triangles set off at `start` and its last at
+    // `start + spread` (group 0: the part; group 1: the upper arm, within the body)
+    const dist = new Float32Array(N), raw = new Float32Array(N);
+    let near = Infinity, far = -Infinity, armLo = Infinity, armHi = -Infinity;
     for (let i = 0; i < N; i++) {
       dist[i] = Math.hypot(ca[i * 3] - origin.x, ca[i * 3 + 1] - origin.y, ca[i * 3 + 2] - origin.z);
-      if (dist[i] > far) far = dist[i];
+      if (upperArm[A[i]]) { armLo = Math.min(armLo, ca[i * 3 + 1]); armHi = Math.max(armHi, ca[i * 3 + 1]); }
+      else { near = Math.min(near, dist[i]); far = Math.max(far, dist[i]); }
+    }
+    const lo = [Infinity, Infinity], hi = [-Infinity, -Infinity];
+    for (let i = 0; i < N; i++) {
+      const g = upperArm[A[i]];
+      const order = g ? (ca[i * 3 + 1] - armLo) / Math.max(1e-6, armHi - armLo) : (dist[i] - near) / Math.max(1e-6, far - near);
+      raw[i] = 0.75 * order + 0.3 * (valueNoise(ca[i * 3] * 5, ca[i * 3 + 1] * 5, ca[i * 3 + 2] * 5) - 0.5);
+      lo[g] = Math.min(lo[g], raw[i]); hi[g] = Math.max(hi[g], raw[i]);
     }
     for (let i = 0; i < N; i++, out++) {
-      const t = A[i], bb = pair[i];
-      const nz = valueNoise(ca[i * 3] * 5, ca[i * 3 + 1] * 5, ca[i * 3 + 2] * 5);
-      const delay = cfg.start + cfg.spread * Math.min(1, Math.max(0, 0.75 * (dist[i] / far) + 0.3 * (nz - 0.5) + 0.05));
+      const t = A[i], bb = pair[i], g = upperArm[t];
+      const cfg = g ? MORPH.upperArm : MORPH.parts[PARTS[p]];
+      const delay = cfg.start + (cfg.spread * (raw[i] - lo[g])) / Math.max(1e-6, hi[g] - lo[g]);
       const swirl = MORPH.swirl * cfg.swirl * (0.55 + 0.9 * valueNoise(ca[i * 3] * 2.5 + 17.3, ca[i * 3 + 1] * 2.5, ca[i * 3 + 2] * 2.5 - 4.1));
       // corner rotation: line the logo triangle's corners up with the statue triangle's
       let best = 0, bestErr = Infinity;
@@ -384,7 +516,7 @@ export function buildMorph({ skinned, space, logo, center, origin }) {
           aNormB[vtx * 3 + q] = LN[ib + q];
         }
         aUv[vtx * 2] = uv.getX(vi); aUv[vtx * 2 + 1] = uv.getY(vi);
-        aParams[vtx * 2] = delay; aParams[vtx * 2 + 1] = swirl;
+        aParams[vtx * 3] = delay; aParams[vtx * 3 + 1] = cfg.travel; aParams[vtx * 3 + 2] = swirl;
         aPart[vtx] = p;
       }
     }
@@ -395,13 +527,15 @@ export function buildMorph({ skinned, space, logo, center, origin }) {
   geo.setAttribute('uv', new THREE.BufferAttribute(aUv, 2));
   geo.setAttribute('aPosB', new THREE.BufferAttribute(aPosB, 3));
   geo.setAttribute('aNormB', new THREE.BufferAttribute(aNormB, 3));
-  geo.setAttribute('aParams', new THREE.BufferAttribute(aParams, 2));
+  geo.setAttribute('aParams', new THREE.BufferAttribute(aParams, 3));
   geo.setAttribute('aPart', new THREE.BufferAttribute(aPart, 1));
 
   const uniforms = {
     uMorph: { value: 0 },
-    uDelayMax: { value: MORPH.delayMax },
     uCenter: { value: center.clone() },
+    uFit: { value: new THREE.Vector4(fit.at.x, fit.at.y, fit.at.z, fit.scale) },
+    uShift: { value: fit.shift },
+    uSettle: { value: 1 },
     uSwirl: { value: MORPH.swirl },
     uLift: { value: MORPH.lift },
     uGold: { value: new THREE.Color(MORPH.gold) },
@@ -443,12 +577,29 @@ export function buildMorph({ skinned, space, logo, center, origin }) {
   mesh.visible = false;
   space.add(mesh);
 
+  const at = new THREE.Vector3().copy(fit.at);
+  const size = closeUp.getSize(new THREE.Vector3());
   return {
     mesh,
     uniforms,
     triangles: total,
     parts: report,
+    fit: { at: fit.at.toArray().map((x) => +x.toFixed(3)), scale: +fit.scale.toFixed(3), shift: Object.fromEntries(PARTS.map((name, p) => [name, fit.shift[p].toArray().slice(0, 2).map((x) => +x.toFixed(3))])) },
+    // for the stage's close-up: what it frames, turntable space
+    closeUp: { centre: closeUp.getCenter(new THREE.Vector3()), width: size.x, height: size.y },
     ms: Math.round(performance.now() - t0),
+    /** Set the morph to `t` (0..1); returns how far the logo has grown into its place (0..1). */
+    update(t) {
+      const grow = growAt(t);
+      uniforms.uMorph.value = t;
+      // the centre moves straight to its place; the scale grows evenly (geometrically)
+      at.lerpVectors(fit.at, center, grow);
+      uniforms.uFit.value.set(at.x, at.y, at.z, fit.scale ** (1 - grow));
+      // the parts close up into the logo's layout before it has grown much (never slower than it
+      // grows, which keeps the shifted parts inside the ring clearance)
+      uniforms.uSettle.value = Math.min(1 - window01(MORPH.settle, t), 1 - grow);
+      return grow;
+    },
     dispose() {
       mesh.removeFromParent();
       geo.dispose(); material.dispose(); depth.dispose(); silhouette.dispose();

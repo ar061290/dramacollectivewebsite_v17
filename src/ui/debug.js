@@ -1,5 +1,5 @@
 // ?debug: a slider that scrubs the statue's whole sequence without scrolling, with a readout of
-// the phase and each track. "Follow scroll" hands control back to the page.
+// the phase, each track and how far the logo has grown. "Follow scroll" hands control back to the page.
 import { PHASES } from '../scene/sequence.js';
 
 export function setupDebug({ stage }) {
@@ -41,7 +41,7 @@ export function setupDebug({ stage }) {
     const t = stage.tracks;
     value.textContent = p.toFixed(3);
     if (stage.seqOverride === null) input.value = p;
-    read.textContent = `${t.phase} · turn ${t.turn.toFixed(2)} · arm ${t.arm.toFixed(2)} · head ${t.head.toFixed(2)} · morph ${t.morph.toFixed(2)} · logo ${t.logo.toFixed(2)}${stage.morph ? '' : ' · morph mesh not built yet'}`;
+    read.textContent = `${t.phase} · turn ${t.turn.toFixed(2)} · arm ${t.arm.toFixed(2)} · head ${t.head.toFixed(2)} · zoom ${t.zoom.toFixed(2)} · morph ${t.morph.toFixed(2)} · grow ${(t.grow ?? 0).toFixed(2)} · logo ${t.logo.toFixed(2)}${stage.morph ? '' : ' · morph mesh not built yet'}`;
   };
   const timer = setInterval(show, 120);
   show();

@@ -85,7 +85,9 @@ main { position: relative; z-index: var(--z-content); }
 .is-intro [data-intro] { visibility: hidden; }
 
 /* ---- Hero ---- */
-.hero { position: relative; height: 100vh; height: 100svh; min-height: 560px; }
+/* clip sideways: the copy's feathered panel (below) bleeds past the edge on phones and would
+   otherwise widen the page, and with it the stage, beyond the screen */
+.hero { position: relative; height: 100vh; height: 100svh; min-height: 560px; overflow-x: clip; }
 .hero__content {
   position: absolute;
   left: var(--stage-gutter);
