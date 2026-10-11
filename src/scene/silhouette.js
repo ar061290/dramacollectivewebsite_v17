@@ -1,5 +1,7 @@
 // A low-resolution, screen-space mask of the statue, so the constellation never captures stars
 // hidden behind it. The statue is rendered alone (its own layer) in flat white into a small target.
+// An object can bring its own flat material in `userData.maskMaterial` (the morph mesh does, so the
+// mask follows the shape its shader computes).
 
 import * as THREE from 'three';
 import { STATUE_LAYER } from './statue.js';
@@ -27,20 +29,24 @@ export class SilhouetteMask {
     this.cssW = cssWidth; this.cssH = cssHeight;
     const r = this.renderer;
     const prevMask = camera.layers.mask;
-    const prevOverride = scene.overrideMaterial;
+    const swapped = [];
+    scene.traverse((o) => {
+      if (!o.isMesh || !o.visible || !o.layers.isEnabled(STATUE_LAYER)) return;
+      swapped.push([o, o.material]);
+      o.material = o.userData.maskMaterial ?? this.material;
+    });
     const prevAlpha = r.getClearAlpha();
     r.getClearColor(this._clear);
     const prevShadowAuto = r.shadowMap.autoUpdate;
     r.shadowMap.autoUpdate = false;
     camera.layers.set(STATUE_LAYER);
-    scene.overrideMaterial = this.material;
     r.setRenderTarget(this.target);
     r.setClearColor(0x000000, 0);
     r.clear();
     r.render(scene, camera);
     r.setRenderTarget(null);
     r.readRenderTargetPixels(this.target, 0, 0, w, h, this.data);
-    scene.overrideMaterial = prevOverride;
+    for (const [o, m] of swapped) o.material = m;
     camera.layers.mask = prevMask;
     r.setClearColor(this._clear, prevAlpha);
     r.shadowMap.autoUpdate = prevShadowAuto;

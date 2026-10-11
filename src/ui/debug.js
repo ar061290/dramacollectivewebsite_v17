@@ -1,0 +1,40 @@
+// ?debug: a slider that scrubs the statue's whole sequence without scrolling, with a readout of
+// the phase and each track. "Follow scroll" hands control back to the page.
+import { PHASES } from '../scene/sequence.js';
+
+export function setupDebug({ stage }) {
+  const panel = document.createElement('div');
+  panel.className = 'debug-panel';
+  panel.innerHTML = `
+    <label class="debug-panel__row"><span>Sequence</span>
+      <input type="range" min="0" max="1" step="0.001" value="0" data-debug-seq>
+      <output data-debug-value>0.000</output></label>
+    <p class="debug-panel__read" data-debug-read></p>
+    <div class="debug-panel__row">
+      ${Object.entries(PHASES).map(([name, [a]]) => `<button type="button" data-debug-jump="${a}">${name}</button>`).join('')}
+      <button type="button" data-debug-jump="1">end</button>
+      <button type="button" data-debug-release>Follow scroll</button>
+    </div>`;
+  document.body.append(panel);
+  const input = panel.querySelector('[data-debug-seq]');
+  const value = panel.querySelector('[data-debug-value]');
+  const read = panel.querySelector('[data-debug-read]');
+  const set = (p) => { input.value = p; stage.setSequenceOverride(p); };
+  input.addEventListener('input', () => stage.setSequenceOverride(parseFloat(input.value)));
+  panel.addEventListener('click', (e) => {
+    const jump = e.target.closest('[data-debug-jump]');
+    if (jump) set(parseFloat(jump.dataset.debugJump));
+    if (e.target.closest('[data-debug-release]')) stage.setSequenceOverride(null);
+  });
+  const show = () => {
+    const p = stage.seqOverride ?? stage.state.seq;
+    const t = stage.tracks;
+    value.textContent = p.toFixed(3);
+    if (stage.seqOverride === null) input.value = p;
+    read.textContent = `${t.phase} · turn ${t.turn.toFixed(2)} · arm ${t.arm.toFixed(2)} · head ${t.head.toFixed(2)} · morph ${t.morph.toFixed(2)} · logo ${t.logo.toFixed(2)}${stage.morph ? '' : ' · morph mesh not built yet'}`;
+  };
+  const timer = setInterval(show, 120);
+  show();
+  window.dramaCollective.debug = { set, release: () => stage.setSequenceOverride(null) };
+  return () => { clearInterval(timer); panel.remove(); };
+}

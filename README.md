@@ -1,8 +1,17 @@
-# The Drama Collective · home page
+# The Drama Collective · home page (v3)
 
-The home page for the CHIREC Drama Collective. It is one page, a dark theatre before curtain-up. A marble statue holding a tragedy mask stands in a fixed three.js scene inside the Penrose ring, while five acts of real HTML scroll past it.
+The home page for the CHIREC Drama Collective: one page, a dark theatre before curtain-up. A marble statue stands in a fixed three.js scene inside the Penrose ring while the page scrolls past it. In v3 the statue performs:
 
-Built with Vite and vanilla JS, three.js 0.170, GSAP 3.13 (ScrollTrigger, SplitText, ScrollToPlugin, CustomEase) and lottie-web 5.12 (light SVG build).
+1. she turns 180° to face you;
+2. as she turns, she brings the tragedy mask down beside her face;
+3. she turns her head away from it;
+4. her marble flows into the Collective's gold mark.
+
+The copy is placeholder for now; the structure (hero, five acts, footer) is v2's.
+
+Built with Vite and vanilla JS, three.js 0.170, GSAP 3.13 (ScrollTrigger, SplitText, ScrollToPlugin, CustomEase) and lottie-web 5.12 (light SVG build). The rig and logo trace are made offline with Blender 5.2 and potrace 1.16 (scripts in `tools/`).
+
+Screenshots of the sequence are in [`docs/screenshots`](docs/screenshots).
 
 ## Run it
 
@@ -13,176 +22,151 @@ npm run build      # production build in dist/
 npm run preview    # serve dist/
 ```
 
-**No build step needed.** `index.html` carries an import map that points the same bare imports (`three`, `gsap/...`, `lottie-web/...`) at pinned jsDelivr URLs. So the folder also runs as-is from any static server, for example `npx serve .` or `python -m http.server`. Vite ignores the import map and bundles from `node_modules`.
+**No build step needed.** `index.html` carries an import map that points the same bare imports (`three`, `gsap/...`, `lottie-web/...`) at pinned jsDelivr URLs, so the folder also runs as-is from any static server (`npx serve .`, `python -m http.server`). Vite ignores the import map and bundles from `node_modules`. Opening `index.html` from disk (`file://`) does not work: module scripts and `fetch` need a server.
 
-Opening `index.html` directly from disk (`file://`) does not work, because module scripts and `fetch` need a server.
+QA flags:
 
-## Folders
+- `?debug` adds a slider that scrubs the statue's whole sequence from 0 to 1 without scrolling, with buttons for each phase and a readout of every track;
+- `?static` forces the still picture;
+- `?live` forces WebGL.
 
+## The statue sequence
+
+One number, the scroll progress through `<main>` (0 at the top, 1 where the footer begins), drives everything. The phases and their curves are one config object, `PHASES` and `TRACKS` in [`src/scene/sequence.js`](src/scene/sequence.js):
+
+| Phase | Progress | What happens |
+|---|---|---|
+| hero | 0–0.08 | v2's composition at rest: seen from behind, mask raised high |
+| pose | 0.08–0.55 | three tracks at once, each on its own curve: the 180° **turn** (sine in-out, the whole phase), the **arm** bringing the mask beside the face (cubic, 5–80% of the phase), the **head** turning away (quad, 35–100%) |
+| morph | 0.55–0.85 | the statue's surface flows into the 3D logo |
+| logo | 0.85–1 | the gold logo holds in the ring, swaying slowly away and back, with a gentle idle drift |
+
+End of the pose, as the viewer sees it: she faces you, the mask is on the right of the screen at face height, angled toward you, and her face looks to the left.
+
+The sequence is scrubbed (scrub 1.2) and fully reversible. With reduced motion nothing is scrubbed: the hero pose holds, then the logo appears in one step when the morph section is reached.
+
+Other stage motion carries over from v2:
+
+- the ring makes four turns about its own centre over the page (`RING_TURNS` in `src/sections/scenes.js`);
+- the camera arcs 22° and moves closer; during the morph the turntable takes up that arc, so the logo ends square to the camera;
+- the light moves warm, cool, warm by section;
+- the stage steps left and right so the text sits in empty space.
+
+On top of the sequence, the statue still answers the mouse:
+
+- she turns up to 10° toward the cursor;
+- over her, the key light leans in and the cursor offers "Drag";
+- a sideways drag turns her, with a fling, and the turn eases back to the choreography afterwards.
+
+### Ring clearance
+
+The ring never crosses the statue or the logo. The statue's bounding sphere is centred on her turning axis, so it holds at any turn. It is measured over both the rest pose and the end pose (both inside a radius of 1.094 statue units; the height is 2). The logo is scaled so that it, plus the morph's mid-flight rise, fits inside the same sphere. The morph's swirl turns about the same axis, which keeps every point's distance from the centre. Camera distance and field of view keep that sphere inside the ring's hole at every point of the scroll, as in v2.
+
+On narrow (portrait) screens the logo is wider than the view. During the morph the turntable scales down about the logo's centre until the logo fits 86% of the visible width; making it smaller only helps the clearance.
+
+## The rig (`tools/blender/`)
+
+The source is a Meshy scan: one fused mesh with no skeleton, where the mask, hand, arm, head, robes and plinth are a single connected surface. It has 502,574 vertices, 941,264 triangles and three WebP textures, and it is 20.4 MB. The mask is in the figure's **left** hand, so the 180° turn alone puts it on the right of the screen.
+
+`build_rig.py` makes `assets/models/statue-rig.glb` (**1.81 MB**: 79,976 vertices, 160,000 triangles, Draco-compressed, 2048 px WebP textures):
+
+1. **Prepare the mesh.** Import, merge the UV-seam duplicates (so the surface is connected), normalise (height 2, base on y = 0, plinth footprint on the y axis), and decimate to 160k triangles.
+2. **Skeleton.** Built from [`rig.json`](tools/blender/rig.json): root, spine, neck, head, left clavicle, upper arm, forearm (two bones, so turning the mask twists along the arm instead of pinching the wrist) and hand, plus a static bone for the right arm. Joints were placed from orthographic renders made with `inspect_views.py`.
+3. **Weights.** Blender's automatic (bone heat) weights, then:
+   - the hand and mask become one rigid piece, blended over the grip;
+   - nothing below the chest follows the arm or head, so the robes stay put;
+   - 4 influences per vertex, normalised.
+4. **End pose**, from [`pose.json`](tools/blender/pose.json):
+   - **arm:** analytic two-bone IK puts the wrist beside the jaw with the elbow down;
+   - **hand:** turns the mask to face the viewer, angled a little out, and keeps it upright;
+   - **head:** nods forward 30° from its upturned gaze and turns 55° away; the neck takes 35% of the turn.
+5. **Export.** A GLB with one action, `Pose` (frame 0 = rest, frame 10 = end). The site reads the two keyframes per bone and blends the arm and the head on their own curves.
+
+Rebuild after changing `rig.json` or `pose.json`:
+
+```bash
+blender -b --factory-startup -P tools/blender/build_rig.py -- <source.glb> assets/models/statue-rig.glb tris=160000 tex=2048 renders=<dir>
 ```
-index.html               all copy, all sections, the import map
-src/
-  main.js                boot: theme, music, loader, stage, sky, scenes, nav, cursor, reveals, intro, teardown
-  scene/                 three.js stage
-    Stage.js             renderer, lights, camera rig, ring, statue turntable, render-on-change loop, dispose()
-    interaction.js       hover, drag-to-turn and fling for the statue (mouse and touch)
-    statue.js            GLB/STL loading (meshopt + Draco), centring, marble material settings
-    ringStone.js         the Penrose ring in the statue's stone, locked to the camera
-    ring/                ring geometry (unchanged from the Penrose model)
-    silhouette.js        low-res statue mask so the constellations never draw over it
-    marble.js            procedural marble, used only for the STL fallback
-  constellation/         cursor-trail star field (single 2D canvas, spatial grid, rAF)
-  sections/              scroll choreography (scenes.js), line reveals, count-ups
-  animations/            intro timeline, nav, star cursor, Lottie loader
-  ui/                    theme.js (dark / light switch), music.js (piano player)
-  styles/                tokens.css (design system + extensions + theme roles), components, layout
-  util/env.js            reduced motion, WebGL probe, low-power check
-assets/
-  models/statue.glb      compressed statue (meshopt, WebP 2048, 4.2 MB)
-  textures/              ring albedo and normal maps baked from the statue's stone
-  lottie/                scroll cue, mask mark, loader flicker, CTA flourish (all under 50 KB)
-  fallback/hero.png      still frame used when WebGL is missing or the device is low-power
-  brand/                 Collective mark (gold, blush), CHIREC endorsement logo
-  fonts/                 Raung, Lato, Open Sans
+
+With `renders=`, it also writes close-ups of the end pose (shoulder, elbow, neck). The current ones are in `docs/screenshots/rig/`. To check joint placement against the scan:
+
+```bash
+blender -b --factory-startup -P tools/blender/inspect_views.py -- <source.glb> <out dir> tools/blender/rig.json
 ```
+
+## The 3D logo (`tools/logo/`, `src/scene/logo.js`)
+
+`trace_logo.ps1` thresholds the alpha of `assets/brand/mark-gold.png` (Blender reads the PNG, `png_to_pbm.py`) and traces it with potrace into `assets/brand/mark.svg` (48 KB, 21 paths):
+
+```powershell
+powershell -File tools/logo/trace_logo.ps1 -Blender <blender.exe> -Potrace <potrace.exe>
+```
+
+At load time `logo.js` builds the 3D mark:
+
+- **extrusion:** `SVGLoader` + `ExtrudeGeometry`, 7% of its width deep with a small bevel;
+- **orientation:** turned to read correctly from the viewer's side;
+- **size:** scaled to fit the ring-clearance sphere;
+- **shading:** creased normals, so the caps stay flat and the bevels smooth.
+
+The curves are sampled as finely as the morph's triangle budget allows.
+
+## The morph (`src/scene/morph.js`)
+
+The morph is one mesh with the same triangles in two shapes. It is not a cross-fade, and two meshes are never visible at once.
+
+- **Start shape.** Each triangle starts as one of the statue's triangles in its end pose. The positions are computed on the CPU from the same skeleton the GPU skins with. At the start of the morph phase the skinned statue is hidden and this mesh is shown. Measured on the canvas, the swap changes nothing: a mean difference of 0.000 per pixel, and at most 9/255 on any pixel, which is anti-aliasing noise.
+- **End shape.** Each triangle ends as one triangle of the logo, which is tessellated by longest-edge splits to exactly the statue's 160,000 triangles.
+- **Pairing.** Statue and logo triangles are paired by balanced recursive median splits of their centroids, each set normalised to its own bounds. Neighbours stay neighbours, and the figure's front becomes the logo's front. Each pair's corners are rotated to the best match, so triangles do not flip.
+- **Motion.** Each triangle has its own start, staggered outward from the mask with smooth noise. It travels on a gentle swirl about the turning axis (all one way, its strength varying smoothly) with a slight rise. The marble's colour, roughness, normal map and reflections turn to gold per triangle.
+- **Shaders.** The same vertex path runs in the colour pass, the shadow pass and the star-field silhouette pass. It is built about 0.35–0.6 s after the hero is up; until then the statue simply holds its end pose.
+
+**What it looks like mid-way:** the marble comes apart into a flowing lace and reassembles as gold, rather than melting as one continuous skin. Both ends are exact. A single unbroken surface cannot become the logo, which has holes through it (the eyes, the gaps between the flames), so the surface has to part somewhere.
+
+Retune it with the `MORPH` constants (stagger, swirl, rise, gold colour and roughness) and `GOLD_ENV` in `Stage.js`.
 
 ## Changing the copy
 
-All of the text is in `index.html`; no copy lives in the JavaScript. Every section is a `<section>` with an id:
-
-| Section | id | Notes |
-|---|---|---|
-| Hero | `#top` | Name, tagline, and a visually hidden description of the statue for screen readers |
-| Act one · Who we are | `#about` | |
-| Act two · Productions | `#productions` | Production card (venue, dates) and the programme list |
-| Act three · Impact | `#impact` | Figures count up from `data-count`; a range uses `data-count-range="5,7"`; `data-prefix` adds ₹ |
-| Act four · Leadership | `#leadership` | Person cards |
-| Act five · Support us | `#support` | Tier cards, funds list, brand tags, and the sponsor button (`mailto:`) |
-| Curtain call | `#contact` | Footer: contacts, event details, copyright |
+All text is in `index.html`. Every section is a `<section>` with an id: hero `#top`, the acts `#about`, `#productions`, `#impact`, `#leadership`, `#support`, and the footer `#contact`.
 
 Each scene also tells the stage how to light and place the statue:
 
-- `data-frame`: where the statue sits, as a fraction of the viewport width (`0.24` = right, `-0.24` = left). Put the text column on the other side (`scene--text-right` moves it right).
-- `data-light`: `0` is the warm spotlight and `1` is the cool one.
+- `data-frame`: where the statue sits, as a fraction of the viewport width (`0.24` = right, `-0.24` = left). `scene--text-right` moves the text column right.
+- `data-light`: 0 is the warm spotlight, 1 the cool one.
 - `data-key`: the key light level.
 
-To add a section, copy one, give it `data-scene` plus those three attributes, and add a link to the nav if it needs one. Anything marked `data-mask` keeps the constellations clear of it.
+Anything marked `data-mask` keeps the constellations clear of it. Act five keeps a button with `data-cta` (its Lottie flourish hooks onto it).
 
-## Changing images
+The sequence follows the length of `<main>`. Longer copy simply stretches it; to change the pacing, retime `PHASES`.
 
-- **Brand marks**: `assets/brand/mark-gold.png` (nav fallback) and `mark-blush.png` (the large cropped mark in the footer). The animated nav mark is `assets/lottie/mask-mark.json`, which embeds a 96 px copy of the gold mark. Replace that image layer if the mark changes.
-- **Endorsement**: `assets/brand/chirec.webp`.
-- **Fallback still**: `assets/fallback/hero.png` is a transparent frame of the hero composition. To re-shoot it after changing the statue, open the page with `?live`, wait for the intro to finish, and run this in the console:
+## Images
 
-  ```js
-  const st = dramaCollective.stage;
-  st.stop();
-  Object.assign(st.state, { frameX: 0, frameY: 0, spin: 0, statueSpin: 0, arc: 0, dolly: 1, parX: 0, parY: 0, ringLevel: 1, lightMix: 0, keyLevel: 1, daylight: 0 });
-  Object.assign(st.turn, { drag: 0, vel: 0, follow: 0, hover: 0, hoverTarget: 0 });
-  st.floor.pool.visible = false; // the additive light pool cannot be stored in a transparent PNG
-  open(URL.createObjectURL(await st.capture()));
-  ```
+- **Brand marks**: `assets/brand/mark-gold.png` (the source of the 3D logo and the nav fallback) and `mark-blush.png` (the footer watermark). The animated nav mark is `assets/lottie/mask-mark.json`. If the mark changes, re-run `trace_logo.ps1`.
+- **Fallback still**: `assets/fallback/hero.png` is the hero composition, unchanged from v2.
 
-## Replacing the statue
+## Stars, cursor, themes, music, nav
 
-1. Export the model from Meshy (or anywhere) as GLB with its PBR textures.
-2. Compress it to under 5 MB. Put the raw export at `assets/models/statue.source.glb` (it is never referenced, so it is never bundled; keep it out of git), then run:
+All as in v2:
 
-   ```bash
-   npm run compress:statue
-   ```
-
-   which is:
-
-   ```bash
-   npx @gltf-transform/cli optimize assets/models/statue.source.glb assets/models/statue.glb --compress meshopt --texture-compress webp --texture-size 2048 --simplify-ratio 0.5 --simplify-error 0.0004
-   ```
-
-   Drop `--simplify-ratio` / `--simplify-error` if the model is already light. Draco-compressed files also load, because the Draco decoder comes from jsDelivr on demand.
-3. Overwrite `assets/models/statue.glb`.
-
-Framing is automatic. The statue is centred on its plinth footprint and scaled to a fixed height. It turns about the vertical axis through that footprint, so its bounding sphere is centred on that axis, which makes it hold at any turn. The camera distance and field of view are then solved so that sphere always fits inside the ring's opening, at every point of the scroll and every turn, so the ring never crosses the statue.
-
-The material is forced to metalness 0 and roughness 0.45, while the model's own colour and normal maps are kept. The ring's stone tint is taken from the statue's average texture colour.
-
-If the new model faces a different way, pass `yaw` (radians) in `src/main.js`:
-
-```js
-await stage.load({ statueUrl: ASSETS.statue, textureUrls: { ... }, yaw: Math.PI, onProgress });
-```
-
-The default is `Math.PI`, which shows the figure from behind with the mask raised towards the camera. An `.stl` URL also works: it gets the procedural marble and is turned Z-up to Y-up automatically.
-
-## Behaviour
-
-- **Intro** (about 2.5 s): darkness, then the spotlight, the ring, the name letter by letter, the tagline and the scroll cue. Any key, click, wheel or touch skips it.
-- **Scroll**:
-  - the ring turns four times about its own centre (the viewing axis) over the whole page, steadily (scrub 1.2). Change `RING_TURNS` in `src/sections/scenes.js`;
-  - the statue makes two full turns of its own the other way, eased and lagging further behind (scrub 2.4), so the two never move in step. Change `STATUE_TURNS` in the same file;
-  - the camera arcs 22° and moves closer;
-  - the light moves warm, cool, warm by section;
-  - the statue steps left and right so the text sits in empty space.
-- **Statue and cursor** (mouse):
-  - the star cursor is a native cursor image (an outlined SVG set in `layout.css`), so it has no lag and clicks land exactly at its centre. It turns 45° over links and controls;
-  - the camera follows the cursor by ±3° and the statue turns up to 14° toward it, both heavily damped;
-  - over the statue, the star cursor grows, shows "Drag" and the key light leans in;
-  - dragging sideways turns the statue (420 px is half a turn); let go while moving and it coasts to a stop.
-  On touch, a sideways drag that starts on the statue turns it; vertical drags still scroll the page.
-- **Stars**: about 0.6 stars per 1,000 px² (686 on a 1482 × 775 screen) over a static dust layer. Stars within 150 px of the cursor glow, and the glow fades out behind it as it moves on. Moving the cursor through the field also links up to 12 stars into a constellation; rest for 1.2 s and it pulses, then fades. Density, glow radius and trail length are the constants at the top of `src/constellation/Constellation.js`.
-- **Ring light**: the ring is about 1.5 times as bright as before in the hero and about 2.5 times as bright during the acts, where it now eases back only slightly. Each text column sits on a feathered panel of the page colour, so copy stays legible where the ring passes behind it.
-- **Light / dark**: the sun and moon button in the top bar. Dark (the theatre) is the default. Light mode ("house lights up") uses the design system's standard register; the 3D stage adds an even daylight fill and pale stone shading on the ring. The choice is remembered in the browser (`localStorage`, key `dc-theme`) and applied before first paint, so there is no flash. The loader stays dark in both; the curtain-call footer follows the theme (plum-50 in light mode).
-- **Piano music**: the bars button in the top bar. It is off by default and starts only when clicked, fades in and out, plays three pieces in turn and loops, pauses while the tab is hidden, and shows the current piece in the button's tooltip and the system media controls.
-- **Nav**: hides on scroll down and returns on scroll up. Anchor links glide with ScrollToPlugin and move keyboard focus to the section. Below 1000 px the links move into the Menu sheet; below 480 px the sheet's Support link stands in for the Sponsor button.
-
-## Music
-
-The recordings are public domain or CC0, from Musopen, streamed from Wikimedia Commons (Ogg Vorbis, or Wikimedia's MP3 copy where Ogg is not supported, such as Safari). Nothing is downloaded until a visitor presses play.
-
-| Piece | Performer | Licence |
-|---|---|---|
-| Satie, Gymnopédie No. 1 | Robin Alciatore | Public domain |
-| Beethoven, Sonata Pathétique, II. Adagio cantabile | Paul Pitman | CC0 |
-| Chopin, Nocturne in F major, Op. 15 No. 1 | Luke Faulkner | CC0 |
-
-To change the list, edit `TRACKS` in `src/ui/music.js` (each `path` is the file's path under `upload.wikimedia.org/wikipedia/commons/`), and update the credit line in the footer of `index.html`. To host the files yourself instead, put them in `assets/audio/` and change `src()` in the same file to point there.
+- **Stars:** a dense field that glows around the cursor and draws constellations.
+- **Cursor:** a native star cursor.
+- **Themes:** light and dark, remembered per browser (`dc-theme`).
+- **Music:** public-domain piano from Musopen, streamed from Wikimedia Commons and credited in the footer (`src/ui/music.js`).
+- **Nav:** hides on scroll down and folds into the Menu below 1000 px.
 
 ## Performance and fallbacks
 
-- **Loading**: three.js and the statue load lazily behind the loader, which shows real `LoadingManager` progress.
-- **Rendering**:
+- **Loading:** three.js, the 1.81 MB rig and the 48 KB logo trace load lazily behind the loader. The morph mesh is built in an idle moment after the intro.
+- **Geometry:** the skinned statue has 79,976 vertices and 160,000 triangles. The morph mesh has 480,000 vertices (160,000 independent triangles; about 31 MB of vertex data on the GPU). Only one of the two is drawn at a time.
+- **Rendering:**
   - DPR is capped at 2;
-  - a frame is rendered only when something changed;
-  - the shadow map is redrawn only when the statue turns;
+  - a frame is rendered only when something changed (while the logo holds, its idle drift keeps rendering);
+  - the shadow map is redrawn only when the shape or the turn changes;
   - both canvases pause when the tab is hidden or the footer covers the stage.
-- **Static fallback**: no WebGL, a software renderer, Save-Data, 2 cores or fewer, or 2 GB of memory or less all get the still picture, with the star field kept.
-- **Reduced motion**:
-  - no intro and no parallax;
-  - the ring and the statue do not turn with the scroll, the statue does not lean toward the cursor, and a drag stops when the hand does (no coasting);
-  - scene changes happen in steps instead of tweens;
-  - text appears without movement;
-  - constellations appear without the draw-on animation.
-- **Teardown**: `dramaCollective.destroy()` (also called on `pagehide`) frees GPU memory, ScrollTriggers, SplitTexts, Lotties and listeners.
-
-QA flags: `?static` forces the still picture and `?live` forces WebGL.
+- **Static fallback:** no WebGL, a software renderer, Save-Data, 2 cores or fewer, or 2 GB of memory or less all get the still picture, with the star field kept.
+- **Reduced motion:** no intro, parallax, ring turn or scrubbed sequence (the hero pose, then the logo in one step), no lean toward the cursor, and no fling.
+- **Teardown:** `dramaCollective.destroy()` (also on `pagehide`) frees the GPU memory, including the morph mesh, along with ScrollTriggers, SplitTexts, Lotties and listeners.
 
 ## Design system extensions
 
-Everything else comes from the Drama Collective design system as written: colours, type scale, fonts, spacing, radii, shadows, motion tokens, and the Button, Tag, Eyebrow, Rule, Card, SectionHeading, Stat, Quote and TopBar components.
-
-These were added because the system has no dark-stage page. They are built from existing tokens in its own style (see the end of `tokens.css`):
-
-- `--border-on-dark`: the hairline at 14%, taken from plum-100, for ink surfaces.
-- `--topbar-h` (56px, from the TopBar spec), `--stage-gutter` (space-6 on small screens, space-8 from 768px), and a z-index scale for the stage layers.
-- The gold (inverse) button's hover and press states use gold-300 and gold-600. Links on dark grounds are gold-500, turning gold-300 on hover.
-- A secondary button for dark grounds: a plum-100 outline whose hover fills ink and turns the edge gold.
-- The mobile text scrim: a fade from transparent to the page colour, so text never sits on the statue. On wider screens, a feathered panel of the page colour (84%) behind each text column does the same job for the ring.
-- **Theme roles** (`--bg`, `--fg`, `--fg-strong`, `--fg-muted`, `--accent`, `--rule-color`, `--card-bg`, `--btn-bg`, `--star` and so on): components read these, never raw palette values. Dark maps them to the inverted, on-stage register used before. Light maps them to the system's standard register: plum-100 page, white cards, plum-800 headings, slate-700 text, plum-500 accents and links, an ink (plum-800) primary button, and the gold rule kept. Two choices are new: muted labels use plum-600 rather than slate-500, which falls below 4.5:1 on plum-100, and the featured gold tier card uses gold-100. `.theme-ink` pins a block to the dark register.
-- Icon buttons in the top bar (44 px, sharp corners, hairline border on hover), the music bars animation, and the star cursor's "Drag" hint in the eyebrow style. In light mode the gold nav mark is deepened with a filter so it holds on plum-100.
-- The design system says "no parallax or looping motion". The brief overrides that for the stage, so the overrides are confined to the canvas, the scroll cue and the loader.
-
-## Content notes
-
-Every fact on the page comes from the Collective's sponsorship document; nothing is invented and nothing is a placeholder. Where the document is silent, the page leaves the subject out:
-
-- no founding year, history, past productions, production title, photographs or social links;
-- the Impact act shows only figures the document states.
+As in v2: theme roles in `tokens.css`, the text grounds behind copy, the icon buttons, the cursor hint, and the motion confined to the stage. The 3D logo's gold is gold-600 a shade deeper, as a metal (`MORPH.gold`).

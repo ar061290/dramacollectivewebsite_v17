@@ -2,23 +2,32 @@
 //
 // Camera rig: the camera orbits the statue (scroll arc + cursor parallax) and dollies in slightly.
 // The ring rides on the camera, so its impossible-shape illusion is exact at every frame; it only
-// ever turns about the camera's viewing axis. The statue stands on a turntable of its own (scroll,
-// drag and a lean toward the cursor), independent of the ring. It is sized so that its bounding
-// sphere, centred on the turning axis, stays inside the ring's hole at any spin and any turn, so the
-// two never overlap on screen.
+// ever turns about the camera's viewing axis. The statue stands on a turntable of its own,
+// independent of the ring, and plays the scroll sequence (src/scene/sequence.js): it turns 180
+// degrees to face the viewer while its skeleton brings the mask beside the face and turns the head
+// away, then its surface flows into the 3D logo (src/scene/morph.js). Its bounding sphere is
+// centred on the turning axis and covers every frame of that sequence (rest pose, end pose, logo,
+// and the morph's mid-flight lift), and it stays inside the ring's hole, so the two never overlap.
 //
-// GSAP writes plain numbers into `stage.state`; the render loop reads them.
+// GSAP writes plain numbers into `stage.state` (including `seq`, the page progress); the render
+// loop reads them.
 
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createRing, placeRing } from './ringStone.js';
-import { loadStatue, prepareStatue } from './statue.js';
+import { loadStatue, prepareStatue, forEachVertex, STATUE_LAYER } from './statue.js';
 import { SilhouetteMask } from './silhouette.js';
+import { evaluate } from './sequence.js';
+import { buildLogoGeometry } from './logo.js';
+import { buildMorph, MORPH } from './morph.js';
 
 const DEG = Math.PI / 180;
 const DRAG_RAD_PER_PX = Math.PI / 420; // a 420 px drag turns the statue half way round
 const MAX_FLING = 8; // rad/s; a hard flick coasts about half a turn
-const FOLLOW = 14 * DEG; // how far the statue leans toward the cursor
+const FOLLOW = 10 * DEG; // how far the statue leans toward the cursor
+const LOGO_SWAY = 0.35; // radians: the logo turns away and back over the logo phase
+const LOGO_DRIFT = 0.08; // radians: the slow idle sway while the logo holds
+const GOLD_ENV = 1.15; // reflection strength of the gold, whatever the stage's environment level
 
 export class Stage {
   /**
@@ -46,7 +55,7 @@ export class Stage {
       ringLevel: 1, // per-scene ring brightness (eased back behind text)
       frameX: 0, frameY: 0, // composition offset, fractions of the viewport (right / up)
       spin: 0, // ring turn about the viewing axis (radians)
-      statueSpin: 0, // statue turn about its own vertical axis (radians), driven by scroll
+      seq: 0, // the statue's sequence: page progress 0..1 (src/scene/sequence.js)
       arc: 0, // camera orbit around the statue (radians)
       dolly: 1, // camera distance multiplier (1 = hero, < 1 = closer)
       parX: 0, parY: 0, // smoothed cursor parallax, -1..1
@@ -61,6 +70,10 @@ export class Stage {
     this._lastSig = '';
     this._maskDue = 0;
     this._shadowYaw = NaN;
+    this._shapeSig = '';
+    this.seqOverride = null; // ?debug: a number here replaces the scroll
+    this.tracks = evaluate(0);
+    this.time = 0;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -134,6 +147,18 @@ export class Stage {
     if (this.disposed) return;
 
     this.statue = prepareStatue(statue.object, { kind: statue.kind, yaw });
+    this.skinned = null;
+    this.statue.root.traverse((o) => { if (o.isSkinnedMesh && !this.skinned) this.skinned = o; });
+    this._readPose(statue.animations);
+    if (this.pose.length) {
+      // the ring clearance must hold at the end pose too (the arm moves outward)
+      this._applyPose(1, 1);
+      let r = this.statue.radius;
+      forEachVertex(this.statue.root, (p) => { r = Math.max(r, p.distanceTo(this.statue.center)); });
+      this.statue.radiusRest = this.statue.radius;
+      this.statue.radius = r;
+      this._applyPose(0, 0);
+    }
     // the turntable turns about the statue's vertical axis (x = z = 0, through the plinth)
     this.turntable = new THREE.Group();
     this.turntable.name = 'Turntable';
@@ -244,6 +269,65 @@ export class Stage {
     if (!this.running && this.statue) this.renderOnce();
   }
 
+  /** Rest and end rotations per bone, from the GLB's "Pose" clip (frame 0 = rest, last = end). */
+  _readPose(animations = []) {
+    this.pose = [];
+    const clip = animations.find((a) => a.name === 'Pose') ?? animations[0];
+    if (!clip || !this.skinned) return;
+    const bones = new Map(this.skinned.skeleton.bones.map((b) => [b.name, b]));
+    for (const track of clip.tracks) {
+      if (!track.name.endsWith('.quaternion')) continue;
+      const bone = bones.get(track.name.slice(0, -'.quaternion'.length));
+      if (!bone) continue;
+      // sample through the track's own interpolant: right for LINEAR and CUBICSPLINE alike
+      const interp = track.createInterpolant();
+      const at = (t) => new THREE.Quaternion().fromArray(interp.evaluate(t)).normalize();
+      const rest = at(track.times[0]);
+      const end = at(track.times[track.times.length - 1]);
+      if (rest.angleTo(end) < 1e-4) continue; // a bone that does not move
+      const group = /^(neck|head)$/.test(bone.name) ? 'head' : 'arm';
+      this.pose.push({ bone, rest, end, group });
+    }
+  }
+
+  /** Blend the skeleton: `arm` and `head` are 0 (rest) .. 1 (end pose). */
+  _applyPose(arm, head) {
+    for (const { bone, rest, end, group } of this.pose) {
+      bone.quaternion.slerpQuaternions(rest, end, group === 'head' ? head : arm);
+    }
+    this.statue.root.updateMatrixWorld(true);
+  }
+
+  /**
+   * Build the morph from the logo's SVG (takes a few hundred milliseconds; call it once the hero is
+   * up). Until it is ready the statue simply holds its end pose through the morph section.
+   */
+  prepareMorph(svgText) {
+    if (!this.skinned || this.morph || this.disposed) return null;
+    const { arm, head } = this.tracks;
+    this._applyPose(1, 1);
+    const c = this.statue.center;
+    const triangles = this.skinned.geometry.index.count / 3;
+    const logo = buildLogoGeometry(svgText, { center: c, radius: this.statue.radius - MORPH.lift - 0.02, maxTriangles: triangles * 0.8 });
+    logo.computeBoundingBox();
+    this.logoWidth = logo.boundingBox.max.x - logo.boundingBox.min.x;
+    // the change starts at the mask: a little above the hand
+    const hand = this.skinned.skeleton.bones.find((b) => /^hand/.test(b.name));
+    const origin = this.turntable.worldToLocal(hand.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.13, 0)));
+    this.morph = buildMorph({ skinned: this.skinned, space: this.turntable, logo, center: c, origin });
+    logo.dispose();
+    this.morph.mesh.layers.enable(STATUE_LAYER);
+    this._applyPose(arm, head);
+    this._lastSig = '';
+    return this.morph;
+  }
+
+  /** ?debug: drive the sequence directly (null hands it back to the scroll). */
+  setSequenceOverride(p) {
+    this.seqOverride = p;
+    this._lastSig = '';
+  }
+
   setPointer(nx, ny) {
     this.pointer.x = nx;
     this.pointer.y = ny;
@@ -281,24 +365,54 @@ export class Stage {
       const k = 1 - Math.exp(-dt * 1.6); // heavy damping
       s.parX += (this.pointer.x - s.parX) * k;
       s.parY += (this.pointer.y - s.parY) * k;
-      if (!t.held && t.vel) {
-        t.drag += t.vel * dt;
-        t.vel *= Math.exp(-dt * 2.6);
-        if (Math.abs(t.vel) < 0.01) t.vel = 0;
+      if (!t.held) {
+        if (t.vel) {
+          t.drag += t.vel * dt;
+          t.vel *= Math.exp(-dt * 2.6);
+          if (Math.abs(t.vel) < 0.01) t.vel = 0;
+        }
+        // a drag is a gesture, not a new pose: it eases back to the choreography
+        t.drag *= Math.exp(-dt * 0.9);
+        if (Math.abs(t.drag) < 1e-4) t.drag = 0;
       }
       // the statue turns its head toward the cursor, a little more slowly than the camera follows
       t.follow += (this.pointer.x * FOLLOW - t.follow) * (1 - Math.exp(-dt * 1.2));
     } else {
       s.parX = s.parY = 0;
       t.follow = 0;
+      if (!t.held) t.drag = 0;
     }
     t.hover += (t.hoverTarget - t.hover) * (dt ? 1 - Math.exp(-dt * 6) : 1);
 
-    // statue: its own turn, independent of the ring
-    const statueYaw = s.statueSpin + t.drag + t.follow;
+    // the sequence: pose, turn, morph, logo
+    const tr = (this.tracks = evaluate(this.seqOverride ?? s.seq));
+    if (this.pose.length) this._applyPose(tr.arm, tr.head);
+    this.time += dt;
+    const drift = this.reducedMotion ? 0 : LOGO_DRIFT * Math.sin(this.time * 0.45) * Math.min(1, tr.logo * 4);
+    // through the morph the turntable takes up the camera's scroll arc, so the logo ends square on
+    const statueYaw = Math.PI * tr.turn + s.arc * tr.morph + LOGO_SWAY * Math.sin(Math.PI * tr.logo) + drift + t.drag + t.follow;
     this.turntable.rotation.y = statueYaw;
-    if (Math.abs(statueYaw - this._shadowYaw) > 0.001 || Number.isNaN(this._shadowYaw)) {
-      this._shadowYaw = statueYaw;
+    // the logo is far wider than the statue: on a narrow (portrait) screen it shrinks into the
+    // width as the morph runs, about its own centre (smaller only helps the ring clearance)
+    let k = 1;
+    if (this.logoWidth) {
+      const d = this.distance * s.dolly;
+      const visibleWidth = 2 * Math.tan((this.camera.fov * DEG) / 2) * d * this.camera.aspect;
+      k = 1 + (Math.min(1, (0.86 * visibleWidth) / this.logoWidth) - 1) * tr.morph;
+    }
+    this.turntable.scale.setScalar(k);
+    this.turntable.position.y = this.statue.center.y * (1 - k);
+    const m = this.morph;
+    const morphing = !!m && tr.morph > 0;
+    if (m) {
+      m.mesh.visible = morphing;
+      m.uniforms.uMorph.value = tr.morph;
+    }
+    if (this.skinned) this.skinned.visible = !morphing;
+    // the shadow map follows the shape and the turn
+    const shape = `${statueYaw.toFixed(4)},${k.toFixed(4)},${tr.arm.toFixed(4)},${tr.head.toFixed(4)},${morphing ? tr.morph.toFixed(4) : 'statue'}`;
+    if (shape !== this._shapeSig) {
+      this._shapeSig = shape;
       this.renderer.shadowMap.needsUpdate = true;
     }
 
@@ -334,6 +448,8 @@ export class Stage {
     // stone in daylight rather than a silhouette on a pale ground
     hemi.intensity = 0.06 * lit + 1.1 * day;
     this.scene.environmentIntensity = 0.16 * lit + 0.3 * day;
+    // the gold reflects at a fixed strength whatever the stage's environment level
+    if (this.morph) this.morph.uniforms.uEnvGold.value = GOLD_ENV / Math.max(0.02, this.scene.environmentIntensity);
     this.renderer.toneMappingExposure = 1 - 0.12 * day;
     const pool = this.floor.pool.material;
     pool.color.copy(key.color);
@@ -357,8 +473,8 @@ export class Stage {
     const s = this.state;
     const t = this.turn;
     const r = (v) => Math.round(v * 1e4);
-    return [s.stageLight, s.ringReveal, s.lightMix, s.keyLevel, s.ringLevel, s.frameX, s.frameY, s.spin, s.statueSpin, s.arc, s.dolly,
-      s.parX, s.parY, s.daylight, t.drag, t.follow, t.hover, this.width, this.height, this.camera.fov].map(r).join(',');
+    return [s.stageLight, s.ringReveal, s.lightMix, s.keyLevel, s.ringLevel, s.frameX, s.frameY, s.spin, this.turntable.rotation.y, s.arc, s.dolly,
+      s.parX, s.parY, s.daylight, this.seqOverride ?? s.seq, t.hover, this.width, this.height, this.camera.fov, this.morph ? 1 : 0].map(r).join(',');
   }
 
   _tick() {
@@ -422,6 +538,7 @@ export class Stage {
     });
     for (const l of Object.values(this.lights)) l.dispose?.();
     this.mask?.dispose();
+    this.morph?.dispose();
     this.ring?.matcap.dispose();
     this.ring?.dayMatcap.dispose();
     this.scene.environment = null;

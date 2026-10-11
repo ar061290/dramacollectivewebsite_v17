@@ -1,0 +1,135 @@
+{
+  "_comment": "Joints of the statue rig, in the statue's own glTF axes (y up, the figure faces +z, its left is +x), as fractions of the statue's height, measured from the centre of the plinth's footprint at the base. Only the masked (left) arm and the head move; the other bones hold the rest of the figure still and give the skin weights somewhere to go. The forearm is two bones so that turning the mask spreads the twist along the arm instead of pinching the wrist.",
+  "bones": {
+    "root": {
+      "head": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "tail": [
+        0.0,
+        0.4,
+        0.0
+      ],
+      "parent": null
+    },
+    "spine": {
+      "head": [
+        0.03,
+        0.4,
+        -0.01
+      ],
+      "tail": [
+        0.04,
+        0.665,
+        -0.025
+      ],
+      "parent": "root"
+    },
+    "neck": {
+      "head": [
+        0.045,
+        0.705,
+        -0.035
+      ],
+      "tail": [
+        0.045,
+        0.755,
+        -0.042
+      ],
+      "parent": "spine"
+    },
+    "head": {
+      "head": [
+        0.045,
+        0.755,
+        -0.042
+      ],
+      "tail": [
+        0.048,
+        0.835,
+        -0.068
+      ],
+      "parent": "neck"
+    },
+    "clavicle.L": {
+      "head": [
+        0.06,
+        0.712,
+        -0.03
+      ],
+      "tail": [
+        0.135,
+        0.738,
+        -0.012
+      ],
+      "parent": "spine"
+    },
+    "upper_arm.L": {
+      "head": [
+        0.135,
+        0.738,
+        -0.012
+      ],
+      "tail": [
+        0.172,
+        0.805,
+        0.028
+      ],
+      "parent": "clavicle.L"
+    },
+    "forearm.L": {
+      "head": [
+        0.172,
+        0.805,
+        0.028
+      ],
+      "tail": [
+        0.1835,
+        0.84,
+        0.047
+      ],
+      "parent": "upper_arm.L"
+    },
+    "forearm_twist.L": {
+      "head": [
+        0.1835,
+        0.84,
+        0.047
+      ],
+      "tail": [
+        0.195,
+        0.875,
+        0.066
+      ],
+      "parent": "forearm.L"
+    },
+    "hand.L": {
+      "head": [
+        0.195,
+        0.875,
+        0.066
+      ],
+      "tail": [
+        0.195,
+        0.94,
+        0.055
+      ],
+      "parent": "forearm_twist.L"
+    },
+    "arm.R": {
+      "head": [
+        0.0,
+        0.7,
+        -0.025
+      ],
+      "tail": [
+        -0.17,
+        0.64,
+        -0.05
+      ],
+      "parent": "spine"
+    }
+  }
+}

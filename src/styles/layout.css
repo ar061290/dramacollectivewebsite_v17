@@ -306,3 +306,23 @@ main { position: relative; z-index: var(--z-content); }
     scroll-behavior: auto !important;
   }
 }
+
+/* ---- ?debug: the sequence scrubber (development only) ---- */
+.debug-panel {
+  position: fixed;
+  left: var(--space-4); bottom: var(--space-4);
+  z-index: var(--z-loader);
+  display: grid; gap: var(--space-2);
+  width: min(560px, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-3) var(--space-4);
+  background: rgba(21, 4, 8, .86);
+  color: var(--plum-100);
+  font: 12px/1.4 var(--font-ui);
+  border: 1px solid var(--border-on-dark);
+}
+.debug-panel__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.debug-panel input[type="range"] { flex: 1; min-width: 160px; accent-color: var(--gold-500); }
+.debug-panel output { font-variant-numeric: tabular-nums; min-width: 3.5em; }
+.debug-panel__read { margin: 0; max-width: none; color: var(--plum-300); font-variant-numeric: tabular-nums; }
+.debug-panel button { font: inherit; color: var(--plum-100); background: transparent; border: 1px solid var(--border-on-dark); padding: 4px 8px; cursor: pointer; }
+.debug-panel button:hover { border-color: var(--gold-500); color: var(--gold-500); }

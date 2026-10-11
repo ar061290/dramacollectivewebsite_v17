@@ -1,6 +1,6 @@
 node_modules/
 dist/
-# raw model export used by `npm run compress:statue`; never referenced by the site
-assets/models/statue.source.glb
+# raw scans and other sources for the rig build (tools/blender/build_rig.py); never referenced by the site
+assets/models/*.source.glb
 .DS_Store
 Thumbs.db

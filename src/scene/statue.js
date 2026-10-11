@@ -1,5 +1,5 @@
-// Loading and preparing the statue: glTF/GLB (Draco or meshopt compressed, or plain), with an STL
-// fallback that gets a procedural white-marble material.
+// Loading and preparing the statue: glTF/GLB (Draco or meshopt compressed, or plain; skinned or
+// not), with an STL fallback that gets a procedural white-marble material.
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -13,7 +13,7 @@ const DRACO_PATH = `https://cdn.jsdelivr.net/npm/three@0.${THREE.REVISION}.0/exa
 
 export const STATUE_LAYER = 1; // the statue alone, for the constellation's silhouette mask
 
-/** Load a statue. Resolves { object, kind: 'gltf' | 'stl' }. */
+/** Load a statue. Resolves { object, kind: 'gltf' | 'stl', animations }. */
 export async function loadStatue(url, { manager, onBytes, dracoPath = DRACO_PATH } = {}) {
   const ext = url.split(/[?#]/)[0].split('.').pop().toLowerCase();
   if (ext === 'stl') {
@@ -29,13 +29,13 @@ export async function loadStatue(url, { manager, onBytes, dracoPath = DRACO_PATH
     const h = geometry.boundingBox.getSize(new THREE.Vector3()).y;
     const mesh = new THREE.Mesh(geometry, createProceduralMarble({ height: h }));
     mesh.name = 'StatueSTL';
-    return { object: mesh, kind: 'stl' };
+    return { object: mesh, kind: 'stl', animations: [] };
   }
   const draco = new DRACOLoader(manager).setDecoderPath(dracoPath);
   const loader = new GLTFLoader(manager).setDRACOLoader(draco).setMeshoptDecoder(MeshoptDecoder);
   try {
     const gltf = await loader.loadAsync(url, onBytes);
-    return { object: gltf.scene, kind: 'gltf' };
+    return { object: gltf.scene, kind: 'gltf', animations: gltf.animations };
   } finally {
     draco.dispose();
   }
@@ -80,6 +80,7 @@ export function prepareStatue(object, { kind, height = 2, yaw = Math.PI, roughne
 
   root.traverse((o) => {
     if (!o.isMesh) return;
+    if (o.isSkinnedMesh) o.frustumCulled = false; // its bounds are the rest pose's
     o.castShadow = true;
     o.receiveShadow = true;
     o.layers.enable(STATUE_LAYER);
@@ -95,11 +96,13 @@ export function prepareStatue(object, { kind, height = 2, yaw = Math.PI, roughne
   return { root, center, radius, height, averageColor: averageStoneColor(root) };
 }
 
-function forEachVertex(root, fn, v) {
+/** Every vertex in world space, as drawn (skinning applied for a skinned mesh). */
+export function forEachVertex(root, fn, v = new THREE.Vector3()) {
+  root.updateMatrixWorld(true);
   root.traverse((o) => {
     if (!o.isMesh) return;
-    const pos = o.geometry.attributes.position;
-    for (let i = 0; i < pos.count; i++) fn(v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld));
+    const n = o.geometry.attributes.position.count;
+    for (let i = 0; i < n; i++) fn(o.getVertexPosition(i, v).applyMatrix4(o.matrixWorld));
   });
 }
 

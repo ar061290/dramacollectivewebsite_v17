@@ -1,0 +1,33 @@
+{
+  "_comment": "The end pose (the end of the 'pose and turn' phase), in the statue's glTF axes (y up, the figure faces +z, its left is +x) and height fractions, like rig.json. The site's turntable adds the 180 degree turn on top, so the figure ends facing the viewer.",
+  "arm": {
+    "_comment": "Two-bone IK for the masked (left) arm: the wrist goes to `wrist`; the elbow bends toward `pole`. The hand then turns the mask to face `maskFacing` (toward the viewer after the turn, and out to the figure's left) and keeps it upright. That turn is a twist of about 135 degrees about the arm; `twistShare` spreads it along the arm (cumulative share per bone; the hand takes the rest).",
+    "wrist": [
+      0.135,
+      0.705,
+      0.04
+    ],
+    "pole": [
+      0.32,
+      0.56,
+      -0.06
+    ],
+    "maskFacing": [
+      0.42,
+      0.0,
+      0.91
+    ],
+    "twistShare": {
+      "upper_arm.L": 0.15,
+      "forearm.L": 0.4,
+      "forearm_twist.L": 0.7
+    }
+  },
+  "head": {
+    "_comment": "Degrees. nod: forward from the upturned gaze (positive = chin down). turn: about the vertical, negative = toward the figure's right (screen left after the turn). tilt: ear toward shoulder. neckShare: how much of the turn the neck takes.",
+    "nod": 30,
+    "turn": -55,
+    "tilt": 6,
+    "neckShare": 0.35
+  }
+}
