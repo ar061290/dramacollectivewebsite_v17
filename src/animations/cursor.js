@@ -1,10 +1,10 @@
 // The star cursor (and the constellation pen). Desktop, fine pointers only.
 // The star itself is a native cursor image set in CSS (layout.css), so the system draws it with no
-// lag and pixel-exact clicks. This module switches it on, keeps the "Drag" hint and the glow beside
-// it, and tells the CSS two things about what is under the pointer:
+// lag and pixel-exact clicks. This module switches it on, keeps the "Drag" hint beside it, and
+// tells the CSS (classes on <html>) two things about what is under the pointer:
 //   is-over-text  selectable text: the star stretches into its tall text form
-//   is-on-box     a text box (where the sky is cleared, so the small star is harder to see): a soft
-//                 glow behind the star, clipped to the box so it shows only there
+//   is-on-box     a text box (where the sky is cleared, so the small star is harder to see): the
+//                 cursor image with a soft glow drawn into it, so the glow cannot lag
 
 const BOXES = '[data-mask], .curtain, .topbar__sheet';
 const NOT_TEXT = 'a, button, input, select, textarea, label, [role="button"], .cursor, .loader';
@@ -40,8 +40,6 @@ export function setupCursor() {
   const el = document.querySelector('.cursor');
   root.classList.add('has-cursor');
   if (!el) return () => root.classList.remove('has-cursor');
-  const glow = el.querySelector('.cursor__glow');
-  const R = 32; // half the glow's size (layout.css)
 
   let last = null, raf = 0;
   const update = () => {
@@ -49,15 +47,7 @@ export function setupCursor() {
     if (!last) return;
     const { x, y, target } = last;
     root.classList.toggle('is-over-text', overText(x, y, target));
-    const box = target?.closest?.(BOXES);
-    el.classList.toggle('is-on-box', !!box);
-    if (box && glow) {
-      // clip the glow to the box: how far each of the box's edges cuts into the glow's square
-      const b = box.getBoundingClientRect();
-      const t = Math.max(0, b.top - (y - R)), l = Math.max(0, b.left - (x - R));
-      const btm = Math.max(0, y + R - b.bottom), rgt = Math.max(0, x + R - b.right);
-      glow.style.clipPath = `inset(${t}px ${rgt}px ${btm}px ${l}px)`;
-    }
+    root.classList.toggle('is-on-box', !!target?.closest?.(BOXES));
   };
   const look = () => { if (last && !raf) raf = requestAnimationFrame(update); };
   const onMove = (e) => {
@@ -68,8 +58,8 @@ export function setupCursor() {
     look();
   };
   const onLeave = () => {
-    el.classList.remove('is-visible', 'is-on-box');
-    root.classList.remove('is-over-text');
+    el.classList.remove('is-visible');
+    root.classList.remove('is-over-text', 'is-on-box');
     last = null;
   };
   // scrolling moves the page under a still pointer: look again at what is there now
@@ -86,6 +76,6 @@ export function setupCursor() {
     window.removeEventListener('pointermove', onMove);
     window.removeEventListener('scroll', onScroll);
     root.removeEventListener('pointerleave', onLeave);
-    root.classList.remove('has-cursor', 'is-over-text');
+    root.classList.remove('has-cursor', 'is-over-text', 'is-on-box');
   };
 }

@@ -124,11 +124,21 @@ export function buildLogoGeometry(svgText, { center, radius, regions = null, dep
   // scale so the farthest point lands on `radius`
   let far = 0;
   for (let i = 0; i < pos.count; i++) far = Math.max(far, Math.hypot(pos.getX(i), pos.getY(i), pos.getZ(i)));
-  geo.scale(radius / far, radius / far, radius / far);
+  const s = radius / far;
+  geo.scale(s, s, s);
   geo.translate(center.x, center.y, center.z);
 
   // flat caps and walls, smooth across the bevel (same triangles, same order)
   geo.deleteAttribute('uv');
   geo = toCreasedNormals(geo, THREE.MathUtils.degToRad(35));
-  return { geometry: geo, part };
+
+  // where the flat mark lies on the 3D one: SVG units (x, y, at the readable cap's depth) to the
+  // logo's own space, for the vector stand-in (src/scene/vectorLogo.js). The extrusion's front cap
+  // is the exact outline at z = -bevelThickness; the bevel then flares out by bevelSize.
+  const bevelThickness = width * 0.012, bevelSize = width * 0.006;
+  const svgToLocal = new THREE.Matrix4().makeTranslation(center.x, center.y, center.z)
+    .multiply(new THREE.Matrix4().makeScale(s, s, s))
+    .multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z))
+    .multiply(new THREE.Matrix4().makeRotationZ(Math.PI));
+  return { geometry: geo, part, flat: { svgToLocal, z: -bevelThickness, outline: bevelSize } };
 }

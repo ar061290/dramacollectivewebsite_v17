@@ -21,6 +21,7 @@ import { SilhouetteMask } from './silhouette.js';
 import { evaluate, TURN } from './sequence.js';
 import { buildLogoGeometry } from './logo.js';
 import { buildMorph, growAt, MORPH } from './morph.js';
+import { VectorLogo } from './vectorLogo.js';
 
 const DEG = Math.PI / 180;
 const DRAG_RAD_PER_PX = Math.PI / 420; // a 420 px drag turns the statue half way round
@@ -326,6 +327,10 @@ export class Stage {
     if (this.statue.averageColor) this.morph.uniforms.uStone.value.copy(this.statue.averageColor);
     logo.geometry.dispose();
     this.morph.mesh.layers.enable(STATUE_LAYER);
+    // the vector stand-in it hands over to at the end, laid exactly over it
+    this.logoFlat = logo.flat;
+    this.vector = new VectorLogo(svgText, { after: this.container, outline: logo.flat.outline });
+    this.vector.setBehind(this.logoInFront === false);
     this._applyPose(arm, head);
     // arriving in the middle of the close-up, its framing eases over from the stand-in's
     this._focusBlend = this.tracks.zoom > 0 ? 0 : 1;
@@ -401,7 +406,9 @@ export class Stage {
     this.time += dt;
     const drift = this.reducedMotion ? 0 : LOGO_DRIFT * Math.sin(this.time * 0.45) * Math.min(1, tr.logo * 4);
     // through the morph the turntable takes up the camera's scroll arc, so the logo ends square on
-    const statueYaw = 2 * Math.PI * TURN.revolutions * tr.turn + s.arc * tr.morph + LOGO_SWAY * Math.sin(Math.PI * tr.logo) + drift + t.drag + t.follow;
+    // as the vector takes over, the logo settles square on: the drift and the gestures fade out
+    const settle = 1 - (this.vector ? tr.vector : 0);
+    const statueYaw = 2 * Math.PI * TURN.revolutions * tr.turn + s.arc * tr.morph + LOGO_SWAY * Math.sin(Math.PI * tr.logo) + (drift + t.drag + t.follow) * settle;
     this.turntable.rotation.y = statueYaw;
     // the morph: the logo forms at her head, then grows out to its place in the ring
     const m = this.morph;
@@ -410,6 +417,11 @@ export class Stage {
     if (m) {
       m.mesh.visible = morphing;
       grow = m.update(tr.morph);
+      // once the vector is fully in, the 3D logo stops drawing colour; it still casts its shadow
+      // and keeps the stars clear of the mark
+      const solid = !(this.vector && tr.vector >= 1);
+      m.mesh.material.colorWrite = solid;
+      m.mesh.material.depthWrite = solid;
     }
     tr.grow = grow; // for the ?debug readout
     // the logo is far wider than the statue: on a narrow (portrait) screen it shrinks into the
@@ -572,6 +584,7 @@ export class Stage {
   setOccluder(el, { logoInFront = true } = {}) {
     this.occluder = el;
     this.logoInFront = logoInFront;
+    this.vector?.setBehind(!logoInFront);
     this._lastSig = '';
   }
 
@@ -581,6 +594,82 @@ export class Stage {
   }
 
   _draw() {
+    const r = this.renderer;
+    const v = this.vector && this.morph?.mesh.visible ? this.tracks.vector : 0;
+    if (v > 0) this._sampleVectorColors();
+    this._drawStage();
+    if (this.vector) {
+      if (v > 0) this._placeVector();
+      this.vector.setOpacity(v);
+    }
+  }
+
+  /** Where the SVG's origin and its x and y edges land on screen (CSS pixels). */
+  _vectorCorners() {
+    const f = this.logoFlat, S = this.vector.size, cam = this.camera;
+    this.turntable.updateMatrixWorld();
+    cam.updateMatrixWorld();
+    const M = this._tmpM.multiplyMatrices(this.turntable.matrixWorld, f.svgToLocal);
+    const at = (x, y) => {
+      const p = this._tmpV.set(x, y, f.z).applyMatrix4(M).project(cam);
+      return { x: ((p.x + 1) / 2) * this.width, y: ((1 - p.y) / 2) * this.height };
+    };
+    return { o: at(0, 0), x: at(S.w, 0), y: at(0, S.h) };
+  }
+
+  _placeVector() {
+    const { o, x, y } = this._vectorCorners();
+    const S = this.vector.size;
+    this.vector.setTransform((x.x - o.x) / S.w, (x.y - o.y) / S.w, (y.x - o.x) / S.h, (y.y - o.y) / S.h, o.x, o.y);
+  }
+
+  /**
+   * The vector's colours: the 3D logo as the stage lights it, its top third and its foot. Read once
+   * from the canvas (after a solid render of the logo), and again after the theme changes.
+   */
+  _sampleVectorColors() {
+    const day = this.state.daylight;
+    if (Math.abs(day - Math.round(day)) > 0.01) return; // mid theme change: wait for it to settle
+    const key = `${Math.round(day)},${this.width}x${this.height}`;
+    if (this._vectorKey === key) return;
+    this._vectorKey = key;
+    const r = this.renderer, mat = this.morph.mesh.material;
+    const cw = mat.colorWrite, dw = mat.depthWrite, shadows = r.shadowMap.needsUpdate;
+    mat.colorWrite = mat.depthWrite = true;
+    r.render(this.scene, this.camera);
+    r.shadowMap.needsUpdate = shadows;
+    mat.colorWrite = cw; mat.depthWrite = dw;
+    // the mark's box on screen, in drawing-buffer pixels
+    const { o, x, y } = this._vectorCorners();
+    const xs = [o.x, x.x, y.x, x.x + y.x - o.x], ys = [o.y, x.y, y.y, x.y + y.y - o.y];
+    const pr = r.getPixelRatio();
+    const x0 = Math.max(0, Math.floor(Math.min(...xs) * pr)), x1 = Math.min(r.domElement.width, Math.ceil(Math.max(...xs) * pr));
+    const y0 = Math.max(0, Math.floor(Math.min(...ys) * pr)), y1 = Math.min(r.domElement.height, Math.ceil(Math.max(...ys) * pr));
+    const w = x1 - x0, h = y1 - y0;
+    if (w <= 0 || h <= 0) return;
+    const gl = r.getContext();
+    const px = new Uint8Array(w * h * 4);
+    gl.readPixels(x0, r.domElement.height - y1, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    // logo pixels only (the silhouette mask): average the top third and the bottom third
+    const sum = [[0, 0, 0, 0], [0, 0, 0, 0]];
+    for (let j = 0; j < h; j += 3) {
+      const cssY = (y1 - 1 - j) / pr; // readPixels rows run bottom up
+      const band = cssY < y0 / pr + (h / pr) / 3 ? 0 : cssY > y0 / pr + (2 * h / pr) / 3 ? 1 : -1;
+      if (band < 0) continue;
+      for (let i = 0; i < w; i += 3) {
+        const k = (j * w + i) * 4;
+        if (px[k + 3] < 250 || !this.covers((x0 + i) / pr, cssY)) continue;
+        const s = sum[band];
+        s[0] += px[k]; s[1] += px[k + 1]; s[2] += px[k + 2]; s[3]++;
+      }
+    }
+    // lifted a little: the flat mark loses the bevel's bright edges, which make the 3D one read lighter
+    const hex = (s) => '#' + s.slice(0, 3).map((c) => Math.min(255, Math.round((c / s[3]) * 1.08)).toString(16).padStart(2, '0')).join('');
+    if (sum[0][3] && sum[1][3]) this.vector.setColors(hex(sum[0]), hex(sum[1]));
+    else this._vectorKey = null; // nothing to see yet: try again next frame
+  }
+
+  _drawStage() {
     const r = this.renderer;
     const top = this._occluderTop();
     if (top >= this.height) { r.render(this.scene, this.camera); return; }
@@ -649,6 +738,7 @@ export class Stage {
     for (const l of Object.values(this.lights)) l.dispose?.();
     this.mask?.dispose();
     this.morph?.dispose();
+    this.vector?.dispose();
     this.ring?.matcap.dispose();
     this.ring?.dayMatcap.dispose();
     this.scene.environment = null;
@@ -661,6 +751,7 @@ export class Stage {
 }
 
 Stage.prototype._tmpColor = new THREE.Color();
+Stage.prototype._tmpM = new THREE.Matrix4();
 Stage.prototype._tmpV = new THREE.Vector3();
 Stage.prototype._focus = new THREE.Vector3();
 Stage.prototype._white = new THREE.Color(1, 1, 1);

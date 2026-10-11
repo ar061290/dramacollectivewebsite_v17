@@ -11,7 +11,8 @@
 //   morph  the statue's own surface flows into the 3D logo (src/scene/morph.js): the mask, hand and
 //          face first, in the close-up; then, as the robes stream in and the logo grows to its
 //          place, the view opens out again
-//   logo   the gold logo holds in the ring, swaying slowly
+//   logo   the logo holds in the ring and sways once, slowly; then, in the last act, it hands over
+//          to its flat vector (src/scene/vectorLogo.js), crisp as the footer slides under it
 
 const inOutSine = (t) => 0.5 - 0.5 * Math.cos(Math.PI * t);
 
@@ -41,7 +42,8 @@ export const TRACKS = {
   head: { phase: 'pose', from: 0.35, to: 1, ease: inOutQuad }, // the face turns away from it
   zoom: { phase: 'zoom', from: 0, to: 1, ease: inOutSine }, // into the close-up (it opens out as the logo grows)
   morph: { phase: 'morph', from: 0, to: 1, ease: linear }, // per-triangle stagger is in the shader
-  logo: { phase: 'logo', from: 0, to: 1, ease: inOutSine }, // the logo's slow sway
+  logo: { phase: 'logo', from: 0, to: 0.45, ease: inOutSine }, // the logo's slow sway, done before the hand-over
+  vector: { phase: 'logo', from: 0.5, to: 0.85, ease: inOutSine }, // the 3D logo hands over to its vector
 };
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
