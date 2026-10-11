@@ -28,8 +28,7 @@ const MAX_FLING = 8; // rad/s; a hard flick coasts about half a turn
 const FOLLOW = 10 * DEG; // how far the statue leans toward the cursor
 const LOGO_SWAY = 0.35; // radians: the logo turns away and back over the logo phase
 const LOGO_DRIFT = 0.08; // radians: the slow idle sway while the logo holds
-const GOLD_ENV = 1.15; // reflection strength of the gold, whatever the stage's environment level
-// the close-up (zoom phase): her head, hand and mask, with the gold ones forming on them, fill at
+// the close-up (zoom phase): her head, hand and mask, with the logo's forming on them, fill at
 // most this share of the view's height and width (on a phone the width decides)
 const CLOSE_UP = { height: 0.45, width: 0.7 };
 const CLOSE_UP_SIZE = { width: 0.42, height: 0.4 }; // statue units, about her head, hand and mask, until the morph is built
@@ -323,6 +322,8 @@ export class Stage {
     const hand = this.skinned.skeleton.bones.find((b) => /^hand/.test(b.name));
     const origin = this.turntable.worldToLocal(hand.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.13, 0)));
     this.morph = buildMorph({ skinned: this.skinned, space: this.turntable, logo, center: c, origin });
+    // the logo is the statue's own stone: its average colour (texture times tint)
+    if (this.statue.averageColor) this.morph.uniforms.uStone.value.copy(this.statue.averageColor);
     logo.geometry.dispose();
     this.morph.mesh.layers.enable(STATUE_LAYER);
     this._applyPose(arm, head);
@@ -443,7 +444,7 @@ export class Stage {
     let zoom = 1, fx = s.frameX, fy = s.frameY;
     const focus = this._focus;
     if (closeIn > 0) {
-      // what it frames: her head, hand and mask, and the gold ones forming on them; before the
+      // what it frames: her head, hand and mask, and the logo's forming on them; before the
       // morph is built, a stand-in between her head and her hand (a statue without a rig: its centre)
       const bones = this.skinned?.skeleton.bones ?? [];
       const head = bones.find((b) => b.name === 'head'), hand = bones.find((b) => /^hand/.test(b.name));
@@ -510,8 +511,6 @@ export class Stage {
     // stone in daylight rather than a silhouette on a pale ground
     hemi.intensity = 0.06 * lit + 1.1 * day;
     this.scene.environmentIntensity = 0.16 * lit + 0.3 * day;
-    // the gold reflects at a fixed strength whatever the stage's environment level
-    if (this.morph) this.morph.uniforms.uEnvGold.value = GOLD_ENV / Math.max(0.02, this.scene.environmentIntensity);
     this.renderer.toneMappingExposure = 1 - 0.12 * day;
     const pool = this.floor.pool.material;
     pool.color.copy(key.color);

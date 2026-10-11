@@ -22,10 +22,10 @@
 // first, scaled and placed so that its mask, hand and face lie on hers (a least-squares fit of the
 // three parts' bounds, then a small shift per part for what one fit cannot place), just in front of
 // her: each part changes where it is, into its counterpart at about its own size. The mask changes
-// first, then the hand (her upper arm goes with it), then the face; the three gold parts hold for a
+// first, then the hand (her upper arm goes with it), then the face; the three new parts hold for a
 // moment on the marble figure; then, as the robes stream on a wide swirl into the brush strokes,
 // flames and crescent, the parts close up into the logo's own layout and the logo grows out to its
-// place in the ring. The marble turns to gold as it goes.
+// place in the ring. It stays the statue's own stone throughout.
 // Everything here runs once, in well under a second for 160k triangles.
 
 import * as THREE from 'three';
@@ -35,8 +35,6 @@ export const MORPH = {
   swirl: 1, // radians of turn about the axis at mid-flight, scaled per part and by smooth noise
   lift: 0.06, // rise at mid-flight, statue units (counted in the ring clearance); the mask, hand and
   // face, changing in place at the logo's small size, rise in proportion
-  gold: 0xcaa752, // gold-600, a shade deeper: as a metal it reads lighter than its swatch
-  goldRoughness: 0.34,
   // per part, as shares of the morph: when its first triangles set off (start), how much later its
   // last ones do (spread), how long each takes to arrive (travel), and how much they swirl. A part
   // is complete at start + spread + travel.
@@ -363,9 +361,7 @@ const BEGIN_NORMAL = /* glsl */`
 `;
 
 const FRAGMENT_HEAD = /* glsl */`
-  uniform vec3 uGold;
-  uniform float uGoldRough;
-  uniform float uEnvGold;
+  uniform vec3 uStone;
   uniform float uShowParts;
   varying float vMorph;
   varying float vPart;
@@ -456,7 +452,7 @@ export function buildMorph({ skinned, space, logo, center, origin }) {
     logoBox.expandByPoint(v.fromArray(LPall, i));
   }
   const fit = fitOverHead(boxes, center, radius) ?? { at: center.clone(), scale: 1, shift: PARTS.map(() => new THREE.Vector3()) };
-  // what the stage's close-up frames: her mask, hand and face, and the gold ones forming on them
+  // what the stage's close-up frames: her mask, hand and face, and the logo's forming on them
   // (without parts, the logo where it forms)
   const closeUp = new THREE.Box3();
   for (const { p, a, b } of boxes) {
@@ -538,24 +534,19 @@ export function buildMorph({ skinned, space, logo, center, origin }) {
     uSettle: { value: 1 },
     uSwirl: { value: MORPH.swirl },
     uLift: { value: MORPH.lift },
-    uGold: { value: new THREE.Color(MORPH.gold) },
-    uGoldRough: { value: MORPH.goldRoughness },
-    uEnvGold: { value: 1 }, // set by the stage: the reflection boost where the surface is gold
+    uStone: { value: new THREE.Color(0xd8d3ca) }, // set by the stage: the statue's average stone colour
     uShowParts: { value: 0 }, // ?debug: tint each part (mask gold, hand green, face blue, body grey)
   };
 
-  // colour pass: the statue's own material, turning to gold per triangle
+  // colour pass: the statue's own material all the way. The logo is carved from the same stone:
+  // same roughness, no metal, the stage's own reflections; only the texture evens out to the
+  // stone's average colour, since each logo triangle carries a stray patch of the statue's texture
   const material = skinned.material.clone();
   material.onBeforeCompile = (shader) => {
     injectVertex(shader, uniforms, { normals: true });
     shader.fragmentShader = FRAGMENT_HEAD + shader.fragmentShader
-      // marble keeps the stage's faint reflections; where it has turned to gold they are strong
-      .replace('#include <envmap_physical_pars_fragment>', THREE.ShaderChunk.envmap_physical_pars_fragment
-        .replaceAll('envMapIntensity', '(envMapIntensity * mix(1.0, uEnvGold, vMorph))'))
-      .replace('#include <map_fragment>', '#include <map_fragment>\n  diffuseColor.rgb = mix(diffuseColor.rgb, uGold, vMorph);\n  if (uShowParts > 0.5) diffuseColor.rgb = partColor(vPart);')
-      .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n  metalnessFactor = mix(metalnessFactor, 1.0, vMorph);')
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n  roughnessFactor = mix(roughnessFactor, uGoldRough, vMorph);')
-      // the statue's normal map belongs to the statue; the logo is smooth gold
+      .replace('#include <map_fragment>', '#include <map_fragment>\n  diffuseColor.rgb = mix(diffuseColor.rgb, uStone, vMorph);\n  if (uShowParts > 0.5) diffuseColor.rgb = partColor(vPart);')
+      // the statue's normal map belongs to the statue; the logo's faces are smooth stone
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n  normal = normalize(mix(normal, nonPerturbedNormal, vMorph));');
   };
   material.customProgramCacheKey = () => 'dc-morph';
