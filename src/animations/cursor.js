@@ -1,7 +1,6 @@
 // The star cursor (and the constellation pen). Desktop, fine pointers only.
 // Mostly the star is a native cursor image set in CSS (layout.css): the system draws it, with no
-// lag and pixel-exact clicks. This module switches it on, keeps the "Drag" hint beside it, and
-// tells the CSS (classes on <html>) what is under the pointer:
+// lag and pixel-exact clicks. This module switches it on and tells the CSS (classes on <html>) what is under the pointer:
 //   is-over-text  selectable text: the star stretches into its tall text form
 //   is-over-link  a link or control: the star turns 45 degrees
 //   is-on-box     a text box, where the sky is cleared and the small star is harder to see: the

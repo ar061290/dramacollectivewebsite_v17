@@ -584,8 +584,20 @@ export class Stage {
   setOccluder(el, { logoInFront = true } = {}) {
     this.occluder = el;
     this.logoInFront = logoInFront;
+    this.dockSlot = el?.querySelector('.curtain__mark') ?? null;
     this.vector?.setBehind(!logoInFront);
     this._lastSig = '';
+  }
+
+  /**
+   * How far the vector has docked into the footer's slot: 0 while the footer is below the screen,
+   * 1 once its top reaches the top of the screen (the end of the page), eased.
+   */
+  _dock() {
+    if (!this.dockSlot) return 0;
+    const top = this._occluderTop();
+    const t = Math.min(1, Math.max(0, 1 - top / this.height));
+    return 0.5 - 0.5 * Math.cos(Math.PI * t);
   }
 
   _occluderTop() {
@@ -599,7 +611,7 @@ export class Stage {
     if (v > 0) this._sampleVectorColors();
     this._drawStage();
     if (this.vector) {
-      if (v > 0) this._placeVector();
+      if (v > 0) this._placeVector(v);
       this.vector.setOpacity(v);
     }
   }
@@ -617,10 +629,24 @@ export class Stage {
     return { o: at(0, 0), x: at(S.w, 0), y: at(0, S.h) };
   }
 
-  _placeVector() {
+  /**
+   * Lay the vector over the 3D logo; as the footer rises, carry it from there into the footer's
+   * slot (fitted, centred), where it then scrolls with the footer. `v` is how far the vector has
+   * taken over: the move waits for it, so it never leaves a fading 3D logo behind.
+   */
+  _placeVector(v) {
     const { o, x, y } = this._vectorCorners();
     const S = this.vector.size;
-    this.vector.setTransform((x.x - o.x) / S.w, (x.y - o.y) / S.w, (y.x - o.x) / S.h, (y.y - o.y) / S.h, o.x, o.y);
+    const m = [(x.x - o.x) / S.w, (x.y - o.y) / S.w, (y.x - o.x) / S.h, (y.y - o.y) / S.h, o.x, o.y];
+    const k = this._dock() * v * v;
+    this.vector.setBehind(!this.logoInFront && k <= 0);
+    if (k > 0) {
+      const r = this.dockSlot.getBoundingClientRect();
+      const s = Math.min(r.width / S.w, r.height / S.h);
+      const to = [s, 0, 0, s, r.left + (r.width - S.w * s) / 2, r.top + (r.height - S.h * s) / 2];
+      for (let i = 0; i < 6; i++) m[i] += (to[i] - m[i]) * k;
+    }
+    this.vector.setTransform(...m);
   }
 
   /**

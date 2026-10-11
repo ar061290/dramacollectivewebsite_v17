@@ -69,7 +69,6 @@
 .has-cursor.is-on-box :is(a, button, label, [role="button"]) { cursor: none; }
 .has-cursor.is-over-statue { cursor: var(--cursor-star-grab); }
 .has-cursor.is-grabbing, .has-cursor.is-grabbing * { cursor: var(--cursor-star-grabbing); }
-/* the "Drag" hint follows the pointer (positioned directly, no easing) */
 .cursor {
   position: fixed;
   left: 0; top: 0;
@@ -90,21 +89,7 @@
 .cursor__star-text, .is-over-text .cursor__star-plain { display: none; }
 .is-over-text .cursor__star-text { display: block; }
 .is-over-link .cursor__star { transform: rotate(45deg); }
-.cursor__hint {
-  position: absolute;
-  left: 22px; top: 0;
-  transform: translate(-4px, -50%);
-  font-family: var(--font-ui);
-  font-size: var(--size-micro);
-  font-weight: var(--weight-bold);
-  letter-spacing: var(--ls-eyebrow);
-  text-transform: uppercase;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity var(--dur-base) var(--ease-curtain), transform var(--dur-base) var(--ease-curtain);
-}
-.is-over-statue:not(.is-grabbing) .cursor__hint { opacity: 1; transform: translate(0, -50%); }
-.is-over-statue, .is-grabbing { -webkit-user-select: none; user-select: none; }
+.is-over-statue:not(.is-grabbing) .is-over-statue, .is-grabbing { -webkit-user-select: none; user-select: none; }
 @media (hover: none), (pointer: coarse) { .cursor { display: none; } }
 
 /* ---- Content layer ---- */
@@ -206,23 +191,35 @@ main { position: relative; z-index: var(--z-content); }
 .fine { font-size: var(--size-caption); color: var(--fg-muted); }
 
 /* ---- Footer: the curtain call ---- */
+/* It fills the screen at the end of the page: the copy on the left, the Collective's mark docked
+   on the right (the stage moves the vector logo into .curtain__mark as the footer rises), and the
+   credits and the CHIREC endorsement along the foot. */
 .curtain {
   position: relative;
   z-index: var(--z-footer);
   background: var(--curtain-bg);
   border-top: var(--rule-thick) solid var(--rule-color);
-  padding: var(--section-y) var(--stage-gutter) var(--space-6);
+  padding: calc(var(--space-9) + var(--space-5)) var(--stage-gutter) var(--space-6);
   overflow: hidden;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
 }
 .curtain__grid {
   position: relative;
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: center;
   column-gap: var(--gutter);
-  row-gap: var(--space-7);
+  row-gap: var(--space-6);
+  width: 100%;
   max-width: var(--container);
+  margin: 0 auto;
 }
 .curtain__intro { grid-column: 1 / span 6; }
+.curtain__mark { grid-column: 8 / span 5; justify-self: center; width: min(100%, 46svh); aspect-ratio: 1; }
 .curtain__title { font-size: var(--size-display-m); margin-top: var(--space-3); }
 .curtain__contacts { grid-column: 1 / span 7; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
 .curtain__contacts .name { font-family: var(--font-display); font-size: var(--size-heading); color: var(--fg-strong); display: block; margin-top: var(--space-2); }
@@ -232,7 +229,8 @@ main { position: relative; z-index: var(--z-content); }
 .curtain__event dd { margin: 0 0 var(--space-2); color: var(--fg-strong); }
 .curtain__base {
   position: relative;
-  margin-top: var(--space-8);
+  width: 100%;
+  margin: var(--space-7) auto 0;
   padding-top: var(--space-5);
   border-top: 1px solid var(--line);
   display: flex;
@@ -314,6 +312,9 @@ main { position: relative; z-index: var(--z-content); }
   }
   .stats, .people, .curtain__contacts { grid-template-columns: minmax(0, 1fr); }
   .curtain__intro, .curtain__contacts, .curtain__event { grid-column: 1 / -1; }
+  .curtain { padding-top: var(--space-8); }
+  .curtain__grid { align-content: center; }
+  .curtain__mark { grid-column: 1 / -1; grid-row: 1; justify-self: start; width: min(56vw, 30svh); }
 }
 
 /* ---- Reduced motion: transitions collapse to near-instant; JS skips the intro and motion ---- */

@@ -62,7 +62,7 @@ Other stage motion carries over from v2:
 On top of the sequence, the statue still answers the mouse:
 
 - she turns up to 10° toward the cursor;
-- over her, the key light leans in and the cursor offers "Drag";
+- over her, the key light leans in and the cursor changes to its grab form;
 - a sideways drag turns her, with a fling, and the turn eases back to the choreography afterwards.
 
 ### Ring clearance
@@ -196,4 +196,4 @@ All as in v2:
 
 ## Design system extensions
 
-As in v2: theme roles in `tokens.css`, the text grounds behind copy, the icon buttons, the cursor hint, and the motion confined to the stage. The 3D logo is the statue's own stone, in its average colour.
+As in v2: theme roles in `tokens.css`, the text grounds behind copy, the icon buttons and the motion confined to the stage. The 3D logo is the statue's own stone, in its average colour.
