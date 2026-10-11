@@ -18,7 +18,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createRing, placeRing } from './ringStone.js';
 import { loadStatue, prepareStatue, forEachVertex, STATUE_LAYER } from './statue.js';
 import { SilhouetteMask } from './silhouette.js';
-import { evaluate } from './sequence.js';
+import { evaluate, TURN } from './sequence.js';
 import { buildLogoGeometry } from './logo.js';
 import { buildMorph, growAt, MORPH } from './morph.js';
 
@@ -401,7 +401,7 @@ export class Stage {
     this.time += dt;
     const drift = this.reducedMotion ? 0 : LOGO_DRIFT * Math.sin(this.time * 0.45) * Math.min(1, tr.logo * 4);
     // through the morph the turntable takes up the camera's scroll arc, so the logo ends square on
-    const statueYaw = Math.PI * tr.turn + s.arc * tr.morph + LOGO_SWAY * Math.sin(Math.PI * tr.logo) + drift + t.drag + t.follow;
+    const statueYaw = 2 * Math.PI * TURN.revolutions * tr.turn + s.arc * tr.morph + LOGO_SWAY * Math.sin(Math.PI * tr.logo) + drift + t.drag + t.follow;
     this.turntable.rotation.y = statueYaw;
     // the morph: the logo forms at her head, then grows out to its place in the ring
     const m = this.morph;
@@ -536,7 +536,7 @@ export class Stage {
     const r = (v) => Math.round(v * 1e4);
     return [s.stageLight, s.ringReveal, s.lightMix, s.keyLevel, s.ringLevel, s.frameX, s.frameY, s.spin, this.turntable.rotation.y, s.arc, s.dolly,
       s.parX, s.parY, s.daylight, this.seqOverride ?? s.seq, t.hover, this.width, this.height, this.camera.fov, this.morph ? 1 : 0,
-      this._focusBlend ?? 1].map(r).join(',');
+      this._focusBlend ?? 1, Math.min(this.height + 1, this._occluderTop())].map(r).join(',');
   }
 
   _tick() {
@@ -546,7 +546,7 @@ export class Stage {
     if (sig === this._lastSig) return; // nothing moved: skip the frame
     this._lastSig = sig;
     this._updateLights();
-    this.renderer.render(this.scene, this.camera);
+    this._draw();
     const now = performance.now();
     if (now >= this._maskDue) {
       this._maskDue = now + 140;
@@ -558,8 +558,56 @@ export class Stage {
     if (!this.statue) return;
     this._updateRig(0);
     this._updateLights();
-    this.renderer.render(this.scene, this.camera);
+    this._draw();
     this.mask?.update(this.scene, this.camera, this.width, this.height);
+  }
+
+  /**
+   * The element that covers the stage from below (the curtain-call footer). The WebGL canvas is
+   * layered over it, so the stage draws in two passes: everything, clipped above the element's top
+   * edge (there the footer covers the ring, the floor and the shadows), then the logo alone over the
+   * element, so the logo stays in front of the footer. With `logoInFront` false (phones, where the
+   * footer fills the screen and the copy above it sits on a solid scrim) the footer covers it all.
+   */
+  setOccluder(el, { logoInFront = true } = {}) {
+    this.occluder = el;
+    this.logoInFront = logoInFront;
+    this._lastSig = '';
+  }
+
+  _occluderTop() {
+    if (!this.occluder) return Infinity;
+    return Math.round(this.occluder.getBoundingClientRect().top);
+  }
+
+  _draw() {
+    const r = this.renderer;
+    const top = this._occluderTop();
+    if (top >= this.height) { r.render(this.scene, this.camera); return; }
+    const w = this.width, h = this.height, cut = Math.max(0, top);
+    r.autoClear = false;
+    r.setScissorTest(false);
+    r.clear();
+    r.setScissorTest(true);
+    if (cut > 0) {
+      // 1. the whole stage, above the footer
+      r.setScissor(0, h - cut, w, cut);
+      r.render(this.scene, this.camera);
+    }
+    const logo = this.morph?.mesh;
+    if (logo?.visible && this.logoInFront) {
+      // 2. the logo alone, over the footer (the shadow map is the first pass's)
+      const hidden = [this.ring.root, this.floor.shadow, this.floor.pool, this.skinned].filter((o) => o?.visible);
+      for (const o of hidden) o.visible = false;
+      const shadows = r.shadowMap.needsUpdate;
+      r.shadowMap.needsUpdate = false;
+      r.setScissor(0, 0, w, h - cut);
+      r.render(this.scene, this.camera);
+      r.shadowMap.needsUpdate = shadows;
+      for (const o of hidden) o.visible = true;
+    }
+    r.setScissorTest(false);
+    r.autoClear = true;
   }
 
   start() {

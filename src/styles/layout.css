@@ -1,9 +1,12 @@
 /* Page structure: a fixed stage (stars + WebGL) under scrolling scenes, a solid curtain-call footer. */
 
 /* ---- Fixed stage ---- */
-.stage { position: fixed; inset: 0; z-index: var(--z-stage); pointer-events: none; }
-.stage__stars { position: absolute; inset: 0; width: 100%; height: 100%; z-index: var(--z-stars); }
-.stage__gl { position: absolute; inset: 0; }
+/* Layers: the sky (and the still picture) sit under the footer; the WebGL stage sits over it, but
+   draws only the logo where the footer is (Stage._draw), so the footer covers the ring and the
+   shadows while the logo stays in front of it; the content is over both. */
+.stage { position: fixed; inset: 0; z-index: var(--z-stars); pointer-events: none; }
+.stage__stars { position: absolute; inset: 0; width: 100%; height: 100%; }
+.stage__gl { position: fixed; inset: 0; z-index: var(--z-stage); pointer-events: none; }
 .stage__gl canvas { display: block; width: 100%; height: 100%; }
 /* the still is a transparent frame of the hero composition, so it fills the stage like the canvas
    and the star field shows through around the statue */
@@ -33,24 +36,32 @@
 /* ---- Cursor (desktop, fine pointers only) ----
    The star is a native cursor image, so the system draws it: no lag, and its hotspot (the star's
    centre) is exactly where a click lands. Outlined so it reads on the statue and on light grounds.
-   It turns 45 degrees over links and controls, grows over the statue, and turns while dragging it. */
+   It turns 45 degrees over links and controls, grows over the statue, turns while dragging it, and
+   over selectable text stretches into a tall star (the text cursor; src/animations/cursor.js finds
+   real text under the pointer). Over the text boxes, where the sky is cleared and the small star is
+   harder to see, a soft glow sits behind it, clipped to the box. */
 :root {
-  --cursor-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-12 -12 24 24'%3E%3Cpath d='M0-10C1-2 2-1 10 0 2 1 1 2 0 10-1 2-2 1-10 0-2-1-1-2 0-10Z' fill='%23ebd88c' stroke='%232a0d1c' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") 12 12, crosshair;
-  --cursor-star-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-12 -12 24 24'%3E%3Cpath d='M0-10C1-2 2-1 10 0 2 1 1 2 0 10-1 2-2 1-10 0-2-1-1-2 0-10Z' fill='%23ebd88c' stroke='%232a0d1c' stroke-width='1.4' stroke-linejoin='round' transform='rotate(45)'/%3E%3C/svg%3E") 12 12, pointer;
-  --cursor-star-grab: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='-12 -12 24 24'%3E%3Cpath d='M0-10C1-2 2-1 10 0 2 1 1 2 0 10-1 2-2 1-10 0-2-1-1-2 0-10Z' fill='%23ebd88c' stroke='%232a0d1c' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") 16 16, grab;
-  --cursor-star-grabbing: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='-12 -12 24 24'%3E%3Cpath d='M0-10C1-2 2-1 10 0 2 1 1 2 0 10-1 2-2 1-10 0-2-1-1-2 0-10Z' fill='%23ebd88c' stroke='%232a0d1c' stroke-width='1.4' stroke-linejoin='round' transform='rotate(45)'/%3E%3C/svg%3E") 14 14, grabbing;
+  --cursor-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-12 -12 24 24'%3E%3Cpath d='M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z' fill='%23ebd88c' stroke='%232a0d1c' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") 12 12, crosshair;
+  --cursor-star-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-12 -12 24 24'%3E%3Cpath d='M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z' fill='%23ebd88c' stroke='%232a0d1c' stroke-width='1.4' stroke-linejoin='round' transform='rotate(45)'/%3E%3C/svg%3E") 12 12, pointer;
+  --cursor-star-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='34' viewBox='-12 -17 24 34'%3E%3Cpath d='M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z' fill='%23ebd88c' stroke='%232a0d1c' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") 12 17, text;
+  --cursor-star-grab: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='-12 -12 24 24'%3E%3Cpath d='M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z' fill='%23ebd88c' stroke='%232a0d1c' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") 16 16, grab;
+  --cursor-star-grabbing: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='-12 -12 24 24'%3E%3Cpath d='M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z' fill='%23ebd88c' stroke='%232a0d1c' stroke-width='1.4' stroke-linejoin='round' transform='rotate(45)'/%3E%3C/svg%3E") 14 14, grabbing;
+  --cursor-glow: radial-gradient(circle, rgba(243,231,184,.7) 0, rgba(235,216,140,.3) 30%, rgba(235,216,140,0) 70%);
 }
 :root[data-theme="light"] {
-  --cursor-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-12 -12 24 24'%3E%3Cpath d='M0-10C1-2 2-1 10 0 2 1 1 2 0 10-1 2-2 1-10 0-2-1-1-2 0-10Z' fill='%236d2751' stroke='%23faf3f4' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") 12 12, crosshair;
-  --cursor-star-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-12 -12 24 24'%3E%3Cpath d='M0-10C1-2 2-1 10 0 2 1 1 2 0 10-1 2-2 1-10 0-2-1-1-2 0-10Z' fill='%236d2751' stroke='%23faf3f4' stroke-width='1.4' stroke-linejoin='round' transform='rotate(45)'/%3E%3C/svg%3E") 12 12, pointer;
-  --cursor-star-grab: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='-12 -12 24 24'%3E%3Cpath d='M0-10C1-2 2-1 10 0 2 1 1 2 0 10-1 2-2 1-10 0-2-1-1-2 0-10Z' fill='%236d2751' stroke='%23faf3f4' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") 16 16, grab;
-  --cursor-star-grabbing: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='-12 -12 24 24'%3E%3Cpath d='M0-10C1-2 2-1 10 0 2 1 1 2 0 10-1 2-2 1-10 0-2-1-1-2 0-10Z' fill='%236d2751' stroke='%23faf3f4' stroke-width='1.4' stroke-linejoin='round' transform='rotate(45)'/%3E%3C/svg%3E") 14 14, grabbing;
+  --cursor-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-12 -12 24 24'%3E%3Cpath d='M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z' fill='%236d2751' stroke='%23faf3f4' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") 12 12, crosshair;
+  --cursor-star-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='-12 -12 24 24'%3E%3Cpath d='M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z' fill='%236d2751' stroke='%23faf3f4' stroke-width='1.4' stroke-linejoin='round' transform='rotate(45)'/%3E%3C/svg%3E") 12 12, pointer;
+  --cursor-star-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='34' viewBox='-12 -17 24 34'%3E%3Cpath d='M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z' fill='%236d2751' stroke='%23faf3f4' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") 12 17, text;
+  --cursor-star-grab: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='-12 -12 24 24'%3E%3Cpath d='M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z' fill='%236d2751' stroke='%23faf3f4' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") 16 16, grab;
+  --cursor-star-grabbing: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='-12 -12 24 24'%3E%3Cpath d='M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z' fill='%236d2751' stroke='%23faf3f4' stroke-width='1.4' stroke-linejoin='round' transform='rotate(45)'/%3E%3C/svg%3E") 14 14, grabbing;
+  --cursor-glow: radial-gradient(circle, rgba(134,52,105,.32) 0, rgba(134,52,105,.13) 32%, rgba(134,52,105,0) 70%);
 }
 .has-cursor { cursor: var(--cursor-star); }
+.has-cursor.is-over-text { cursor: var(--cursor-star-text); }
 .has-cursor :is(a, button, label, [role="button"]) { cursor: var(--cursor-star-link); }
 .has-cursor.is-over-statue { cursor: var(--cursor-star-grab); }
 .has-cursor.is-grabbing, .has-cursor.is-grabbing * { cursor: var(--cursor-star-grabbing); }
-/* the "Drag" hint beside the cursor over the statue (positioned directly, no easing) */
+/* the glow and the "Drag" hint follow the pointer (positioned directly, no easing) */
 .cursor {
   position: fixed;
   left: 0; top: 0;
@@ -61,6 +72,16 @@
   transition: opacity var(--dur-base) var(--ease-curtain);
 }
 .has-cursor .cursor.is-visible { opacity: 1; }
+.cursor__glow {
+  position: absolute;
+  left: -32px; top: -32px;
+  width: 64px; height: 64px;
+  background: var(--cursor-glow);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-curtain);
+}
+:root:not([data-theme="light"]) .cursor__glow { mix-blend-mode: screen; }
+.cursor.is-on-box .cursor__glow { opacity: 1; }
 .cursor__hint {
   position: absolute;
   left: 22px; top: 0;
@@ -185,17 +206,6 @@ main { position: relative; z-index: var(--z-content); }
   padding: var(--section-y) var(--stage-gutter) var(--space-6);
   overflow: hidden;
 }
-/* The mark, oversized, cropped, at 10%: the system's only ornament */
-.curtain__mark {
-  position: absolute;
-  right: -8vw;
-  bottom: -14vw;
-  width: min(62vw, 720px);
-  opacity: .1;
-  pointer-events: none;
-}
-/* the blush mark vanishes on a light ground: deepened to a plum watermark */
-[data-theme="light"] .curtain__mark { filter: brightness(.38) saturate(1.4); opacity: .08; }
 .curtain__grid {
   position: relative;
   display: grid;
@@ -296,7 +306,6 @@ main { position: relative; z-index: var(--z-content); }
   }
   .stats, .people, .curtain__contacts { grid-template-columns: minmax(0, 1fr); }
   .curtain__intro, .curtain__contacts, .curtain__event { grid-column: 1 / -1; }
-  .curtain__mark { width: 120vw; right: -30vw; bottom: -40vw; }
 }
 
 /* ---- Reduced motion: transitions collapse to near-instant; JS skips the intro and motion ---- */

@@ -2,13 +2,13 @@
 
 The home page for the CHIREC Drama Collective: one page, a dark theatre before curtain-up. A marble statue stands in a fixed three.js scene inside the Penrose ring while the page scrolls past it. In v3 the statue performs:
 
-1. she turns 180° to face you;
-2. as she turns, she brings the tragedy mask down beside her face;
+1. she makes a full revolution, the mask still raised;
+2. as she turns on, one and a half revolutions more until she faces you, she brings the tragedy mask down beside her face;
 3. she turns her head away from it;
 4. the view closes in on her upper body: her head, the hand and the mask;
 5. in the close-up her marble flows into the Collective's mark, carved in the same stone, part for part and where each part is: her mask becomes the logo's mask, her hand the hand that holds it, her face the profile face, and the three hold for a moment on the marble figure; then, as her robes stream into the brush strokes, flames and crescent, the mark grows out to fill the ring and the view opens out again.
 
-The copy is placeholder for now; the structure (hero, five acts, footer) is v2's.
+The copy is placeholder for now: a hero, eight acts (three more than v2, to give the longer turn its room) and the footer.
 
 Built with Vite and vanilla JS, three.js 0.170, GSAP 3.13 (ScrollTrigger, SplitText, ScrollToPlugin, CustomEase) and lottie-web 5.12 (light SVG build). The rig and logo trace are made offline with Blender 5.2 and potrace 1.16 (scripts in `tools/`).
 
@@ -37,11 +37,14 @@ One number, the scroll progress through `<main>` (0 at the top, 1 where the foot
 
 | Phase | Progress | What happens |
 |---|---|---|
-| hero | 0–0.08 | v2's composition at rest: seen from behind, mask raised high |
-| pose | 0.08–0.55 | three tracks at once, each on its own curve: the 180° **turn** (sine in-out, the whole phase), the **arm** bringing the mask beside the face (cubic, 5–80% of the phase), the **head** turning away (quad, 35–100%) |
-| zoom | 0.55–0.63 | the view closes in on her upper body (sine in-out), until her head, hand and mask, with the logo's that will form on them, fill 45% of the view's height (or 70% of its width, if that is less, as on a phone) |
-| morph | 0.63–0.92 | in the close-up, the statue's surface flows into the 3D logo: mask, hand and face in turn, at her head; then the robes stream into the rest of the mark as the logo grows to its place and the view opens out again |
-| logo | 0.92–1 | the stone logo holds in the ring, swaying slowly away and back, with a gentle idle drift |
+| hero | 0–0.05 | v2's composition at rest: seen from behind, mask raised high |
+| revolve | 0.05–0.28 | one full revolution, the mask still raised |
+| pose | 0.28–0.58 | she turns on, a revolution and a half more, to face the viewer; through it the **arm** brings the mask beside the face (cubic, 5–80% of the phase) and the **head** turns away (quad, 35–100%) |
+| zoom | 0.58–0.65 | the view closes in on her upper body (sine in-out), until her head, hand and mask, with the logo's that will form on them, fill 45% of the view's height (or 70% of its width, if that is less, as on a phone) |
+| morph | 0.65–0.93 | in the close-up, the statue's surface flows into the 3D logo: mask, hand and face in turn, at her head; then the robes stream into the rest of the mark as the logo grows to its place and the view opens out again |
+| logo | 0.93–1 | the stone logo holds in the ring, swaying slowly away and back, with a gentle idle drift |
+
+The turn is one smooth motion across the revolve and pose phases: 2.5 revolutions (900°) through one sine ease, so it never pauses between revolutions, and the pose phase starts exactly where the ease completes the first revolution (`TURN` in `sequence.js`: change `revolutions`, keeping it on a half, or `first`).
 
 End of the pose, as the viewer sees it: she faces you, the mask is on the right of the screen at face height, angled toward you, and her face looks to the left.
 
@@ -157,13 +160,13 @@ Each scene also tells the stage how to light and place the statue:
 - `data-light`: 0 is the warm spotlight, 1 the cool one.
 - `data-key`: the key light level.
 
-Anything marked `data-mask` keeps the constellations clear of it. Act five keeps a button with `data-cta` (its Lottie flourish hooks onto it).
+Anything marked `data-mask` keeps the constellations clear of it. Act eight (`#support`, the last) keeps a button with `data-cta` (its Lottie flourish hooks onto it).
 
 The sequence follows the length of `<main>`. Longer copy simply stretches it; to change the pacing, retime `PHASES`.
 
 ## Images
 
-- **Brand marks**: `assets/brand/mark-gold.png` (the source of the 3D logo and the nav fallback) and `mark-blush.png` (the footer watermark). The animated nav mark is `assets/lottie/mask-mark.json`. If the mark changes, re-run `trace_logo.ps1`.
+- **Brand marks**: `assets/brand/mark-gold.png` (the source of the 3D logo and the nav fallback) and `mark-blush.png` (no longer used on the page). The animated nav mark is `assets/lottie/mask-mark.json`. If the mark changes, re-run `trace_logo.ps1`.
 - **Fallback still**: `assets/fallback/hero.png` is the hero composition, unchanged from v2.
 
 ## Stars, cursor, themes, music, nav
@@ -171,7 +174,8 @@ The sequence follows the length of `<main>`. Longer copy simply stretches it; to
 All as in v2:
 
 - **Stars:** a dense field that glows around the cursor and draws constellations.
-- **Cursor:** a native star cursor.
+- **Cursor:** a native star cursor. Over selectable text it stretches into a tall, narrow star (the same star; `cursor.js` checks that a character really is under the pointer). Over the text boxes, where the sky is cleared and the small star is harder to see, a soft glow sits behind it, clipped to the box.
+- **Footer:** no watermark. On wide screens the 3D canvas is layered over the footer and draws in two passes (`Stage._draw`): the whole stage clipped above the footer's top edge, then the logo alone over the footer. The footer slides under the logo and covers the ring and the logo's shadow. On phones, where the footer fills the screen, it covers the logo too.
 - **Themes:** light and dark, remembered per browser (`dc-theme`).
 - **Music:** public-domain piano from Musopen, streamed from Wikimedia Commons and credited in the footer (`src/ui/music.js`).
 - **Nav:** hides on scroll down and folds into the Menu below 1000 px.

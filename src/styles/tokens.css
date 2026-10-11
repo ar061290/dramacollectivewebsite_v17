@@ -59,7 +59,8 @@
   /* side margin of the stage layout: space-6 on small screens, space-8 from tablet up */
   --stage-gutter: var(--space-6);
   /* layer order for the fixed stage, content and chrome */
-  --z-stars: 0; --z-stage: 1; --z-content: 2; --z-footer: 3; --z-topbar: 10; --z-cursor: 20; --z-loader: 30;
+  /* the footer sits between the sky and the WebGL stage, so the 3D logo stays in front of it */
+  --z-stars: 0; --z-footer: 1; --z-stage: 2; --z-content: 3; --z-topbar: 10; --z-cursor: 20; --z-loader: 30;
 }
 @media (min-width: 768px) {
   :root { --stage-gutter: var(--space-8); }

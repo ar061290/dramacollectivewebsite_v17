@@ -29,6 +29,8 @@ export function setupScenes({ stage }) {
   }, (ctx) => {
     const { mobile, reduce } = ctx.conditions;
     stage.setFill(mobile ? 0.46 : 0.68);
+    // the logo stays in front of the footer on wide screens; on phones the footer covers it
+    if (stage.occluder) stage.setOccluder(stage.occluder, { logoInFront: !mobile });
 
     const hero = { frameX: 0, frameY: mobile ? 0.12 : 0, lightMix: 0, keyLevel: 1, ringLevel: 1 };
     Object.assign(state, hero);

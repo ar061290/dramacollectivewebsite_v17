@@ -105,6 +105,7 @@ async function boot() {
 
   if (stage) {
     stage.renderOnce();
+    stage.setOccluder(document.querySelector('.curtain'));
     stage.start();
     cleanups.push(setupScenes({ stage }));
     cleanups.push(app.setupStatueInteraction({ stage, sky }));

@@ -41,11 +41,13 @@
 
   <div class="stage" aria-hidden="true">
     <canvas class="stage__stars"></canvas>
-    <div class="stage__gl"></div>
     <img class="stage__fallback" src="./assets/fallback/hero.png" alt="" hidden>
   </div>
 
+  <div class="stage__gl" aria-hidden="true"></div>
+
   <div class="cursor" aria-hidden="true">
+    <span class="cursor__glow"></span>
     <span class="cursor__hint">Drag</span>
   </div>
 
@@ -143,11 +145,47 @@
       </div>
     </section>
 
+    <section class="scene" id="act-five" aria-labelledby="act-five-title"
+      data-scene data-frame="0.24" data-light="0.6" data-key="0.9">
+      <div class="scene__content">
+        <header class="section-heading" data-mask>
+          <p class="eyebrow">Act five · Placeholder</p>
+          <h2 id="act-five-title" data-reveal>Placeholder heading</h2>
+          <span class="rule" aria-hidden="true"></span>
+        </header>
+        <p data-mask data-reveal>Placeholder text for this section. The real copy comes later.</p>
+      </div>
+    </section>
+
+    <section class="scene scene--text-right" id="act-six" aria-labelledby="act-six-title"
+      data-scene data-frame="-0.24" data-light="0.15" data-key="0.95">
+      <div class="scene__content">
+        <header class="section-heading" data-mask>
+          <p class="eyebrow">Act six · Placeholder</p>
+          <h2 id="act-six-title" data-reveal>Placeholder heading</h2>
+          <span class="rule" aria-hidden="true"></span>
+        </header>
+        <p data-mask data-reveal>Placeholder text for this section. The real copy comes later.</p>
+      </div>
+    </section>
+
+    <section class="scene scene--text-right" id="act-seven" aria-labelledby="act-seven-title"
+      data-scene data-frame="-0.24" data-light="0.9" data-key="0.88">
+      <div class="scene__content">
+        <header class="section-heading" data-mask>
+          <p class="eyebrow">Act seven · Placeholder</p>
+          <h2 id="act-seven-title" data-reveal>Placeholder heading</h2>
+          <span class="rule" aria-hidden="true"></span>
+        </header>
+        <p data-mask data-reveal>Placeholder text for this section. The real copy comes later.</p>
+      </div>
+    </section>
+
     <section class="scene" id="support" aria-labelledby="support-title"
       data-scene data-frame="0.24" data-light="0" data-key="1">
       <div class="scene__content">
         <header class="section-heading" data-mask>
-          <p class="eyebrow">Act five · Placeholder</p>
+          <p class="eyebrow">Act eight · Placeholder</p>
           <h2 id="support-title" data-reveal>Placeholder heading</h2>
           <span class="rule" aria-hidden="true"></span>
         </header>
@@ -161,7 +199,6 @@
   </main>
 
   <footer class="curtain" id="contact" aria-labelledby="contact-title">
-    <img class="curtain__mark" src="./assets/brand/mark-blush.png" alt="" aria-hidden="true">
     <div class="curtain__grid">
       <div class="curtain__intro">
         <p class="eyebrow">Curtain call · Placeholder</p>
