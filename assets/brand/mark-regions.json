@@ -1,5 +1,5 @@
 {
-  "_comment": "Parts of the mark, for the morph: each part of the statue becomes the matching part of the logo. Polygons are in the traced SVG's units (assets/brand/mark.svg: 1230 x 1230, y down; twice the pixels of mark-gold.png). A piece of the logo belongs to the first polygon that contains it; anything outside all of them is 'body' (the brush strokes, the flames, the crescent and the star). The logo's mask is drawn as negative space, so its part is the D-shaped frame around it with the eye and the nose and lips on its edge. The face is the profile alone, so her nose becomes its nose. Check the polygons with tools/logo/regions_preview.py.",
+  "_comment": "Parts of the mark, for the morph: each part of the statue becomes the matching part of the logo. Polygons are in the traced SVG's units (assets/brand/mark.svg: 1230 x 1230, y down; twice the pixels of mark-gold.png). A piece of the logo belongs to the first polygon that contains it; anything outside all of them is 'body' (the brush strokes, the flames, the crescent and the star). The logo's mask is drawn as negative space, so its part is the D-shaped frame around it with the eye and the nose and lips on its edge. The face is the profile with the gold it is cut from (the right edge of the brush strokes), so it reads as a face even small, and her nose becomes its nose. Check the polygons with tools/logo/regions_preview.py.",
   "statueParts": {
     "mask": "the mask in her hand",
     "hand": "her hand and forearm",
@@ -9,6 +9,6 @@
   "regions": [
     { "name": "hand", "polygon": [[536, 656], [770, 656], [776, 840], [720, 930], [704, 1200], [590, 1200], [590, 960], [536, 860]] },
     { "name": "mask", "polygon": [[570, 280], [790, 280], [900, 370], [912, 520], [908, 700], [880, 840], [800, 930], [770, 940], [770, 656], [600, 656], [600, 500], [570, 500]] },
-    { "name": "face", "polygon": [[450, 230], [505, 230], [520, 300], [600, 300], [600, 656], [536, 656], [536, 910], [420, 910], [330, 690], [360, 520]] }
+    { "name": "face", "polygon": [[450, 230], [505, 230], [520, 300], [600, 300], [600, 656], [536, 656], [536, 910], [420, 960], [300, 800], [255, 640], [290, 500], [400, 330]] }
   ]
 }

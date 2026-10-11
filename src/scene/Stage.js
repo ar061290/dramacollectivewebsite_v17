@@ -5,7 +5,8 @@
 // ever turns about the camera's viewing axis. The statue stands on a turntable of its own,
 // independent of the ring, and plays the scroll sequence (src/scene/sequence.js): it turns 180
 // degrees to face the viewer while its skeleton brings the mask beside the face and turns the head
-// away, then its surface flows into the 3D logo (src/scene/morph.js). Its bounding sphere is
+// away, then its surface flows into the 3D logo (src/scene/morph.js): mask, hand and face into the
+// logo's own, at her head, before the logo grows out to its place. Its bounding sphere is
 // centred on the turning axis and covers every frame of that sequence (rest pose, end pose, logo,
 // and the morph's mid-flight lift), and it stays inside the ring's hole, so the two never overlap.
 //
@@ -19,7 +20,7 @@ import { loadStatue, prepareStatue, forEachVertex, STATUE_LAYER } from './statue
 import { SilhouetteMask } from './silhouette.js';
 import { evaluate } from './sequence.js';
 import { buildLogoGeometry } from './logo.js';
-import { buildMorph, MORPH } from './morph.js';
+import { buildMorph, growAt, MORPH } from './morph.js';
 
 const DEG = Math.PI / 180;
 const DRAG_RAD_PER_PX = Math.PI / 420; // a 420 px drag turns the statue half way round
@@ -27,7 +28,11 @@ const MAX_FLING = 8; // rad/s; a hard flick coasts about half a turn
 const FOLLOW = 10 * DEG; // how far the statue leans toward the cursor
 const LOGO_SWAY = 0.35; // radians: the logo turns away and back over the logo phase
 const LOGO_DRIFT = 0.08; // radians: the slow idle sway while the logo holds
-const GOLD_ENV = 1.15; // reflection strength of the gold, whatever the stage's environment level
+// the close-up (zoom phase): her head, hand and mask, with the logo's forming on them, fill at
+// most this share of the view's height and width (on a phone the width decides)
+const CLOSE_UP = { height: 0.45, width: 0.7 };
+const CLOSE_UP_SIZE = { width: 0.42, height: 0.4 }; // statue units, about her head, hand and mask, until the morph is built
+const UP = new THREE.Vector3(0, 1, 0);
 
 export class Stage {
   /**
@@ -300,7 +305,8 @@ export class Stage {
 
   /**
    * Build the morph from the logo's SVG (takes a few hundred milliseconds; call it once the hero is
-   * up). Until it is ready the statue simply holds its end pose through the morph section.
+   * up). Until it is ready the statue simply holds its end pose through the morph section (the
+   * close-up still opens out on the morph's schedule).
    */
   prepareMorph(svgText, regions = null) {
     if (!this.skinned || this.morph || this.disposed) return null;
@@ -316,9 +322,13 @@ export class Stage {
     const hand = this.skinned.skeleton.bones.find((b) => /^hand/.test(b.name));
     const origin = this.turntable.worldToLocal(hand.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.13, 0)));
     this.morph = buildMorph({ skinned: this.skinned, space: this.turntable, logo, center: c, origin });
+    // the logo is the statue's own stone: its average colour (texture times tint)
+    if (this.statue.averageColor) this.morph.uniforms.uStone.value.copy(this.statue.averageColor);
     logo.geometry.dispose();
     this.morph.mesh.layers.enable(STATUE_LAYER);
     this._applyPose(arm, head);
+    // arriving in the middle of the close-up, its framing eases over from the stand-in's
+    this._focusBlend = this.tracks.zoom > 0 ? 0 : 1;
     this._lastSig = '';
     return this.morph;
   }
@@ -393,22 +403,26 @@ export class Stage {
     // through the morph the turntable takes up the camera's scroll arc, so the logo ends square on
     const statueYaw = Math.PI * tr.turn + s.arc * tr.morph + LOGO_SWAY * Math.sin(Math.PI * tr.logo) + drift + t.drag + t.follow;
     this.turntable.rotation.y = statueYaw;
+    // the morph: the logo forms at her head, then grows out to its place in the ring
+    const m = this.morph;
+    const morphing = !!m && tr.morph > 0;
+    let grow = 0;
+    if (m) {
+      m.mesh.visible = morphing;
+      grow = m.update(tr.morph);
+    }
+    tr.grow = grow; // for the ?debug readout
     // the logo is far wider than the statue: on a narrow (portrait) screen it shrinks into the
-    // width as the morph runs, about its own centre (smaller only helps the ring clearance)
+    // width as it grows, about the clearance sphere's centre, where it ends (smaller only helps the
+    // ring clearance)
     let k = 1;
     if (this.logoWidth) {
       const d = this.distance * s.dolly;
       const visibleWidth = 2 * Math.tan((this.camera.fov * DEG) / 2) * d * this.camera.aspect;
-      k = 1 + (Math.min(1, (0.86 * visibleWidth) / this.logoWidth) - 1) * tr.morph;
+      k = 1 + (Math.min(1, (0.86 * visibleWidth) / this.logoWidth) - 1) * grow;
     }
     this.turntable.scale.setScalar(k);
     this.turntable.position.y = this.statue.center.y * (1 - k);
-    const m = this.morph;
-    const morphing = !!m && tr.morph > 0;
-    if (m) {
-      m.mesh.visible = morphing;
-      m.uniforms.uMorph.value = tr.morph;
-    }
     if (this.skinned) this.skinned.visible = !morphing;
     // the shadow map follows the shape and the turn
     const shape = `${statueYaw.toFixed(4)},${k.toFixed(4)},${tr.arm.toFixed(4)},${tr.head.toFixed(4)},${morphing ? tr.morph.toFixed(4) : 'statue'}`;
@@ -418,19 +432,67 @@ export class Stage {
     }
 
     const c = this.statue.center;
-    const yaw = s.arc + s.parX * 3 * DEG;
-    const pitch = this.pitch - s.parY * 2 * DEG;
     const d = this.distance * s.dolly;
     const cam = this.camera;
+    const w = this.width, h = this.height;
+    // the close-up: after the turn the view closes in on her head, hand and mask, where the logo
+    // forms, so its mask, hand and face change large; as the logo grows to its place the view opens
+    // out again (on the morph's schedule, built or not). It is a zoom of the picture itself, a
+    // smaller window on the same view: the ring, which rides on the camera, magnifies with the
+    // statue, so the two still never cross, and the light is unchanged.
+    const closeIn = tr.zoom * (1 - (m ? grow : growAt(tr.morph)));
+    let zoom = 1, fx = s.frameX, fy = s.frameY;
+    const focus = this._focus;
+    if (closeIn > 0) {
+      // what it frames: her head, hand and mask, and the logo's forming on them; before the
+      // morph is built, a stand-in between her head and her hand (a statue without a rig: its centre)
+      const bones = this.skinned?.skeleton.bones ?? [];
+      const head = bones.find((b) => b.name === 'head'), hand = bones.find((b) => /^hand/.test(b.name));
+      if (head && hand) focus.copy(head.getWorldPosition(focus)).add(hand.getWorldPosition(this._tmpV)).multiplyScalar(0.5);
+      else focus.copy(c);
+      let width = CLOSE_UP_SIZE.width, height = CLOSE_UP_SIZE.height;
+      if (m) {
+        // a morph that arrives mid-close-up takes over from the stand-in smoothly
+        this._focusBlend = Math.min(1, (this._focusBlend ?? 1) + dt / 0.5);
+        const e = this._focusBlend * this._focusBlend * (3 - 2 * this._focusBlend);
+        this.turntable.updateMatrixWorld();
+        focus.lerp(this.turntable.localToWorld(this._tmpV.copy(m.closeUp.centre)), e);
+        width += (m.closeUp.width - width) * e;
+        height += (m.closeUp.height - height) * e;
+      }
+      // the frame follows the choreography, not a gesture: a drag or the lean toward the cursor
+      // turns her about her axis (x = z = 0) inside a steady frame
+      focus.applyAxisAngle(UP, -(t.drag + t.follow));
+      const viewH = 2 * Math.tan((cam.fov * DEG) / 2) * d, viewW = viewH * cam.aspect;
+      const full = Math.max(1, Math.min((CLOSE_UP.height * viewH) / height, (CLOSE_UP.width * viewW) / width));
+      zoom = full ** closeIn;
+      // the composition's offset (text beside the stage) leaves less room on one side: bring the
+      // frame in from it as far as the close-up needs, with a margin
+      const roomX = Math.max(0, 0.47 - (zoom * width) / (2 * viewW)), roomY = Math.max(0, 0.47 - (zoom * height) / (2 * viewH));
+      fx = Math.sign(fx) * Math.min(Math.abs(fx), roomX);
+      fy = Math.sign(fy) * Math.min(Math.abs(fy), roomY);
+    }
+    // the cursor parallax moves the picture as much in the close-up as out of it
+    const yaw = s.arc + (s.parX * 3 * DEG) / zoom;
+    const pitch = this.pitch - (s.parY * 2 * DEG) / zoom;
     cam.position.set(
       c.x + d * Math.sin(yaw) * Math.cos(pitch),
       c.y - d * Math.sin(pitch),
       c.z + d * Math.cos(yaw) * Math.cos(pitch),
     );
     cam.lookAt(c);
-    // composition: shift the whole picture; the centre of projection does not move
-    const w = this.width, h = this.height;
-    cam.setViewOffset(w, h, -s.frameX * w, s.frameY * h, w, h);
+    // composition: shift the whole picture (the centre of projection does not move); in the
+    // close-up, magnify it about the focus, which settles where the statue's centre would be
+    let nx = 0, ny = 0;
+    if (closeIn > 0) {
+      cam.clearViewOffset(); // the focus, as the plain view sees it
+      cam.updateMatrixWorld();
+      this._tmpV.copy(focus).project(cam);
+      nx = this._tmpV.x * closeIn;
+      ny = this._tmpV.y * closeIn;
+    }
+    const fw = w * zoom, fh = h * zoom;
+    cam.setViewOffset(fw, fh, ((nx + 1) / 2) * fw - (w / 2 + fx * w), ((1 - ny) / 2) * fh - (h / 2 - fy * h), w, h);
     // ring: behind the statue, turned only about the viewing axis
     placeRing(this.ring, d + this.statue.radius * 1.4);
     this.ring.spinner.rotation.z = s.spin;
@@ -449,8 +511,6 @@ export class Stage {
     // stone in daylight rather than a silhouette on a pale ground
     hemi.intensity = 0.06 * lit + 1.1 * day;
     this.scene.environmentIntensity = 0.16 * lit + 0.3 * day;
-    // the gold reflects at a fixed strength whatever the stage's environment level
-    if (this.morph) this.morph.uniforms.uEnvGold.value = GOLD_ENV / Math.max(0.02, this.scene.environmentIntensity);
     this.renderer.toneMappingExposure = 1 - 0.12 * day;
     const pool = this.floor.pool.material;
     pool.color.copy(key.color);
@@ -475,7 +535,8 @@ export class Stage {
     const t = this.turn;
     const r = (v) => Math.round(v * 1e4);
     return [s.stageLight, s.ringReveal, s.lightMix, s.keyLevel, s.ringLevel, s.frameX, s.frameY, s.spin, this.turntable.rotation.y, s.arc, s.dolly,
-      s.parX, s.parY, s.daylight, this.seqOverride ?? s.seq, t.hover, this.width, this.height, this.camera.fov, this.morph ? 1 : 0].map(r).join(',');
+      s.parX, s.parY, s.daylight, this.seqOverride ?? s.seq, t.hover, this.width, this.height, this.camera.fov, this.morph ? 1 : 0,
+      this._focusBlend ?? 1].map(r).join(',');
   }
 
   _tick() {
@@ -552,4 +613,6 @@ export class Stage {
 }
 
 Stage.prototype._tmpColor = new THREE.Color();
+Stage.prototype._tmpV = new THREE.Vector3();
+Stage.prototype._focus = new THREE.Vector3();
 Stage.prototype._white = new THREE.Color(1, 1, 1);

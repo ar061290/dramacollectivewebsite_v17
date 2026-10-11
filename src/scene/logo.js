@@ -23,6 +23,46 @@ function insidePolygon(x, y, poly) {
 }
 
 /**
+ * The caps are triangulated as fans of long slivers, and a sliver belongs to the part its centroid
+ * falls in: a sliver from the brush strokes can reach across the profile, so the gold edge that draws
+ * the face would change with the body. Split every cap triangle whose corners and centroid lie in
+ * different parts at the middle of its longest edge (winding kept), until each lies in one part or is
+ * under `minEdge` SVG units long. Only the caps (flat, all three corners at one depth): the walls and
+ * bevels follow the outline, and a split there would open cracks against their neighbours.
+ */
+function splitAcross(geo, regionAt, minEdge = 8) {
+  const src = geo.attributes.position.array;
+  const out = [];
+  const stack = [];
+  for (let t = src.length / 9 - 1; t >= 0; t--) stack.push(Array.from(src.subarray(t * 9, t * 9 + 9)));
+  while (stack.length) {
+    const v = stack.pop();
+    const d = (i, j) => Math.hypot(v[i * 3] - v[j * 3], v[i * 3 + 1] - v[j * 3 + 1]);
+    const edges = [d(0, 1), d(1, 2), d(2, 0)];
+    const longest = Math.max(...edges);
+    const cap = v[2] === v[5] && v[5] === v[8];
+    if (cap && longest >= minEdge) {
+      const r = [0, 1, 2].map((i) => regionAt(v[i * 3], v[i * 3 + 1]));
+      r.push(regionAt((v[0] + v[3] + v[6]) / 3, (v[1] + v[4] + v[7]) / 3));
+      if (!r.every((x) => x === r[0])) {
+        // corners a, b on the longest edge, c opposite, in the triangle's own order
+        const k = edges.indexOf(longest);
+        const a = v.slice(k * 3, k * 3 + 3), b = v.slice(((k + 1) % 3) * 3, ((k + 1) % 3) * 3 + 3), c = v.slice(((k + 2) % 3) * 3, ((k + 2) % 3) * 3 + 3);
+        const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, a[2]];
+        stack.push([...m, ...b, ...c], [...a, ...m, ...c]);
+        continue;
+      }
+    }
+    out.push(...v);
+  }
+  if (out.length === src.length) return geo;
+  const split = new THREE.BufferGeometry();
+  split.setAttribute('position', new THREE.Float32BufferAttribute(out, 3));
+  geo.dispose();
+  return split;
+}
+
+/**
  * @param {string} svgText
  * @param {object} o
  * @param {THREE.Vector3} o.center   where the logo's centre sits
@@ -60,14 +100,16 @@ export function buildLogoGeometry(svgText, { center, radius, regions = null, dep
   }
 
   // label the triangles while they are still in SVG units (the polygons are drawn in them)
+  const polys = (regions?.regions ?? []).map((r) => ({ id: PARTS.indexOf(r.name), poly: r.polygon })).filter((r) => r.id > 0);
+  const regionAt = (x, y) => { for (const r of polys) if (insidePolygon(x, y, r.poly)) return r.id; return 0; };
+  if (polys.length) geo = splitAcross(geo, regionAt);
   const pos = geo.attributes.position;
   const n = pos.count / 3;
   const part = new Uint8Array(n);
-  const polys = (regions?.regions ?? []).map((r) => ({ id: PARTS.indexOf(r.name), poly: r.polygon })).filter((r) => r.id > 0);
   for (let t = 0; t < n; t++) {
     const x = (pos.getX(t * 3) + pos.getX(t * 3 + 1) + pos.getX(t * 3 + 2)) / 3;
     const y = (pos.getY(t * 3) + pos.getY(t * 3 + 1) + pos.getY(t * 3 + 2)) / 3;
-    for (const r of polys) if (insidePolygon(x, y, r.poly)) { part[t] = r.id; break; }
+    part[t] = regionAt(x, y);
   }
 
   // SVG is y-down; the extrusion starts with the readable cap at z = 0, facing -z. Seen from -z,
