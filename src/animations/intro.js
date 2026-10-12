@@ -1,5 +1,5 @@
-// Curtain-up: darkness, the spotlight fades up, the ring appears, the name rises letter by letter,
-// then the tagline and the scroll cue. About 2.5 s; any input skips to the end.
+// Curtain-up: the spotlight fades up as the name rises letter by letter, the ring appears, then the
+// tagline and the scroll cue. About 1.6 s, the words from the first moment; any input skips to the end.
 import gsap from 'gsap';
 import { SplitText } from 'gsap/SplitText.js';
 
@@ -32,13 +32,13 @@ export function playIntro({ hero, light, scrollCue, reduced, onComplete }) {
     },
   });
   tl.set(title, { autoAlpha: 1 }, 0)
-    .add(light.tween({ stageLight: 1, duration: 1.0, ease: 'power2.out' }), 0)
-    .add(light.tween({ ringReveal: 1, duration: 0.7, ease: 'power1.out' }), 0.7)
-    .fromTo(eyebrow, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5 }, 0.9)
-    .from(split.chars, { yPercent: 115, duration: 0.7, stagger: 0.03 }, 1.0)
-    .fromTo(rule, { autoAlpha: 1, scaleX: 0 }, { scaleX: 1, duration: 0.5 }, 1.55)
-    .fromTo(tagline, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.6 }, 1.7)
-    .fromTo(cue, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4 }, 2.1);
+    .add(light.tween({ stageLight: 1, duration: 0.9, ease: 'power2.out' }), 0)
+    .add(light.tween({ ringReveal: 1, duration: 0.6, ease: 'power1.out' }), 0.45)
+    .fromTo(eyebrow, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.45 }, 0.15)
+    .from(split.chars, { yPercent: 115, duration: 0.6, stagger: 0.022 }, 0.25)
+    .fromTo(rule, { autoAlpha: 1, scaleX: 0 }, { scaleX: 1, duration: 0.45 }, 0.7)
+    .fromTo(tagline, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5 }, 0.8)
+    .fromTo(cue, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4 }, 1.2);
 
   const skip = () => tl.progress(1);
   const removeSkip = () => SKIP_EVENTS.forEach((e) => window.removeEventListener(e, skip));

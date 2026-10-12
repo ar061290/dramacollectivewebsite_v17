@@ -10,6 +10,9 @@
   position: absolute;
   top: 0; bottom: 0;
   width: 50.5%;
+  will-change: transform; /* its own layer: the move is composited, never repainted */
+  backface-visibility: hidden;
+  contain: layout paint;
   background:
     linear-gradient(to bottom, rgb(21 4 8 / .6), rgb(21 4 8 / 0) 22%, rgb(21 4 8 / 0) 68%, rgb(21 4 8 / .65)),
     repeating-linear-gradient(90deg, var(--plum-900) 0, var(--plum-800) 14px, var(--plum-700) 24px, var(--plum-800) 34px, var(--plum-900) 46px);
@@ -95,6 +98,27 @@
 .statement { font-family: var(--font-display); font-size: var(--size-display-m); line-height: 1.24; margin: 0; max-width: 26em; }
 
 /* ---- About us ---- */
+/* the stone ring: fixed, half off the right edge, over the sky and under the page; the copy keeps
+   to the left of it on wide screens */
+.about-ring {
+  --ring: min(86vh, 64vw);
+  position: fixed;
+  top: 50%;
+  right: 0;
+  width: var(--ring);
+  height: var(--ring);
+  transform: translate(46%, -50%);
+  z-index: 1;
+  pointer-events: none;
+}
+.about-ring[hidden] { display: none; }
+.about-ring canvas { display: block; width: 100%; height: 100%; }
+@media (min-width: 1024px) {
+  .page--about .page__main { padding-right: calc(var(--stage-gutter) + var(--ring-room, min(43vh, 32vw))); }
+}
+@media (max-width: 1023px) {
+  .about-ring { --ring: min(72vw, 60vh); top: 34%; transform: translate(50%, -50%); opacity: .55; }
+}
 .about-who { display: grid; gap: var(--space-6); }
 .skills { list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-5); }
 .skill {
@@ -140,7 +164,7 @@
 /* LEARN · CREATE · COLLABORATE · PERFORM · GROW: the light walks along the verbs as the page
    scrolls (the verbs stay put in a sticky frame); a verb can also be tapped */
 .verbs-act { position: relative; }
-.verbs-scroll { height: 260vh; }
+.verbs-scroll { height: 140vh; } /* the light walks the five verbs in under a screen and a half */
 .verbs-frame {
   position: sticky;
   top: 0;
@@ -302,9 +326,22 @@
 }
 
 /* ---- Behind the curtain: a film strip of the team at work (team.js) ----
-   Scrolling down runs the strip sideways (pinned); the frame in the middle of the screen is in
+   Scrolling down runs the strip sideways (a sticky frame); the frame in the middle of the screen is in
    colour, the rest are stone, like the headshots before the spot finds them. With reduced motion,
    or without JS, the strip simply scrolls sideways. */
+/* the scroll: the section is a screen plus the strip's run tall (team.js sets --reel-run); the
+   frame inside sticks to the top while the page scrolls through it */
+.reel.is-sticky { height: calc(100vh + var(--reel-run, 0px)); height: calc(100svh + var(--reel-run, 0px)); }
+.reel.is-sticky .reel__sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: var(--topbar-h);
+}
 .reel__window {
   position: relative;
   width: 100vw;
@@ -315,7 +352,8 @@
   outline-offset: -4px;
 }
 .reel__window::-webkit-scrollbar { display: none; }
-.reel.is-pinned .reel__window { overflow: hidden; }
+.reel.is-sticky .reel__window { overflow: hidden; }
+.reel__track { will-change: transform; }
 .reel { --reel-hole: var(--black); }
 [data-theme="light"] .reel { --reel-hole: var(--bg); }
 .reel__track {
@@ -323,7 +361,7 @@
   display: flex;
   gap: var(--space-4);
   width: max-content;
-  --reel-w: clamp(260px, 44vw, 600px);
+  --reel-w: clamp(240px, min(44vw, 62vh), 600px);
   padding: 28px max(var(--stage-gutter), calc(50vw - var(--reel-w) / 2));
   /* the film: a plum band with its sprocket holes, top and bottom */
   background:
@@ -806,7 +844,7 @@
   .act { margin-top: var(--space-9); }
   .values, .funds-list { grid-template-columns: minmax(0, 1fr); }
   .verbs { flex-direction: column; gap: 0; }
-  .verbs-scroll { height: 240vh; }
+  .verbs-scroll { height: 130vh; }
   .verb { font-size: clamp(30px, 10vw, 48px); text-align: left; }
   .team-filter { flex-wrap: nowrap; overflow-x: auto; margin-inline: calc(-1 * var(--stage-gutter)); padding: 0 var(--stage-gutter) var(--space-2); scrollbar-width: none; }
   .team-filter::-webkit-scrollbar { display: none; }
@@ -830,3 +868,25 @@
   .verb { color: var(--fg-strong); }
   .member__photo::after { opacity: 0; }
 }
+
+/* ---- Contact us ---- */
+.contact-cards { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); margin-top: var(--space-7); }
+.contact-card {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  padding: var(--space-7) var(--space-6) var(--space-6);
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-md);
+}
+.contact-card::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: var(--rule-thick); background: var(--rule-color); }
+.contact-card .eyebrow { margin: 0; }
+.contact-card__name { font-family: var(--font-display); font-size: var(--size-display-m); line-height: var(--lh-title); color: var(--fg-strong); margin: 0; }
+.contact-card__email { font-size: var(--size-body-l); overflow-wrap: anywhere; }
+.contact-card__copy { margin-top: var(--space-4); }
+.contact-card__spark { position: absolute; right: var(--space-4); top: var(--space-4); width: 48px; height: 48px; pointer-events: none; }
+.contact-more { margin-top: var(--space-9); }
+.contact-more__links { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
+@media (max-width: 767px) { .contact-cards { grid-template-columns: minmax(0, 1fr); } }

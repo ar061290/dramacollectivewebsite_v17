@@ -50,15 +50,22 @@
       <ul class="topbar__links">
         <li><a href="./about.html" aria-current="page">About us</a></li>
         <li><a href="./team.html">Core team</a></li>
-        <li><a href="./publication.html">The publication</a></li>
-        <li><a href="./production.html">The production</a></li>
-        <li><a href="./flash-plays.html">Flash plays</a></li>
-        <li><a href="./workshops.html">Workshops</a></li>
-        <li><a href="./outreach.html">Social outreach</a></li>
+        <li class="topbar__group" data-dropdown>
+          <button class="topbar__group-toggle" type="button" aria-expanded="false" aria-controls="outputs-menu">Our outputs<svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <ul class="topbar__dropdown" id="outputs-menu" data-dropdown-menu>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+          </ul>
+        </li>
+        <li><a href="./contact.html">Contact us</a></li>
       </ul>
       <span class="topbar__glint" aria-hidden="true"></span>
     </nav>
     <div class="topbar__tools">
+      <a class="icon-btn" href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="The Drama Collective on Instagram" title="Instagram"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg></a>
       <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Music" title="Play music" data-music-toggle>
         <svg viewBox="0 0 20 20" aria-hidden="true"><rect class="bar" x="2.5" y="8" width="2.2" height="9"/><rect class="bar" x="6.9" y="3" width="2.2" height="14"/><rect class="bar" x="11.3" y="6" width="2.2" height="11"/><rect class="bar" x="15.7" y="9" width="2.2" height="8"/></svg>
       </button>
@@ -74,12 +81,18 @@
         <li><a href="./index.html">Home</a></li>
         <li><a href="./about.html" aria-current="page">About us</a></li>
         <li><a href="./team.html">Core team</a></li>
-        <li><a href="./publication.html">The publication</a></li>
-        <li><a href="./production.html">The production</a></li>
-        <li><a href="./flash-plays.html">Flash plays</a></li>
-        <li><a href="./workshops.html">Workshops</a></li>
-        <li><a href="./outreach.html">Social outreach</a></li>
+        <li class="topbar__sheet-group"><span class="eyebrow">Our outputs</span>
+          <ul>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+          </ul>
+        </li>
+        <li><a href="./contact.html">Contact us</a></li>
         <li><a href="./sponsor.html">Become a sponsor</a></li>
+        <li><a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a></li>
       </ul>
     </div>
   </header>
@@ -95,6 +108,9 @@
     <svg class="cursor__star" viewBox="-12 -17 24 34" focusable="false"><path class="cursor__star-plain" d="M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z"/><path class="cursor__star-text" d="M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z"/></svg>
   </div>
   <!-- /site:stage -->
+
+  <!-- the stone ring, half off the right edge, turning as the page scrolls (src/scene/aboutRing.js) -->
+  <div class="about-ring" data-about-ring aria-hidden="true"></div>
 
   <main id="main" class="page__main">
     <header class="act-head ground" data-mask>
@@ -182,18 +198,49 @@
         <p class="eyebrow">Curtain call · Placeholder</p>
         <h2 id="contact-title" class="curtain__title">Placeholder heading</h2>
         <span class="rule" aria-hidden="true"></span>
-        <p>Placeholder text for the footer. Contacts and event details come later.</p>
+        <p>Placeholder text for the footer. Event details come later.</p>
       </div>
       <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>
+      <nav class="curtain__links" aria-label="All pages">
+        <div class="curtain__col">
+          <p class="eyebrow">The Collective</p>
+          <ul>
+            <li><a href="./index.html">Home</a></li>
+            <li><a href="./about.html" aria-current="page">About us</a></li>
+            <li><a href="./team.html">Core team</a></li>
+            <li><a href="./contact.html">Contact us</a></li>
+            <li><a href="./sponsor.html">Become a sponsor</a></li>
+          </ul>
+        </div>
+        <div class="curtain__col">
+          <p class="eyebrow">Our outputs</p>
+          <ul>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+            <li><a href="./stage-planner.html">Stage planner</a></li>
+          </ul>
+        </div>
+        <div class="curtain__col curtain__col--contact">
+          <p class="eyebrow">Write to us</p>
+          <ul>
+            <li><span class="curtain__who">Aadi Ramnani, President</span><a href="mailto:aadir6405@students.chirec.ac.in">aadir6405@students.chirec.ac.in</a></li>
+            <li><span class="curtain__who">Aripra Sharma, Executive President</span><a href="mailto:Aripras111460@students.chirec.ac.in">Aripras111460@students.chirec.ac.in</a></li>
+            <li><a class="curtain__social" href="https://www.instagram.com/" target="_blank" rel="noopener"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg><span>Instagram</span></a></li>
+          </ul>
+        </div>
+      </nav>
     </div>
     <div class="curtain__base">
       <div class="curtain__legal">
         <p class="legal">© 2026 The Drama Collective · CHIREC International School</p>
-        <p class="credits">Music: <a href="https://www.youtube.com/watch?v=HCV-2-IoIXs" rel="noopener">the smell of old books, reading, writing and studying (a dark academia playlist)</a>, by <a href="https://www.youtube.com/@DarkEnigmatic68" rel="noopener">Dark Enigmatic</a>, played from YouTube.</p>
+        <p class="credits">Music: “the smell of old books, reading, writing and studying (a dark academia playlist)”, <a href="https://www.youtube.com/@DarkEnigmatic68" rel="noopener">Dark Enigmatic</a>.</p>
       </div>
       <a class="endorsement" href="https://www.chirec.ac.in" rel="noopener">
         <img class="endorsement__logo" src="./assets/brand/chirec.webp" alt="CHIREC International School" width="475" height="140">
-        <span>Placeholder line</span>
+        <span>CHIREC International School: the No. 1 school in Hyderabad and Telangana</span>
       </a>
     </div>
   </footer>

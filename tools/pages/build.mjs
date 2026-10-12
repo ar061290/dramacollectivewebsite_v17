@@ -5,6 +5,7 @@
 //                         which has its own stage)
 //   <!-- site:footer -->  the curtain-call footer
 //   <!-- site:team -->    team.html only: the core team's cards, from content/team.json
+//   <!-- site:contacts --> contact.html only: who to write to (CONTACTS)
 // Run after editing this file or content/team.json:  npm run pages
 // Each file keeps its own line endings.
 
@@ -14,16 +15,30 @@ import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-export const NAV = [
-  { key: 'about', href: './about.html', label: 'About us' },
-  { key: 'team', href: './team.html', label: 'Core team' },
+// The pages. In the top bar: About us, Core team, Our outputs (a menu that drops on hover, focus or
+// click) and Contact us; Become a sponsor is the button. The footer lists every page, the outputs
+// under their own heading.
+export const OUTPUTS = [
   { key: 'publication', href: './publication.html', label: 'The publication' },
   { key: 'production', href: './production.html', label: 'The production' },
   { key: 'flash-plays', href: './flash-plays.html', label: 'Flash plays' },
   { key: 'workshops', href: './workshops.html', label: 'Workshops' },
   { key: 'outreach', href: './outreach.html', label: 'Social outreach' },
 ];
+const ABOUT = { key: 'about', href: './about.html', label: 'About us' };
+const TEAM = { key: 'team', href: './team.html', label: 'Core team' };
+const CONTACT = { key: 'contact', href: './contact.html', label: 'Contact us' };
+const HOME = { key: 'home', href: './index.html', label: 'Home' };
 const CTA = { key: 'sponsor', href: './sponsor.html', label: 'Become a sponsor' };
+export const NAV = [ABOUT, TEAM, ...OUTPUTS, CONTACT];
+
+// The Collective's Instagram. TODO: the handle (it was not given; this opens Instagram itself).
+export const INSTAGRAM = { href: 'https://www.instagram.com/', label: 'Instagram' };
+// Who to write to (Contact us and the footer)
+export const CONTACTS = [
+  { name: 'Aadi Ramnani', role: 'President', email: 'aadir6405@students.chirec.ac.in' },
+  { name: 'Aripra Sharma', role: 'Executive President', email: 'Aripras111460@students.chirec.ac.in' },
+];
 
 export const PAGES = [
   { file: 'index.html', key: 'home' },
@@ -36,6 +51,8 @@ export const PAGES = [
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const current = (key, page) => (key === page ? ' aria-current="page"' : '');
+const link = (n, page, cls = '') => `<a${cls ? ` class="${cls}"` : ''} href="${n.href}"${current(n.key, page)}>${n.label}</a>`;
+const ICON_INSTAGRAM = '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg>';
 
 const head = () => `<link rel="icon" href="./assets/brand/mark-gold.png">
   <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -61,7 +78,9 @@ const head = () => `<link rel="icon" href="./assets/brand/mark-gold.png">
     document.documentElement.classList.add('has-js');
   </script>`;
 
-const header = (page) => `<a class="skip-link" href="#main">Skip to content</a>
+const header = (page) => {
+  const inOutputs = OUTPUTS.some((o) => o.key === page);
+  return `<a class="skip-link" href="#main">Skip to content</a>
 
   <div class="veil" aria-hidden="true">
     <div class="veil__half veil__half--l"></div>
@@ -75,11 +94,20 @@ const header = (page) => `<a class="skip-link" href="#main">Skip to content</a>
     </a>
     <nav class="topbar__nav" aria-label="Main">
       <ul class="topbar__links">
-${NAV.map((n) => `        <li><a href="${n.href}"${current(n.key, page)}>${n.label}</a></li>`).join('\n')}
+        <li>${link(ABOUT, page)}</li>
+        <li>${link(TEAM, page)}</li>
+        <li class="topbar__group" data-dropdown>
+          <button class="topbar__group-toggle${inOutputs ? ' is-current' : ''}" type="button" aria-expanded="false" aria-controls="outputs-menu">Our outputs<svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <ul class="topbar__dropdown" id="outputs-menu" data-dropdown-menu>
+${OUTPUTS.map((o) => `            <li>${link(o, page)}</li>`).join('\n')}
+          </ul>
+        </li>
+        <li>${link(CONTACT, page)}</li>
       </ul>
       <span class="topbar__glint" aria-hidden="true"></span>
     </nav>
     <div class="topbar__tools">
+      <a class="icon-btn" href="${INSTAGRAM.href}" target="_blank" rel="noopener" aria-label="The Drama Collective on Instagram" title="Instagram">${ICON_INSTAGRAM}</a>
       <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Music" title="Play music" data-music-toggle>
         <svg viewBox="0 0 20 20" aria-hidden="true"><rect class="bar" x="2.5" y="8" width="2.2" height="9"/><rect class="bar" x="6.9" y="3" width="2.2" height="14"/><rect class="bar" x="11.3" y="6" width="2.2" height="11"/><rect class="bar" x="15.7" y="9" width="2.2" height="8"/></svg>
       </button>
@@ -92,11 +120,18 @@ ${NAV.map((n) => `        <li><a href="${n.href}"${current(n.key, page)}>${n.lab
     <a class="btn btn--inverse btn--sm topbar__cta" href="${CTA.href}"${current(CTA.key, page)}>${CTA.label}</a>
     <div class="topbar__sheet" id="menu-sheet" data-menu-sheet>
       <ul>
-        <li><a href="./index.html"${current('home', page)}>Home</a></li>
-${[...NAV, CTA].map((n) => `        <li><a href="${n.href}"${current(n.key, page)}>${n.label}</a></li>`).join('\n')}
+${[HOME, ABOUT, TEAM].map((n) => `        <li>${link(n, page)}</li>`).join('\n')}
+        <li class="topbar__sheet-group"><span class="eyebrow">Our outputs</span>
+          <ul>
+${OUTPUTS.map((o) => `            <li>${link(o, page)}</li>`).join('\n')}
+          </ul>
+        </li>
+${[CONTACT, CTA].map((n) => `        <li>${link(n, page)}</li>`).join('\n')}
+        <li><a href="${INSTAGRAM.href}" target="_blank" rel="noopener">Instagram</a></li>
       </ul>
     </div>
   </header>`;
+};
 
 const stage = () => `<div class="stage" aria-hidden="true">
     <canvas class="stage__stars"></canvas>
@@ -107,25 +142,48 @@ const stage = () => `<div class="stage" aria-hidden="true">
     <svg class="cursor__star" viewBox="-12 -17 24 34" focusable="false"><path class="cursor__star-plain" d="M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z"/><path class="cursor__star-text" d="M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z"/></svg>
   </div>`;
 
-// the home page docks the stage's vector logo into the empty slot; the other pages show the mark there
+// Every page shows the mark in the slot; on the home page the stage's own logo flies down into it and
+// hands over to it (Stage._placeVector), so the two are the same in the end.
 const footer = (page) => `<footer class="curtain" id="contact" aria-labelledby="contact-title">
     <div class="curtain__grid">
       <div class="curtain__intro">
         <p class="eyebrow">Curtain call · Placeholder</p>
         <h2 id="contact-title" class="curtain__title">Placeholder heading</h2>
         <span class="rule" aria-hidden="true"></span>
-        <p>Placeholder text for the footer. Contacts and event details come later.</p>
+        <p>Placeholder text for the footer. Event details come later.</p>
       </div>
-      <div class="curtain__mark" aria-hidden="true">${page === 'home' ? '' : '<span class="curtain__emblem" data-tilt></span>'}</div>
+      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>
+      <nav class="curtain__links" aria-label="All pages">
+        <div class="curtain__col">
+          <p class="eyebrow">The Collective</p>
+          <ul>
+${[HOME, ABOUT, TEAM, CONTACT, CTA].map((n) => `            <li>${link(n, page)}</li>`).join('\n')}
+          </ul>
+        </div>
+        <div class="curtain__col">
+          <p class="eyebrow">Our outputs</p>
+          <ul>
+${OUTPUTS.map((o) => `            <li>${link(o, page)}</li>`).join('\n')}
+            <li><a href="./stage-planner.html">Stage planner</a></li>
+          </ul>
+        </div>
+        <div class="curtain__col curtain__col--contact">
+          <p class="eyebrow">Write to us</p>
+          <ul>
+${CONTACTS.map((c) => `            <li><span class="curtain__who">${esc(c.name)}, ${esc(c.role)}</span><a href="mailto:${c.email}">${c.email}</a></li>`).join('\n')}
+            <li><a class="curtain__social" href="${INSTAGRAM.href}" target="_blank" rel="noopener">${ICON_INSTAGRAM}<span>Instagram</span></a></li>
+          </ul>
+        </div>
+      </nav>
     </div>
     <div class="curtain__base">
       <div class="curtain__legal">
         <p class="legal">© 2026 The Drama Collective · CHIREC International School</p>
-        <p class="credits">Music: <a href="https://www.youtube.com/watch?v=HCV-2-IoIXs" rel="noopener">the smell of old books, reading, writing and studying (a dark academia playlist)</a>, by <a href="https://www.youtube.com/@DarkEnigmatic68" rel="noopener">Dark Enigmatic</a>, played from YouTube.</p>
+        <p class="credits">Music: “the smell of old books, reading, writing and studying (a dark academia playlist)”, <a href="https://www.youtube.com/@DarkEnigmatic68" rel="noopener">Dark Enigmatic</a>.</p>
       </div>
       <a class="endorsement" href="https://www.chirec.ac.in" rel="noopener">
         <img class="endorsement__logo" src="./assets/brand/chirec.webp" alt="CHIREC International School" width="475" height="140">
-        <span>Placeholder line</span>
+        <span>CHIREC International School: the No. 1 school in Hyderabad and Telangana</span>
       </a>
     </div>
   </footer>`;
@@ -184,6 +242,18 @@ ${cards}
       </ul>`;
 }
 
+function contacts() {
+  return `<ul class="contact-cards" data-spot>
+${CONTACTS.map((c) => `        <li class="contact-card">
+          <p class="eyebrow">${esc(c.role)}</p>
+          <p class="contact-card__name">${esc(c.name)}</p>
+          <a class="contact-card__email" href="mailto:${c.email}">${c.email}</a>
+          <button class="btn btn--secondary btn--sm contact-card__copy" type="button" data-copy="${c.email}">Copy address</button>
+          <span class="contact-card__spark" data-spark aria-hidden="true"></span>
+        </li>`).join('\n')}
+      </ul>`;
+}
+
 function fill(src, name, html, indent = '  ') {
   const re = new RegExp(`<!-- site:${name} -->[\\s\\S]*?<!-- /site:${name} -->`);
   if (!re.test(src)) return src;
@@ -202,6 +272,8 @@ export function build() {
     if (key !== 'home') out = fill(out, 'stage', stage());
     out = fill(out, 'footer', footer(key));
     if (key === 'team') out = fill(out, 'team', team(), '      ');
+    if (key === 'contact') out = fill(out, 'contacts', contacts(), '      ');
+    out = out.replace(/(<a [^>]*data-instagram[^>]*href=")[^"]*(")/g, `$1${INSTAGRAM.href}$2`);
     if (crlf) out = out.replace(/\n/g, '\r\n');
     if (out !== src) { writeFileSync(path, out); console.log(`wrote ${file}`); }
     else console.log(`unchanged ${file}`);

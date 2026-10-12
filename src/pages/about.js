@@ -1,12 +1,45 @@
 // About us: the statement lights up under the follow-spot; the skills and the values light as the
 // spot passes over them; the five verbs are lit one after another as the page scrolls (or tapped).
+// The home page's stone ring stands half off the right edge and turns about its centre with the scroll.
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
 import { bootPage } from '../site/boot.js';
 import { followSpot, falloff, litCopy } from '../site/spotlight.js';
+import { probeWebGL, prefersStatic } from '../util/env.js';
+import { currentTheme } from '../ui/theme.js';
 
-bootPage(({ reduced }) => {
+const RING = {
+  albedo: new URL('../../assets/textures/ring-albedo.webp', import.meta.url).href,
+  normal: new URL('../../assets/textures/ring-normal.webp', import.meta.url).href,
+};
+const RING_TURNS = 1.5; // over the whole page
+
+bootPage(({ reduced, onTheme, opened }) => {
   const cleanups = [];
+
+  // the ring (three.js, loaded once the page curtain has parted, and only where WebGL runs well)
+  const ringHost = document.querySelector('[data-about-ring]');
+  const gl = probeWebGL();
+  if (ringHost && gl.ok && !prefersStatic(gl.renderer)) {
+    let ring = null, st = null, gone = false;
+    opened.then(() => import('../scene/aboutRing.js')).then(async ({ AboutRing }) => {
+      if (gone) return;
+      ring = new AboutRing(ringHost, { theme: currentTheme() });
+      await ring.load(RING);
+      if (gone) { ring.dispose(); return; }
+      const turn = { a: 0 };
+      const spinTo = gsap.quickTo(turn, 'a', { duration: reduced ? 0 : 1.1, ease: 'power3.out', onUpdate: () => ring.setSpin(turn.a) });
+      st = ScrollTrigger.create({
+        start: 0,
+        end: 'max',
+        onUpdate: (self) => { if (!reduced) spinTo(-self.progress * Math.PI * 2 * RING_TURNS); },
+      });
+    }).catch((err) => console.warn('Ring unavailable.', err));
+    onTheme((theme) => ring?.setTheme(theme));
+    cleanups.push(() => { gone = true; st?.kill(); ring?.dispose(); });
+  } else if (ringHost) {
+    ringHost.hidden = true;
+  }
 
   // the statement: a warm copy of the text shows inside the spot
   for (const block of document.querySelectorAll('.spot-text')) {

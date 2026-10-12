@@ -4,6 +4,7 @@
 // from the card into it.
 import gsap from 'gsap';
 import { Flip } from 'gsap/Flip.js';
+import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
 import { bootPage } from '../site/boot.js';
 import { followSpot } from '../site/spotlight.js';
 import { tilt } from '../site/tilt.js';
@@ -45,27 +46,37 @@ bootPage(({ reduced }) => {
     cleanups.push(tilt(m.querySelector('.member__card'), { target: m.querySelector('.member__photo'), max: 7, reduced }));
   }
 
-  // department filter
+  // department filter: the cards move to their new places (Flip). The grid keeps its height while
+  // they move, then eases to the new one, so what is below it never slides up over the cards; the
+  // scroll positions below are measured again once it has settled.
   const buttons = [...document.querySelectorAll('.team-filter__btn')];
+  let flip = null;
   const onFilter = (e) => {
     const key = e.currentTarget.dataset.filter;
     buttons.forEach((b) => b.setAttribute('aria-pressed', String(b === e.currentTarget)));
+    flip?.progress(1);
+    const from = grid.offsetHeight;
     const state = Flip.getState(members);
     members.forEach((m) => { m.hidden = key !== 'all' && m.dataset.dept !== key; });
+    const to = grid.offsetHeight;
     measure();
-    if (reduced) return;
-    Flip.from(state, {
+    if (reduced) { ScrollTrigger.refresh(); return; }
+    gsap.set(grid, { height: from });
+    flip = gsap.timeline({
+      onComplete: () => { gsap.set(grid, { clearProps: 'height' }); measure(); ScrollTrigger.refresh(); },
+    });
+    flip.to(grid, { height: to, duration: 0.55, ease: 'curtain' }, 0);
+    flip.add(Flip.from(state, {
       duration: 0.55,
       ease: 'curtain',
       absolute: true,
       stagger: 0.02,
       onEnter: (els) => gsap.fromTo(els, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: 'curtain', delay: 0.1 }),
       onLeave: (els) => gsap.to(els, { autoAlpha: 0, duration: 0.2, ease: 'power1.in' }),
-      onComplete: measure,
-    });
+    }), 0);
   };
   buttons.forEach((b) => b.addEventListener('click', onFilter));
-  cleanups.push(() => buttons.forEach((b) => b.removeEventListener('click', onFilter)));
+  cleanups.push(() => { flip?.kill(); buttons.forEach((b) => b.removeEventListener('click', onFilter)); });
 
   // the spotlight panel
   const dialog = document.getElementById('spotlight');
@@ -141,9 +152,13 @@ bootPage(({ reduced }) => {
 });
 
 /**
- * Behind the curtain: scrolling down runs the film strip sideways (the section is pinned while it
- * runs); the frame nearest the middle of the screen comes into colour and the photos drift a little
- * inside their frames. Reduced motion: the strip scrolls sideways by itself, all in colour.
+ * Behind the curtain: a horizontal scroll in the manner of landonorris.com. The section is as tall
+ * as the strip's sideways run (plus a screen); inside it, a frame the height of the screen sticks
+ * to the top while the page scrolls through the section, and the strip slides with the scroll (a
+ * little faster than it: SPEED). Nothing is pinned or moved in the page's flow, so it cannot jump: the strip
+ * arrives with its first frame in view, and leaves with its last. The frame nearest the middle of
+ * the screen comes into colour and the photos drift a little inside their frames. Reduced motion:
+ * the strip scrolls sideways by itself, all in colour.
  */
 function setupReel({ reduced }) {
   const reel = document.querySelector('.reel');
@@ -151,31 +166,39 @@ function setupReel({ reduced }) {
   if (!track || reduced) return () => {};
   const win = reel.querySelector('.reel__window');
   const frames = [...track.children];
+  const SPEED = 1.5; // sideways pixels per pixel scrolled
+  let run = 0;
   const light = () => {
     const mid = innerWidth / 2;
     for (const f of frames) {
       const r = f.getBoundingClientRect();
       const d = (r.left + r.width / 2 - mid) / (r.width * 0.9 + 1);
       f.style.setProperty('--lit', Math.max(0, 1 - Math.abs(d)).toFixed(3));
-      f.style.setProperty('--shift', Math.max(-1, Math.min(1, d)) * -4);
+      f.style.setProperty('--shift', (Math.max(-1, Math.min(1, d)) * -4).toFixed(2));
     }
   };
-  reel.classList.add('is-pinned');
-  const run = () => Math.max(0, track.scrollWidth - win.clientWidth);
-  const tween = gsap.to(track, {
-    x: () => -run(),
-    ease: 'none',
-    scrollTrigger: {
-      trigger: win,
-      start: 'center center',
-      end: () => `+=${run()}`,
-      pin: true,
-      scrub: 0.8,
-      invalidateOnRefresh: true,
-      onRefresh: light,
-    },
-    onUpdate: light,
+  // the section's height: one screen for the sticky frame, plus the run
+  const size = () => {
+    run = Math.max(0, track.scrollWidth - win.clientWidth);
+    reel.style.setProperty('--reel-run', `${run / SPEED}px`);
+  };
+  reel.classList.add('is-sticky');
+  size();
+  const x = gsap.quickTo(track, 'x', { duration: 0.5, ease: 'power3.out', onUpdate: light });
+  const st = ScrollTrigger.create({
+    trigger: reel,
+    start: 'top top',
+    end: () => `+=${run / SPEED}`,
+    invalidateOnRefresh: true,
+    onRefreshInit: size,
+    onUpdate: (self) => x(-run * self.progress),
+    onRefresh: (self) => { gsap.set(track, { x: -run * self.progress }); light(); },
   });
   light();
-  return () => { tween.scrollTrigger?.kill(); tween.kill(); reel.classList.remove('is-pinned'); gsap.set(track, { clearProps: 'transform' }); };
+  return () => {
+    st.kill();
+    reel.classList.remove('is-sticky');
+    reel.style.removeProperty('--reel-run');
+    gsap.set(track, { clearProps: 'transform' });
+  };
 }

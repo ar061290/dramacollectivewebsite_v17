@@ -17,7 +17,7 @@ const STILL = {
   gold: ['#f3e7b8', '#a98f38'],
 };
 
-bootPage(({ reduced }) => {
+bootPage(({ reduced, opened }) => {
   const cleanups = [];
   const host = document.querySelector('[data-medallion]');
   const tickets = [...document.querySelectorAll('.ticket')];
@@ -34,7 +34,7 @@ bootPage(({ reduced }) => {
 
   const gl = probeWebGL();
   if (host && gl.ok && !prefersStatic(gl.renderer)) {
-    import('../scene/medallion.js').then(async ({ Medallion }) => {
+    opened.then(() => import('../scene/medallion.js')).then(async ({ Medallion }) => {
       const m = new Medallion(host, { reduced });
       if (new URLSearchParams(location.search).has('debug')) window.__stage = m;
       await m.load(MARK_SVG);

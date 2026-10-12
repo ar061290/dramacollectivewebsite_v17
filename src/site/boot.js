@@ -21,7 +21,7 @@ gsap.registerPlugin(ScrollTrigger, SplitText, ScrollToPlugin, CustomEase);
 CustomEase.create('curtain', '.22,.61,.36,1'); // --ease-curtain from the design system
 
 /**
- * @param {(ctx: { reduced: boolean, sky: ConstellationField|null, onTheme: (fn) => void }) => (void|(() => void))} [setup]
+ * @param {(ctx: { reduced: boolean, sky: ConstellationField|null, onTheme: (fn) => void, opened: Promise<void> }) => (void|(() => void))} [setup]
  */
 export async function bootPage(setup) {
   const reduced = reducedMotion();
@@ -49,10 +49,13 @@ export async function bootPage(setup) {
   cleanups.push(setupCursor({ reduced }));
   for (const el of document.querySelectorAll('[data-tilt]')) cleanups.push(tilt(el, { reduced, max: 10 }));
 
-  // the type has to be in before lines are split (never wait on it for long)
-  await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1200))]);
+  // the type has to be in before lines are split (never wait on it for long: the curtain is closed)
+  await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 450))]);
   cleanups.push(setupReveals({ reduced }));
-  const ctx = { reduced, sky, onTheme: (fn) => themeListeners.push(fn) };
+  // pages hold their heavy work (three.js) until the curtain has parted, so it parts smoothly
+  let parted;
+  const opened = new Promise((r) => { parted = r; });
+  const ctx = { reduced, sky, onTheme: (fn) => themeListeners.push(fn), opened };
   try {
     const own = setup?.(ctx);
     if (typeof own === 'function') cleanups.push(own);
@@ -61,7 +64,10 @@ export async function bootPage(setup) {
   }
   setupBrandMark({ reduced }).then((c) => cleanups.push(c));
 
+  // one frame for the page to settle, then the curtain parts
+  await new Promise((r) => requestAnimationFrame(r));
   await transitions.open();
+  parted();
   ScrollTrigger.refresh();
   window.addEventListener('pagehide', (e) => { if (!e.persisted) cleanups.forEach((c) => c?.()); });
   return ctx;

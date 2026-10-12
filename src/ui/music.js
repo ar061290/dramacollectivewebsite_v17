@@ -1,9 +1,10 @@
 // Music, off by default and only ever started by the visitor: "the smell of old books, reading,
-// writing and studying (a dark academia playlist)" by Dark Enigmatic, played from YouTube through
-// YouTube's own embedded player (credited in the footer). The video is not copied or hosted here:
-// it streams from YouTube, and YouTube's terms want its player in view (at least 200 x 200 px), so
-// while the music plays a small "now playing" card shows the player in the corner of the screen;
-// closing the card, or the music button, stops it.
+// writing and studying (a dark academia playlist)" by Dark Enigmatic (credited in the footer).
+// It plays from the site's own MP3 (public/music/the-smell-of-old-books.mp3) in a plain audio
+// element. Until that file is in place, it plays from YouTube instead, through YouTube's own
+// embedded player: YouTube's terms want its player in view (at least 200 x 200 px), so then a small
+// "now playing" card shows the player in the corner while it plays; closing the card, or the music
+// button, stops it.
 //
 // The music carries on from page to page: where it got to is remembered for this visit
 // (sessionStorage) and the next page picks it up there, if the browser lets it play (a click on a
@@ -16,7 +17,19 @@ export const TRACK = {
   by: 'Dark Enigmatic',
   url: 'https://www.youtube.com/watch?v=HCV-2-IoIXs',
 };
-const VOLUME = 60; // of YouTube's 100
+const VOLUME = 60; // of YouTube's 100 (the MP3 plays at the same share of full volume)
+// the site's own recording: under Vite, public/ is the site's root; run without a build, it is the folder
+const FILE = import.meta.env
+  ? new URL('music/the-smell-of-old-books.mp3', document.baseURI).href
+  : new URL('../../public/music/the-smell-of-old-books.mp3', import.meta.url).href;
+let fileOk = null;
+/** Whether the MP3 is there (asked once per page). */
+function hasFile() {
+  fileOk ??= fetch(FILE, { method: 'HEAD' })
+    .then((r) => r.ok && /audio|mpeg|octet/.test(r.headers.get('content-type') || 'audio/mpeg'))
+    .catch(() => false);
+  return fileOk;
+}
 const KEY = 'dc-music'; // { on, t }: whether the visitor wants it, and where it had got to (seconds)
 
 let apiReady = null;
@@ -43,7 +56,8 @@ export function setupMusic({ reduced }) {
   if (!button) return () => {};
 
   let wanted = false; // the visitor's choice; the player may be briefly paused while the tab is hidden
-  let player = null; // YT.Player once built
+  let player = null; // YT.Player once built, or the audio element's adapter (same few methods)
+  let audio = null;
   let card = null;
   let fade = null;
   const level = { v: 0 }; // the volume being faded (0..VOLUME)
@@ -96,8 +110,34 @@ export function setupMusic({ reduced }) {
     else setUi('paused');
   };
 
+  // the MP3: an audio element behind the same few methods the YouTube player has
+  const startFile = (at) => {
+    audio = new Audio(FILE);
+    audio.loop = true;
+    audio.preload = 'auto';
+    audio.volume = 0;
+    audio.addEventListener('playing', () => { setUi('playing'); fadeTo(VOLUME, 1.6); });
+    audio.addEventListener('waiting', () => setUi('loading'));
+    audio.addEventListener('pause', () => setUi('paused'));
+    audio.addEventListener('loadedmetadata', () => { if (at > 0 && at < audio.duration) audio.currentTime = at; }, { once: true });
+    player = {
+      setVolume: (v) => { audio.volume = Math.max(0, Math.min(1, v / 100)); },
+      playVideo: () => audio.play().catch(() => setUi('paused')),
+      pauseVideo: () => audio.pause(),
+      getCurrentTime: () => audio.currentTime,
+      destroy: () => { audio.pause(); audio.removeAttribute('src'); audio.load(); audio = null; },
+    };
+    player.playVideo();
+  };
+
   const start = async (at = 0) => {
     setUi('loading');
+    if (await hasFile()) {
+      if (!wanted) return;
+      if (!player) startFile(at); else player.playVideo();
+      return;
+    }
+    if (!wanted) return;
     if (!card) buildCard();
     try {
       const YT = await loadApi();

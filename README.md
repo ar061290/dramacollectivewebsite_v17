@@ -1,4 +1,4 @@
-# The Drama Collective · website (v4)
+# The Drama Collective · website (v5)
 
 The home page for the CHIREC Drama Collective: one page, a dark theatre before curtain-up. A marble statue stands in a fixed three.js scene inside the Penrose ring while the page scrolls past it. The statue performs:
 
@@ -10,6 +10,18 @@ The home page for the CHIREC Drama Collective: one page, a dark theatre before c
 6. meanwhile one more star shows in the sky behind the stage, comes forward through the ring and settles beside the mask as the logo's own star.
 
 The home page's copy is placeholder for now: a hero, five acts and the footer.
+
+## What changed in v5
+
+- **Header:** About us, Core team, **Our outputs** (a menu that drops on hover, focus or click: the publication, the production, flash plays, workshops, social outreach) and **Contact us**; an Instagram button beside music and the theme. On phones the Menu lists the outputs under their own heading.
+- **Footer:** every page, in three columns (the Collective, Our outputs, Write to us: both leads' emails and Instagram); CHIREC as the No. 1 school in Hyderabad and Telangana beside its logo. The home page's logo now flies into the footer and hands over to the same crisp mark as every other page.
+- **Contact us** (`contact.html`): a card each for Aadi Ramnani (President) and Aripra Sharma (Executive President), with copy-to-clipboard; Instagram and sponsorship.
+- **Instagram:** one constant, `INSTAGRAM` in `tools/pages/build.mjs` (then `npm run pages`). **It still points at instagram.com itself: put the Collective's handle there.**
+- **Core team:** the film strip is a sticky horizontal scroll in the manner of landonorris.com (a tall section, a sticky screen-high frame, the strip moved by scroll progress; nothing pinned), so it arrives with its first frame and leaves with its last; the department filter holds the grid's height while the cards move, so nothing below slides over them.
+- **Curtain between pages:** closes in 0.36 s, opens in 0.5 s on its own GPU layer; pages wait at most 0.45 s for the type, and the coming-soon, sponsor and About pages load three.js only after it has parted.
+- **Home:** no scrolling while the loader is up (and the page always starts at the top); the intro starts with the words at once (1.6 s) instead of waiting for the Lotties.
+- **About us:** the home page's stone ring stands half off the right edge and turns about its centre with the scroll (`src/scene/aboutRing.js`); the copy keeps to its left. The five verbs light in 1.4 screens instead of 2.6.
+- **Music:** plays the site's own MP3, `public/music/the-smell-of-old-books.mp3` (see `public/music/README.txt`); until that file is there, it plays the piece from YouTube in the "now playing" card.
 
 ## What changed in v4
 

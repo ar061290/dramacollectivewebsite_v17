@@ -35,6 +35,7 @@ const LOGO_DRIFT = 0.08; // radians: the slow idle sway while the logo holds
 const CLOSE_UP = { height: 0.45, width: 0.7 };
 const CLOSE_UP_SIZE = { width: 0.42, height: 0.4 }; // statue units, about her head, hand and mask, until the morph is built
 const UP = new THREE.Vector3(0, 1, 0);
+const smoothstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 export class Stage {
   /**
@@ -337,6 +338,7 @@ export class Stage {
     this.logoFlat = logo.flat;
     this.vector = new VectorLogo(svgText, { after: this.container, outline: logo.flat.outline });
     this.vector.setBehind(this.logoInFront === false);
+    this._setEmblem(0); // from now on the stage's logo brings the footer's mark in
     this._applyPose(arm, head);
     // arriving in the middle of the close-up, its framing eases over from the stand-in's
     this._focusBlend = this.tracks.zoom > 0 ? 0 : 1;
@@ -614,6 +616,8 @@ export class Stage {
     this.occluder = el;
     this.logoInFront = logoInFront;
     this.dockSlot = el?.querySelector('.curtain__mark') ?? null;
+    this.emblem = el?.querySelector('.curtain__emblem') ?? null;
+    if (this.vector) this._setEmblem(0);
     this.vector?.setBehind(!logoInFront);
     this._lastSig = '';
   }
@@ -640,8 +644,11 @@ export class Stage {
     if (v > 0) this._sampleVectorColors();
     this._drawStage();
     if (this.vector) {
-      if (v > 0) this._placeVector(v);
-      this.vector.setOpacity(v);
+      // docked in the footer, the vector hands over to the footer's own mark (the same as every
+      // other page's), so what is left there is crisp and of one weight
+      const hand = v > 0 ? this._placeVector(v) : 0;
+      this.vector.setOpacity(v * (1 - hand));
+      this._setEmblem(hand);
     }
   }
 
@@ -676,6 +683,16 @@ export class Stage {
       for (let i = 0; i < 6; i++) m[i] += (to[i] - m[i]) * k;
     }
     this.vector.setTransform(...m);
+    return k > 0 ? smoothstep(0.62, 0.97, k) : 0;
+  }
+
+  /** The footer's own mark: shown as the stage's logo settles into its slot. */
+  _setEmblem(o) {
+    if (!this.emblem) return;
+    const v = Math.round(o * 1000) / 1000;
+    if (v === this._emblemO) return;
+    this._emblemO = v;
+    this.emblem.style.opacity = String(v);
   }
 
   /**

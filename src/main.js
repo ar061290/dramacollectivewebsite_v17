@@ -18,6 +18,7 @@ import { setupCounters } from './sections/counters.js';
 import { setupScenes } from './sections/scenes.js';
 import { setupTheme, skyTheme, currentTheme } from './ui/theme.js';
 import { setupMusic } from './ui/music.js';
+import { tilt } from './site/tilt.js';
 
 gsap.registerPlugin(ScrollTrigger, SplitText, ScrollToPlugin, CustomEase);
 CustomEase.create('curtain', '.22,.61,.36,1'); // --ease-curtain from the design system
@@ -114,12 +115,16 @@ async function boot() {
   await gsap.to(loader, { autoAlpha: 0, duration: reduced ? 0 : 0.45, ease: 'curtain' });
   loader.classList.add('is-done');
   window.dcLoader?.stop();
+  // the page scrolls again (index.html held it at the top while the loader was up)
+  document.documentElement.classList.remove('is-loading');
+  window.scrollTo(0, 0);
   mark('curtain up');
   if (new URLSearchParams(location.search).has('debug')) console.info('start:', marks.map(([n, t]) => `${n} ${t} ms`).join(' · '));
 
   if (stage) {
     stage.renderOnce();
     stage.setOccluder(document.querySelector('.curtain'));
+    document.querySelector('.curtain')?.classList.add('has-stage-logo');
     stage.start();
     cleanups.push(setupScenes({ stage }));
     cleanups.push(app.setupStatueInteraction({ stage, sky }));
@@ -136,7 +141,8 @@ async function boot() {
   cleanups.push(setupCursor({ reduced }));
   cleanups.push(setupReveals({ reduced }));
   cleanups.push(setupCounters({ reduced }));
-  await setupLotties();
+  // the Lotties load alongside the intro, never ahead of it (the hero's words must not wait on them)
+  const lotties = setupLotties();
 
   // what the intro animates: the live lights, or the still picture's opacity
   const light = stage
@@ -152,10 +158,12 @@ async function boot() {
   playIntro({
     hero: document.querySelector('.hero'),
     light,
-    scrollCue: app.scrollCue,
+    scrollCue: { play: () => lotties.then(() => app.scrollCue?.play()) },
     reduced,
     onComplete: () => ScrollTrigger.refresh(),
   });
+  // the footer's mark leans toward the pointer, as on the other pages
+  for (const el of document.querySelectorAll('[data-tilt]')) cleanups.push(tilt(el, { reduced, max: 10 }));
 
   watchVisibility();
   if (stage) prepareMorph();

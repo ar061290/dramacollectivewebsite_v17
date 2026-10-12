@@ -8,7 +8,7 @@ import { currentTheme } from '../ui/theme.js';
 
 const MARK = new URL('../../assets/brand/mark-gold.png', import.meta.url).href;
 
-bootPage(({ reduced, onTheme }) => {
+bootPage(({ reduced, onTheme, opened }) => {
   const host = document.querySelector('[data-curtain]');
   if (!host) return undefined;
   const hint = document.querySelector('[data-curtain-hint]');
@@ -21,7 +21,8 @@ bootPage(({ reduced, onTheme }) => {
   onTheme((theme) => stage?.setTheme(theme));
   const gl = probeWebGL();
   if (gl.ok && !prefersStatic(gl.renderer)) {
-    import('../scene/curtain/CurtainStage.js')
+    // after the page curtain has parted: three.js loading would make it stutter
+    opened.then(() => import('../scene/curtain/CurtainStage.js'))
       .then(async ({ CurtainStage }) => {
         if (gone) return;
         stage = new CurtainStage(host, { variant: host.dataset.curtain, markUrl: MARK, reduced, theme: currentTheme() });

@@ -48,7 +48,9 @@
     radial-gradient(ellipse 50% 40% at 12% 18%, #fff, rgb(255 255 255 / 0) 70%),
     linear-gradient(160deg, #f3e7e9, #ddb8cf 50%, #f3e7e9);
 }
-.has-js .loader { display: grid; }
+.has-js .loader { display: grid; touch-action: none; overscroll-behavior: contain; }
+/* the page holds still under the loader (index.html sets it; main.js clears it) */
+html.has-js.is-loading, html.has-js.is-loading body { overflow: hidden; height: 100%; }
 .loader.is-done { display: none; }
 .loader__satin { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .6s var(--ease-curtain); }
 .loader.has-satin .loader__satin { opacity: 1; }
@@ -250,6 +252,25 @@ main { position: relative; z-index: var(--z-content); }
   margin: 0 auto;
 }
 .curtain__intro { grid-column: 1 / span 6; }
+/* every page, in three columns: the Collective, its outputs, and who to write to */
+.curtain__links {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+}
+.curtain__col ul { list-style: none; display: grid; gap: var(--space-2); margin-top: var(--space-3); }
+.curtain__col a { font-family: var(--font-display); font-size: 20px; line-height: 1.25; color: var(--fg-strong); text-decoration: none; }
+.curtain__col a:hover, .curtain__col a:focus-visible { color: var(--accent); }
+.curtain__col a[aria-current="page"] { color: var(--accent); }
+.curtain__col--contact li { display: grid; gap: 2px; }
+.curtain__col--contact li + li { margin-top: var(--space-2); }
+.curtain__who { font-size: var(--size-caption); color: var(--fg-muted); }
+.curtain__col--contact a { font-family: var(--font-body); font-size: var(--size-body-s); overflow-wrap: anywhere; color: var(--fg); }
+.curtain__col--contact a.curtain__social { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-display); font-size: 20px; color: var(--fg-strong); }
+.curtain__social svg { width: 20px; height: 20px; flex: none; }
 .curtain__mark { grid-column: 8 / span 5; justify-self: center; width: min(100%, 46svh); aspect-ratio: 1; }
 .curtain__title { font-size: var(--size-display-m); margin-top: var(--space-3); }
 .curtain__contacts { grid-column: 1 / span 7; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
@@ -279,7 +300,7 @@ main { position: relative; z-index: var(--z-content); }
 .endorsement { display: flex; align-items: center; gap: var(--space-4); color: var(--fg); text-decoration: none; }
 .endorsement:hover { color: var(--fg-strong); text-decoration: none; }
 .endorsement__logo { background: var(--white); padding: 6px 10px; width: 132px; height: auto; box-shadow: inset 0 0 0 1px var(--line); }
-.endorsement span { font-size: var(--size-caption); line-height: 1.4; max-width: 15em; }
+.endorsement span { font-size: var(--size-caption); line-height: 1.4; max-width: 18em; }
 
 /* ---- Text grounds: a feathered panel of the page colour behind the hero copy (every width) and
    each scene's text column (tablet and up; phones use the scrim further down), so copy stays
@@ -343,6 +364,7 @@ main { position: relative; z-index: var(--z-content); }
   }
   .stats, .people, .curtain__contacts { grid-template-columns: minmax(0, 1fr); }
   .curtain__intro, .curtain__contacts, .curtain__event { grid-column: 1 / -1; }
+  .curtain__links { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
   .curtain { padding-top: var(--space-8); }
   .curtain__grid { align-content: center; }
   .curtain__mark { grid-column: 1 / -1; grid-row: 1; justify-self: start; width: min(56vw, 30svh); }

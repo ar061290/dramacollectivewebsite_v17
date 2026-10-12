@@ -30,8 +30,9 @@ export function setupTransitions({ reduced }) {
     }
     gsap.to(halves, {
       xPercent: away,
-      duration: 0.7,
-      ease: 'curtain',
+      duration: 0.5,
+      ease: 'power3.out',
+      force3D: true,
       onComplete: () => { gsap.set('.veil', { pointerEvents: 'none' }); resolve(); },
     });
   });
@@ -58,8 +59,9 @@ export function setupTransitions({ reduced }) {
     gsap.set('.veil', { pointerEvents: 'auto' });
     gsap.to(halves, {
       xPercent: 0,
-      duration: 0.5,
-      ease: 'power2.in',
+      duration: 0.36,
+      ease: 'power2.inOut',
+      force3D: true,
       overwrite: true,
       onComplete: () => { location.href = url.href; },
     });
@@ -70,7 +72,7 @@ export function setupTransitions({ reduced }) {
     if (!e.persisted) return;
     leaving = false;
     try { sessionStorage.removeItem(FLAG); } catch { /* ignore */ }
-    gsap.to(halves, { xPercent: away, duration: reduced ? 0 : 0.6, ease: 'curtain', overwrite: true });
+    gsap.to(halves, { xPercent: away, duration: reduced ? 0 : 0.45, ease: 'power3.out', overwrite: true, force3D: true });
     gsap.set('.veil', { pointerEvents: 'none' });
   };
 

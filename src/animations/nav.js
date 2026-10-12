@@ -1,4 +1,5 @@
 // Top bar: hides on scroll down, returns on scroll up, gains the blurred ground once scrolled.
+// Our outputs is a menu that drops from its button on hover (fine pointers), focus or click.
 // Each page link opens its own page (the curtain between pages is src/site/transition.js). On wide
 // screens a gold rule slides under the link the pointer is on and rests under the current page;
 // on narrow ones the Menu drops a full-screen sheet like a curtain and the pages rise into it.
@@ -41,7 +42,7 @@ export function setupNav({ reduced }) {
   toggle.addEventListener('click', onToggle);
   window.addEventListener('keydown', onKey);
   // the sheet only exists below the wide layout: close it if the window grows past it
-  const wide = matchMedia('(min-width: 1240px)');
+  const wide = matchMedia('(min-width: 1024px)');
   const onWide = () => { if (wide.matches) setMenu(false); };
   wide.addEventListener('change', onWide);
 
@@ -62,8 +63,9 @@ export function setupNav({ reduced }) {
   // the sliding rule under the page links
   const nav = bar.querySelector('.topbar__nav');
   const glint = nav?.querySelector('.topbar__glint');
-  const links = nav ? [...nav.querySelectorAll('.topbar__links a')] : [];
-  const here = links.find((a) => a.getAttribute('aria-current') === 'page');
+  // the top-level items: the links and the Our outputs button (its pages are in its menu)
+  const links = nav ? [...nav.querySelectorAll('.topbar__links > li > a, .topbar__group-toggle')] : [];
+  const here = links.find((a) => a.getAttribute('aria-current') === 'page' || a.classList.contains('is-current'));
   let glintCleanup = () => {};
   if (glint && links.length) {
     root.classList.add('has-glint');
@@ -98,6 +100,8 @@ export function setupNav({ reduced }) {
     };
   }
 
+  const dropdownCleanup = setupDropdowns(bar, { reduced });
+
   // same-page anchors: smooth scroll and focus (the home page's acts)
   const onClick = (e) => {
     const a = e.target.closest('a[href^="#"]');
@@ -124,6 +128,7 @@ export function setupNav({ reduced }) {
     scrollWatch.kill();
     sheetTl?.kill();
     glintCleanup();
+    dropdownCleanup();
     toggle.removeEventListener('click', onToggle);
     window.removeEventListener('keydown', onKey);
     wide.removeEventListener('change', onWide);
@@ -131,4 +136,81 @@ export function setupNav({ reduced }) {
     document.removeEventListener('click', onClick);
     root.classList.remove('is-locked');
   };
+}
+
+/**
+ * The top bar's menus (Our outputs): open on hover with a fine pointer (after a short pause, so a
+ * pointer passing over does not open it), on click or Enter, and from the keyboard; close on
+ * leaving, on Escape (focus back on the button), on a click elsewhere, when focus leaves, or when
+ * the page scrolls (the bar hides as it does).
+ * The menu drops like the curtain: a clip from the top, its pages rising in after it.
+ */
+function setupDropdowns(bar, { reduced }) {
+  const groups = [...bar.querySelectorAll('[data-dropdown]')];
+  const fine = matchMedia('(hover: hover) and (pointer: fine)');
+  const offs = groups.map((group) => {
+    const button = group.querySelector('.topbar__group-toggle');
+    const menu = group.querySelector('[data-dropdown-menu]');
+    const items = [...menu.querySelectorAll('a')];
+    let open = false, tl = null, hoverTimer = 0;
+    const set = (want, { focusButton = false } = {}) => {
+      clearTimeout(hoverTimer);
+      if (want === open) return;
+      open = want;
+      button.setAttribute('aria-expanded', String(open));
+      tl?.kill();
+      if (open) {
+        group.classList.add('is-open');
+        tl = reduced
+          ? gsap.timeline().set(menu, { clipPath: 'none' }).set(items, { autoAlpha: 1, y: 0 })
+          : gsap.timeline({ defaults: { ease: 'curtain' } })
+            .fromTo(menu, { clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0% 0)', duration: 0.32 })
+            .fromTo(items, { autoAlpha: 0, y: -6 }, { autoAlpha: 1, y: 0, duration: 0.3, stagger: 0.03 }, 0.06);
+      } else {
+        tl = gsap.timeline({ onComplete: () => group.classList.remove('is-open') })
+          .to(menu, { clipPath: 'inset(0 0 100% 0)', duration: reduced ? 0 : 0.2, ease: 'power2.in' });
+        if (focusButton) button.focus();
+      }
+    };
+    const onClick = () => set(!open);
+    const onEnter = () => { if (!fine.matches) return; clearTimeout(hoverTimer); hoverTimer = setTimeout(() => set(true), 80); };
+    const onLeave = () => { if (!fine.matches) return; clearTimeout(hoverTimer); hoverTimer = setTimeout(() => set(false), 180); };
+    const onKey = (e) => {
+      if (e.key === 'Escape' && open) { e.stopPropagation(); set(false, { focusButton: true }); }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (!open) set(true);
+        const i = items.indexOf(document.activeElement);
+        items[Math.min(items.length - 1, i + 1)].focus();
+      }
+      if (e.key === 'ArrowUp' && open) {
+        e.preventDefault();
+        const i = items.indexOf(document.activeElement);
+        if (i <= 0) button.focus(); else items[i - 1].focus();
+      }
+    };
+    const onFocusOut = (e) => { if (!group.contains(e.relatedTarget)) set(false); };
+    const onDocClick = (e) => { if (open && !group.contains(e.target)) set(false); };
+    // the bar hides as the page scrolls down: the menu goes with it
+    const onScroll = () => { if (open) set(false); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    button.addEventListener('click', onClick);
+    group.addEventListener('pointerenter', onEnter);
+    group.addEventListener('pointerleave', onLeave);
+    group.addEventListener('keydown', onKey);
+    group.addEventListener('focusout', onFocusOut);
+    document.addEventListener('click', onDocClick);
+    return () => {
+      clearTimeout(hoverTimer);
+      tl?.kill();
+      button.removeEventListener('click', onClick);
+      group.removeEventListener('pointerenter', onEnter);
+      group.removeEventListener('pointerleave', onLeave);
+      group.removeEventListener('keydown', onKey);
+      group.removeEventListener('focusout', onFocusOut);
+      document.removeEventListener('click', onDocClick);
+      window.removeEventListener('scroll', onScroll);
+    };
+  });
+  return () => offs.forEach((off) => off());
 }

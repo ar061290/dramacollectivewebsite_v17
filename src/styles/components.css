@@ -188,7 +188,7 @@
 /* the pages: each opens its own page (same tab). A gold rule slides under the link the pointer is
    on and rests under the current page, which also carries the small star (src/animations/nav.js). */
 .topbar__nav { position: relative; }
-.topbar__links { display: flex; gap: 18px; list-style: none; }
+.topbar__links { display: flex; align-items: center; gap: 22px; list-style: none; }
 .topbar__links a {
   position: relative;
   font-family: var(--font-ui);
@@ -221,6 +221,69 @@
   opacity: 0;
   pointer-events: none;
 }
+/* Our outputs: the button names the group; its menu drops from under it (hover, focus or click;
+   nav.js). The button carries the current-page star when one of its pages is open. */
+.topbar__group { position: relative; }
+.topbar__group::after { content: ""; position: absolute; left: -12px; right: -12px; top: 100%; height: 14px; } /* a bridge for the pointer */
+.topbar__group-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 14px 0 7px;
+  background: none;
+  border: 0;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--fg);
+  cursor: pointer;
+}
+.topbar__group-toggle svg { width: 9px; height: 6px; transition: rotate var(--dur-base) var(--ease-curtain); }
+.topbar__group-toggle:hover, .topbar__group-toggle.is-current, .topbar__group-toggle[aria-expanded="true"] { color: var(--accent); }
+.topbar__group-toggle[aria-expanded="true"] svg { rotate: 180deg; }
+.topbar__group-toggle.is-current::before {
+  content: "";
+  position: absolute;
+  left: calc(50% - 8px); top: 3px;
+  width: 7px; height: 7px;
+  margin-left: -3.5px;
+  background: var(--accent);
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+}
+.topbar__dropdown {
+  position: absolute;
+  left: -22px;
+  top: calc(100% + 10px);
+  min-width: 250px;
+  padding: var(--space-3) 0;
+  list-style: none;
+  background: var(--sheet-bg);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
+  visibility: hidden;
+  clip-path: inset(0 0 100% 0);
+}
+.topbar__dropdown::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: var(--rule-thick); background: var(--rule-color); }
+.topbar__group.is-open .topbar__dropdown { visibility: visible; }
+.topbar__links .topbar__dropdown a {
+  display: block;
+  padding: 9px 22px 9px 40px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--fg-strong);
+  box-shadow: none;
+}
+.topbar__links .topbar__dropdown a:hover, .topbar__links .topbar__dropdown a:focus-visible { color: var(--accent); background: var(--tag-bg); }
+.topbar__links .topbar__dropdown a[aria-current="page"] { color: var(--accent); }
+.topbar__links .topbar__dropdown a[aria-current="page"]::before { left: 22px; top: 50%; margin: -3.5px 0 0; }
+
 /* until the script runs, the rule is a plain underline */
 html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links a[aria-current="page"] { box-shadow: inset 0 calc(-1 * var(--rule-thick)) 0 var(--rule-color); }
 
@@ -293,22 +356,17 @@ html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links
 }
 .topbar__sheet { display: none; }
 
-/* eight pages beside the wordmark: on one line on wide screens; stacked in two lines below that,
-   with the bar's own margins, gaps and the links' tracking coming in a step where room is tight */
-@media (max-width: 1679px) {
+/* the wordmark: on one line on wide screens, stacked in two lines below that, where the bar's
+   own margins and gaps also come in a step */
+@media (max-width: 1279px) {
+  .topbar { padding-inline: var(--space-6); gap: var(--space-4); }
   .topbar__word { font-size: 21px; line-height: .98; }
   .topbar__word > span { display: block; }
-}
-@media (min-width: 1240px) and (max-width: 1439px) {
-  .topbar { padding-inline: var(--space-6); gap: var(--space-4); }
-  .topbar__mark { width: 44px; height: 44px; }
-  .topbar__word { font-size: 19px; }
-  .topbar__links { gap: 13px; }
-  .topbar__links a { letter-spacing: .1em; }
+  .topbar__links { gap: 16px; }
 }
 /* below this the pages move into the Menu: a full-screen sheet that drops like a curtain, the
-   pages in Raung, rising in one after another */
-@media (max-width: 1239px) {
+   pages in Raung, rising in one after another (the outputs indented under their heading) */
+@media (max-width: 1023px) {
   .topbar nav { display: none; }
   .topbar__menu { display: inline-flex; align-items: center; }
   .topbar__word { font-size: 24px; }
@@ -340,6 +398,9 @@ html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links
   .topbar__sheet a:hover { color: var(--accent); }
   .topbar__sheet a[aria-current="page"] { color: var(--accent); }
   .topbar__sheet a[aria-current="page"]::after { content: ""; display: block; width: 48px; height: var(--rule-thick); background: var(--rule-color); margin-top: 4px; }
+  .topbar__sheet-group > .eyebrow { display: block; margin: var(--space-3) 0 var(--space-1); }
+  .topbar__sheet-group ul { list-style: none; display: grid; gap: 0; padding-left: var(--space-5); border-left: 2px solid var(--rule-color); }
+  .topbar__sheet-group a { font-size: clamp(22px, 4.8vw, 34px); }
 }
 @media (max-width: 640px) {
   .topbar__brand { gap: 8px; }
