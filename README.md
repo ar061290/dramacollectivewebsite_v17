@@ -1,4 +1,4 @@
-# The Drama Collective · home page (v3)
+# The Drama Collective · website (v3)
 
 The home page for the CHIREC Drama Collective: one page, a dark theatre before curtain-up. A marble statue stands in a fixed three.js scene inside the Penrose ring while the page scrolls past it. In v3 the statue performs:
 
@@ -8,7 +8,9 @@ The home page for the CHIREC Drama Collective: one page, a dark theatre before c
 4. the view closes in on her upper body: her head, the hand and the mask;
 5. in the close-up her marble flows into the Collective's mark, carved in the same stone, part for part and where each part is: her mask becomes the logo's mask, her hand the hand that holds it, her face the profile face, and the three hold for a moment on the marble figure; then, as her robes stream into the brush strokes, flames and crescent, the mark grows out to fill the ring and the view opens out again.
 
-The copy is placeholder for now: a hero, eight acts (three more than v2, to give the longer turn its room) and the footer.
+The home page's copy is placeholder for now: a hero, eight acts (three more than v2, to give the longer turn its room) and the footer.
+
+Around it are eight pages, each its own page in the same tab, with the same header and footer (see "The pages" below): About us, Core team, The publication, The production, Flash plays, Workshops and Social outreach (both coming soon, like Flash plays), and Become a sponsor.
 
 Built with Vite and vanilla JS, three.js 0.170, GSAP 3.13 (ScrollTrigger, SplitText, ScrollToPlugin, CustomEase) and lottie-web 5.12 (light SVG build). The rig and logo trace are made offline with Blender 5.2 and potrace 1.16 (scripts in `tools/`).
 
@@ -150,9 +152,30 @@ The mask, hand and face change almost as solid pieces, each in its own place. Th
 
 Retune it with the `MORPH` constants (part timings, the upper arm, the settle, the grow, swirl, rise). Redraw the parts in `mark-regions.json`.
 
+## The pages
+
+| Page | File | What you can do on it |
+|---|---|---|
+| About us | `about.html` | The follow-spot lights the statement, the skills and the values; the five verbs light one by one as you scroll (or tap them). Copy from the sponsorship document, without the outputs. |
+| Core team | `team.html` | Headshots stay stone until the spot (or, on touch, the middle of the screen) finds them; they lean toward the pointer; department filters rearrange the grid (GSAP Flip); choosing someone opens their own introduction, the photo travelling into the panel. Cards are generated from `content/team.json`. |
+| The publication | `publication.html` | A cover that swings open when it comes into view; drag it, tap it or use the button to close and open it. |
+| The production | `production.html` | Five stage lights (written, directed, designed, performed, managed): switch them on, the beams turn toward the pointer, and all five lit sets off a spark. A live countdown to 30 November 2026. |
+| Flash plays, Workshops, Social outreach | `flash-plays.html`, `workshops.html`, `outreach.html` | Coming soon: a full-screen three.js house curtain (`src/scene/curtain/CurtainStage.js`): velvet folds in a vertex shader on a sheen material, a marquee whose bulbs spell COMING SOON (instanced, bloomed), a follow-spot on the pointer, footlights. Touch it and it ripples; drag across it and it parts a sliver onto the lit stage. Each page has its own velvet. Description from the sponsorship document. |
+| Become a sponsor | `sponsor.html` | The three tiers as tickets; pointing at one previews its metal on a 3D medallion of the mark (`src/scene/medallion.js`), choosing one turns it bronze, silver or gold with a full turn and a spark. Drag the medallion to spin it. How to sponsor comes later. |
+
+**Shared parts.** The head block, the header, the curtain between pages, the sky and the footer are written into every page by `tools/pages/build.mjs`, between `<!-- site:... -->` markers. Edit them there (or `content/team.json` for the team) and run `npm run pages`. The page list for the Vite build comes from the same file.
+
+**Between pages** (`src/site/transition.js`): a link to another page closes two velvet halves, loads the page in the same tab, and that page parts them. Links that leave the site, open a new tab or jump within the page are left alone; reduced motion navigates plainly.
+
+**Team photos** are cropped from the core team document by `tools/team/crop_photos.py` (crop boxes by eye, 4:5, WebP). Ayushi Shah and Karanjot have no photo in the document and show their initials; the Head of Design in the last photo has no name in it, so the card shows the role.
+
+**Lottie:** the spark (`assets/lottie/spark.json`, made by `tools/lottie/make_spark.py`) plays on a chosen tier and when all five stage lights are on; the CTA flourish is reused on the production page.
+
+QA: `?debug` on the coming-soon and sponsor pages exposes the 3D scene as `window.__stage`.
+
 ## Changing the copy
 
-All text is in `index.html`. Every section is a `<section>` with an id: hero `#top`, the acts `#about`, `#productions`, `#impact`, `#leadership`, `#support`, and the footer `#contact`.
+The home page's text is in `index.html`; each inner page's is in its own HTML file. Every section is a `<section>` with an id: hero `#top`, the acts `#about`, `#productions`, `#impact`, `#leadership`, `#support`, and the footer `#contact`.
 
 Each scene also tells the stage how to light and place the statue:
 
@@ -179,7 +202,7 @@ All as in v2:
 - **Vector hand-over:** in the last act (the second half of the logo phase, `vector` in `TRACKS`) the stone logo cross-fades into the flat, vector mark (`src/scene/vectorLogo.js`: the traced `mark.svg` as inline SVG), so what meets the footer is crisp at any size. The stage projects the SVG's corners through its camera every frame and sets them as a CSS transform, so the vector lies exactly on the 3D logo (the logo's sway finishes first, and its idle drift and the lean toward the cursor fade out, so it is square on). Its colour is sampled from the 3D logo as the stage lights it, top and foot, and sampled again after a theme change. Once the vector is fully in, the 3D logo stops drawing colour but still casts its shadow and keeps the stars clear of the mark.
 - **Themes:** light and dark, remembered per browser (`dc-theme`).
 - **Music:** public-domain piano from Musopen, streamed from Wikimedia Commons and credited in the footer (`src/ui/music.js`).
-- **Nav:** hides on scroll down and folds into the Menu below 1000 px.
+- **Nav:** the eight pages, the current one marked with a star and a gold rule that slides under the link the pointer is on. The wordmark gives way to the mark below 1600 px; below 1240 px the pages fold into the Menu, a full-screen sheet that drops like a curtain. Hides on scroll down.
 
 ## Performance and fallbacks
 
@@ -192,8 +215,11 @@ All as in v2:
   - both canvases pause when the tab is hidden or the footer covers the stage.
 - **Static fallback:** no WebGL, a software renderer, Save-Data, 2 cores or fewer, or 2 GB of memory or less all get the still picture, with the star field kept.
 - **Reduced motion:** no intro, parallax, ring turn or scrubbed sequence (the hero pose, then the logo in one step), no lean toward the cursor, and no fling.
+- **Inner pages:** three.js loads only on the coming-soon and sponsor pages, and only where WebGL runs well (the same low-power check); otherwise a CSS velvet with the sign in type, and the mark masked in the tier's metal. The curtain renders while it is on screen; the medallion only while something moves. Pixel ratio 1.75 on the curtain, 2 on the medallion.
 - **Teardown:** `dramaCollective.destroy()` (also on `pagehide`) frees the GPU memory, including the morph mesh, along with ScrollTriggers, SplitTexts, Lotties and listeners.
 
 ## Design system extensions
 
 As in v2: theme roles in `tokens.css`, the text grounds behind copy, the icon buttons and the motion confined to the stage. The 3D logo is the statue's own stone, in its average colour.
+
+For the pages: `--z-veil` (the curtain between pages, above the top bar and below the cursor), and `--spot-rgb` / `--spot-lit` (the follow-spot and the stage lamps: gold-300 on the dark stage, gold-600 with house lights up; lit text gold-300 or plum-800). The text ground is reused as `.ground`, its feather limited to the page gutter.

@@ -6,6 +6,7 @@
   <title>The Drama Collective · CHIREC International School</title>
   <meta name="description" content="The CHIREC Drama Collective. (Placeholder description.)">
   <meta name="theme-color" content="#2a0d1c">
+  <!-- site:head -->
   <link rel="icon" href="./assets/brand/mark-gold.png">
   <link rel="preload" href="./assets/fonts/Raung-400.otf" as="font" type="font/otf" crossorigin>
   <link rel="stylesheet" href="./src/styles/main.css">
@@ -25,12 +26,67 @@
   <script>
     // theme before first paint: the saved choice, else the dark theatre
     try { var t = localStorage.getItem('dc-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+    // arriving through the curtain (src/site/transition.js): it starts closed and opens on this page
+    try { if (sessionStorage.getItem('dc-veil') === '1') { sessionStorage.removeItem('dc-veil'); document.documentElement.classList.add('is-veiled'); } } catch (e) {}
     document.documentElement.classList.add('has-js');
+  </script>
+  <!-- /site:head -->
+  <script>
     if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('is-intro');
   </script>
 </head>
 <body>
-  <a class="skip-link" href="#about">Skip to content</a>
+  <!-- site:header -->
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="veil" aria-hidden="true">
+    <div class="veil__half veil__half--l"></div>
+    <div class="veil__half veil__half--r"></div>
+  </div>
+
+  <header class="topbar" data-topbar>
+    <a class="topbar__brand" href="#top" aria-label="The Drama Collective, back to top">
+      <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
+      <span class="topbar__word">The Drama Collective</span>
+    </a>
+    <nav class="topbar__nav" aria-label="Main">
+      <ul class="topbar__links">
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li><a href="./publication.html">The publication</a></li>
+        <li><a href="./production.html">The production</a></li>
+        <li><a href="./flash-plays.html">Flash plays</a></li>
+        <li><a href="./workshops.html">Workshops</a></li>
+        <li><a href="./outreach.html">Social outreach</a></li>
+      </ul>
+      <span class="topbar__glint" aria-hidden="true"></span>
+    </nav>
+    <div class="topbar__tools">
+      <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Piano music" title="Play piano music" data-music-toggle>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><rect class="bar" x="2.5" y="8" width="2.2" height="9"/><rect class="bar" x="6.9" y="3" width="2.2" height="14"/><rect class="bar" x="11.3" y="6" width="2.2" height="11"/><rect class="bar" x="15.7" y="9" width="2.2" height="8"/></svg>
+      </button>
+      <button class="icon-btn theme-toggle" type="button" aria-pressed="false" aria-label="Light mode" title="House lights" data-theme-toggle>
+        <svg class="theme-toggle__sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 1.8v2.1M10 16.1v2.1M1.8 10h2.1M16.1 10h2.1M4.2 4.2l1.5 1.5M14.3 14.3l1.5 1.5M4.2 15.8l1.5-1.5M14.3 5.7l1.5-1.5"/></g></svg>
+        <svg class="theme-toggle__moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.9 12.6A6.6 6.6 0 0 1 7.4 4.1a6.6 6.6 0 1 0 8.5 8.5Z" fill="currentColor"/></svg>
+      </button>
+    </div>
+    <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu-sheet" data-menu-toggle>Menu</button>
+    <a class="btn btn--inverse btn--sm topbar__cta" href="./sponsor.html">Become a sponsor</a>
+    <div class="topbar__sheet" id="menu-sheet" data-menu-sheet>
+      <ul>
+        <li><a href="./index.html" aria-current="page">Home</a></li>
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li><a href="./publication.html">The publication</a></li>
+        <li><a href="./production.html">The production</a></li>
+        <li><a href="./flash-plays.html">Flash plays</a></li>
+        <li><a href="./workshops.html">Workshops</a></li>
+        <li><a href="./outreach.html">Social outreach</a></li>
+        <li><a href="./sponsor.html">Become a sponsor</a></li>
+      </ul>
+    </div>
+  </header>
+  <!-- /site:header -->
 
   <div class="loader theme-ink" aria-hidden="true">
     <div class="loader__inner">
@@ -51,39 +107,6 @@
     <svg class="cursor__star" viewBox="-12 -17 24 34" focusable="false"><path class="cursor__star-plain" d="M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z"/><path class="cursor__star-text" d="M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z"/></svg>
   </div>
 
-  <header class="topbar" data-topbar>
-    <a class="topbar__brand" href="#top" aria-label="The Drama Collective, back to top">
-      <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
-      <span class="topbar__word">The Drama Collective</span>
-    </a>
-    <nav aria-label="Main">
-      <ul class="topbar__links">
-        <li><a href="#about">About</a></li>
-        <li><a href="#productions">Productions</a></li>
-        <li><a href="#support">Support</a></li>
-        <li><a href="#contact">Contact</a></li>
-      </ul>
-    </nav>
-    <div class="topbar__tools">
-      <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Piano music" title="Play piano music" data-music-toggle>
-        <svg viewBox="0 0 20 20" aria-hidden="true"><rect class="bar" x="2.5" y="8" width="2.2" height="9"/><rect class="bar" x="6.9" y="3" width="2.2" height="14"/><rect class="bar" x="11.3" y="6" width="2.2" height="11"/><rect class="bar" x="15.7" y="9" width="2.2" height="8"/></svg>
-      </button>
-      <button class="icon-btn theme-toggle" type="button" aria-pressed="false" aria-label="Light mode" title="House lights" data-theme-toggle>
-        <svg class="theme-toggle__sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 1.8v2.1M10 16.1v2.1M1.8 10h2.1M16.1 10h2.1M4.2 4.2l1.5 1.5M14.3 14.3l1.5 1.5M4.2 15.8l1.5-1.5M14.3 5.7l1.5-1.5"/></g></svg>
-        <svg class="theme-toggle__moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.9 12.6A6.6 6.6 0 0 1 7.4 4.1a6.6 6.6 0 1 0 8.5 8.5Z" fill="currentColor"/></svg>
-      </button>
-    </div>
-    <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu-sheet" data-menu-toggle>Menu</button>
-    <a class="btn btn--inverse btn--sm" href="#support">Sponsor us</a>
-    <div class="topbar__sheet" id="menu-sheet" data-menu-sheet>
-      <ul>
-        <li><a href="#about">About</a></li>
-        <li><a href="#productions">Productions</a></li>
-        <li><a href="#support">Support</a></li>
-        <li><a href="#contact">Contact</a></li>
-      </ul>
-    </div>
-  </header>
 
   <main id="main">
     <section class="hero" id="top" aria-labelledby="hero-title">
@@ -198,6 +221,7 @@
     </section>
   </main>
 
+  <!-- site:footer -->
   <footer class="curtain" id="contact" aria-labelledby="contact-title">
     <div class="curtain__grid">
       <div class="curtain__intro">
@@ -219,6 +243,7 @@
       </a>
     </div>
   </footer>
+  <!-- /site:footer -->
 
   <script type="module" src="./src/main.js"></script>
 </body>

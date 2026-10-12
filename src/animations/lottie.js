@@ -6,6 +6,7 @@ const FILES = {
   'scroll-cue': new URL('../../assets/lottie/scroll-cue.json', import.meta.url),
   'mask-mark': new URL('../../assets/lottie/mask-mark.json', import.meta.url),
   'cta-flourish': new URL('../../assets/lottie/cta-flourish.json', import.meta.url),
+  spark: new URL('../../assets/lottie/spark.json', import.meta.url),
 };
 
 /** Load a named animation into `container`. Resolves the lottie AnimationItem (or null). */

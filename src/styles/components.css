@@ -184,20 +184,44 @@
 /* the gold mark, deepened toward gold-700 so it holds on the light page */
 [data-theme="light"] .topbar__mark { filter: brightness(.68) saturate(1.3); }
 .topbar__word { font-family: var(--font-display); font-size: 17px; line-height: 1; }
-.topbar__links { display: flex; gap: var(--space-5); list-style: none; }
+/* the pages: each opens its own page (same tab). A gold rule slides under the link the pointer is
+   on and rests under the current page, which also carries the small star (src/animations/nav.js). */
+.topbar__nav { position: relative; }
+.topbar__links { display: flex; gap: 18px; list-style: none; }
 .topbar__links a {
+  position: relative;
   font-family: var(--font-ui);
   font-size: 11px;
   font-weight: var(--weight-bold);
-  letter-spacing: .2em;
+  letter-spacing: .14em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--fg);
   text-decoration: none;
-  border-bottom: var(--rule-thick) solid transparent;
-  padding: 14px 0 4px;
+  padding: 14px 0 7px;
   display: inline-block;
 }
-.topbar__links a:hover, .topbar__links a[aria-current="true"] { color: var(--accent); border-bottom-color: var(--rule-color); }
+.topbar__links a:hover, .topbar__links a[aria-current="page"] { color: var(--accent); text-decoration: none; }
+.topbar__links a[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 3px;
+  width: 7px; height: 7px;
+  margin-left: -3.5px;
+  background: var(--accent);
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+}
+.topbar__glint {
+  position: absolute;
+  left: 0; bottom: 4px;
+  width: 1px; height: var(--rule-thick);
+  background: var(--rule-color);
+  transform-origin: 0 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+/* until the script runs, the rule is a plain underline */
+html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links a[aria-current="page"] { box-shadow: inset 0 calc(-1 * var(--rule-thick)) 0 var(--rule-color); }
 
 /* Icon controls: piano music and the theme */
 .topbar__tools { display: flex; align-items: center; }
@@ -245,37 +269,49 @@
 }
 .topbar__sheet { display: none; }
 
-@media (max-width: 1000px) {
+/* eight pages do not fit beside the wordmark until the screen is wide: the mark alone stands for it */
+@media (max-width: 1599px) { .topbar__word { display: none; } }
+/* and until it is very wide, the bar's own margins and gaps come in a step */
+@media (min-width: 1240px) and (max-width: 1439px) { .topbar { padding-inline: var(--space-6); gap: var(--space-4); } }
+/* below this the pages move into the Menu: a full-screen sheet that drops like a curtain, the
+   pages in Raung, rising in one after another */
+@media (max-width: 1239px) {
   .topbar nav { display: none; }
   .topbar__menu { display: inline-flex; align-items: center; }
-  .topbar__word { font-size: 15px; }
+  .topbar__word { display: inline; font-size: 15px; }
   .topbar__sheet {
     position: fixed;
-    top: var(--topbar-h);
-    left: 0; right: 0;
+    inset: var(--topbar-h) 0 0 0;
+    display: block;
+    visibility: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     background: var(--sheet-bg);
-    border-bottom: var(--rule-thick) solid var(--rule-color);
-    padding: var(--space-4) var(--stage-gutter) var(--space-5);
+    border-top: var(--rule-thick) solid var(--rule-color);
+    padding: var(--space-6) var(--stage-gutter) calc(var(--space-7) + env(safe-area-inset-bottom));
     z-index: var(--z-topbar);
   }
-  .topbar__sheet.is-open { display: block; }
-  .topbar__sheet ul { list-style: none; display: grid; gap: var(--space-1); }
+  .topbar__sheet.is-open { visibility: visible; }
+  .topbar__sheet ul { list-style: none; display: grid; gap: 2px; }
+  .topbar__sheet li { overflow: hidden; }
   .topbar__sheet a {
-    display: block;
-    padding: var(--space-3) 0;
-    font-family: var(--font-ui);
-    font-size: 13px;
-    font-weight: var(--weight-bold);
-    letter-spacing: .2em;
-    text-transform: uppercase;
+    display: inline-block;
+    padding: 6px 0;
+    font-family: var(--font-display);
+    font-size: clamp(28px, 6.2vw, 44px);
+    line-height: 1.15;
     color: var(--fg-strong);
     text-decoration: none;
   }
+  .topbar__sheet a:hover { color: var(--accent); }
+  .topbar__sheet a[aria-current="page"] { color: var(--accent); }
+  .topbar__sheet a[aria-current="page"]::after { content: ""; display: block; width: 48px; height: var(--rule-thick); background: var(--rule-color); margin-top: 4px; }
 }
 @media (max-width: 640px) {
   .topbar__word { display: none; }
 }
-/* phones: the sheet's Support link stands in for the sponsor button */
+html.is-locked { overflow: hidden; }
+/* phones: the sheet's sponsor link stands in for the button */
 @media (max-width: 480px) {
   .topbar > .btn { display: none; }
 }

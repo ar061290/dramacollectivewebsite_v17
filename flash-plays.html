@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Flash plays · The Drama Collective</title>
+  <meta name="description" content="Flash plays from the CHIREC Drama Collective: short plays about the real issues students deal with. Coming soon.">
+  <meta name="theme-color" content="#2a0d1c">
+  <!-- site:head -->
+  <link rel="icon" href="./assets/brand/mark-gold.png">
+  <link rel="preload" href="./assets/fonts/Raung-400.otf" as="font" type="font/otf" crossorigin>
+  <link rel="stylesheet" href="./src/styles/main.css">
+  <!-- Bare-module map for running without a build step (any static server). Vite resolves the same
+       specifiers from node_modules and ignores this map. Keep the versions in step with package.json. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/index.js",
+      "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/",
+      "lottie-web/build/player/lottie_light.js": "https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.js/+esm"
+    }
+  }
+  </script>
+  <script>
+    // theme before first paint: the saved choice, else the dark theatre
+    try { var t = localStorage.getItem('dc-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+    // arriving through the curtain (src/site/transition.js): it starts closed and opens on this page
+    try { if (sessionStorage.getItem('dc-veil') === '1') { sessionStorage.removeItem('dc-veil'); document.documentElement.classList.add('is-veiled'); } } catch (e) {}
+    document.documentElement.classList.add('has-js');
+  </script>
+  <!-- /site:head -->
+</head>
+<body class="page page--soon page--flash-plays">
+  <!-- site:header -->
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="veil" aria-hidden="true">
+    <div class="veil__half veil__half--l"></div>
+    <div class="veil__half veil__half--r"></div>
+  </div>
+
+  <header class="topbar" data-topbar>
+    <a class="topbar__brand" href="./index.html" aria-label="The Drama Collective, home">
+      <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
+      <span class="topbar__word">The Drama Collective</span>
+    </a>
+    <nav class="topbar__nav" aria-label="Main">
+      <ul class="topbar__links">
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li><a href="./publication.html">The publication</a></li>
+        <li><a href="./production.html">The production</a></li>
+        <li><a href="./flash-plays.html" aria-current="page">Flash plays</a></li>
+        <li><a href="./workshops.html">Workshops</a></li>
+        <li><a href="./outreach.html">Social outreach</a></li>
+      </ul>
+      <span class="topbar__glint" aria-hidden="true"></span>
+    </nav>
+    <div class="topbar__tools">
+      <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Piano music" title="Play piano music" data-music-toggle>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><rect class="bar" x="2.5" y="8" width="2.2" height="9"/><rect class="bar" x="6.9" y="3" width="2.2" height="14"/><rect class="bar" x="11.3" y="6" width="2.2" height="11"/><rect class="bar" x="15.7" y="9" width="2.2" height="8"/></svg>
+      </button>
+      <button class="icon-btn theme-toggle" type="button" aria-pressed="false" aria-label="Light mode" title="House lights" data-theme-toggle>
+        <svg class="theme-toggle__sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 1.8v2.1M10 16.1v2.1M1.8 10h2.1M16.1 10h2.1M4.2 4.2l1.5 1.5M14.3 14.3l1.5 1.5M4.2 15.8l1.5-1.5M14.3 5.7l1.5-1.5"/></g></svg>
+        <svg class="theme-toggle__moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.9 12.6A6.6 6.6 0 0 1 7.4 4.1a6.6 6.6 0 1 0 8.5 8.5Z" fill="currentColor"/></svg>
+      </button>
+    </div>
+    <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu-sheet" data-menu-toggle>Menu</button>
+    <a class="btn btn--inverse btn--sm topbar__cta" href="./sponsor.html">Become a sponsor</a>
+    <div class="topbar__sheet" id="menu-sheet" data-menu-sheet>
+      <ul>
+        <li><a href="./index.html">Home</a></li>
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li><a href="./publication.html">The publication</a></li>
+        <li><a href="./production.html">The production</a></li>
+        <li><a href="./flash-plays.html" aria-current="page">Flash plays</a></li>
+        <li><a href="./workshops.html">Workshops</a></li>
+        <li><a href="./outreach.html">Social outreach</a></li>
+        <li><a href="./sponsor.html">Become a sponsor</a></li>
+      </ul>
+    </div>
+  </header>
+  <!-- /site:header -->
+
+  <!-- site:stage -->
+  <div class="stage" aria-hidden="true">
+    <canvas class="stage__stars"></canvas>
+  </div>
+
+  <div class="cursor" aria-hidden="true">
+    <span class="cursor__glow"></span>
+    <svg class="cursor__star" viewBox="-12 -17 24 34" focusable="false"><path class="cursor__star-plain" d="M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z"/><path class="cursor__star-text" d="M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z"/></svg>
+  </div>
+  <!-- /site:stage -->
+
+  <main id="main" class="page__main page__main--soon">
+    <section class="soon" aria-labelledby="soon-title">
+      <div class="soon__stage" data-curtain="flash-plays"></div>
+      <p class="soon__sign">Coming soon</p>
+      <div class="soon__copy">
+        <p class="eyebrow">The Drama Collective presents</p>
+        <h1 class="soon__title" id="soon-title">Flash plays</h1>
+        <span class="rule" aria-hidden="true"></span>
+      </div>
+      <p class="eyebrow soon__hint" data-curtain-hint aria-hidden="true">Drag across the curtain</p>
+    </section>
+
+    <section class="soon-about" aria-labelledby="about-title">
+      <div class="ground" data-mask>
+        <h2 class="act__title" id="about-title" data-reveal>Awareness through performance</h2>
+        <span class="rule" aria-hidden="true"></span>
+        <p>Our productions and mini-plays won’t just be for entertainment. We will use them to address real issues students deal with: academic pressure, peer pressure, cyberbullying, environmental responsibility, and safeguarding. Theatre is a powerful medium for this, especially in a school setting.</p>
+      </div>
+      <p class="soon-about__coda ground" data-mask>Coming soon.</p>
+    </section>
+  </main>
+
+  <!-- site:footer -->
+  <footer class="curtain" id="contact" aria-labelledby="contact-title">
+    <div class="curtain__grid">
+      <div class="curtain__intro">
+        <p class="eyebrow">Curtain call · Placeholder</p>
+        <h2 id="contact-title" class="curtain__title">Placeholder heading</h2>
+        <span class="rule" aria-hidden="true"></span>
+        <p>Placeholder text for the footer. Contacts and event details come later.</p>
+      </div>
+      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>
+    </div>
+    <div class="curtain__base">
+      <div class="curtain__legal">
+        <p class="legal">© 2026 The Drama Collective · CHIREC International School</p>
+        <p class="credits">Music: Satie, Gymnopédie No. 1 (Robin Alciatore); Beethoven, Sonata Pathétique, Adagio cantabile (Paul Pitman); Chopin, Nocturne Op. 15 No. 1 (Luke Faulkner). Public-domain recordings from <a href="https://musopen.org" rel="noopener">Musopen</a>, via <a href="https://commons.wikimedia.org" rel="noopener">Wikimedia Commons</a>.</p>
+      </div>
+      <a class="endorsement" href="https://www.chirec.ac.in" rel="noopener">
+        <img class="endorsement__logo" src="./assets/brand/chirec.webp" alt="CHIREC International School" width="475" height="140">
+        <span>Placeholder line</span>
+      </a>
+    </div>
+  </footer>
+  <!-- /site:footer -->
+
+  <script type="module" src="./src/pages/soon.js"></script>
+</body>
+</html>

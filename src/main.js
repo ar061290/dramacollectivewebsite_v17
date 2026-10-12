@@ -10,6 +10,8 @@ import { ConstellationField } from './constellation/Constellation.js';
 import { loadLottie, freeze } from './animations/lottie.js';
 import { playIntro } from './animations/intro.js';
 import { setupNav } from './animations/nav.js';
+import { setupBrandMark } from './animations/brand.js';
+import { setupTransitions } from './site/transition.js';
 import { setupCursor } from './animations/cursor.js';
 import { setupReveals } from './sections/reveals.js';
 import { setupCounters } from './sections/counters.js';
@@ -34,6 +36,11 @@ let stage = null;
 let sky = null;
 
 async function boot() {
+  // arriving through the curtain from another page: part it now, onto the loader
+  const transitions = setupTransitions({ reduced });
+  cleanups.push(transitions.dispose);
+  transitions.open();
+
   // the theme and music switches work from the first moment, before the stage has loaded
   cleanups.push(setupMusic({ reduced }));
   cleanups.push(setupTheme({
@@ -170,17 +177,7 @@ const app = { scrollCue: null, setupStatueInteraction: null };
 
 async function setupLotties() {
   // nav mark: the curtain rises on the mark once, and again on hover
-  const markHost = document.querySelector('[data-lottie="mask-mark"]');
-  const mark = await loadLottie(markHost, 'mask-mark');
-  if (mark) {
-    markHost.querySelector('img')?.remove();
-    if (reduced) freeze(mark, mark.totalFrames - 1);
-    else mark.play();
-    const replay = () => { if (!reduced) mark.goToAndPlay(0, true); };
-    const brand = markHost.closest('a');
-    brand.addEventListener('mouseenter', replay);
-    cleanups.push(() => { brand.removeEventListener('mouseenter', replay); mark.destroy(); });
-  }
+  cleanups.push(await setupBrandMark({ reduced }));
 
   // scroll cue: a slow descending dot (static frame with reduced motion)
   const cue = await loadLottie(document.querySelector('[data-lottie="scroll-cue"]'), 'scroll-cue', { loop: !reduced });

@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Core team · The Drama Collective</title>
+  <meta name="description" content="The students who run the CHIREC Drama Collective, in their own words.">
+  <meta name="theme-color" content="#2a0d1c">
+  <!-- site:head -->
+  <link rel="icon" href="./assets/brand/mark-gold.png">
+  <link rel="preload" href="./assets/fonts/Raung-400.otf" as="font" type="font/otf" crossorigin>
+  <link rel="stylesheet" href="./src/styles/main.css">
+  <!-- Bare-module map for running without a build step (any static server). Vite resolves the same
+       specifiers from node_modules and ignores this map. Keep the versions in step with package.json. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/index.js",
+      "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/",
+      "lottie-web/build/player/lottie_light.js": "https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.js/+esm"
+    }
+  }
+  </script>
+  <script>
+    // theme before first paint: the saved choice, else the dark theatre
+    try { var t = localStorage.getItem('dc-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+    // arriving through the curtain (src/site/transition.js): it starts closed and opens on this page
+    try { if (sessionStorage.getItem('dc-veil') === '1') { sessionStorage.removeItem('dc-veil'); document.documentElement.classList.add('is-veiled'); } } catch (e) {}
+    document.documentElement.classList.add('has-js');
+  </script>
+  <!-- /site:head -->
+</head>
+<body class="page page--team">
+  <!-- site:header -->
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="veil" aria-hidden="true">
+    <div class="veil__half veil__half--l"></div>
+    <div class="veil__half veil__half--r"></div>
+  </div>
+
+  <header class="topbar" data-topbar>
+    <a class="topbar__brand" href="./index.html" aria-label="The Drama Collective, home">
+      <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
+      <span class="topbar__word">The Drama Collective</span>
+    </a>
+    <nav class="topbar__nav" aria-label="Main">
+      <ul class="topbar__links">
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html" aria-current="page">Core team</a></li>
+        <li><a href="./publication.html">The publication</a></li>
+        <li><a href="./production.html">The production</a></li>
+        <li><a href="./flash-plays.html">Flash plays</a></li>
+        <li><a href="./workshops.html">Workshops</a></li>
+        <li><a href="./outreach.html">Social outreach</a></li>
+      </ul>
+      <span class="topbar__glint" aria-hidden="true"></span>
+    </nav>
+    <div class="topbar__tools">
+      <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Piano music" title="Play piano music" data-music-toggle>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><rect class="bar" x="2.5" y="8" width="2.2" height="9"/><rect class="bar" x="6.9" y="3" width="2.2" height="14"/><rect class="bar" x="11.3" y="6" width="2.2" height="11"/><rect class="bar" x="15.7" y="9" width="2.2" height="8"/></svg>
+      </button>
+      <button class="icon-btn theme-toggle" type="button" aria-pressed="false" aria-label="Light mode" title="House lights" data-theme-toggle>
+        <svg class="theme-toggle__sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 1.8v2.1M10 16.1v2.1M1.8 10h2.1M16.1 10h2.1M4.2 4.2l1.5 1.5M14.3 14.3l1.5 1.5M4.2 15.8l1.5-1.5M14.3 5.7l1.5-1.5"/></g></svg>
+        <svg class="theme-toggle__moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.9 12.6A6.6 6.6 0 0 1 7.4 4.1a6.6 6.6 0 1 0 8.5 8.5Z" fill="currentColor"/></svg>
+      </button>
+    </div>
+    <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu-sheet" data-menu-toggle>Menu</button>
+    <a class="btn btn--inverse btn--sm topbar__cta" href="./sponsor.html">Become a sponsor</a>
+    <div class="topbar__sheet" id="menu-sheet" data-menu-sheet>
+      <ul>
+        <li><a href="./index.html">Home</a></li>
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html" aria-current="page">Core team</a></li>
+        <li><a href="./publication.html">The publication</a></li>
+        <li><a href="./production.html">The production</a></li>
+        <li><a href="./flash-plays.html">Flash plays</a></li>
+        <li><a href="./workshops.html">Workshops</a></li>
+        <li><a href="./outreach.html">Social outreach</a></li>
+        <li><a href="./sponsor.html">Become a sponsor</a></li>
+      </ul>
+    </div>
+  </header>
+  <!-- /site:header -->
+
+  <!-- site:stage -->
+  <div class="stage" aria-hidden="true">
+    <canvas class="stage__stars"></canvas>
+  </div>
+
+  <div class="cursor" aria-hidden="true">
+    <span class="cursor__glow"></span>
+    <svg class="cursor__star" viewBox="-12 -17 24 34" focusable="false"><path class="cursor__star-plain" d="M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z"/><path class="cursor__star-text" d="M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z"/></svg>
+  </div>
+  <!-- /site:stage -->
+
+  <main id="main" class="page__main">
+    <header class="act-head ground" data-mask>
+      <p class="eyebrow">Core team</p>
+      <h1 class="act-head__title" data-reveal>The students who run the Collective</h1>
+      <span class="rule" aria-hidden="true"></span>
+      <p class="lead">Choose anyone to read their introduction, in their own words.</p>
+    </header>
+
+    <section class="team" aria-label="Team members">
+      <!-- site:team -->
+      <div class="team-filter" role="group" aria-label="Show a department">
+        <button class="team-filter__btn" type="button" aria-pressed="true" data-filter="all">Everyone</button>
+        <button class="team-filter__btn" type="button" aria-pressed="false" data-filter="leadership">Leadership</button>
+        <button class="team-filter__btn" type="button" aria-pressed="false" data-filter="design">Design</button>
+        <button class="team-filter__btn" type="button" aria-pressed="false" data-filter="photography">Photography</button>
+        <button class="team-filter__btn" type="button" aria-pressed="false" data-filter="logistics">Logistics</button>
+        <button class="team-filter__btn" type="button" aria-pressed="false" data-filter="marketing">Marketing &amp; outreach</button>
+        <button class="team-filter__btn" type="button" aria-pressed="false" data-filter="finance">Finance &amp; sponsorship</button>
+        <button class="team-filter__btn" type="button" aria-pressed="false" data-filter="workshops">Workshops &amp; publication</button>
+      </div>
+      <ul class="team-grid" data-spot>
+        <li class="member" data-dept="leadership" data-flip-id="aadi">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="aadi">
+            <span class="member__photo"><img src="./assets/team/aadi.webp" alt="" width="520" height="650" loading="lazy" decoding="async"></span>
+            <span class="member__name">Aadi Ramnani</span>
+            <span class="member__role">President</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>Hi, I’m Aadi and I’ve been training in theatre since kindergarten, beginning with Helen O’Grady International, the world’s largest developmental drama programme, and later continuing my training with the International Drama Academy.</p>
+            <p>Theatre has been a huge part of my life, partly because it lets me explore different versions of my own self, those that I never would have dared touch in reality, and I want to use what I’ve learned to help make drama more accessible, collaborative, and exciting for the entirety of the student body at CHIREC, not solely the performers.</p>
+            <p>Through the Drama Collective, I hope to create more spaces for students to perform, experiment, collaborate, and discover what they’re capable of, whether they’ve been performing for years or are stepping onto a stage for the first time, while creating opportunities for students to experience theatre from the other side of the stage; to encounter stories, performances, and ideas that they might not otherwise have the chance to see, and to make theatre something the wider community can engage with.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="leadership" data-flip-id="aripra">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="aripra">
+            <span class="member__photo"><img src="./assets/team/aripra.webp" alt="" width="520" height="650" loading="lazy" decoding="async"></span>
+            <span class="member__name">Aripra Sharma</span>
+            <span class="member__role">Executive President</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>whirlwind (n): a rush of chaos and momentum</p>
+            <p>Take your pick on whether that's my connotation of the word or a personal biography. Hi! I'm Aripra:) Apart from being an avid monologuer and a novel addict, I'm also the Executive President of the Drama Collective and an IBDP1 student at Chirec. If I had to sum myself up, I'd say I'm a mix of B99 reruns, blasts of Green Day and Drake and the desire to live by the words “I go to seek a great perhaps.” On a very serious note, I joined this collective not purely because of my love for theatre, but because I wanted to take all that chaos and actually put it towards something meaningful.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="finance" data-flip-id="karthikeya">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="karthikeya">
+            <span class="member__photo"><img src="./assets/team/karthikeya.webp" alt="" width="441" height="551" loading="lazy" decoding="async"></span>
+            <span class="member__name">Karthikeya</span>
+            <span class="member__role">Head of Finance</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>I'm Karthikeya, and I'm the Head of Finance for the collective.</p>
+            <p>My finance experience comes from the business side of things. I wrote a full business plan for a public space, mapping out how it could fund itself through multiple revenue streams. I've done research into finance and how businesses stay sustainable, and I've helped with sponsorships, which taught me how to pitch value and make the numbers work for both sides. I also run Spark Tank, where we teach people how businesses actually make money.</p>
+            <p>As for drama, I've always been into storytelling. I love cinema and spend a lot of time thinking about why certain scenes hit the way they do. I'm also a pianist, so I care about how music and mood shape what an audience feels. I'm not the one who'll be center stage, but I care about what makes a production happen.</p>
+            <p>My goal is simple: keep our money organized, bring in sponsors, and let the creative people do their thing without worrying about costs.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="design" data-flip-id="snikitha">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="snikitha">
+            <span class="member__photo"><img src="./assets/team/snikitha.webp" alt="" width="520" height="650" loading="lazy" decoding="async"></span>
+            <span class="member__name">Snikitha</span>
+            <span class="member__role">Head of Design</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>Hello! I'm Snikitha. I am a DP1 student. I’m currently one of the three heads of Designs in the drama collective. I chose design because I've always been more interested in the visual side of theatre and figuring out how all the little details come together. I've always been super into theatre - keeping up with every musical and plays; and design. And I would love to bring my two top interests together! In addition, I've done many stage plays and musical theatre, worked on set design, and I also love character, environment and prop design!</p>
+          </div>
+        </li>
+        <li class="member" data-dept="logistics" data-flip-id="ikshan">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="ikshan">
+            <span class="member__photo"><img src="./assets/team/ikshan.webp" alt="" width="207" height="259" loading="lazy" decoding="async"></span>
+            <span class="member__name">Ikshan Kodimyala</span>
+            <span class="member__role">Head of Logistics</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>Hey there! I'm Ikshan Kodimyala. I'm currently an IBDP Year 1 student and so far I kind of hate it. Other than that, I’m one of the Heads of Logistics for this year's CHIREC Drama Collective. I joined this collective with little to no knowledge on how drama works whatsoever. Thankfully, I’m a part of the logistics team! I chose this department mainly because I enjoy putting together plans and fixing them when moments get tight. I also love clearing things up and organizing stuff because it makes me happy afterwards. However, outside the collective, I’ve done taekwondo for 8 years, and now I’m playing tennis competitively. Sadly, this does mean that I have to put a ton of hours into practice but I'm still able to balance my love with video games as well. My favorite game is Assassin's Creed Odyssey right now. I also love cars, I love how they work and I love watching restoration videos. I really hope I get to go hands on soon. However, I'm an absolute sucker for Bad Bunny. I've loved him since 2023 and I’m pretty sure I’m never going to let go of him either.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="" data-flip-id="hasini">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="hasini">
+            <span class="member__photo"><img src="./assets/team/hasini.webp" alt="" width="520" height="650" loading="lazy" decoding="async"></span>
+            <span class="member__name">Hasini Rao Kasuganti</span>
+            
+          </button>
+          <div class="member__intro" hidden>
+            <p>Meet Hasini Rao Kasuganti, a DP1 student interested in writing, design, economics, entrepreneurship, and, most importantly, bringing ideas to life. With experience in MUN, student publications, and various creative and student-led initiatives, she enjoys working across different roles and turning concepts into engaging projects. She applied for the role because she wanted to be involved in the process of creating a production from the very first idea to the final performance, while bringing together the creative and organisational sides of theatre. She hopes to create productions that are exciting, memorable, and leave audiences looking forward to what comes next. Outside of school, you’ll probably find her listening to Sade on repeat or working on her next project.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="photography" data-flip-id="bhavneesh">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="bhavneesh">
+            <span class="member__photo"><img src="./assets/team/bhavneesh.webp" alt="" width="640" height="800" loading="lazy" decoding="async"></span>
+            <span class="member__name">Bhavneesh M</span>
+            <span class="member__role">Head of Photography</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>Hi! I’m Bhavneesh M, an IBDP Year 1 student and one of the Heads of Photography of the Drama Collective. I joined because I’ve always wanted to explore theatre, meet creative people, and be part of something where we can actually bring ideas to life.</p>
+            <p>Outside of drama, I’m really into photography, videography, music, gaming, and writing. I love experimenting with visuals and storytelling, I’ve probably spent an unhealthy amount of time overthinking something absolutely useless and I’m especially interested in anything cinematic. I’m additionally into sports, especially cricket and pickleball, and I’m also a certified Weeknd addict and, unfortunately, a White Monster addict. If I’m not listening to The Weeknd, there’s a decent chance im dead :)).</p>
+          </div>
+        </li>
+        <li class="member" data-dept="logistics" data-flip-id="avyukth">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="avyukth">
+            <span class="member__photo"><img src="./assets/team/avyukth.webp" alt="" width="640" height="800" loading="lazy" decoding="async"></span>
+            <span class="member__name">Avyukth</span>
+            <span class="member__role">Head of Logistics</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>Hey! I’m Avyukth, a DP2 student interested in mechanical engineering. When I’m free you can probably find me at CragStudio. I'm also the head of logistics for the school band, what I’ve done with them so far: lead logistics for a performance at the second biggest marathon in the nation (35,000+ Participants), lead logistics for performance at Merutsav 2026 (Largest Inter-School student festival), and other school events. My love for theatre comes from watching old movies with my dad and as of late the discussions in Rosalind Ma'am's literature classes.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="design" data-flip-id="ayushi">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="ayushi">
+            <span class="member__photo member__photo--initials"><span>AS</span></span>
+            <span class="member__name">Ayushi Shah</span>
+            <span class="member__role">Head of Design</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>Hi, I’m Ayushi Shah from IB12 and I’m one of the heads of design. I’ve been into art and design almost my entire life and wish to pursue a career in animation. I have considerable experience in editorial, graphic, character and set design. I was first properly introduced to theatre in middle school and some of my favourite productions include Hamilton, Hadestown, Dear Evan Hansen, and Macbeth. My hobbies include reading, watching k-dramas, and scrolling pinterest. During my time in the drama collective, I hope to combine my knowledge of theatre and my design skills to create work that leaves a lasting impact.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="photography" data-flip-id="rimsha">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="rimsha">
+            <span class="member__photo"><img src="./assets/team/rimsha.webp" alt="" width="640" height="800" loading="lazy" decoding="async"></span>
+            <span class="member__name">Rimsha Dawood</span>
+            <span class="member__role">Head of Photography</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>“I am nothing in my soul if not obsessive.”</p>
+            <p>Richard Papen, from The Secret History, was drawn into the world of Classics, Greek, and the people around him. Well, my obsessions tend to be a little less dramatic: books, films, photography, and classic literature. Hi, I’m Rimsha Dawood, a DP 2 student at CHIREC, and one of the Heads of Photography of the Drama Collective. My love for photography has eventually led me to co-found the Film &amp; Photography Club at CHIREC, where I’ve been able to share my passion for framing a moment and keeping it forever. Joining the Drama Collective means the line between photography and storytelling tends to blur, and being a part of that means getting to capture not just what unfolds on the stage, but every little thing – the expressions, the emotions, and the atmosphere – that leads up to the moment we get to share with an audience.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="marketing" data-flip-id="darsh">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="darsh">
+            <span class="member__photo"><img src="./assets/team/darsh.webp" alt="" width="280" height="350" loading="lazy" decoding="async"></span>
+            <span class="member__name">Darsh</span>
+            <span class="member__role">Head of Outreach</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>I'm Darsh, a DP1 student and this year's Head of Outreach for the CHIREC Drama Collective! I joined because I've always been amazed by how much goes into putting on a show. Behind every great performance is a whole crew making the magic happen, and I knew I wanted to be part of it. Outreach felt like the perfect spot for me since I love meeting new people, building connections, and being the link between the collective and everyone outside it. Away from the collective, I play football and tennis, spend a lot of my free time gaming, and have a serious soft spot for cars.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="workshops" data-flip-id="deeksha">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="deeksha">
+            <span class="member__photo"><img src="./assets/team/deeksha.webp" alt="" width="640" height="800" loading="lazy" decoding="async"></span>
+            <span class="member__name">Deeksha</span>
+            <span class="member__role">Head of Workshops</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>Heyyyyyyy! This is Deeksha, a DP1 student, and also the Head of Workshops. My passion for the collective was fueled by the opportunity it offered for combining creativity with teamwork to produce a wonderful community of artists including those who write, those who act, those who direct, those who make and many more. Despite not being a previous theatre enthusiast and knowing almost nothing about it, I've loved writing stories right from middle school. Hence, I applied to see how these tales on paper turn into scenes on stage. I like my role because it combines 2 things I love: exploring something new and teaching something. Being the Head of Workshops, I intend to bring forth the world of theatre not through monotone lectures but fun programs combining theory with practicality, right as I learn alongside you.</p>
+            <p>P.S.: I'm a big mystery and fantasy addict (no discrimination upon whether a series or a good read), so feel free to recommend something during the sessions ;)</p>
+          </div>
+        </li>
+        <li class="member" data-dept="" data-flip-id="pritika">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="pritika">
+            <span class="member__photo"><img src="./assets/team/pritika.webp" alt="" width="640" height="800" loading="lazy" decoding="async"></span>
+            <span class="member__name">Pritika</span>
+            
+          </button>
+          <div class="member__intro" hidden>
+            <p>Hey! I’m Pritika :)</p>
+            <p>I’m currently an IBDP1 student at CHIREC interested in economics and politics, and outside of theatre, I’m usually somewhere between writing, overthinking storylines, or getting way too invested in how something could be done better. I didn’t join this collective just because I like theatre (though I do). I joined because I like the process of it: the brainstorming, the problem-solving, the “this might actually work” moments. Flash plays especially feel like that space where ideas don’t have to be perfect, just bold enough to exist, and that is something I'm extremely excited to pursue throughout the year.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="photography" data-flip-id="randheer">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="randheer">
+            <span class="member__photo"><img src="./assets/team/randheer.webp" alt="" width="315" height="394" loading="lazy" decoding="async"></span>
+            <span class="member__name">Randheer Chowdary Kankanala</span>
+            <span class="member__role">Head of Photography</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>Hi! I’m Randheer Chowdary Kankanala. I'm a DP year 1 student and I am also a head of photography at the drama collective. I went up for photography because I’d say I’m not bad at taking pictures or finding the right frame. This comes from my passion for cinematography and filmmaking. I’ve been making short films and writing scripts for as long as I can remember, so taking photos and editing is no new thing to me. Other than filmmaking, I am really passionate about music. I love making music and experimenting with different genres to hopefully one day find my own sound.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="marketing" data-flip-id="samaara">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="samaara">
+            <span class="member__photo"><img src="./assets/team/samaara.webp" alt="" width="567" height="709" loading="lazy" decoding="async"></span>
+            <span class="member__name">Samaara Rao</span>
+            <span class="member__role">Head of Marketing</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>I’m Samaara Rao, a DP1 student and this year’s Head of Marketing for the CHIREC Drama Collective. I’ve been involved in theatre before, both as a performer and behind the scenes, and it’s something I’ve always enjoyed being a part of.</p>
+            <p>Outside of theatre, I’m a Psychology student and have always been interested in art and creativity in general. I love travelling, listening to music and spending time with my friends.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="finance" data-flip-id="hemanth">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="hemanth">
+            <span class="member__photo"><img src="./assets/team/hemanth.webp" alt="" width="446" height="557" loading="lazy" decoding="async"></span>
+            <span class="member__name">Hemanth</span>
+            <span class="member__role">Head of Sponsorship</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>Hey!!! I’m Hemanth, I’m someone who loves meeting new people, communicating, and taking responsibility, so I felt Head of Sponsorship was a role that suited me. Among all chaos that comes with me I always find time to do the one thing I love the most… play basketball. I really enjoy spending time with my loved ones, listening to music and exploring new things. I really hope with my experience and knowledge I would allow the event to go smoothly.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="marketing" data-flip-id="karanjot">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="karanjot">
+            <span class="member__photo member__photo--initials"><span>K</span></span>
+            <span class="member__name">Karanjot</span>
+            <span class="member__role">Head of Marketing and Outreach</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>I’ve always been someone who likes having a lot going on. Whether it’s photography, basketball, fitness, or working on some random creative idea, I enjoy things that keep me moving, thinking, and trying something new. Photography, in particular, has become one of the ways I notice and remember things. I like catching moments that might otherwise go unnoticed, whether it’s an expression, a reaction, or just something that looks interesting for reasons I probably can’t explain properly. Hi, I’m Karanjot, a CP Year 2 student at CHIREC and the Head of Marketing and Outreach for the Drama Collective.</p>
+            <p>I think a lot of what I enjoy comes down to the same thing: energy and storytelling. Basketball has taught me to think quickly and work with the people around me, while photography and content creation give me a space to experiment with how something looks, feels, and comes across to someone else. I’m also the kind of person who can get strangely invested in an idea once I think it has potential, which is probably both useful and mildly concerning for everyone who ends up working on it with me.</p>
+            <p>That’s also what drew me to marketing and outreach for the Drama Collective. Through marketing, I want to take everything happening around the Collective, from rehearsals and performances to the people and moments behind them, and find ways to make others care about them too. Through outreach, I want to take that same energy beyond our own stage by building collaborations and finding ways for theatre to connect with different people and communities. More than anything, I want the work we do to feel like us: creative, energetic, slightly unpredictable, and capable of reaching people both within and beyond the Collective.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="design" data-flip-id="design-head">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="design-head">
+            <span class="member__photo"><img src="./assets/team/design-head.webp" alt="" width="640" height="800" loading="lazy" decoding="async"></span>
+            <span class="member__name">Head of Design</span>
+            
+          </button>
+          <div class="member__intro" hidden>
+            <p>As one of the Heads of Design for the Drama Collective, my role is to shape the visual identity of the collective and bring creativity into everything we present. I focus on creating a distinctive style through posters, visuals, social media, set elements and other creative details. I want the Drama Collective to have an identity that feels modern, expressive and memorable, while allowing us to experiment with different styles and ideas. My goal is to make the visual side of the collective just as engaging and impactful as the performances themselves.</p>
+          </div>
+        </li>
+        <li class="member" data-dept="workshops" data-flip-id="gautam">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="gautam">
+            <span class="member__photo"><img src="./assets/team/gautam.webp" alt="" width="454" height="568" loading="lazy" decoding="async"></span>
+            <span class="member__name">Gautam</span>
+            <span class="member__role">Head of Publication</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>“To be or not to be, that is the question”</p>
+            <p>Hey there! I’m Gautam, a DP 1 student and this year’s Head of Publication for the Drama Collective. As a student, I am a person who enjoys putting thoughts into words that can be remembered for a lifetime. I’ve always wanted to capture an unseen lens of theatre apart from its production, sharpen my creativity through a new form of expression: Drama, and meet new people who strengthen my creative persona. Hence, here I am!</p>
+            <p>Outside the stage, I am a Mathematics and Economics enthusiast making me to also view real-life problems with a practical approach.</p>
+            <p>My hobbies? Well, I am an obsessive cinephile and an imaginative storywriter who loves to explore a myriad of genres.</p>
+            <p>That is it. I am ready to give you a whole ton of issues to be read without you getting bored at all! I am ready, so are you?</p>
+            <p>Let’s talk about some Drama this year!</p>
+          </div>
+        </li>
+        <li class="member" data-dept="finance" data-flip-id="jasshan">
+          <button class="member__card" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-member="jasshan">
+            <span class="member__photo"><img src="./assets/team/jasshan.webp" alt="" width="480" height="600" loading="lazy" decoding="async"></span>
+            <span class="member__name">Jasshan</span>
+            <span class="member__role">Head of Sponsorship</span>
+          </button>
+          <div class="member__intro" hidden>
+            <p>Hey, I’m Jasshan, a DP1 student with a strong interest in acting, marketing, networking, and the performing arts. Having acted in productions and worked on creative promotions, I enjoy connecting with people and bringing ideas to life. As Sponsorship Head of my school’s Drama Collective, I focus on building partnerships and supporting our productions.</p>
+          </div>
+        </li>
+      </ul>
+      <!-- /site:team -->
+    </section>
+
+    <dialog class="spotlight" id="spotlight" aria-labelledby="spotlight-name">
+      <div class="spotlight__inner">
+        <div class="spotlight__photo" data-spotlight-photo></div>
+        <div class="spotlight__body">
+          <p class="eyebrow" data-spotlight-role></p>
+          <h2 class="spotlight__name" id="spotlight-name" data-spotlight-name></h2>
+          <span class="rule" aria-hidden="true"></span>
+          <div class="spotlight__intro" data-spotlight-intro></div>
+        </div>
+        <button class="icon-btn spotlight__close" type="button" aria-label="Close" data-spotlight-close>
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </dialog>
+  </main>
+
+  <!-- site:footer -->
+  <footer class="curtain" id="contact" aria-labelledby="contact-title">
+    <div class="curtain__grid">
+      <div class="curtain__intro">
+        <p class="eyebrow">Curtain call · Placeholder</p>
+        <h2 id="contact-title" class="curtain__title">Placeholder heading</h2>
+        <span class="rule" aria-hidden="true"></span>
+        <p>Placeholder text for the footer. Contacts and event details come later.</p>
+      </div>
+      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>
+    </div>
+    <div class="curtain__base">
+      <div class="curtain__legal">
+        <p class="legal">© 2026 The Drama Collective · CHIREC International School</p>
+        <p class="credits">Music: Satie, Gymnopédie No. 1 (Robin Alciatore); Beethoven, Sonata Pathétique, Adagio cantabile (Paul Pitman); Chopin, Nocturne Op. 15 No. 1 (Luke Faulkner). Public-domain recordings from <a href="https://musopen.org" rel="noopener">Musopen</a>, via <a href="https://commons.wikimedia.org" rel="noopener">Wikimedia Commons</a>.</p>
+      </div>
+      <a class="endorsement" href="https://www.chirec.ac.in" rel="noopener">
+        <img class="endorsement__logo" src="./assets/brand/chirec.webp" alt="CHIREC International School" width="475" height="140">
+        <span>Placeholder line</span>
+      </a>
+    </div>
+  </footer>
+  <!-- /site:footer -->
+
+  <script type="module" src="./src/pages/team.js"></script>
+</body>
+</html>

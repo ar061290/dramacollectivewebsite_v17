@@ -1,25 +1,49 @@
 // Top bar: hides on scroll down, returns on scroll up, gains the blurred ground once scrolled.
-// Anchor links scroll smoothly (ScrollToPlugin) and move focus to their target.
+// Each page link opens its own page (the curtain between pages is src/site/transition.js). On wide
+// screens a gold rule slides under the link the pointer is on and rests under the current page;
+// on narrow ones the Menu drops a full-screen sheet like a curtain and the pages rise into it.
+// Same-page anchors (the home page's) still scroll smoothly and move focus to their target.
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
 
 export function setupNav({ reduced }) {
+  const root = document.documentElement;
   const bar = document.querySelector('[data-topbar]');
+  if (!bar) return () => {};
   const toggle = bar.querySelector('[data-menu-toggle]');
   const sheet = bar.querySelector('[data-menu-sheet]');
+  const sheetLinks = [...sheet.querySelectorAll('a')];
   let menuOpen = false;
+  let sheetTl = null;
 
   const setMenu = (open) => {
+    if (open === menuOpen) return;
     menuOpen = open;
     toggle.setAttribute('aria-expanded', String(open));
     toggle.textContent = open ? 'Close' : 'Menu';
-    sheet.classList.toggle('is-open', open);
+    root.classList.toggle('is-locked', open);
     if (open) bar.classList.remove('is-hidden');
+    sheetTl?.kill();
+    if (open) {
+      sheet.classList.add('is-open');
+      sheetTl = reduced
+        ? gsap.timeline().set(sheet, { clipPath: 'none' }).set(sheetLinks, { yPercent: 0, autoAlpha: 1 })
+        : gsap.timeline({ defaults: { ease: 'curtain' } })
+          .fromTo(sheet, { clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0% 0)', duration: 0.45 })
+          .fromTo(sheetLinks, { yPercent: 110, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.5, stagger: 0.04 }, 0.12);
+    } else {
+      sheetTl = gsap.timeline({ onComplete: () => sheet.classList.remove('is-open') })
+        .to(sheet, { clipPath: 'inset(0 0 100% 0)', duration: reduced ? 0 : 0.28, ease: 'power2.in' });
+    }
   };
   const onToggle = () => setMenu(!menuOpen);
   const onKey = (e) => { if (e.key === 'Escape' && menuOpen) { setMenu(false); toggle.focus(); } };
   toggle.addEventListener('click', onToggle);
   window.addEventListener('keydown', onKey);
+  // the sheet only exists below the wide layout: close it if the window grows past it
+  const wide = matchMedia('(min-width: 1240px)');
+  const onWide = () => { if (wide.matches) setMenu(false); };
+  wide.addEventListener('change', onWide);
 
   const scrollWatch = ScrollTrigger.create({
     start: 0,
@@ -35,22 +59,46 @@ export function setupNav({ reduced }) {
   const onFocusIn = () => bar.classList.remove('is-hidden');
   bar.addEventListener('focusin', onFocusIn);
 
-  // current section in the nav
-  const links = [...bar.querySelectorAll('.topbar__links a')];
-  const sectionTriggers = links.map((a) => {
-    const target = document.querySelector(a.getAttribute('href'));
-    if (!target) return null;
-    return ScrollTrigger.create({
-      trigger: target,
-      start: 'top 50%',
-      end: 'bottom 50%',
-      onToggle: (self) => {
-        if (self.isActive) links.forEach((l) => l.toggleAttribute('aria-current', l === a));
-        else a.removeAttribute('aria-current');
-      },
-    });
-  }).filter(Boolean);
+  // the sliding rule under the page links
+  const nav = bar.querySelector('.topbar__nav');
+  const glint = nav?.querySelector('.topbar__glint');
+  const links = nav ? [...nav.querySelectorAll('.topbar__links a')] : [];
+  const here = links.find((a) => a.getAttribute('aria-current') === 'page');
+  let glintCleanup = () => {};
+  if (glint && links.length) {
+    root.classList.add('has-glint');
+    const dur = reduced ? 0 : 0.42;
+    const qx = gsap.quickTo(glint, 'x', { duration: dur, ease: 'power3.out' });
+    const qw = gsap.quickTo(glint, 'scaleX', { duration: dur, ease: 'power3.out' });
+    const navLeft = () => nav.getBoundingClientRect().left;
+    const place = (a, instant) => {
+      const r = a.getBoundingClientRect();
+      if (instant) gsap.set(glint, { x: r.left - navLeft(), scaleX: r.width });
+      else { qx(r.left - navLeft()); qw(r.width); }
+      gsap.to(glint, { opacity: 1, duration: reduced ? 0 : 0.2, overwrite: 'auto' });
+    };
+    const rest = () => {
+      if (here) place(here);
+      else gsap.to(glint, { opacity: 0, duration: reduced ? 0 : 0.25, overwrite: 'auto' });
+    };
+    const onEnter = (e) => place(e.currentTarget);
+    links.forEach((a) => { a.addEventListener('pointerenter', onEnter); a.addEventListener('focus', onEnter); });
+    nav.addEventListener('pointerleave', rest);
+    nav.addEventListener('focusout', rest);
+    // wait for the fonts, so the widths are the real ones
+    const settle = () => { if (here) place(here, true); };
+    document.fonts.ready.then(settle);
+    window.addEventListener('resize', settle);
+    glintCleanup = () => {
+      links.forEach((a) => { a.removeEventListener('pointerenter', onEnter); a.removeEventListener('focus', onEnter); });
+      nav.removeEventListener('pointerleave', rest);
+      nav.removeEventListener('focusout', rest);
+      window.removeEventListener('resize', settle);
+      root.classList.remove('has-glint');
+    };
+  }
 
+  // same-page anchors: smooth scroll and focus (the home page's acts)
   const onClick = (e) => {
     const a = e.target.closest('a[href^="#"]');
     if (!a) return;
@@ -74,10 +122,13 @@ export function setupNav({ reduced }) {
 
   return () => {
     scrollWatch.kill();
-    sectionTriggers.forEach((t) => t.kill());
+    sheetTl?.kill();
+    glintCleanup();
     toggle.removeEventListener('click', onToggle);
     window.removeEventListener('keydown', onKey);
+    wide.removeEventListener('change', onWide);
     bar.removeEventListener('focusin', onFocusIn);
     document.removeEventListener('click', onClick);
+    root.classList.remove('is-locked');
   };
 }

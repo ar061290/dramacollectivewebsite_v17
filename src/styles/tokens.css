@@ -60,7 +60,7 @@
   --stage-gutter: var(--space-6);
   /* layer order for the fixed stage, content and chrome */
   /* the footer sits between the sky and the WebGL stage, so the 3D logo stays in front of it */
-  --z-stars: 0; --z-footer: 1; --z-stage: 2; --z-content: 3; --z-topbar: 10; --z-cursor: 20; --z-loader: 30;
+  --z-stars: 0; --z-footer: 1; --z-stage: 2; --z-content: 3; --z-topbar: 10; --z-veil: 15; --z-cursor: 20; --z-loader: 30;
 }
 @media (min-width: 768px) {
   :root { --stage-gutter: var(--space-8); }
@@ -95,6 +95,8 @@
   --star: var(--gold-500);
   --star-glow: var(--gold-300);
   --cursor: var(--gold-500);
+  --spot-rgb: 243 231 184;            /* gold-300: the follow-spot and the stage lamps */
+  --spot-lit: var(--gold-300);        /* text the follow-spot falls on */
 }
 :root[data-theme="light"] {
   --bg: var(--surface-page);
@@ -118,4 +120,6 @@
   --star: var(--gold-700);
   --star-glow: var(--gold-600);
   --cursor: var(--plum-600);
+  --spot-rgb: 203 174 87;             /* gold-600 */
+  --spot-lit: var(--plum-800);
 }
