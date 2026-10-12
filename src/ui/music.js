@@ -1,147 +1,181 @@
-// Piano music, off by default and only ever started by the visitor. Public-domain and CC0
-// recordings from Musopen, streamed from Wikimedia Commons (credited in the footer), played in turn
-// and looped. Fades in and out; pauses while the tab is hidden and picks up again on return.
+// Music, off by default and only ever started by the visitor: "the smell of old books, reading,
+// writing and studying (a dark academia playlist)" by Dark Enigmatic, played from YouTube through
+// YouTube's own embedded player (credited in the footer). The video is not copied or hosted here:
+// it streams from YouTube, and YouTube's terms want its player in view (at least 200 x 200 px), so
+// while the music plays a small "now playing" card shows the player in the corner of the screen;
+// closing the card, or the music button, stops it.
+//
+// The music carries on from page to page: where it got to is remembered for this visit
+// (sessionStorage) and the next page picks it up there, if the browser lets it play (a click on a
+// link of the same site normally does). It fades in and out, and pauses while the tab is hidden.
 import gsap from 'gsap';
 
-const COMMONS = 'https://upload.wikimedia.org/wikipedia/commons/';
-const VOLUME = 0.5;
+export const TRACK = {
+  id: 'HCV-2-IoIXs',
+  title: 'the smell of old books, reading, writing and studying (a dark academia playlist)',
+  by: 'Dark Enigmatic',
+  url: 'https://www.youtube.com/watch?v=HCV-2-IoIXs',
+};
+const VOLUME = 60; // of YouTube's 100
+const KEY = 'dc-music'; // { on, t }: whether the visitor wants it, and where it had got to (seconds)
 
-export const TRACKS = [
-  {
-    title: 'Gymnopédie No. 1',
-    composer: 'Erik Satie',
-    performer: 'Robin Alciatore',
-    path: '9/90/Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg',
-  },
-  {
-    title: 'Sonata Pathétique, II. Adagio cantabile',
-    composer: 'Ludwig van Beethoven',
-    performer: 'Paul Pitman',
-    path: '6/63/Beethoven%2C_Sonata_No._8_in_C_Minor_Pathetique%2C_Op._13_-_II._Adagio_cantabile.ogg',
-  },
-  {
-    title: 'Nocturne in F major, Op. 15 No. 1',
-    composer: 'Frédéric Chopin',
-    performer: 'Luke Faulkner',
-    path: '5/56/Chopin_-_Nocturne_Op._15_no._1_in_F_major.ogg',
-  },
-];
+let apiReady = null;
+/** Load YouTube's IFrame Player API once. */
+function loadApi() {
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  apiReady ??= new Promise((resolve, reject) => {
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { prev?.(); resolve(window.YT); };
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    s.async = true;
+    s.onerror = () => { apiReady = null; reject(new Error('YouTube player unavailable')); };
+    document.head.append(s);
+  });
+  return apiReady;
+}
+
+const read = () => { try { return JSON.parse(sessionStorage.getItem(KEY)) ?? {}; } catch { return {}; } };
+const write = (v) => { try { sessionStorage.setItem(KEY, JSON.stringify(v)); } catch { /* private mode: it starts over */ } };
 
 export function setupMusic({ reduced }) {
   const button = document.querySelector('[data-music-toggle]');
   if (!button) return () => {};
-  const audio = new Audio();
-  audio.preload = 'none';
-  // Ogg Vorbis where supported (smaller); Wikimedia's MP3 copy elsewhere (Safari)
-  const ogg = audio.canPlayType('audio/ogg; codecs="vorbis"') !== '';
-  const src = (t) => {
-    if (ogg) return COMMONS + t.path;
-    const [a, b, file] = t.path.split('/');
-    return `${COMMONS}transcoded/${a}/${b}/${file}/${file}.mp3`;
-  };
 
-  let index = 0;
-  let wanted = false; // the visitor's choice; the audio may be briefly paused while the tab is hidden
-  let failures = 0;
+  let wanted = false; // the visitor's choice; the player may be briefly paused while the tab is hidden
+  let player = null; // YT.Player once built
+  let card = null;
   let fade = null;
+  const level = { v: 0 }; // the volume being faded (0..VOLUME)
 
-  const label = () => {
-    const t = TRACKS[index];
-    button.title = wanted ? `Now playing: ${t.composer}, ${t.title}` : 'Play piano music';
-  };
-  const setUi = () => {
+  const setUi = (state) => {
     button.setAttribute('aria-pressed', String(wanted));
-    button.classList.toggle('is-playing', wanted && !audio.paused);
-    if (!wanted) button.classList.remove('is-loading');
-    label();
+    button.classList.toggle('is-playing', wanted && state === 'playing');
+    button.classList.toggle('is-loading', wanted && state === 'loading');
+    button.title = wanted ? `Now playing: ${TRACK.title}, ${TRACK.by}` : 'Play music';
   };
 
-  const load = (i) => {
-    index = (i + TRACKS.length) % TRACKS.length;
-    audio.src = src(TRACKS[index]);
-    if ('mediaSession' in navigator && window.MediaMetadata) {
-      const t = TRACKS[index];
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: t.title,
-        artist: `${t.composer} · ${t.performer}`,
-        album: 'The Drama Collective',
-      });
-    }
+  // the card: the player in view, the piece's name, and a way to stop it
+  const buildCard = () => {
+    card = document.createElement('section');
+    card.className = 'now-playing';
+    card.setAttribute('aria-label', 'Now playing');
+    card.innerHTML = `
+      <div class="now-playing__player"><div data-yt></div></div>
+      <div class="now-playing__meta">
+        <p class="eyebrow now-playing__label">Now playing</p>
+        <p class="now-playing__title"></p>
+        <a class="now-playing__by" href="${TRACK.url}" target="_blank" rel="noopener"></a>
+      </div>
+      <button class="icon-btn now-playing__close" type="button" aria-label="Stop the music" title="Stop the music">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>`;
+    card.querySelector('.now-playing__title').textContent = TRACK.title;
+    card.querySelector('.now-playing__by').textContent = `${TRACK.by} · YouTube`;
+    card.querySelector('.now-playing__close').addEventListener('click', () => { if (wanted) toggle(); });
+    document.body.append(card);
+    if (!reduced) gsap.from(card, { autoAlpha: 0, y: 16, duration: 0.5, ease: 'curtain' });
   };
 
-  const fadeTo = (volume, duration, onComplete) => {
+  const fadeTo = (to, duration, onComplete) => {
     fade?.kill();
-    fade = gsap.to(audio, { volume, duration: reduced ? 0 : duration, ease: 'sine.inOut', onComplete });
+    fade = gsap.to(level, {
+      v: to,
+      duration: reduced ? 0 : duration,
+      ease: 'sine.inOut',
+      onUpdate: () => player?.setVolume?.(Math.round(level.v)),
+      onComplete,
+    });
   };
 
-  const start = async () => {
-    if (!audio.src) load(index);
-    fade?.kill();
-    if (audio.paused) audio.volume = 0;
+  const onState = (e) => {
+    const S = window.YT.PlayerState;
+    if (e.data === S.PLAYING) { setUi('playing'); fadeTo(VOLUME, 1.6); }
+    else if (e.data === S.BUFFERING) setUi('loading');
+    else if (e.data === S.ENDED) { player.seekTo(0, true); player.playVideo(); }
+    else setUi('paused');
+  };
+
+  const start = async (at = 0) => {
+    setUi('loading');
+    if (!card) buildCard();
     try {
-      await audio.play();
+      const YT = await loadApi();
+      if (!wanted) return;
+      if (!player) {
+        level.v = 0;
+        await new Promise((resolve) => {
+          player = new YT.Player(card.querySelector('[data-yt]'), {
+            host: 'https://www.youtube-nocookie.com',
+            videoId: TRACK.id,
+            width: '100%',
+            height: '100%',
+            playerVars: { autoplay: 1, start: Math.floor(at), playsinline: 1, rel: 0, modestbranding: 1 },
+            events: { onReady: () => { player.setVolume(0); player.playVideo(); resolve(); }, onStateChange: onState },
+          });
+        });
+      } else {
+        player.playVideo();
+      }
     } catch (err) {
-      if (err?.name !== 'AbortError') { wanted = false; console.warn('Music could not start.', err); }
-      setUi();
-      return;
+      console.warn('Music could not start.', err);
+      wanted = false;
+      stop(true);
     }
-    fadeTo(VOLUME, 1.6);
-    setUi();
   };
 
-  const stop = () => fadeTo(0, 0.6, () => { audio.pause(); setUi(); });
+  const stop = (now = false) => {
+    const end = () => {
+      player?.destroy?.();
+      player = null;
+      const c = card;
+      card = null;
+      if (c && !reduced && !now) gsap.to(c, { autoAlpha: 0, y: 16, duration: 0.35, ease: 'power1.in', onComplete: () => c.remove() });
+      else c?.remove();
+      setUi('paused');
+    };
+    if (now || !player) { fade?.kill(); end(); return; }
+    fadeTo(0, 0.6, end);
+  };
 
-  const onClick = () => {
+  const toggle = () => {
     wanted = !wanted;
-    if (wanted) start(); else stop();
-    setUi();
+    write({ on: wanted, t: wanted ? (read().t ?? 0) : 0 });
+    if (wanted) start(read().t ?? 0); else stop();
+    setUi(wanted ? 'loading' : 'paused');
   };
 
-  // the playlist: next piece at the end; skip a piece that will not load (up to one full round)
-  const onEnded = () => { load(index + 1); if (wanted) start(); };
-  const onError = () => {
-    if (!audio.src || ++failures > TRACKS.length) { wanted = false; setUi(); return; }
-    load(index + 1);
-    if (wanted) start();
-  };
-  const onPlaying = () => { failures = 0; setUi(); };
-  const onWaiting = () => button.classList.add('is-loading');
-  const onCanPlay = () => button.classList.remove('is-loading');
-  const onVisibility = () => {
+  // where it got to, for the next page (and the next visit to this one, within the visit)
+  const remember = () => {
     if (!wanted) return;
-    if (document.hidden) { fade?.kill(); audio.pause(); } else start();
+    const t = player?.getCurrentTime?.();
+    write({ on: true, t: typeof t === 'number' ? t : read().t ?? 0 });
+  };
+  const timer = setInterval(remember, 2000);
+  const onHide = () => remember();
+
+  const onVisibility = () => {
+    if (!wanted || !player) return;
+    if (document.hidden) { remember(); player.pauseVideo?.(); } else player.playVideo?.();
   };
 
-  button.addEventListener('click', onClick);
-  audio.addEventListener('ended', onEnded);
-  audio.addEventListener('error', onError);
-  audio.addEventListener('playing', onPlaying);
-  audio.addEventListener('pause', setUi);
-  audio.addEventListener('waiting', onWaiting);
-  audio.addEventListener('canplay', onCanPlay);
+  button.addEventListener('click', toggle);
   document.addEventListener('visibilitychange', onVisibility);
-  if ('mediaSession' in navigator) {
-    navigator.mediaSession.setActionHandler('play', () => { if (!wanted) onClick(); });
-    navigator.mediaSession.setActionHandler('pause', () => { if (wanted) onClick(); });
-    navigator.mediaSession.setActionHandler('nexttrack', () => { load(index + 1); if (wanted) start(); });
-  }
-  setUi();
+  window.addEventListener('pagehide', onHide);
+  setUi('paused');
+
+  // carry on from the last page
+  const saved = read();
+  if (saved.on) { wanted = true; start(saved.t ?? 0); }
 
   return () => {
+    clearInterval(timer);
+    remember();
     fade?.kill();
-    audio.pause();
-    audio.removeAttribute('src');
-    audio.load();
-    button.removeEventListener('click', onClick);
-    audio.removeEventListener('ended', onEnded);
-    audio.removeEventListener('error', onError);
-    audio.removeEventListener('playing', onPlaying);
-    audio.removeEventListener('pause', setUi);
-    audio.removeEventListener('waiting', onWaiting);
-    audio.removeEventListener('canplay', onCanPlay);
+    button.removeEventListener('click', toggle);
     document.removeEventListener('visibilitychange', onVisibility);
-    if ('mediaSession' in navigator) {
-      for (const action of ['play', 'pause', 'nexttrack']) navigator.mediaSession.setActionHandler(action, null);
-    }
+    window.removeEventListener('pagehide', onHide);
+    player?.destroy?.();
+    card?.remove();
   };
 }

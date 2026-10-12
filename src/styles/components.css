@@ -224,7 +224,7 @@
 /* until the script runs, the rule is a plain underline */
 html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links a[aria-current="page"] { box-shadow: inset 0 calc(-1 * var(--rule-thick)) 0 var(--rule-color); }
 
-/* Icon controls: piano music and the theme */
+/* Icon controls: music and the theme */
 .topbar__tools { display: flex; align-items: center; }
 .icon-btn {
   width: 44px; height: 44px;
@@ -254,6 +254,29 @@ html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links
 /* theme: the sun turns the house lights up; the moon brings them down */
 .icon-btn .theme-toggle__moon, [data-theme="light"] .icon-btn .theme-toggle__sun { display: none; }
 [data-theme="light"] .icon-btn .theme-toggle__moon { display: block; }
+/* Now playing: while the music plays, YouTube's player in view in the corner (its terms want the
+   player visible, at least 200 x 200 px), with the piece's name and a way to stop it (music.js) */
+.now-playing {
+  position: fixed;
+  left: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 12; /* over the page and the stage, under the curtain between pages */
+  width: min(372px, calc(100vw - 2 * var(--space-4)));
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
+  color: var(--fg);
+}
+.now-playing::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: var(--rule-thick); background: var(--rule-color); z-index: 1; }
+.now-playing__player { position: relative; width: 100%; height: 200px; background: var(--black); }
+.now-playing__player iframe, .now-playing__player > div { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+.now-playing__meta { padding: var(--space-3) calc(var(--space-4) + 40px) var(--space-3) var(--space-4); display: grid; gap: 2px; }
+.now-playing__label { margin: 0; }
+.now-playing__title { margin: 0; font-family: var(--font-display); font-size: 17px; line-height: 1.2; color: var(--fg-strong); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.now-playing__by { font-size: var(--size-caption); color: var(--fg-muted); }
+.now-playing__close { position: absolute; right: var(--space-1); bottom: var(--space-2); }
+@media (prefers-reduced-motion: reduce) { .now-playing { transition: none; } }
+
 .topbar__menu {
   display: none;
   background: none;
