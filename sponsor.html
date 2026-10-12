@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#2a0d1c">
   <!-- site:head -->
   <link rel="icon" href="./assets/brand/mark-gold.png">
-  <link rel="preload" href="./assets/fonts/Raung-400.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./src/styles/main.css">
   <!-- Bare-module map for running without a build step (any static server). Vite resolves the same
        specifiers from node_modules and ignores this map. Keep the versions in step with package.json. -->
@@ -44,7 +44,7 @@
   <header class="topbar" data-topbar>
     <a class="topbar__brand" href="./index.html" aria-label="The Drama Collective, home">
       <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
-      <span class="topbar__word">The Drama Collective</span>
+      <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
     </a>
     <nav class="topbar__nav" aria-label="Main">
       <ul class="topbar__links">
@@ -114,7 +114,6 @@
     <section class="act tiers-act" aria-labelledby="tiers-title">
       <div class="medallion" data-medallion>
         <span class="medallion__still" aria-hidden="true"></span>
-        <p class="eyebrow medallion__caption" data-medallion-caption aria-hidden="true">Drag to turn</p>
       </div>
       <div>
         <div class="tiers-head ground" data-mask>

@@ -9,7 +9,8 @@
 //   mask  the mask in her hand        -> the logo's mask (its frame, eye, nose and lips)
 //   hand  her hand and forearm        -> the hand holding it, down its long wrist
 //   face  her head and neck           -> the profile face
-//   body  torso, robes, arms, plinth  -> the brush strokes, the flames, the crescent and the star
+//   body  torso, robes, arms, plinth  -> the brush strokes, the flames and the crescent
+// (the star beside the mask is not made from her: it flies in from the sky, src/scene/star.js)
 // The statue's parts come from the rig (which bone moves each vertex); the logo's from
 // assets/brand/mark-regions.json. Within each part:
 //   1. the logo part is tessellated (longest-edge splits) to the statue part's triangle count (or
@@ -570,7 +571,9 @@ export function buildMorph({ skinned, space, logo, center, origin }) {
 
   const at = new THREE.Vector3().copy(fit.at);
   const size = closeUp.getSize(new THREE.Vector3());
+  const current = { at, scale: fit.scale }; // where the logo stands now (for the star, src/scene/star.js)
   return {
+    current,
     mesh,
     uniforms,
     triangles: total,
@@ -585,7 +588,8 @@ export function buildMorph({ skinned, space, logo, center, origin }) {
       uniforms.uMorph.value = t;
       // the centre moves straight to its place; the scale grows evenly (geometrically)
       at.lerpVectors(fit.at, center, grow);
-      uniforms.uFit.value.set(at.x, at.y, at.z, fit.scale ** (1 - grow));
+      current.scale = fit.scale ** (1 - grow);
+      uniforms.uFit.value.set(at.x, at.y, at.z, current.scale);
       // the parts close up into the logo's layout before it has grown much (never slower than it
       // grows, which keeps the shifted parts inside the ring clearance)
       uniforms.uSettle.value = Math.min(1 - window01(MORPH.settle, t), 1 - grow);

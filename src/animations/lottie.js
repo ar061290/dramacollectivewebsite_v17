@@ -2,7 +2,6 @@
 import lottie from 'lottie-web/build/player/lottie_light.js';
 
 const FILES = {
-  loader: new URL('../../assets/lottie/loader.json', import.meta.url),
   'scroll-cue': new URL('../../assets/lottie/scroll-cue.json', import.meta.url),
   'mask-mark': new URL('../../assets/lottie/mask-mark.json', import.meta.url),
   'cta-flourish': new URL('../../assets/lottie/cta-flourish.json', import.meta.url),

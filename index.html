@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#2a0d1c">
   <!-- site:head -->
   <link rel="icon" href="./assets/brand/mark-gold.png">
-  <link rel="preload" href="./assets/fonts/Raung-400.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./src/styles/main.css">
   <!-- Bare-module map for running without a build step (any static server). Vite resolves the same
        specifiers from node_modules and ignores this map. Keep the versions in step with package.json. -->
@@ -31,6 +31,8 @@
     document.documentElement.classList.add('has-js');
   </script>
   <!-- /site:head -->
+  <!-- the statue starts downloading with the page, not once the scripts have asked for it -->
+  <link rel="preload" href="./assets/models/statue-rig.glb" as="fetch" type="model/gltf-binary" crossorigin="anonymous">
   <script>
     if (!matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('is-intro');
   </script>
@@ -47,7 +49,7 @@
   <header class="topbar" data-topbar>
     <a class="topbar__brand" href="#top" aria-label="The Drama Collective, back to top">
       <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
-      <span class="topbar__word">The Drama Collective</span>
+      <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
     </a>
     <nav class="topbar__nav" aria-label="Main">
       <ul class="topbar__links">
@@ -88,16 +90,154 @@
   </header>
   <!-- /site:header -->
 
-  <div class="loader theme-ink" aria-hidden="true">
-    <div class="loader__inner">
-      <div class="loader__light" data-lottie="loader"></div>
-      <p class="eyebrow loader__status" data-loader-status>Lighting the stage</p>
-    </div>
+  <!-- The loader: the house curtain's satin, flowing (a small shader, below), and in the middle the
+       Collective's sunburst: a ring, a crescent and the rays, which come on one by one round the
+       ring and, once all are lit, go out and start again. It marks time only; it is not a progress
+       bar. -->
+  <div class="loader" role="status" aria-label="Loading">
+    <canvas class="loader__satin" aria-hidden="true"></canvas>
+    <svg class="loader__sun" viewBox="-130 -130 260 260" aria-hidden="true">
+      <defs>
+        <mask id="loader-crescent" maskUnits="userSpaceOnUse" x="-130" y="-130" width="260" height="260">
+          <rect x="-130" y="-130" width="260" height="260" fill="#000"/>
+          <circle cx="9" cy="9" r="73" fill="#fff"/>
+          <circle cx="-1" cy="-1" r="64" fill="#000"/>
+        </mask>
+      </defs>
+      <circle class="loader__ring" r="60"/>
+      <rect class="loader__moon" x="-130" y="-130" width="260" height="260" mask="url(#loader-crescent)"/>
+      <g class="loader__rays">
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-146.00)" style="--i:0"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-138.17)" style="--i:1"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-130.35)" style="--i:2"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-122.52)" style="--i:3"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-114.70)" style="--i:4"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-106.87)" style="--i:5"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-99.04)" style="--i:6"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-91.22)" style="--i:7"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-83.39)" style="--i:8"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-75.57)" style="--i:9"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-67.74)" style="--i:10"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-59.91)" style="--i:11"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-52.09)" style="--i:12"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-44.26)" style="--i:13"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-36.43)" style="--i:14"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-28.61)" style="--i:15"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-20.78)" style="--i:16"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-12.96)" style="--i:17"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(-5.13)" style="--i:18"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(2.70)" style="--i:19"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(10.52)" style="--i:20"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(18.35)" style="--i:21"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(26.17)" style="--i:22"/>
+        <rect class="loader__ray" x="-2.3" y="-92" width="4.6" height="19" rx="0.6" transform="rotate(34.00)" style="--i:23"/>
+      </g>
+      <path class="loader__star" d="M0 -11C1 -3 3 -1 11 0 3 1 1 3 0 11 -1 3 -3 1 -11 0 -3 -1 -1 -3 0 -11Z" transform="rotate(46) translate(0 -101) rotate(-46)"/>
+      <path class="loader__star loader__star--small" d="M0 -6C.6 -1.6 1.6 -.6 6 0 1.6 .6 .6 1.6 0 6 -.6 1.6 -1.6 .6 -6 0 -1.6 -.6 -.6 -1.6 0 -6Z" transform="rotate(66) translate(0 -118) rotate(-66)"/>
+    </svg>
   </div>
+  <script>
+    // the loader runs before anything else loads: the rays (a timer) and the satin (raw WebGL; a
+    // still gradient without it). main.js calls dcLoader.stop() as the curtain goes up.
+    (function () {
+      var root = document.querySelector('.loader');
+      var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var rays = root.querySelectorAll('.loader__ray');
+      var n = 0, timer = 0, raf = 0, gl = null;
+      function step() {
+        // one ray more each beat; a beat's rest with all of them lit; then out, and round again
+        if (n > rays.length + 4) n = 0;
+        for (var i = 0; i < rays.length; i++) rays[i].classList.toggle('is-on', i < n);
+        n++;
+      }
+      if (reduced) { for (var i = 0; i < rays.length; i++) rays[i].classList.add('is-on'); }
+      else { step(); timer = setInterval(step, 75); }
+
+      var canvas = root.querySelector('.loader__satin');
+      try { gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' }); } catch (e) {}
+      if (gl) {
+        var vs = 'attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }';
+        var fs = [
+          'precision mediump float;',
+          'uniform vec2 uRes; uniform float uTime; uniform float uDay;',
+          'float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }',
+          'float noise(vec2 p) { vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);',
+          '  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y); }',
+          'float fbm(vec2 p) { float v = 0.0, a = 0.5; mat2 m = mat2(1.6, 1.2, -1.2, 1.6);',
+          '  for (int i = 0; i < 4; i++) { v += a * noise(p); p = m * p; a *= 0.5; } return v; }',
+          // the cloth: a height field, warped twice, drifting slowly
+          'float cloth(vec2 p) {',
+          '  vec2 q = vec2(fbm(p + vec2(0.0, uTime * 0.045)), fbm(p + vec2(5.2, 1.3) - uTime * 0.03));',
+          '  return fbm(p + 1.7 * q + vec2(uTime * 0.02, 0.0));',
+          '}',
+          'void main() {',
+          '  vec2 uv = gl_FragCoord.xy / uRes;',
+          '  vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y * 1.45;',
+          '  float e = 0.02;',
+          '  float h = cloth(p), hx = cloth(p + vec2(e, 0.0)), hy = cloth(p + vec2(0.0, e));',
+          '  vec3 n = normalize(vec3((h - hx) / e, (h - hy) / e, 1.1));',
+          '  vec3 l = normalize(vec3(-0.5, 0.6, 0.7));',
+          '  float diff = max(dot(n, l), 0.0);',
+          '  float spec = pow(max(dot(n, normalize(l + vec3(0.0, 0.0, 1.0))), 0.0), 18.0);',
+          // satin: plum-900 in the folds, plum-700 on them, a rose sheen on the crests (light: blush)
+          '  vec3 deep = mix(vec3(0.10, 0.025, 0.06), vec3(0.80, 0.62, 0.70), uDay);',
+          '  vec3 mid = mix(vec3(0.36, 0.11, 0.22), vec3(0.93, 0.83, 0.87), uDay);',
+          '  vec3 sheen = mix(vec3(0.86, 0.56, 0.70), vec3(1.0, 0.97, 0.98), uDay);',
+          '  vec3 c = mix(deep, mid, smoothstep(0.25, 0.75, h)) * (0.45 + 0.75 * diff) + sheen * spec * 0.55;',
+          // darker in the middle, where the sunburst is, as on the invitation
+          '  float r = length((uv - 0.5) * vec2(uRes.x / uRes.y, 1.0));',
+          '  c *= mix(mix(0.42, 0.8, uDay), 1.0, smoothstep(0.08, 0.62, r));',
+          '  gl_FragColor = vec4(c, 1.0);',
+          '}',
+        ].join('\n');
+        var sh = function (type, src) { var o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return o; };
+        var prog = gl.createProgram();
+        gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs));
+        gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) gl = null;
+      }
+      if (gl) {
+        gl.useProgram(prog);
+        gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+        var loc = gl.getAttribLocation(prog, 'p');
+        gl.enableVertexAttribArray(loc);
+        gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+        var uRes = gl.getUniformLocation(prog, 'uRes'), uTime = gl.getUniformLocation(prog, 'uTime'), uDay = gl.getUniformLocation(prog, 'uDay');
+        var t0 = performance.now();
+        var size = function () {
+          // soft cloth: drawn at a third of the screen's pixels and scaled up
+          var k = 0.34;
+          canvas.width = Math.max(1, Math.round(innerWidth * k));
+          canvas.height = Math.max(1, Math.round(innerHeight * k));
+          gl.viewport(0, 0, canvas.width, canvas.height);
+        };
+        size();
+        addEventListener('resize', size);
+        var frame = function (now) {
+          gl.uniform2f(uRes, canvas.width, canvas.height);
+          gl.uniform1f(uTime, reduced ? 6.0 : 6.0 + (now - t0) / 1000);
+          gl.uniform1f(uDay, document.documentElement.dataset.theme === 'light' ? 1 : 0);
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
+          if (!reduced) raf = requestAnimationFrame(frame);
+        };
+        raf = requestAnimationFrame(frame);
+        root.classList.add('has-satin');
+      }
+      window.dcLoader = {
+        stop: function () {
+          clearInterval(timer);
+          cancelAnimationFrame(raf);
+          if (gl) gl.getExtension('WEBGL_lose_context') && gl.getExtension('WEBGL_lose_context').loseContext();
+        },
+      };
+    })();
+  </script>
 
   <div class="stage" aria-hidden="true">
     <canvas class="stage__stars"></canvas>
-    <img class="stage__fallback" src="./assets/fallback/hero.png" alt="" hidden>
+    <img class="stage__fallback" alt="" hidden>
   </div>
 
   <div class="stage__gl" aria-hidden="true"></div>
@@ -107,8 +247,7 @@
     <svg class="cursor__star" viewBox="-12 -17 24 34" focusable="false"><path class="cursor__star-plain" d="M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z"/><path class="cursor__star-text" d="M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z"/></svg>
   </div>
 
-
-  <main id="main">
+  <main id="main" class="stage-main">
     <section class="hero" id="top" aria-labelledby="hero-title">
       <p class="sr-only">On stage: a white marble statue of a robed figure, seen from behind, raising a tragedy mask, framed by a ring of carved stone. As the page scrolls she turns to face you, brings the mask beside her face and looks away from it, and then her marble flows into the gold mark of the Drama Collective.</p>
       <div class="hero__content" data-mask>
@@ -168,47 +307,11 @@
       </div>
     </section>
 
-    <section class="scene" id="act-five" aria-labelledby="act-five-title"
-      data-scene data-frame="0.24" data-light="0.6" data-key="0.9">
-      <div class="scene__content">
-        <header class="section-heading" data-mask>
-          <p class="eyebrow">Act five · Placeholder</p>
-          <h2 id="act-five-title" data-reveal>Placeholder heading</h2>
-          <span class="rule" aria-hidden="true"></span>
-        </header>
-        <p data-mask data-reveal>Placeholder text for this section. The real copy comes later.</p>
-      </div>
-    </section>
-
-    <section class="scene scene--text-right" id="act-six" aria-labelledby="act-six-title"
-      data-scene data-frame="-0.24" data-light="0.15" data-key="0.95">
-      <div class="scene__content">
-        <header class="section-heading" data-mask>
-          <p class="eyebrow">Act six · Placeholder</p>
-          <h2 id="act-six-title" data-reveal>Placeholder heading</h2>
-          <span class="rule" aria-hidden="true"></span>
-        </header>
-        <p data-mask data-reveal>Placeholder text for this section. The real copy comes later.</p>
-      </div>
-    </section>
-
-    <section class="scene scene--text-right" id="act-seven" aria-labelledby="act-seven-title"
-      data-scene data-frame="-0.24" data-light="0.9" data-key="0.88">
-      <div class="scene__content">
-        <header class="section-heading" data-mask>
-          <p class="eyebrow">Act seven · Placeholder</p>
-          <h2 id="act-seven-title" data-reveal>Placeholder heading</h2>
-          <span class="rule" aria-hidden="true"></span>
-        </header>
-        <p data-mask data-reveal>Placeholder text for this section. The real copy comes later.</p>
-      </div>
-    </section>
-
     <section class="scene" id="support" aria-labelledby="support-title"
       data-scene data-frame="0.24" data-light="0" data-key="1">
       <div class="scene__content">
         <header class="section-heading" data-mask>
-          <p class="eyebrow">Act eight · Placeholder</p>
+          <p class="eyebrow">Act five · Placeholder</p>
           <h2 id="support-title" data-reveal>Placeholder heading</h2>
           <span class="rule" aria-hidden="true"></span>
         </header>

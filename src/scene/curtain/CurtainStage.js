@@ -13,11 +13,18 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-// velvet and light per page, from the plum palette (tokens.css) and the gold of the stage lamps
+// velvet and light per page, from the plum palette (tokens.css) and the gold of the stage lamps;
+// `day` is the light theme's curtain (house lights up): a pale rose velvet in a lit house
 const VARIANTS = {
-  'flash-plays': { velvet: '#5a1f3c', sheen: '#c185ac', spot: '#fff3dc', flash: 2.2 },
-  workshops: { velvet: '#4a1733', sheen: '#ddb8cf', spot: '#f3e7b8', flash: 1.4 },
-  outreach: { velvet: '#40142a', sheen: '#c185ac', spot: '#faf4de', flash: 1.4 },
+  'flash-plays': { velvet: '#5a1f3c', sheen: '#c185ac', spot: '#fff3dc', flash: 2.2, day: { velvet: '#c99ab6', sheen: '#faf3f4' } },
+  workshops: { velvet: '#4a1733', sheen: '#ddb8cf', spot: '#f3e7b8', flash: 1.4, day: { velvet: '#c492b0', sheen: '#faf3f4' } },
+  outreach: { velvet: '#40142a', sheen: '#c185ac', spot: '#faf4de', flash: 1.4, day: { velvet: '#bd8aa9', sheen: '#faf3f4' } },
+};
+// the house around the curtain in each theme: the background, the fill from above and below, the
+// exposure, the vignette and the marquee board
+const HOUSE = {
+  night: { bg: '#150408', sky: '#3a1a2a', ground: '#120408', hemi: 0.5, foot: 0.9, exposure: 1.05, vignette: 0.5, env: 0.22, board: '#2a0d1c', behind: '#f3e7b8' },
+  day: { bg: '#f3e7e9', sky: '#faf3f4', ground: '#ddb8cf', hemi: 1.6, foot: 0.7, exposure: 1.0, vignette: 0.86, env: 0.55, board: '#40142a', behind: '#faf4de' },
 };
 const GOLD = '#ebd88c';
 const FOV = 35;
@@ -69,8 +76,9 @@ export class CurtainStage {
    * @param {string} o.variant    the page ('flash-plays' | 'workshops' | 'outreach')
    * @param {string} o.markUrl    the gold mark (PNG with alpha) for the pelmet
    * @param {boolean} [o.reduced]
+   * @param {'dark'|'light'} [o.theme]  the site theme (setTheme changes it)
    */
-  constructor(container, { variant, markUrl, reduced = false }) {
+  constructor(container, { variant, markUrl, reduced = false, theme = 'dark' }) {
     this.container = container;
     this.reduced = reduced;
     this.v = VARIANTS[variant] ?? VARIANTS.workshops;
@@ -79,6 +87,10 @@ export class CurtainStage {
     this.visible = true;
     this.dirty = true;
     this.disposed = false;
+    // the theme: 0 the dark theatre, 1 house lights up; eased toward its target in the frame loop
+    this.day = theme === 'light' ? 1 : 0;
+    this.dayTarget = this.day;
+    this.velvetMats = [];
 
     const r = (this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' }));
     r.setPixelRatio(Math.min(devicePixelRatio, 1.75));
@@ -161,9 +173,10 @@ export class CurtainStage {
 
   _buildLights() {
     const s = this.scene;
-    s.add(new THREE.HemisphereLight('#3a1a2a', '#120408', 0.5));
+    this.hemi = new THREE.HemisphereLight('#3a1a2a', '#120408', 0.5);
+    s.add(this.hemi);
     // footlights: warm, from below the front edge of the stage
-    const foot = new THREE.DirectionalLight('#ffb36b', 0.9);
+    const foot = (this.foot = new THREE.DirectionalLight('#ffb36b', 0.9));
     foot.position.set(0, -3, 4);
     s.add(foot);
     // the follow-spot, from the front of house
@@ -179,17 +192,17 @@ export class CurtainStage {
     this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.75, 0.5, 1.05);
     c.addPass(this.bloom);
     // the house is dark at the edges: a soft vignette (no grain, no other screen effect)
-    c.addPass(new ShaderPass({
-      uniforms: { tDiffuse: { value: null } },
+    c.addPass((this.vignette = new ShaderPass({
+      uniforms: { tDiffuse: { value: null }, uEdge: { value: 0.5 } },
       vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-      fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv;
+      fragmentShader: `uniform sampler2D tDiffuse; uniform float uEdge; varying vec2 vUv;
         void main() {
           vec4 c = texture2D(tDiffuse, vUv);
           vec2 q = (vUv - 0.5) * vec2(1.15, 1.0);
-          c.rgb *= mix(0.5, 1.0, smoothstep(0.85, 0.2, length(q)));
+          c.rgb *= mix(uEdge, 1.0, smoothstep(0.85, 0.2, length(q)));
           gl_FragColor = c;
         }`,
-    }));
+    })));
     c.addPass(new OutputPass());
   }
 
@@ -219,10 +232,12 @@ export class CurtainStage {
         .replace('#include <color_fragment>', '#include <color_fragment>\n  diffuseColor.rgb *= vShade;');
     };
     m.customProgramCacheKey = () => 'curtain-velvet';
+    this.velvetMats.push(m);
     return m;
   }
 
   _clearSet() {
+    this.velvetMats = [];
     if (!this.set) return;
     this.set.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
@@ -278,13 +293,12 @@ export class CurtainStage {
 
     // the pelmet across the top, with a gold trim and the mark
     // the pelmet hangs below the top bar (which covers the top of the stage)
-    const bar = Math.min(0.2, 56 / h);
+    const bar = Math.min(0.2, 64 / h); // --topbar-h
     const valH = viewH * ((this.camera.aspect < 0.8 ? 0.08 : 0.1) + bar);
     const valY = viewH / 2 - valH / 2 + 0.01;
-    const valance = new THREE.Mesh(
-      new THREE.BoxGeometry(viewW * 1.3, valH, 0.14),
-      new THREE.MeshPhysicalMaterial({ color: this.v.velvet, roughness: 0.85, sheen: 1, sheenColor: new THREE.Color(this.v.sheen), sheenRoughness: 0.4, envMapIntensity: 0.4 }),
-    );
+    const valanceMat = new THREE.MeshPhysicalMaterial({ color: this.v.velvet, roughness: 0.85, sheen: 1, sheenColor: new THREE.Color(this.v.sheen), sheenRoughness: 0.4, envMapIntensity: 0.4 });
+    this.velvetMats.push(valanceMat);
+    const valance = new THREE.Mesh(new THREE.BoxGeometry(viewW * 1.3, valH, 0.14), valanceMat);
     valance.position.set(0, valY, 0.32);
     set.add(valance);
     const goldMat = new THREE.MeshStandardMaterial({ color: GOLD, metalness: 0.8, roughness: 0.42, envMapIntensity: 0.8 });
@@ -306,6 +320,7 @@ export class CurtainStage {
     this._buildSign(set, viewW, viewH, valY - valH / 2, goldMat);
 
     this.scene.add(set);
+    this._applyDay();
     // the spot keeps its place in the new frame
     this.dirty = true;
     this._render();
@@ -349,7 +364,7 @@ export class CurtainStage {
     set.add(sign);
     const board = new THREE.Mesh(
       new THREE.BoxGeometry(signW + pad * 2, signH + pad * 2, 0.05),
-      new THREE.MeshStandardMaterial({ color: '#2a0d1c', roughness: 0.55, metalness: 0.1, envMapIntensity: 0.5 }),
+      (this.boardMat = new THREE.MeshStandardMaterial({ color: '#2a0d1c', roughness: 0.55, metalness: 0.1, envMapIntensity: 0.5 })),
     );
     board.position.y = -(signH / 2 + pad);
     sign.add(board);
@@ -515,6 +530,15 @@ export class CurtainStage {
     if (this.sign) this.sign.rotation.z = this.reduced ? 0 : this.swing.a;
     if (this.chase >= 0) { this.chase += dt * 1.5; if (this.chase > 1.3) this.chase = -1; }
     this.flash = Math.max(0, this.flash - dt * 2.5);
+    if (this.day !== this.dayTarget) {
+      // by the wall clock (a slow frame must not stretch the change): 0.7 s from end to end
+      const now = performance.now();
+      const step = this.reduced ? 1 : (now - (this._dayAt ?? now - 16)) / 700;
+      this._dayAt = now;
+      this.day = this.dayTarget > this.day ? Math.min(this.dayTarget, this.day + step) : Math.max(this.dayTarget, this.day - step);
+      this._applyDay();
+      this.dirty = true;
+    }
 
     const moving = Math.abs(s.part + s.push + s.x + s.y + this.swing.a - before) > 1e-5 || this.chase >= 0 || this.flash > 0;
     if (this.reduced && !moving && !this.dirty) return; // nothing changed: keep the last frame
@@ -532,6 +556,34 @@ export class CurtainStage {
   }
 
   _render() { this.composer.render(); }
+
+  /** Follow the site theme: 'light' raises the house lights and hangs the pale curtain. */
+  setTheme(theme) {
+    this.dayTarget = theme === 'light' ? 1 : 0;
+    this._dayAt = performance.now();
+    this._wake();
+  }
+
+  /** The theme's colours and light, blended by `day` (eased 0..1). */
+  _applyDay() {
+    const k = this.day * this.day * (3 - 2 * this.day);
+    const N = HOUSE.night, D = HOUSE.day;
+    const mix = (a, b, out = new THREE.Color()) => out.set(a).lerp(this._dayTmp.set(b), k);
+    const num = (a, b) => a + (b - a) * k;
+    this._dayTmp ??= new THREE.Color();
+    mix(N.bg, D.bg, this.scene.background);
+    mix(N.sky, D.sky, this.hemi.color);
+    mix(N.ground, D.ground, this.hemi.groundColor);
+    this.hemi.intensity = num(N.hemi, D.hemi);
+    this.foot.intensity = num(N.foot, D.foot);
+    this.renderer.toneMappingExposure = num(N.exposure, D.exposure);
+    this.scene.environmentIntensity = num(N.env, D.env);
+    this.vignette.uniforms.uEdge.value = num(N.vignette, D.vignette);
+    const velvet = mix(this.v.velvet, this.v.day.velvet), sheen = mix(this.v.sheen, this.v.day.sheen);
+    for (const m of this.velvetMats) { m.color.copy(velvet); m.sheenColor.copy(sheen); }
+    if (this.boardMat) mix(N.board, D.board, this.boardMat.color);
+    if (this.behind) mix(N.behind, D.behind, this.behind.uniforms.uColor.value);
+  }
 
   dispose() {
     this.disposed = true;

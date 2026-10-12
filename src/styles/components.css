@@ -179,11 +179,12 @@
   min-height: 44px;
 }
 .topbar__brand:hover { color: var(--fg-strong); text-decoration: none; }
-.topbar__mark { width: 32px; height: 32px; flex: none; }
+.topbar__mark { width: 48px; height: 48px; flex: none; }
 .topbar__mark img, .topbar__mark svg { width: 100%; height: 100%; }
 /* the gold mark, deepened toward gold-700 so it holds on the light page */
 [data-theme="light"] .topbar__mark { filter: brightness(.68) saturate(1.3); }
-.topbar__word { font-family: var(--font-display); font-size: 17px; line-height: 1; }
+/* the wordmark: on one line where there is room, else stacked in two beside the mark */
+.topbar__word { font-family: var(--font-display); font-size: 25px; line-height: 1; white-space: nowrap; }
 /* the pages: each opens its own page (same tab). A gold rule slides under the link the pointer is
    on and rests under the current page, which also carries the small star (src/animations/nav.js). */
 .topbar__nav { position: relative; }
@@ -269,16 +270,26 @@ html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links
 }
 .topbar__sheet { display: none; }
 
-/* eight pages do not fit beside the wordmark until the screen is wide: the mark alone stands for it */
-@media (max-width: 1599px) { .topbar__word { display: none; } }
-/* and until it is very wide, the bar's own margins and gaps come in a step */
-@media (min-width: 1240px) and (max-width: 1439px) { .topbar { padding-inline: var(--space-6); gap: var(--space-4); } }
+/* eight pages beside the wordmark: on one line on wide screens; stacked in two lines below that,
+   with the bar's own margins, gaps and the links' tracking coming in a step where room is tight */
+@media (max-width: 1679px) {
+  .topbar__word { font-size: 21px; line-height: .98; }
+  .topbar__word > span { display: block; }
+}
+@media (min-width: 1240px) and (max-width: 1439px) {
+  .topbar { padding-inline: var(--space-6); gap: var(--space-4); }
+  .topbar__mark { width: 44px; height: 44px; }
+  .topbar__word { font-size: 19px; }
+  .topbar__links { gap: 13px; }
+  .topbar__links a { letter-spacing: .1em; }
+}
 /* below this the pages move into the Menu: a full-screen sheet that drops like a curtain, the
    pages in Raung, rising in one after another */
 @media (max-width: 1239px) {
   .topbar nav { display: none; }
   .topbar__menu { display: inline-flex; align-items: center; }
-  .topbar__word { display: inline; font-size: 15px; }
+  .topbar__word { font-size: 24px; }
+  .topbar__word > span { display: inline; }
   .topbar__sheet {
     position: fixed;
     inset: var(--topbar-h) 0 0 0;
@@ -308,7 +319,10 @@ html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links
   .topbar__sheet a[aria-current="page"]::after { content: ""; display: block; width: 48px; height: var(--rule-thick); background: var(--rule-color); margin-top: 4px; }
 }
 @media (max-width: 640px) {
-  .topbar__word { display: none; }
+  .topbar__brand { gap: 8px; }
+  .topbar__mark { width: 40px; height: 40px; }
+  .topbar__word { font-size: 17px; }
+  .topbar__word > span { display: block; }
 }
 html.is-locked { overflow: hidden; }
 /* phones: the sheet's sponsor link stands in for the button */

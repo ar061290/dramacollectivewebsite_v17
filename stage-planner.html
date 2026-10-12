@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Stage planner · The Drama Collective</title>
+  <meta name="description" content="Plan the production in 3D: the school hall's stage, stairs, risers, box sets, the LED wall, a lighting rig with RGB spotlights, audience seating, props and speakers. Walk through the hall and save renders.">
+  <meta name="theme-color" content="#2a0d1c">
+  <link rel="icon" href="./assets/brand/mark-gold.png">
+  <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./src/styles/fonts.css">
+  <link rel="stylesheet" href="./src/styles/planner.css">
+  <!-- Bare-module map for running without a build step (any static server). Vite resolves the same
+       specifiers from node_modules and ignores this map. Keep the versions in step with package.json. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/index.js",
+      "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/"
+    }
+  }
+  </script>
+  <script>
+    // arriving through the curtain (src/site/transition.js): it starts closed and parts on the hall
+    try { if (sessionStorage.getItem('dc-veil') === '1') { sessionStorage.removeItem('dc-veil'); document.documentElement.classList.add('is-veiled'); } } catch (e) {}
+  </script>
+</head>
+<body>
+  <!-- The stage planner (src/planner/): the school hall in 3D, to plan the production's set, light
+       and seating. Opened from The production; "The production" in its top bar goes back. -->
+  <div class="veil" aria-hidden="true">
+    <div class="veil__half veil__half--l"></div>
+    <div class="veil__half veil__half--r"></div>
+  </div>
+  <div id="app" class="app" data-mode="design">
+    <header id="topbar" class="topbar"></header>
+    <main id="stagewrap" class="stagewrap">
+      <h1 class="sr-only">Stage planner</h1>
+      <div id="viewport" class="viewport"></div>
+      <aside id="library" class="panel library" aria-label="Parts library"></aside>
+      <aside id="inspector" class="panel inspector" aria-label="Selected item" hidden></aside>
+      <div id="walkhud" class="walkhud" hidden></div>
+      <div id="modehint" class="modehint" role="status"></div>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+      <div id="loading" class="loading">Setting up the hall…</div>
+    </main>
+  </div>
+  <script type="module" src="./src/planner/main.js"></script>
+</body>
+</html>

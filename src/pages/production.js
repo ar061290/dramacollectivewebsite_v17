@@ -1,7 +1,7 @@
 // The production: five stage lights, one for each part the students do. Tap (or click) to switch
 // them on; the beams turn toward the pointer or the finger like moving heads; when all five are
 // on, "Entirely by students." lights and a spark goes off. Below, the event card counts down to
-// the date.
+// the date, and the stage planner's doorway lights up as the pointer nears it.
 import gsap from 'gsap';
 import { bootPage } from '../site/boot.js';
 import { loadLottie, freeze } from '../animations/lottie.js';
@@ -13,8 +13,27 @@ bootPage(({ reduced }) => {
   const count = document.querySelector('[data-countdown]');
   if (count) cleanups.push(setupCountdown(count, reduced));
   setupFlourish(reduced).then((c) => cleanups.push(c));
+  const door = document.querySelector('[data-planner-door]');
+  if (door) cleanups.push(setupDoor(door, reduced));
   return () => cleanups.forEach((c) => c());
 });
+
+/** The stage planner's doorway: the light inside follows the pointer and brightens as it nears. */
+function setupDoor(door, reduced) {
+  if (reduced) { door.style.setProperty('--near', '0.6'); return () => {}; }
+  let raf = 0, at = null;
+  const paint = () => {
+    raf = 0;
+    const r = door.getBoundingClientRect();
+    const dx = Math.max(r.left - at.x, 0, at.x - r.right), dy = Math.max(r.top - at.y, 0, at.y - r.bottom);
+    door.style.setProperty('--near', Math.exp(-(dx * dx + dy * dy) / (260 * 260)).toFixed(3));
+    door.style.setProperty('--gx', `${at.x - r.left}px`);
+    door.style.setProperty('--gy', `${at.y - r.top}px`);
+  };
+  const onMove = (e) => { at = { x: e.clientX, y: e.clientY }; if (!raf) raf = requestAnimationFrame(paint); };
+  window.addEventListener('pointermove', onMove, { passive: true });
+  return () => { cancelAnimationFrame(raf); window.removeEventListener('pointermove', onMove); };
+}
 
 function setupLamps(act, reduced) {
   const lamps = [...act.querySelectorAll('.lamp')];

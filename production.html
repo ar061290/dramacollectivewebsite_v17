@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#2a0d1c">
   <!-- site:head -->
   <link rel="icon" href="./assets/brand/mark-gold.png">
-  <link rel="preload" href="./assets/fonts/Raung-400.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./src/styles/main.css">
   <!-- Bare-module map for running without a build step (any static server). Vite resolves the same
        specifiers from node_modules and ignores this map. Keep the versions in step with package.json. -->
@@ -44,7 +44,7 @@
   <header class="topbar" data-topbar>
     <a class="topbar__brand" href="./index.html" aria-label="The Drama Collective, home">
       <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
-      <span class="topbar__word">The Drama Collective</span>
+      <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
     </a>
     <nav class="topbar__nav" aria-label="Main">
       <ul class="topbar__links">
@@ -142,6 +142,23 @@
         <div class="count__unit"><dt>Seconds</dt><dd data-unit="seconds">--</dd></div>
       </dl>
       <p class="fine count__note">*The date may change.</p>
+    </section>
+
+    <section class="act planner-act" aria-labelledby="planner-title">
+      <div class="planner-act__copy ground" data-mask>
+        <p class="eyebrow">Stage planner</p>
+        <h2 class="act__title" id="planner-title" data-reveal>Build the set before the set is built</h2>
+        <span class="rule" aria-hidden="true"></span>
+        <p>The school hall in 3D: lay out the stage, stairs and risers, hang the box sets and the LED wall, light it from the rig and the floor, and seat the audience. Then walk through it from the front row, or save a picture.</p>
+      </div>
+      <a class="planner-door" href="./stage-planner.html" data-planner-door>
+        <span class="planner-door__glow" aria-hidden="true"></span>
+        <span class="planner-door__label">
+          <span class="eyebrow">Open</span>
+          <span class="planner-door__title">The stage planner</span>
+        </span>
+        <svg class="planner-door__arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
     </section>
 
     <div class="prod-cta">

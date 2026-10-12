@@ -1,4 +1,5 @@
-// Become a sponsor: three tiers as tickets. Pointing at a ticket shows its metal on the medallion;
+// Become a sponsor: three tiers as tickets, each stub struck in its metal (bronze, silver, gold),
+// catching the pointer's light like the medallion does. Pointing at a ticket shows its metal on the medallion;
 // choosing one (click, tap, or the arrow keys: they are radio buttons) turns the medallion to it
 // with a full turn, and a spark goes off on the ticket. Below, what the support pays for lights up
 // under the spot.
@@ -42,12 +43,6 @@ bootPage(({ reduced }) => {
       if (chosen !== 'stone') m.setFinish(chosen, { turn: false });
       cleanups.push(() => m.dispose());
     }).catch((err) => console.warn('Medallion unavailable; showing the still mark.', err));
-  } else if (host) {
-    host.querySelector('[data-medallion-caption]')?.setAttribute('hidden', '');
-  }
-  if (host) {
-    const caption = host.querySelector('[data-medallion-caption]');
-    if (caption && !matchMedia('(hover: hover) and (pointer: fine)').matches) caption.textContent = 'Swipe to turn';
   }
 
   // the tickets
@@ -89,6 +84,8 @@ bootPage(({ reduced }) => {
     sparks.forEach((a) => a.destroy());
   });
 
+  cleanups.push(metalStubs({ reduced }));
+
   // what the support pays for: each line takes light from the spot
   const funds = document.querySelector('[data-funds]');
   if (funds) {
@@ -110,3 +107,63 @@ bootPage(({ reduced }) => {
 
   return () => cleanups.forEach((c) => c());
 });
+
+/**
+ * The tickets' metal stubs catch the light of the pointer: a hot spot where it points and a streak
+ * across the brushed grain that slides with it, brighter the closer it is (the pointer is a lamp
+ * held over the page). On touch the finger is the lamp while it is down; at rest a soft light
+ * falls from the top left.
+ */
+function metalStubs({ reduced }) {
+  const stubs = [...document.querySelectorAll('.ticket__stub')];
+  if (!stubs.length) return () => {};
+  const REACH = 520; // px: how far the lamp's light carries
+  let raf = 0, at = null;
+  const rest = () => stubs.forEach((s) => {
+    s.style.setProperty('--mx', '18%');
+    s.style.setProperty('--my', '12%');
+    s.style.setProperty('--spec', '.45');
+    s.style.setProperty('--band', '30%');
+  });
+  const paint = () => {
+    raf = 0;
+    if (!at) return;
+    for (const s of stubs) {
+      const r = s.getBoundingClientRect();
+      const x = (at.x - r.left) / r.width, y = (at.y - r.top) / r.height;
+      const dx = Math.max(r.left - at.x, 0, at.x - r.right), dy = Math.max(r.top - at.y, 0, at.y - r.bottom);
+      const near = Math.exp(-((dx * dx + dy * dy) / (REACH * REACH)) * 3);
+      // the hot spot sits under the lamp, or at the stub's edge nearest to it
+      const clamp = (v) => Math.min(1.12, Math.max(-0.12, v));
+      s.style.setProperty('--mx', `${(clamp(x) * 100).toFixed(1)}%`);
+      s.style.setProperty('--my', `${(clamp(y) * 100).toFixed(1)}%`);
+      s.style.setProperty('--spec', (0.35 + 0.65 * near).toFixed(3));
+      // the streak lies across the grain and sweeps the other way to the lamp as it crosses the
+      // screen, as a reflection does
+      const off = (at.x - (r.left + r.width / 2)) / innerWidth + (at.y - (r.top + r.height / 2)) / innerHeight * 0.35;
+      s.style.setProperty('--band', `${(50 - off * 170).toFixed(1)}%`);
+    }
+  };
+  const onMove = (e) => {
+    if (e.pointerType !== 'mouse' && e.buttons === 0 && e.type === 'pointermove') return;
+    at = { x: e.clientX, y: e.clientY };
+    if (!raf) raf = requestAnimationFrame(paint);
+  };
+  const onUp = (e) => { if (e.pointerType !== 'mouse') { at = null; rest(); } };
+  const onScroll = () => { if (at && !raf) raf = requestAnimationFrame(paint); };
+  rest();
+  if (reduced) return () => {};
+  window.addEventListener('pointermove', onMove, { passive: true });
+  window.addEventListener('pointerdown', onMove, { passive: true });
+  window.addEventListener('pointerup', onUp, { passive: true });
+  window.addEventListener('pointercancel', onUp, { passive: true });
+  window.addEventListener('scroll', onScroll, { passive: true });
+  return () => {
+    cancelAnimationFrame(raf);
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerdown', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onUp);
+    window.removeEventListener('scroll', onScroll);
+  };
+}

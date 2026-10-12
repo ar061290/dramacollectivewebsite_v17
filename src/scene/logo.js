@@ -5,7 +5,9 @@
 //
 // Every triangle is labelled with the part of the mark it belongs to (assets/brand/mark-regions.json:
 // the mask, the hand, the face; everything else is the body), so the morph can turn each part of the
-// statue into the matching part of the logo.
+// statue into the matching part of the logo. The star beside the mask is not part of the morph: it is
+// extruded on its own (same depth and bevel, same place), for the star that flies in from the sky
+// (src/scene/star.js).
 
 import * as THREE from 'three';
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
@@ -71,13 +73,23 @@ function splitAcross(geo, regionAt, minEdge = 8) {
  * @param {number} [o.depth]         extrusion depth, as a fraction of the logo's width
  * @param {number} [o.maxTriangles]  the curves are sampled as finely as this budget allows (the
  *                                   morph needs no more triangles than the statue has)
- * @returns {{ geometry: THREE.BufferGeometry, part: Uint8Array }}  non-indexed geometry with
- *          position and normal; part[t] indexes PARTS for triangle t
+ * @returns {{ geometry: THREE.BufferGeometry, part: Uint8Array, star: THREE.BufferGeometry|null }}
+ *          non-indexed geometry with position and normal; part[t] indexes PARTS for triangle t; the
+ *          star on its own, in the same space (null without regions.star)
  */
 export function buildLogoGeometry(svgText, { center, radius, regions = null, depth = 0.07, maxTriangles = Infinity }) {
   const svg = new SVGLoader().parse(svgText);
-  const shapes = [];
+  let shapes = [];
   for (const path of svg.paths) shapes.push(...SVGLoader.createShapes(path));
+  // the star: the smallest shape around regions.star
+  let starShapes = [];
+  if (regions?.star) {
+    const [sx, sy] = regions.star;
+    const around = shapes.filter((sh) => insidePolygon(sx, sy, sh.getPoints(4).map((v) => [v.x, v.y])));
+    const area = (sh) => { const b = new THREE.Box2().setFromPoints(sh.getPoints(4)); return (b.max.x - b.min.x) * (b.max.y - b.min.y); };
+    const star = around.sort((a, b) => area(a) - area(b))[0];
+    if (star) { starShapes = [star]; shapes = shapes.filter((sh) => sh !== star); }
+  }
 
   // measure in SVG units first so depth and bevel are proportional to the mark
   const flat = new THREE.ShapeGeometry(shapes, 2);
@@ -86,18 +98,21 @@ export function buildLogoGeometry(svgText, { center, radius, regions = null, dep
   flat.dispose();
 
   let geo = null;
+  const extrude = (list, curveSegments, bevelSegments) => new THREE.ExtrudeGeometry(list, {
+    depth: width * depth,
+    bevelEnabled: true,
+    bevelThickness: width * 0.012,
+    bevelSize: width * 0.006,
+    bevelSegments,
+    curveSegments,
+  });
   for (const [curveSegments, bevelSegments] of [[5, 3], [4, 3], [3, 2], [2, 2], [1, 2], [1, 1]]) {
     geo?.dispose();
-    geo = new THREE.ExtrudeGeometry(shapes, {
-      depth: width * depth,
-      bevelEnabled: true,
-      bevelThickness: width * 0.012,
-      bevelSize: width * 0.006,
-      bevelSegments,
-      curveSegments,
-    });
+    geo = extrude(shapes, curveSegments, bevelSegments);
     if (geo.attributes.position.count / 3 <= maxTriangles) break;
   }
+  // the star, finely: it is seen close up as it arrives
+  let starGeo = starShapes.length ? extrude(starShapes, 8, 4) : null;
 
   // label the triangles while they are still in SVG units (the polygons are drawn in them)
   const polys = (regions?.regions ?? []).map((r) => ({ id: PARTS.indexOf(r.name), poly: r.polygon })).filter((r) => r.id > 0);
@@ -117,20 +132,28 @@ export function buildLogoGeometry(svgText, { center, radius, regions = null, dep
   // reads correctly (not mirrored) for a viewer on the -z side, where the viewer is once the
   // statue has turned to face them
   geo.rotateZ(Math.PI);
+  starGeo?.rotateZ(Math.PI);
+  // the whole mark's bounds (the star lies inside the rest's, but measure it all the same)
   geo.computeBoundingBox();
-  const c = geo.boundingBox.getCenter(new THREE.Vector3());
+  const box = geo.boundingBox.clone();
+  if (starGeo) { starGeo.computeBoundingBox(); box.union(starGeo.boundingBox); }
+  const c = box.getCenter(new THREE.Vector3());
   geo.translate(-c.x, -c.y, -c.z);
+  starGeo?.translate(-c.x, -c.y, -c.z);
 
   // scale so the farthest point lands on `radius`
   let far = 0;
-  for (let i = 0; i < pos.count; i++) far = Math.max(far, Math.hypot(pos.getX(i), pos.getY(i), pos.getZ(i)));
+  for (const g of [geo, starGeo]) {
+    const P = g?.attributes.position;
+    for (let i = 0; P && i < P.count; i++) far = Math.max(far, Math.hypot(P.getX(i), P.getY(i), P.getZ(i)));
+  }
   const s = radius / far;
-  geo.scale(s, s, s);
-  geo.translate(center.x, center.y, center.z);
+  for (const g of [geo, starGeo]) { g?.scale(s, s, s); g?.translate(center.x, center.y, center.z); }
 
   // flat caps and walls, smooth across the bevel (same triangles, same order)
   geo.deleteAttribute('uv');
   geo = toCreasedNormals(geo, THREE.MathUtils.degToRad(35));
+  if (starGeo) { starGeo.deleteAttribute('uv'); starGeo = toCreasedNormals(starGeo, THREE.MathUtils.degToRad(35)); }
 
   // where the flat mark lies on the 3D one: SVG units (x, y, at the readable cap's depth) to the
   // logo's own space, for the vector stand-in (src/scene/vectorLogo.js). The extrusion's front cap
@@ -140,5 +163,5 @@ export function buildLogoGeometry(svgText, { center, radius, regions = null, dep
     .multiply(new THREE.Matrix4().makeScale(s, s, s))
     .multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z))
     .multiply(new THREE.Matrix4().makeRotationZ(Math.PI));
-  return { geometry: geo, part, flat: { svgToLocal, z: -bevelThickness, outline: bevelSize } };
+  return { geometry: geo, part, star: starGeo, flat: { svgToLocal, z: -bevelThickness, outline: bevelSize } };
 }

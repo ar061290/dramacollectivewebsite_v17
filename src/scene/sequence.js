@@ -16,28 +16,53 @@
 
 const inOutSine = (t) => 0.5 - 0.5 * Math.cos(Math.PI * t);
 
+// The sequence is laid out in scroll lengths (screens: one viewport height of scrolling), then
+// turned into fractions of the page by retime(), which the stage calls with the page's own scroll
+// length. In v3 the turn, the pose and the close-up ran over 5.2 screens; v4 plays them twice as
+// fast (2.6 screens) and keeps the morph and the logo's hold at exactly v3's pace (2.24 and 0.56
+// screens), so the page needs three acts fewer.
+//   lead   the hero at rest before she starts to turn
+//   turn   all the revolutions (the pose is the last part of them)
+//   zoom   into the close-up
+//   morph  the statue into the logo (as v3)
+//   logo   the hold and the hand-over to the vector (as v3)
+export const LENGTHS = { lead: 0.2, turn: 2.12, zoom: 0.28, morph: 2.24, logo: 0.56 };
+const FIXED = ['morph', 'logo']; // never sped up or slowed down to fit the page
+
 // the turn: from `from` to `to` (page progress), `revolutions` in all through one sine ease, so it
 // starts and stops softly and never pauses between revolutions. It must end on a half revolution
 // (she started from behind and ends facing the viewer). The first `first` revolutions are made
 // with the mask raised; the pose phase begins where the ease reaches them.
-export const TURN = { from: 0.05, to: 0.58, revolutions: 2.5, first: 1 };
-const split = TURN.from + (Math.acos(1 - (2 * TURN.first) / TURN.revolutions) / Math.PI) * (TURN.to - TURN.from);
+export const TURN = { from: 0, to: 0, revolutions: 2.5, first: 1 };
+export const PHASES = { hero: [0, 0], revolve: [0, 0], pose: [0, 0], zoom: [0, 0], morph: [0, 0], logo: [0, 1] };
 
-export const PHASES = {
-  hero: [0, TURN.from],
-  revolve: [TURN.from, split],
-  pose: [split, TURN.to],
-  zoom: [0.58, 0.65],
-  morph: [0.65, 0.93],
-  logo: [0.93, 1],
-};
+/**
+ * Lay the sequence over a page whose scroll runs `screens` viewport heights. The morph and the logo
+ * keep their lengths; the hero, turn and close-up share what is left (in their own proportions),
+ * so on a page of exactly the designed length every phase runs at its designed pace.
+ */
+export function retime(screens = Object.values(LENGTHS).reduce((a, b) => a + b, 0)) {
+  const fixed = FIXED.reduce((sum, k) => sum + LENGTHS[k], 0);
+  const free = LENGTHS.lead + LENGTHS.turn + LENGTHS.zoom;
+  const total = Math.max(screens, fixed + free * 0.3);
+  const k = (total - fixed) / free;
+  const len = { lead: LENGTHS.lead * k, turn: LENGTHS.turn * k, zoom: LENGTHS.zoom * k, morph: LENGTHS.morph, logo: LENGTHS.logo };
+  let at = 0;
+  const span = (n) => { const r = [at / total, (at + n) / total]; at += n; return r; };
+  const lead = span(len.lead), turn = span(len.turn), zoom = span(len.zoom), morph = span(len.morph);
+  TURN.from = lead[1];
+  TURN.to = turn[1];
+  const split = TURN.from + (Math.acos(1 - (2 * TURN.first) / TURN.revolutions) / Math.PI) * (TURN.to - TURN.from);
+  Object.assign(PHASES, { hero: lead, revolve: [TURN.from, split], pose: [split, TURN.to], zoom, morph, logo: [morph[1], 1] });
+  TRACKS.turn.range = [TURN.from, TURN.to];
+}
 const inOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const inOutQuad = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 const linear = (t) => t;
 
 // each track runs over [from, to] of its phase (fractions of the phase), through its own ease
 export const TRACKS = {
-  turn: { range: [TURN.from, TURN.to], from: 0, to: 1, ease: inOutSine }, // 0..1 of all the revolutions
+  turn: { range: [0, 1], from: 0, to: 1, ease: inOutSine }, // 0..1 of all the revolutions (range set by retime)
   arm: { phase: 'pose', from: 0.05, to: 0.8, ease: inOutCubic }, // mask down beside the face
   head: { phase: 'pose', from: 0.35, to: 1, ease: inOutQuad }, // the face turns away from it
   zoom: { phase: 'zoom', from: 0, to: 1, ease: inOutSine }, // into the close-up (it opens out as the logo grows)
@@ -47,6 +72,7 @@ export const TRACKS = {
 };
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
+retime();
 
 /** Evaluate every track at page progress p. Returns { turn, arm, head, zoom, morph, logo, phase }. */
 export function evaluate(p) {

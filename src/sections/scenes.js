@@ -1,4 +1,4 @@
-// Scroll choreography for the stage. Each [data-scene] section declares its "scene":
+// Scroll choreography for the stage. Each [data-scene] section (five acts after the hero) declares its "scene":
 //   data-frame  where the statue sits (fraction of the viewport width, + = right), so the text has
 //               clear negative space beside it
 //   data-light  0 warm ... 1 cool spotlight
@@ -11,7 +11,7 @@
 // when the morph section is reached.
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
-import { PHASES } from '../scene/sequence.js';
+import { PHASES, retime } from '../scene/sequence.js';
 
 const DEG = Math.PI / 180;
 const RING_TURNS = 4;
@@ -28,6 +28,12 @@ export function setupScenes({ stage }) {
     reduce: '(prefers-reduced-motion: reduce)',
   }, (ctx) => {
     const { mobile, reduce } = ctx.conditions;
+    // the sequence is laid out in screens of scroll: fit it to this page's own scroll length (the
+    // morph keeps its pace whatever the length; the turn takes up the difference)
+    const main = document.querySelector('main');
+    const fit = () => retime((main.offsetHeight - innerHeight) / innerHeight);
+    fit();
+    ScrollTrigger.addEventListener('refreshInit', fit);
     stage.setFill(mobile ? 0.46 : 0.68);
     // the logo stays in front of the footer on wide screens; on phones the footer covers it
     if (stage.occluder) stage.setOccluder(stage.occluder, { logoInFront: !mobile });
@@ -91,6 +97,7 @@ export function setupScenes({ stage }) {
         onUpdate: (self) => { state.seq = self.progress >= PHASES.morph[0] ? 1 : 0; },
       });
     }
+    return () => ScrollTrigger.removeEventListener('refreshInit', fit);
   });
 
   return () => mm.revert();

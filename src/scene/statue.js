@@ -9,7 +9,10 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createProceduralMarble } from './marble.js';
 
-const DRACO_PATH = `https://cdn.jsdelivr.net/npm/three@0.${THREE.REVISION}.0/examples/jsm/libs/draco/gltf/`;
+// the Draco decoder (WebAssembly) is served with the site, from public/draco/ (copied from three's
+// examples/jsm/libs/draco/gltf; keep it in step with the three version): under Vite, public/ is
+// the site's root; run without a build, it is the folder itself
+const DRACO_PATH = import.meta.env ? new URL('draco/', document.baseURI).href : new URL('../../public/draco/', import.meta.url).href;
 
 export const STATUE_LAYER = 1; // the statue alone, for the constellation's silhouette mask
 
@@ -31,7 +34,8 @@ export async function loadStatue(url, { manager, onBytes, dracoPath = DRACO_PATH
     mesh.name = 'StatueSTL';
     return { object: mesh, kind: 'stl', animations: [] };
   }
-  const draco = new DRACOLoader(manager).setDecoderPath(dracoPath);
+  const draco = new DRACOLoader(manager).setDecoderPath(dracoPath).setDecoderConfig({ type: 'wasm' });
+  draco.preload(); // fetch and compile the decoder while the model downloads, not after
   const loader = new GLTFLoader(manager).setDRACOLoader(draco).setMeshoptDecoder(MeshoptDecoder);
   try {
     const gltf = await loader.loadAsync(url, onBytes);

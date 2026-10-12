@@ -1,18 +1,31 @@
-# The Drama Collective · website (v3)
+# The Drama Collective · website (v4)
 
-The home page for the CHIREC Drama Collective: one page, a dark theatre before curtain-up. A marble statue stands in a fixed three.js scene inside the Penrose ring while the page scrolls past it. In v3 the statue performs:
+The home page for the CHIREC Drama Collective: one page, a dark theatre before curtain-up. A marble statue stands in a fixed three.js scene inside the Penrose ring while the page scrolls past it. The statue performs:
 
 1. she makes a full revolution, the mask still raised;
 2. as she turns on, one and a half revolutions more until she faces you, she brings the tragedy mask down beside her face;
 3. she turns her head away from it;
 4. the view closes in on her upper body: her head, the hand and the mask;
-5. in the close-up her marble flows into the Collective's mark, carved in the same stone, part for part and where each part is: her mask becomes the logo's mask, her hand the hand that holds it, her face the profile face, and the three hold for a moment on the marble figure; then, as her robes stream into the brush strokes, flames and crescent, the mark grows out to fill the ring and the view opens out again.
+5. in the close-up her marble flows into the Collective's mark, carved in the same stone, part for part and where each part is: her mask becomes the logo's mask, her hand the hand that holds it, her face the profile face, and the three hold for a moment on the marble figure; then, as her robes stream into the brush strokes, flames and crescent, the mark grows out to fill the ring and the view opens out again;
+6. meanwhile one more star shows in the sky behind the stage, comes forward through the ring and settles beside the mask as the logo's own star.
 
-The home page's copy is placeholder for now: a hero, eight acts (three more than v2, to give the longer turn its room) and the footer.
+The home page's copy is placeholder for now: a hero, five acts and the footer.
+
+## What changed in v4
+
+- **Home:** the turn, the pose and the close-up run twice as fast, so the page has five acts instead of eight; the morph runs at exactly v3's pace. The sequence is now laid out in screens of scroll (`LENGTHS` in `sequence.js`) and fitted to the page by `retime()`.
+- **The logo's star** is no longer made from the statue: it flies in from the sky (`src/scene/star.js`).
+- **Loader:** the satin of the invitation (a small shader) and the sunburst's ring, crescent and rays, which come on one by one round the ring and start again; no number, no percentage.
+- **Faster start:** the Draco decoder is served with the site and fetched while the model downloads; the model is preloaded with the page; the shaders compile (in parallel where the driver can) before the curtain goes up instead of stalling the first frame; the fonts are WOFF2 (a third of the bytes); the 0.9 MB still picture is fetched only when it is needed.
+- **Header:** a larger mark and wordmark (on one line from 1680 px, stacked in two below; the top bar is 64 px).
+- **Core team:** names and roles as the publication gives them; Finance (Karthikeya Aduru, Nivaan Garg) and Flash plays & production (Hasini, Pritika) departments; Behind the curtain, a film strip of the team at work; the intro panel scrolls; the cursor stays visible over it.
+- **Coming soon:** the 3D curtain, the page and the curtain between pages follow the light theme.
+- **Become a sponsor:** the tickets' stubs are struck in their metal and catch the pointer's light; the medallion's "Drag to turn" is gone.
+- **The production → Stage planner:** the 3D stage planner is part of the site (`stage-planner.html`, `src/planner/`), with a way back to The production.
 
 Around it are eight pages, each its own page in the same tab, with the same header and footer (see "The pages" below): About us, Core team, The publication, The production, Flash plays, Workshops and Social outreach (both coming soon, like Flash plays), and Become a sponsor.
 
-Built with Vite and vanilla JS, three.js 0.170, GSAP 3.13 (ScrollTrigger, SplitText, ScrollToPlugin, CustomEase) and lottie-web 5.12 (light SVG build). The rig and logo trace are made offline with Blender 5.2 and potrace 1.16 (scripts in `tools/`).
+Built with Vite and vanilla JS, three.js 0.170, GSAP 3.13 (ScrollTrigger, SplitText, ScrollToPlugin, CustomEase, Flip) and lottie-web 5.12 (light SVG build). The rig and logo trace are made offline with Blender 5.2 and potrace 1.16 (scripts in `tools/`).
 
 Screenshots of the sequence are in [`docs/screenshots`](docs/screenshots).
 
@@ -35,16 +48,16 @@ QA flags:
 
 ## The statue sequence
 
-One number, the scroll progress through `<main>` (0 at the top, 1 where the footer begins), drives everything. The phases and their curves are one config object, `PHASES` and `TRACKS` in [`src/scene/sequence.js`](src/scene/sequence.js):
+One number, the scroll progress through `<main>` (0 at the top, 1 where the footer begins), drives everything. The sequence is laid out in **screens of scroll** (one viewport height each, `LENGTHS` in [`src/scene/sequence.js`](src/scene/sequence.js)); `retime()` turns them into the phases (`PHASES`) for the page's own scroll length, measured on every refresh. The morph and the logo keep their lengths whatever the page; the hero, the turn and the close-up share what is left. The home page's `<main>` is at least 6.4 screens tall (5.4 screens of scroll), the designed length, so every phase runs at its designed pace:
 
-| Phase | Progress | What happens |
-|---|---|---|
-| hero | 0–0.05 | v2's composition at rest: seen from behind, mask raised high |
-| revolve | 0.05–0.28 | one full revolution, the mask still raised |
-| pose | 0.28–0.58 | she turns on, a revolution and a half more, to face the viewer; through it the **arm** brings the mask beside the face (cubic, 5–80% of the phase) and the **head** turns away (quad, 35–100%) |
-| zoom | 0.58–0.65 | the view closes in on her upper body (sine in-out), until her head, hand and mask, with the logo's that will form on them, fill 45% of the view's height (or 70% of its width, if that is less, as on a phone) |
-| morph | 0.65–0.93 | in the close-up, the statue's surface flows into the 3D logo: mask, hand and face in turn, at her head; then the robes stream into the rest of the mark as the logo grows to its place and the view opens out again |
-| logo | 0.93–1 | the stone logo holds in the ring, swaying slowly away and back, with a gentle idle drift |
+| Phase | Screens | Progress | What happens |
+|---|---|---|---|
+| hero | 0.2 | 0–0.037 | v2's composition at rest: seen from behind, mask raised high |
+| revolve + pose | 2.12 | 0.037–0.43 | the turn (the first revolution with the mask raised, then the pose); twice v3's speed |
+| ↳ pose | | 0.21–0.43 | she turns on, a revolution and a half more, to face the viewer; through it the **arm** brings the mask beside the face (cubic, 5–80% of the phase) and the **head** turns away (quad, 35–100%) |
+| zoom | 0.28 | 0.43–0.48 | the view closes in on her upper body (sine in-out), until her head, hand and mask, with the logo's that will form on them, fill 45% of the view's height (or 70% of its width, if that is less, as on a phone); twice v3's speed |
+| morph | 2.24 | 0.48–0.90 | in the close-up, the statue's surface flows into the 3D logo: mask, hand and face in turn, at her head; then the robes stream into the rest of the mark as the logo grows to its place and the view opens out again; v3's pace |
+| logo | 0.56 | 0.90–1 | the stone logo holds in the ring, swaying slowly away and back, with a gentle idle drift; v3's pace |
 
 The turn is one smooth motion across the revolve and pose phases: 2.5 revolutions (900°) through one sine ease, so it never pauses between revolutions, and the pose phase starts exactly where the ease completes the first revolution (`TURN` in `sequence.js`: change `revolutions`, keeping it on a half, or `first`).
 
@@ -132,7 +145,8 @@ The logo is about four times the size of her head, hand and mask together, so it
 | the mask in her hand | → | the logo's mask: the D-shaped frame around it, the eye, the nose and lips |
 | her hand and forearm | → | the hand holding the mask, down its long wrist |
 | her head and neck | → | the profile face |
-| torso, robes, upper arm, the other arm, plinth | → | the brush strokes, the flames, the crescent and the star |
+| torso, robes, upper arm, the other arm, plinth | → | the brush strokes, the flames and the crescent |
+| (nothing: it comes from the sky) | → | the star beside the mask |
 
 - **The statue's parts** come from the rig. The hand bone carries the hand and, above the grip, the mask; the forearm bones join the hand (in the end pose her forearm runs down from the wrist to the elbow, like the logo's long wrist), and the upper arm stays with the body; the head and neck bones are the face (`statueParts` in `morph.js`).
 - **The logo's parts** are polygons drawn over the trace in [`assets/brand/mark-regions.json`](assets/brand/mark-regions.json). In the mark, the mask is drawn as negative space, so its part is the frame and features around it. The profile face is negative space too, so its part is the profile with the gold it is cut from (the right edge of the brush strokes): it reads as a face even small, and her nose becomes its nose.
@@ -152,22 +166,27 @@ The mask, hand and face change almost as solid pieces, each in its own place. Th
 
 Retune it with the `MORPH` constants (part timings, the upper arm, the settle, the grow, swirl, rise). Redraw the parts in `mark-regions.json`.
 
+### The star from the sky (`src/scene/star.js`)
+
+The four-pointed star beside the mask is extruded on its own (`logo.js` takes the smallest shape of the trace around `star` in `mark-regions.json`; same depth and bevel as the mark) and is not part of the morph. As the robes start to stream (morph 0.36–0.44) it shows in the sky up and to the right of its place, far behind the ring, a few pixels of gold that twinkle like the sky's stars. From 0.44 to 0.95 it comes forward through the ring's opening, turning as it nears, burning gold and cooling to stone, to its place on the logo as the logo stands at that moment, and it lands with a glint (0.9–1). It is a stone star on the turntable plus a glow sprite (additive gold on the dark stage, gold-700 with house lights up), hidden behind the figure while it is behind her. Retune it with `STAR`.
+
 ## The pages
 
 | Page | File | What you can do on it |
 |---|---|---|
 | About us | `about.html` | The follow-spot lights the statement, the skills and the values; the five verbs light one by one as you scroll (or tap them). Copy from the sponsorship document, without the outputs. |
-| Core team | `team.html` | Headshots stay stone until the spot (or, on touch, the middle of the screen) finds them; they lean toward the pointer; department filters rearrange the grid (GSAP Flip); choosing someone opens their own introduction, the photo travelling into the panel. Cards are generated from `content/team.json`. |
+| Core team | `team.html` | Headshots stay stone until the spot (or, on touch, the middle of the screen) finds them; they lean toward the pointer; department filters rearrange the grid (GSAP Flip); choosing someone opens their own introduction, the photo travelling into the panel (a long introduction scrolls inside it). Cards are generated from `content/team.json`. Below, Behind the curtain: a film strip of the team at work that runs sideways as you scroll (pinned), the frame in the middle in colour. |
 | The publication | `publication.html` | A cover that swings open when it comes into view; drag it, tap it or use the button to close and open it. |
-| The production | `production.html` | Five stage lights (written, directed, designed, performed, managed): switch them on, the beams turn toward the pointer, and all five lit sets off a spark. A live countdown to 30 November 2026. |
-| Flash plays, Workshops, Social outreach | `flash-plays.html`, `workshops.html`, `outreach.html` | Coming soon: a full-screen three.js house curtain (`src/scene/curtain/CurtainStage.js`): velvet folds in a vertex shader on a sheen material, a marquee whose bulbs spell COMING SOON (instanced, bloomed), a follow-spot on the pointer, footlights. Touch it and it ripples; drag across it and it parts a sliver onto the lit stage. Each page has its own velvet. Description from the sponsorship document. |
-| Become a sponsor | `sponsor.html` | The three tiers as tickets; pointing at one previews its metal on a 3D medallion of the mark (`src/scene/medallion.js`), choosing one turns it bronze, silver or gold with a full turn and a spark. Drag the medallion to spin it. How to sponsor comes later. |
+| The production | `production.html` | Five stage lights (written, directed, designed, performed, managed): switch them on, the beams turn toward the pointer, and all five lit sets off a spark. A live countdown to 30 November 2026. A lit doorway into the stage planner. |
+| Stage planner | `stage-planner.html` | The school hall in 3D, to plan the production (`src/planner/`, ported from the stand-alone planner, `dramacollective_stagerenders_v1`): stairs, risers, box sets, the LED wall, a lighting rig with RGB spotlights, seating, props and speakers; walk through it and save renders or a design. In the site's palette and type; "The production" in its top bar goes back, through the site's curtain. Its own README is folded in below. |
+| Flash plays, Workshops, Social outreach | `flash-plays.html`, `workshops.html`, `outreach.html` | Coming soon: a full-screen three.js house curtain (`src/scene/curtain/CurtainStage.js`): velvet folds in a vertex shader on a sheen material, a marquee whose bulbs spell COMING SOON (instanced, bloomed), a follow-spot on the pointer, footlights. Touch it and it ripples; drag across it and it parts a sliver onto the lit stage. Each page has its own velvet; with house lights up (the light theme) the curtain is a pale rose velvet in a lit house, and the copy and the CSS fallback follow. Description from the sponsorship document. |
+| Become a sponsor | `sponsor.html` | The three tiers as tickets, each stub struck in its metal (brushed bronze, silver or gold, matched to the medallion's finishes), with a streak of reflected light and a hot spot that follow the pointer like a lamp held over the page. Pointing at a ticket previews its metal on a 3D medallion of the mark (`src/scene/medallion.js`); choosing one turns it bronze, silver or gold with a full turn and a spark. The medallion still turns when dragged. How to sponsor comes later. |
 
 **Shared parts.** The head block, the header, the curtain between pages, the sky and the footer are written into every page by `tools/pages/build.mjs`, between `<!-- site:... -->` markers. Edit them there (or `content/team.json` for the team) and run `npm run pages`. The page list for the Vite build comes from the same file.
 
 **Between pages** (`src/site/transition.js`): a link to another page closes two velvet halves, loads the page in the same tab, and that page parts them. Links that leave the site, open a new tab or jump within the page are left alone; reduced motion navigates plainly.
 
-**Team photos** are cropped from the core team document by `tools/team/crop_photos.py` (crop boxes by eye, 4:5, WebP). Ayushi Shah and Karanjot have no photo in the document and show their initials; the Head of Design in the last photo has no name in it, so the card shows the role.
+**Team photos** are cropped from the core team document by `tools/team/crop_photos.py` (crop boxes by eye, 4:5, WebP). Names and roles follow the Canva publication ("publication design", the core team pages). Ayushi Shah, Karanjot Singh Bagga and Nivaan Garg show their initials until their photos are added (`photo` in `content/team.json`, a 4:5 WebP in `assets/team/`). The film strip's photos (`assets/team/gallery/`) are eight of the meeting photos from the team's Drive folder, 4:3, 960 px.
 
 **Lottie:** the spark (`assets/lottie/spark.json`, made by `tools/lottie/make_spark.py`) plays on a chosen tier and when all five stage lights are on; the CTA flourish is reused on the production page.
 
@@ -183,9 +202,9 @@ Each scene also tells the stage how to light and place the statue:
 - `data-light`: 0 is the warm spotlight, 1 the cool one.
 - `data-key`: the key light level.
 
-Anything marked `data-mask` keeps the constellations clear of it. Act eight (`#support`, the last) keeps a button with `data-cta` (its Lottie flourish hooks onto it).
+Anything marked `data-mask` keeps the constellations clear of it. Act five (`#support`, the last) keeps a button with `data-cta` (its Lottie flourish hooks onto it).
 
-The sequence follows the length of `<main>`. Longer copy simply stretches it; to change the pacing, retime `PHASES`.
+The sequence is fitted to the length of `<main>`: longer copy gives the turn more room (the morph keeps its pace). To change the pacing, change `LENGTHS`.
 
 ## Images
 
@@ -202,18 +221,20 @@ All as in v2:
 - **Vector hand-over:** in the last act (the second half of the logo phase, `vector` in `TRACKS`) the stone logo cross-fades into the flat, vector mark (`src/scene/vectorLogo.js`: the traced `mark.svg` as inline SVG), so what meets the footer is crisp at any size. The stage projects the SVG's corners through its camera every frame and sets them as a CSS transform, so the vector lies exactly on the 3D logo (the logo's sway finishes first, and its idle drift and the lean toward the cursor fade out, so it is square on). Its colour is sampled from the 3D logo as the stage lights it, top and foot, and sampled again after a theme change. Once the vector is fully in, the 3D logo stops drawing colour but still casts its shadow and keeps the stars clear of the mark.
 - **Themes:** light and dark, remembered per browser (`dc-theme`).
 - **Music:** public-domain piano from Musopen, streamed from Wikimedia Commons and credited in the footer (`src/ui/music.js`).
-- **Nav:** the eight pages, the current one marked with a star and a gold rule that slides under the link the pointer is on. The wordmark gives way to the mark below 1600 px; below 1240 px the pages fold into the Menu, a full-screen sheet that drops like a curtain. Hides on scroll down.
+- **Nav:** the eight pages, the current one marked with a star and a gold rule that slides under the link the pointer is on. The mark (48 px) and the wordmark (on one line from 1680 px, stacked in two lines below that); below 1240 px the pages fold into the Menu, a full-screen sheet that drops like a curtain. Hides on scroll down.
+- **Cursor over the team's intro panel:** the panel is a modal dialog, drawn in the browser's top layer above every z-index, so while it is open the drawn cursor moves into it.
 
 ## Performance and fallbacks
 
-- **Loading:** three.js, the 1.81 MB rig and the 48 KB logo trace load lazily behind the loader. The morph mesh is built in an idle moment after the intro.
+- **Loading:** the loader is in the page itself (`index.html`: the satin in raw WebGL at a third of the screen's pixels, the sunburst in SVG on a 75 ms timer), so it runs before any script loads. The 1.81 MB rig is preloaded with the page; three.js and the 48 KB logo trace load lazily behind the loader; the Draco decoder (`public/draco/`, from three's examples, WebAssembly only) is fetched and compiled while the rig downloads. The stage's shaders are compiled with `compileAsync` before the curtain goes up (`Stage.warm`), so the first frame does not stall. `?debug` prints how long each step took. The morph mesh is built in an idle moment after the intro.
+- **Fonts:** WOFF2, converted from the design system's TTF/OTF with fontTools (same outlines; 300 KB in all, from 760 KB).
 - **Geometry:** the skinned statue has 79,976 vertices and 160,000 triangles. The morph mesh has 550,761 vertices (183,587 independent triangles; about 40 MB of vertex data on the GPU). Only one of the two is drawn at a time.
 - **Rendering:**
   - DPR is capped at 2;
   - a frame is rendered only when something changed (while the logo holds, its idle drift keeps rendering);
   - the shadow map is redrawn only when the shape or the turn changes;
   - both canvases pause when the tab is hidden or the footer covers the stage.
-- **Static fallback:** no WebGL, a software renderer, Save-Data, 2 cores or fewer, or 2 GB of memory or less all get the still picture, with the star field kept.
+- **Static fallback:** no WebGL, a software renderer, Save-Data, 2 cores or fewer, or 2 GB of memory or less all get the still picture (fetched only then), with the star field kept.
 - **Reduced motion:** no intro, parallax, ring turn or scrubbed sequence (the hero pose, then the logo in one step), no lean toward the cursor, and no fling.
 - **Inner pages:** three.js loads only on the coming-soon and sponsor pages, and only where WebGL runs well (the same low-power check); otherwise a CSS velvet with the sign in type, and the mark masked in the tier's metal. The curtain renders while it is on screen; the medallion only while something moves. Pixel ratio 1.75 on the curtain, 2 on the medallion.
 - **Teardown:** `dramaCollective.destroy()` (also on `pagehide`) frees the GPU memory, including the morph mesh, along with ScrollTriggers, SplitTexts, Lotties and listeners.
@@ -223,3 +244,17 @@ All as in v2:
 As in v2: theme roles in `tokens.css`, the text grounds behind copy, the icon buttons and the motion confined to the stage. The 3D logo is the statue's own stone, in its average colour.
 
 For the pages: `--z-veil` (the curtain between pages, above the top bar and below the cursor), and `--spot-rgb` / `--spot-lit` (the follow-spot and the stage lamps: gold-300 on the dark stage, gold-600 with house lights up; lit text gold-300 or plum-800). The text ground is reused as `.ground`, its feather limited to the page gutter.
+
+## The stage planner (`stage-planner.html`, `src/planner/`)
+
+The planner from `dramacollective_stagerenders_v1`, now part of the site: every texture, backdrop and model is generated in code. Its styles are `src/styles/planner.css` (the planner's own layout, in the site's palette and type), and it shares the site's three.js and fonts; GSAP drives only the curtain between pages.
+
+- **Hall:** about 18 m wide, 6.5 m high, 20 m from the stage front to the back wall; black pleated curtains, blue tile floor, a 6 × 8 grid of ceiling panel lights. **Stage:** 7 × 4 m, 1 m high.
+- **Parts:** stair blocks, risers (1 × 1 × 0.5 m, they snap to the stage edges), an 8 × 4.5 m LED wall (built-in pictures or an upload; its picture lights the stage), box sets of printed flex walls, tables and chairs, lockers, floor spotlights and a lighting rig (RGB, gels, beam, diffusion), general lights with dimmer and colour temperature, haze, column speakers, and the audience in straight or curved rows with aisles.
+- **Scenes:** Founder's Day, fashion show runway, talk or seminar, drawing-room drama, school play, concert night and an empty hall.
+- **Modes:** Design (orbit, click to select, drag to move) and Walk through (first person, W A S D, number keys for viewpoints).
+- **Saving:** Snapshot (PNG at HD, 1440p, 4K or portrait), a `.json` design, or a `.glb` with lights. The current design is kept in the browser.
+- **Shortcuts (design):** R / Shift + R rotate, arrows nudge, Page Up / Down raise and lower, Ctrl + D duplicate, Delete remove, Ctrl + Z / Ctrl + Shift + Z undo and redo, F frame the selection, Esc cancel.
+- **Address options:** `?scene=founders|runway|seminar|living|school|concert|empty`, `?design=URL`, `?mode=walk` (or `#walk`), `?quality=low|medium|high`, `?embed`, `?fresh`.
+
+Units are metres; +x across the hall, +y up, +z from the stage toward the audience; the stage front edge is z = 0.

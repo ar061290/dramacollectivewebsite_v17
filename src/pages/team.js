@@ -135,5 +135,47 @@ bootPage(({ reduced }) => {
     dialog.removeEventListener('close', onClosed);
   });
 
+  cleanups.push(setupReel({ reduced }));
+
   return () => cleanups.forEach((c) => c());
 });
+
+/**
+ * Behind the curtain: scrolling down runs the film strip sideways (the section is pinned while it
+ * runs); the frame nearest the middle of the screen comes into colour and the photos drift a little
+ * inside their frames. Reduced motion: the strip scrolls sideways by itself, all in colour.
+ */
+function setupReel({ reduced }) {
+  const reel = document.querySelector('.reel');
+  const track = reel?.querySelector('.reel__track');
+  if (!track || reduced) return () => {};
+  const win = reel.querySelector('.reel__window');
+  const frames = [...track.children];
+  const light = () => {
+    const mid = innerWidth / 2;
+    for (const f of frames) {
+      const r = f.getBoundingClientRect();
+      const d = (r.left + r.width / 2 - mid) / (r.width * 0.9 + 1);
+      f.style.setProperty('--lit', Math.max(0, 1 - Math.abs(d)).toFixed(3));
+      f.style.setProperty('--shift', Math.max(-1, Math.min(1, d)) * -4);
+    }
+  };
+  reel.classList.add('is-pinned');
+  const run = () => Math.max(0, track.scrollWidth - win.clientWidth);
+  const tween = gsap.to(track, {
+    x: () => -run(),
+    ease: 'none',
+    scrollTrigger: {
+      trigger: win,
+      start: 'center center',
+      end: () => `+=${run()}`,
+      pin: true,
+      scrub: 0.8,
+      invalidateOnRefresh: true,
+      onRefresh: light,
+    },
+    onUpdate: light,
+  });
+  light();
+  return () => { tween.scrollTrigger?.kill(); tween.kill(); reel.classList.remove('is-pinned'); gsap.set(track, { clearProps: 'transform' }); };
+}

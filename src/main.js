@@ -32,6 +32,9 @@ const ASSETS = {
 
 const reduced = reducedMotion();
 const cleanups = [];
+// ?debug: how long each step of the start takes (printed once the curtain is up)
+const marks = [];
+const mark = (name) => marks.push([name, Math.round(performance.now())]);
 let stage = null;
 let sky = null;
 
@@ -51,10 +54,8 @@ async function boot() {
     },
   }));
 
+  // the loader is already running (index.html): the satin and the sunburst's rays
   const loader = document.querySelector('.loader');
-  const status = document.querySelector('[data-loader-status]');
-  const loaderAnim = await loadLottie(document.querySelector('[data-lottie="loader"]'), 'loader', { loop: !reduced, autoplay: !reduced });
-  if (reduced) freeze(loaderAnim, 60);
 
   // the sky works everywhere, even without WebGL
   sky = new ConstellationField({
@@ -73,6 +74,7 @@ async function boot() {
         import('./scene/interaction.js'),
       ]);
       app.setupStatueInteraction = setupStatueInteraction;
+      mark('stage code');
       stage = new Stage({
         container: document.querySelector('.stage__gl'),
         reducedMotion: reduced,
@@ -87,8 +89,8 @@ async function boot() {
       await stage.load({
         statueUrl: ASSETS.statue,
         textureUrls: { albedo: ASSETS.albedo, normal: ASSETS.normal },
-        onProgress: (p) => { status.textContent = `Lighting the stage · ${Math.round(p * 100)}%`; },
       });
+      mark('statue loaded');
     } catch (err) {
       console.error('Stage failed, showing the still picture instead.', err);
       stage?.dispose();
@@ -97,18 +99,23 @@ async function boot() {
   }
   const still = document.querySelector('.stage__fallback');
   if (!stage) {
+    // the still picture is fetched only when it is needed (it is most of a megabyte)
+    still.src = new URL('../assets/fallback/hero.png', import.meta.url).href;
     still.hidden = false;
     // never let a stalled decode hold the curtain
     await Promise.race([still.decode().catch(() => {}), new Promise((r) => setTimeout(r, 1500))]);
   }
 
-  await document.fonts.ready;
+  // the type, and the stage's shaders, are ready before the curtain goes up
+  await Promise.all([document.fonts.ready, stage?.warm()]);
+  mark('fonts and shaders');
 
   // curtain: loader out
-  loaderAnim?.stop();
   await gsap.to(loader, { autoAlpha: 0, duration: reduced ? 0 : 0.45, ease: 'curtain' });
   loader.classList.add('is-done');
-  loaderAnim?.destroy();
+  window.dcLoader?.stop();
+  mark('curtain up');
+  if (new URLSearchParams(location.search).has('debug')) console.info('start:', marks.map(([n, t]) => `${n} ${t} ms`).join(' · '));
 
   if (stage) {
     stage.renderOnce();

@@ -24,8 +24,29 @@
       ]
     },
     {
+      "id": "hasini",
+      "name": "Hasini Rao Kasuganti",
+      "role": "Head of Production",
+      "dept": "productions",
+      "photo": "hasini",
+      "intro": [
+        "Meet Hasini Rao Kasuganti, a DP1 student interested in writing, design, economics, entrepreneurship, and, most importantly, bringing ideas to life. With experience in MUN, student publications, and various creative and student-led initiatives, she enjoys working across different roles and turning concepts into engaging projects. She applied for the role because she wanted to be involved in the process of creating a production from the very first idea to the final performance, while bringing together the creative and organisational sides of theatre. She hopes to create productions that are exciting, memorable, and leave audiences looking forward to what comes next. Outside of school, you’ll probably find her listening to Sade on repeat or working on her next project."
+      ]
+    },
+    {
+      "id": "pritika",
+      "name": "Pritika Ajwani",
+      "role": "Head of Flash Plays",
+      "dept": "productions",
+      "photo": "pritika",
+      "intro": [
+        "Hey! I’m Pritika :)",
+        "I’m currently an IBDP1 student at CHIREC interested in economics and politics, and outside of theatre, I’m usually somewhere between writing, overthinking storylines, or getting way too invested in how something could be done better. I didn’t join this collective just because I like theatre (though I do). I joined because I like the process of it: the brainstorming, the problem-solving, the “this might actually work” moments. Flash plays especially feel like that space where ideas don’t have to be perfect, just bold enough to exist, and that is something I'm extremely excited to pursue throughout the year."
+      ]
+    },
+    {
       "id": "karthikeya",
-      "name": "Karthikeya",
+      "name": "Karthikeya Aduru",
       "role": "Head of Finance",
       "dept": "finance",
       "photo": "karthikeya",
@@ -37,13 +58,63 @@
       ]
     },
     {
+      "id": "nivaan",
+      "name": "Nivaan Garg",
+      "role": "Head of Finance",
+      "dept": "finance",
+      "photo": "",
+      "intro": [
+        "Heyy, I’m Nivaan! I spend a good amount of my time at the gym or playing badminton, and I love films that feel like art rather than just entertainment. I’m especially drawn to the way directors build entire worlds and tell stories through visuals, music and the smallest details. I’m also someone who gets curious about how things work, whether it’s understanding something completely new or figuring out how all the different pieces of a system fit together. I like challenging myself, learning new things and getting a little too invested in whatever catches my interest. Excited to see what’s in store with Drama Collective!"
+      ]
+    },
+    {
+      "id": "jasshan",
+      "name": "Jasshan Krishna Gadiraju",
+      "role": "Head of Sponsorships",
+      "dept": "sponsorship",
+      "photo": "jasshan",
+      "intro": [
+        "Hey, I’m Jasshan, a DP1 student with a strong interest in acting, marketing, networking, and the performing arts. Having acted in productions and worked on creative promotions, I enjoy connecting with people and bringing ideas to life. As Sponsorship Head of my school’s Drama Collective, I focus on building partnerships and supporting our productions."
+      ]
+    },
+    {
+      "id": "hemanth",
+      "name": "Hemanth Reddy Lingamdinny",
+      "role": "Head of Sponsorships",
+      "dept": "sponsorship",
+      "photo": "hemanth",
+      "intro": [
+        "Hey!!! I’m Hemanth, I’m someone who loves meeting new people, communicating, and taking responsibility, so I felt Head of Sponsorship was a role that suited me. Among all chaos that comes with me I always find time to do the one thing I love the most… play basketball. I really enjoy spending time with my loved ones, listening to music and exploring new things. I really hope with my experience and knowledge I would allow the event to go smoothly."
+      ]
+    },
+    {
       "id": "snikitha",
-      "name": "Snikitha",
+      "name": "Snikitha Tatini",
       "role": "Head of Design",
       "dept": "design",
       "photo": "snikitha",
       "intro": [
         "Hello! I'm Snikitha. I am a DP1 student. I’m currently one of the three heads of Designs in the drama collective. I chose design because I've always been more interested in the visual side of theatre and figuring out how all the little details come together. I've always been super into theatre - keeping up with every musical and plays; and design. And I would love to bring my two top interests together! In addition, I've done many stage plays and musical theatre, worked on set design, and I also love character, environment and prop design!"
+      ]
+    },
+    {
+      "id": "ayushi",
+      "name": "Ayushi Shah",
+      "role": "Head of Design",
+      "dept": "design",
+      "photo": "",
+      "intro": [
+        "Hi, I’m Ayushi Shah from IB12 and I’m one of the heads of design. I’ve been into art and design almost my entire life and wish to pursue a career in animation. I have considerable experience in editorial, graphic, character and set design. I was first properly introduced to theatre in middle school and some of my favourite productions include Hamilton, Hadestown, Dear Evan Hansen, and Macbeth. My hobbies include reading, watching k-dramas, and scrolling pinterest. During my time in the drama collective, I hope to combine my knowledge of theatre and my design skills to create work that leaves a lasting impact."
+      ]
+    },
+    {
+      "id": "design-head",
+      "name": "Bala Mysura Sreethan Reddy",
+      "role": "Head of Design",
+      "dept": "design",
+      "photo": "design-head",
+      "intro": [
+        "As one of the Heads of Design for the Drama Collective, my role is to shape the visual identity of the collective and bring creativity into everything we present. I focus on creating a distinctive style through posters, visuals, social media, set elements and other creative details. I want the Drama Collective to have an identity that feels modern, expressive and memorable, while allowing us to experiment with different styles and ideas. My goal is to make the visual side of the collective just as engaging and impactful as the performances themselves."
       ]
     },
     {
@@ -57,29 +128,8 @@
       ]
     },
     {
-      "id": "hasini",
-      "name": "Hasini Rao Kasuganti",
-      "role": "",
-      "dept": "",
-      "photo": "hasini",
-      "intro": [
-        "Meet Hasini Rao Kasuganti, a DP1 student interested in writing, design, economics, entrepreneurship, and, most importantly, bringing ideas to life. With experience in MUN, student publications, and various creative and student-led initiatives, she enjoys working across different roles and turning concepts into engaging projects. She applied for the role because she wanted to be involved in the process of creating a production from the very first idea to the final performance, while bringing together the creative and organisational sides of theatre. She hopes to create productions that are exciting, memorable, and leave audiences looking forward to what comes next. Outside of school, you’ll probably find her listening to Sade on repeat or working on her next project."
-      ]
-    },
-    {
-      "id": "bhavneesh",
-      "name": "Bhavneesh M",
-      "role": "Head of Photography",
-      "dept": "photography",
-      "photo": "bhavneesh",
-      "intro": [
-        "Hi! I’m Bhavneesh M, an IBDP Year 1 student and one of the Heads of Photography of the Drama Collective. I joined because I’ve always wanted to explore theatre, meet creative people, and be part of something where we can actually bring ideas to life.",
-        "Outside of drama, I’m really into photography, videography, music, gaming, and writing. I love experimenting with visuals and storytelling, I’ve probably spent an unhealthy amount of time overthinking something absolutely useless and I’m especially interested in anything cinematic. I’m additionally into sports, especially cricket and pickleball, and I’m also a certified Weeknd addict and, unfortunately, a White Monster addict. If I’m not listening to The Weeknd, there’s a decent chance im dead :))."
-      ]
-    },
-    {
       "id": "avyukth",
-      "name": "Avyukth",
+      "name": "Avyukth Reddy Pochampally",
       "role": "Head of Logistics",
       "dept": "logistics",
       "photo": "avyukth",
@@ -88,13 +138,36 @@
       ]
     },
     {
-      "id": "ayushi",
-      "name": "Ayushi Shah",
-      "role": "Head of Design",
-      "dept": "design",
+      "id": "karanjot",
+      "name": "Karanjot Singh Bagga",
+      "role": "Head of Marketing and Outreach",
+      "dept": "marketing",
       "photo": "",
       "intro": [
-        "Hi, I’m Ayushi Shah from IB12 and I’m one of the heads of design. I’ve been into art and design almost my entire life and wish to pursue a career in animation. I have considerable experience in editorial, graphic, character and set design. I was first properly introduced to theatre in middle school and some of my favourite productions include Hamilton, Hadestown, Dear Evan Hansen, and Macbeth. My hobbies include reading, watching k-dramas, and scrolling pinterest. During my time in the drama collective, I hope to combine my knowledge of theatre and my design skills to create work that leaves a lasting impact."
+        "I’ve always been someone who likes having a lot going on. Whether it’s photography, basketball, fitness, or working on some random creative idea, I enjoy things that keep me moving, thinking, and trying something new. Photography, in particular, has become one of the ways I notice and remember things. I like catching moments that might otherwise go unnoticed, whether it’s an expression, a reaction, or just something that looks interesting for reasons I probably can’t explain properly. Hi, I’m Karanjot, a CP Year 2 student at CHIREC and the Head of Marketing and Outreach for the Drama Collective.",
+        "I think a lot of what I enjoy comes down to the same thing: energy and storytelling. Basketball has taught me to think quickly and work with the people around me, while photography and content creation give me a space to experiment with how something looks, feels, and comes across to someone else. I’m also the kind of person who can get strangely invested in an idea once I think it has potential, which is probably both useful and mildly concerning for everyone who ends up working on it with me.",
+        "That’s also what drew me to marketing and outreach for the Drama Collective. Through marketing, I want to take everything happening around the Collective, from rehearsals and performances to the people and moments behind them, and find ways to make others care about them too. Through outreach, I want to take that same energy beyond our own stage by building collaborations and finding ways for theatre to connect with different people and communities. More than anything, I want the work we do to feel like us: creative, energetic, slightly unpredictable, and capable of reaching people both within and beyond the Collective."
+      ]
+    },
+    {
+      "id": "samaara",
+      "name": "Samaara Gadra Rao",
+      "role": "Head of Marketing",
+      "dept": "marketing",
+      "photo": "samaara",
+      "intro": [
+        "I’m Samaara Rao, a DP1 student and this year’s Head of Marketing for the CHIREC Drama Collective. I’ve been involved in theatre before, both as a performer and behind the scenes, and it’s something I’ve always enjoyed being a part of.",
+        "Outside of theatre, I’m a Psychology student and have always been interested in art and creativity in general. I love travelling, listening to music and spending time with my friends."
+      ]
+    },
+    {
+      "id": "darsh",
+      "name": "Darsh Agarwal",
+      "role": "Head of Outreach",
+      "dept": "marketing",
+      "photo": "darsh",
+      "intro": [
+        "I'm Darsh, a DP1 student and this year's Head of Outreach for the CHIREC Drama Collective! I joined because I've always been amazed by how much goes into putting on a show. Behind every great performance is a whole crew making the magic happen, and I knew I wanted to be part of it. Outreach felt like the perfect spot for me since I love meeting new people, building connections, and being the link between the collective and everyone outside it. Away from the collective, I play football and tennis, spend a lot of my free time gaming, and have a serious soft spot for cars."
       ]
     },
     {
@@ -109,18 +182,29 @@
       ]
     },
     {
-      "id": "darsh",
-      "name": "Darsh",
-      "role": "Head of Outreach",
-      "dept": "marketing",
-      "photo": "darsh",
+      "id": "bhavneesh",
+      "name": "Bhavneesh Marri",
+      "role": "Head of Photography",
+      "dept": "photography",
+      "photo": "bhavneesh",
       "intro": [
-        "I'm Darsh, a DP1 student and this year's Head of Outreach for the CHIREC Drama Collective! I joined because I've always been amazed by how much goes into putting on a show. Behind every great performance is a whole crew making the magic happen, and I knew I wanted to be part of it. Outreach felt like the perfect spot for me since I love meeting new people, building connections, and being the link between the collective and everyone outside it. Away from the collective, I play football and tennis, spend a lot of my free time gaming, and have a serious soft spot for cars."
+        "Hi! I’m Bhavneesh M, an IBDP Year 1 student and one of the Heads of Photography of the Drama Collective. I joined because I’ve always wanted to explore theatre, meet creative people, and be part of something where we can actually bring ideas to life.",
+        "Outside of drama, I’m really into photography, videography, music, gaming, and writing. I love experimenting with visuals and storytelling, I’ve probably spent an unhealthy amount of time overthinking something absolutely useless and I’m especially interested in anything cinematic. I’m additionally into sports, especially cricket and pickleball, and I’m also a certified Weeknd addict and, unfortunately, a White Monster addict. If I’m not listening to The Weeknd, there’s a decent chance im dead :))."
+      ]
+    },
+    {
+      "id": "randheer",
+      "name": "Randheer Kankanala",
+      "role": "Head of Photography",
+      "dept": "photography",
+      "photo": "randheer",
+      "intro": [
+        "Hi! I’m Randheer Chowdary Kankanala. I'm a DP year 1 student and I am also a head of photography at the drama collective. I went up for photography because I’d say I’m not bad at taking pictures or finding the right frame. This comes from my passion for cinematography and filmmaking. I’ve been making short films and writing scripts for as long as I can remember, so taking photos and editing is no new thing to me. Other than filmmaking, I am really passionate about music. I love making music and experimenting with different genres to hopefully one day find my own sound."
       ]
     },
     {
       "id": "deeksha",
-      "name": "Deeksha",
+      "name": "Deeksha Cheekati",
       "role": "Head of Workshops",
       "dept": "workshops",
       "photo": "deeksha",
@@ -130,72 +214,8 @@
       ]
     },
     {
-      "id": "pritika",
-      "name": "Pritika",
-      "role": "",
-      "dept": "",
-      "photo": "pritika",
-      "intro": [
-        "Hey! I’m Pritika :)",
-        "I’m currently an IBDP1 student at CHIREC interested in economics and politics, and outside of theatre, I’m usually somewhere between writing, overthinking storylines, or getting way too invested in how something could be done better. I didn’t join this collective just because I like theatre (though I do). I joined because I like the process of it: the brainstorming, the problem-solving, the “this might actually work” moments. Flash plays especially feel like that space where ideas don’t have to be perfect, just bold enough to exist, and that is something I'm extremely excited to pursue throughout the year."
-      ]
-    },
-    {
-      "id": "randheer",
-      "name": "Randheer Chowdary Kankanala",
-      "role": "Head of Photography",
-      "dept": "photography",
-      "photo": "randheer",
-      "intro": [
-        "Hi! I’m Randheer Chowdary Kankanala. I'm a DP year 1 student and I am also a head of photography at the drama collective. I went up for photography because I’d say I’m not bad at taking pictures or finding the right frame. This comes from my passion for cinematography and filmmaking. I’ve been making short films and writing scripts for as long as I can remember, so taking photos and editing is no new thing to me. Other than filmmaking, I am really passionate about music. I love making music and experimenting with different genres to hopefully one day find my own sound."
-      ]
-    },
-    {
-      "id": "samaara",
-      "name": "Samaara Rao",
-      "role": "Head of Marketing",
-      "dept": "marketing",
-      "photo": "samaara",
-      "intro": [
-        "I’m Samaara Rao, a DP1 student and this year’s Head of Marketing for the CHIREC Drama Collective. I’ve been involved in theatre before, both as a performer and behind the scenes, and it’s something I’ve always enjoyed being a part of.",
-        "Outside of theatre, I’m a Psychology student and have always been interested in art and creativity in general. I love travelling, listening to music and spending time with my friends."
-      ]
-    },
-    {
-      "id": "hemanth",
-      "name": "Hemanth",
-      "role": "Head of Sponsorship",
-      "dept": "finance",
-      "photo": "hemanth",
-      "intro": [
-        "Hey!!! I’m Hemanth, I’m someone who loves meeting new people, communicating, and taking responsibility, so I felt Head of Sponsorship was a role that suited me. Among all chaos that comes with me I always find time to do the one thing I love the most… play basketball. I really enjoy spending time with my loved ones, listening to music and exploring new things. I really hope with my experience and knowledge I would allow the event to go smoothly."
-      ]
-    },
-    {
-      "id": "karanjot",
-      "name": "Karanjot",
-      "role": "Head of Marketing and Outreach",
-      "dept": "marketing",
-      "photo": "",
-      "intro": [
-        "I’ve always been someone who likes having a lot going on. Whether it’s photography, basketball, fitness, or working on some random creative idea, I enjoy things that keep me moving, thinking, and trying something new. Photography, in particular, has become one of the ways I notice and remember things. I like catching moments that might otherwise go unnoticed, whether it’s an expression, a reaction, or just something that looks interesting for reasons I probably can’t explain properly. Hi, I’m Karanjot, a CP Year 2 student at CHIREC and the Head of Marketing and Outreach for the Drama Collective.",
-        "I think a lot of what I enjoy comes down to the same thing: energy and storytelling. Basketball has taught me to think quickly and work with the people around me, while photography and content creation give me a space to experiment with how something looks, feels, and comes across to someone else. I’m also the kind of person who can get strangely invested in an idea once I think it has potential, which is probably both useful and mildly concerning for everyone who ends up working on it with me.",
-        "That’s also what drew me to marketing and outreach for the Drama Collective. Through marketing, I want to take everything happening around the Collective, from rehearsals and performances to the people and moments behind them, and find ways to make others care about them too. Through outreach, I want to take that same energy beyond our own stage by building collaborations and finding ways for theatre to connect with different people and communities. More than anything, I want the work we do to feel like us: creative, energetic, slightly unpredictable, and capable of reaching people both within and beyond the Collective."
-      ]
-    },
-    {
-      "id": "design-head",
-      "name": "",
-      "role": "Head of Design",
-      "dept": "design",
-      "photo": "design-head",
-      "intro": [
-        "As one of the Heads of Design for the Drama Collective, my role is to shape the visual identity of the collective and bring creativity into everything we present. I focus on creating a distinctive style through posters, visuals, social media, set elements and other creative details. I want the Drama Collective to have an identity that feels modern, expressive and memorable, while allowing us to experiment with different styles and ideas. My goal is to make the visual side of the collective just as engaging and impactful as the performances themselves."
-      ]
-    },
-    {
       "id": "gautam",
-      "name": "Gautam",
+      "name": "Gautam Kodela",
       "role": "Head of Publication",
       "dept": "workshops",
       "photo": "gautam",
@@ -206,16 +226,6 @@
         "My hobbies? Well, I am an obsessive cinephile and an imaginative storywriter who loves to explore a myriad of genres.",
         "That is it. I am ready to give you a whole ton of issues to be read without you getting bored at all! I am ready, so are you?",
         "Let’s talk about some Drama this year!"
-      ]
-    },
-    {
-      "id": "jasshan",
-      "name": "Jasshan",
-      "role": "Head of Sponsorship",
-      "dept": "finance",
-      "photo": "jasshan",
-      "intro": [
-        "Hey, I’m Jasshan, a DP1 student with a strong interest in acting, marketing, networking, and the performing arts. Having acted in productions and worked on creative promotions, I enjoy connecting with people and bringing ideas to life. As Sponsorship Head of my school’s Drama Collective, I focus on building partnerships and supporting our productions."
       ]
     }
   ]

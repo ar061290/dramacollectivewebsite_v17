@@ -29,13 +29,16 @@ export const PAGES = [
   { file: 'index.html', key: 'home' },
   ...NAV.map((n) => ({ file: n.href.slice(2), key: n.key })),
   { file: 'sponsor.html', key: 'sponsor' },
+  // the stage planner, opened from The production: a full-screen app with its own top bar (no
+  // shared parts are written into it; it is listed here so Vite builds it)
+  { file: 'stage-planner.html', key: 'planner' },
 ];
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const current = (key, page) => (key === page ? ' aria-current="page"' : '');
 
 const head = () => `<link rel="icon" href="./assets/brand/mark-gold.png">
-  <link rel="preload" href="./assets/fonts/Raung-400.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./src/styles/main.css">
   <!-- Bare-module map for running without a build step (any static server). Vite resolves the same
        specifiers from node_modules and ignores this map. Keep the versions in step with package.json. -->
@@ -68,7 +71,7 @@ const header = (page) => `<a class="skip-link" href="#main">Skip to content</a>
   <header class="topbar" data-topbar>
     <a class="topbar__brand" href="${page === 'home' ? '#top' : './index.html'}" aria-label="The Drama Collective, ${page === 'home' ? 'back to top' : 'home'}">
       <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
-      <span class="topbar__word">The Drama Collective</span>
+      <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
     </a>
     <nav class="topbar__nav" aria-label="Main">
       <ul class="topbar__links">
@@ -129,11 +132,13 @@ const footer = (page) => `<footer class="curtain" id="contact" aria-labelledby="
 
 const DEPTS = [
   { key: 'leadership', label: 'Leadership' },
+  { key: 'productions', label: 'Flash plays & production' },
+  { key: 'finance', label: 'Finance' },
+  { key: 'sponsorship', label: 'Sponsorship' },
   { key: 'design', label: 'Design' },
-  { key: 'photography', label: 'Photography' },
   { key: 'logistics', label: 'Logistics' },
   { key: 'marketing', label: 'Marketing & outreach' },
-  { key: 'finance', label: 'Finance & sponsorship' },
+  { key: 'photography', label: 'Photography' },
   { key: 'workshops', label: 'Workshops & publication' },
 ];
 

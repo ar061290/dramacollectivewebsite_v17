@@ -1,12 +1,14 @@
 // Flash plays, Workshops, Social outreach: coming soon. The house curtain is down
 // (src/scene/curtain/CurtainStage.js, loaded only where WebGL runs well); without it, the same
-// velvet in CSS with the sign set in type.
+// velvet in CSS with the sign set in type. Both follow the theme: dark velvet in the dark theatre,
+// a pale rose velvet with the house lights up.
 import { bootPage } from '../site/boot.js';
 import { probeWebGL, prefersStatic } from '../util/env.js';
+import { currentTheme } from '../ui/theme.js';
 
 const MARK = new URL('../../assets/brand/mark-gold.png', import.meta.url).href;
 
-bootPage(({ reduced }) => {
+bootPage(({ reduced, onTheme }) => {
   const host = document.querySelector('[data-curtain]');
   if (!host) return undefined;
   const hint = document.querySelector('[data-curtain-hint]');
@@ -15,12 +17,14 @@ bootPage(({ reduced }) => {
 
   let stage = null;
   let gone = false;
+  // the curtain follows the theme switch (house lights up: the pale velvet in a lit house)
+  onTheme((theme) => stage?.setTheme(theme));
   const gl = probeWebGL();
   if (gl.ok && !prefersStatic(gl.renderer)) {
     import('../scene/curtain/CurtainStage.js')
       .then(async ({ CurtainStage }) => {
         if (gone) return;
-        stage = new CurtainStage(host, { variant: host.dataset.curtain, markUrl: MARK, reduced });
+        stage = new CurtainStage(host, { variant: host.dataset.curtain, markUrl: MARK, reduced, theme: currentTheme() });
         if (new URLSearchParams(location.search).has('debug')) window.__stage = stage;
         await stage.load();
         if (!gone) host.classList.add('is-live');

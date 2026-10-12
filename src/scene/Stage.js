@@ -22,6 +22,7 @@ import { evaluate, TURN } from './sequence.js';
 import { buildLogoGeometry } from './logo.js';
 import { buildMorph, growAt, MORPH } from './morph.js';
 import { VectorLogo } from './vectorLogo.js';
+import { LogoStar } from './star.js';
 
 const DEG = Math.PI / 180;
 const DRAG_RAD_PER_PX = Math.PI / 420; // a 420 px drag turns the statue half way round
@@ -180,7 +181,10 @@ export class Stage {
     this._frameStatue();
     this.mask = new SilhouetteMask(this.renderer);
     this.renderer.shadowMap.needsUpdate = true;
+    // size the view without drawing: the first frame waits for warm(), which compiles the shaders
+    this._sizing = true;
     this._resize();
+    this._sizing = false;
     onProgress(1);
   }
 
@@ -272,7 +276,7 @@ export class Stage {
     this.camera.updateProjectionMatrix();
     this._lastSig = '';
     this._maskDue = 0;
-    if (!this.running && this.statue) this.renderOnce();
+    if (!this.running && this.statue && !this._sizing) this.renderOnce();
   }
 
   /** Rest and end rotations per bone, from the GLB's "Pose" clip (frame 0 = rest, last = end). */
@@ -327,6 +331,8 @@ export class Stage {
     if (this.statue.averageColor) this.morph.uniforms.uStone.value.copy(this.statue.averageColor);
     logo.geometry.dispose();
     this.morph.mesh.layers.enable(STATUE_LAYER);
+    // the star beside the mask is not made from her: it flies in from the sky (src/scene/star.js)
+    if (logo.star) this.star = new LogoStar({ geometry: logo.star, space: this.turntable, scene: this.scene, stone: this.statue.averageColor });
     // the vector stand-in it hands over to at the end, laid exactly over it
     this.logoFlat = logo.flat;
     this.vector = new VectorLogo(svgText, { after: this.container, outline: logo.flat.outline });
@@ -508,6 +514,14 @@ export class Stage {
     // ring: behind the statue, turned only about the viewing axis
     placeRing(this.ring, d + this.statue.radius * 1.4);
     this.ring.spinner.rotation.z = s.spin;
+    // the logo's star, on its way in from the sky (it needs this frame's camera)
+    if (this.star && m) {
+      cam.updateMatrixWorld();
+      this.star.update(tr.morph, {
+        fit: m.current, center: c, camera: cam, height: h, time: this.time,
+        day: s.daylight, solid: !(this.vector && tr.vector >= 1),
+      });
+    }
   }
 
   _updateLights() {
@@ -548,7 +562,8 @@ export class Stage {
     const r = (v) => Math.round(v * 1e4);
     return [s.stageLight, s.ringReveal, s.lightMix, s.keyLevel, s.ringLevel, s.frameX, s.frameY, s.spin, this.turntable.rotation.y, s.arc, s.dolly,
       s.parX, s.parY, s.daylight, this.seqOverride ?? s.seq, t.hover, this.width, this.height, this.camera.fov, this.morph ? 1 : 0,
-      this._focusBlend ?? 1, Math.min(this.height + 1, this._occluderTop())].map(r).join(',');
+      this._focusBlend ?? 1, Math.min(this.height + 1, this._occluderTop()),
+      this.star?.twinkling ? Math.round(this.time * 30) : 0].map(r).join(',');
   }
 
   _tick() {
@@ -564,6 +579,20 @@ export class Stage {
       this._maskDue = now + 140;
       this.mask.update(this.scene, this.camera, this.width, this.height);
     }
+  }
+
+  /**
+   * Compile every shader on stage (in parallel where the driver allows) and draw the first frame,
+   * so the first frame the visitor sees is not the one that stalls on compiling.
+   */
+  async warm() {
+    if (!this.statue) return;
+    this._updateRig(0);
+    this._updateLights();
+    try {
+      await this.renderer.compileAsync(this.scene, this.camera);
+    } catch { /* compiled on first draw instead */ }
+    this.renderOnce();
   }
 
   renderOnce() {
@@ -712,7 +741,7 @@ export class Stage {
     const logo = this.morph?.mesh;
     if (logo?.visible && this.logoInFront) {
       // 2. the logo alone, over the footer (the shadow map is the first pass's)
-      const hidden = [this.ring.root, this.floor.shadow, this.floor.pool, this.skinned].filter((o) => o?.visible);
+      const hidden = [this.ring.root, this.floor.shadow, this.floor.pool, this.skinned, this.star?.glow].filter((o) => o?.visible);
       for (const o of hidden) o.visible = false;
       const shadows = r.shadowMap.needsUpdate;
       r.shadowMap.needsUpdate = false;
@@ -764,6 +793,7 @@ export class Stage {
     for (const l of Object.values(this.lights)) l.dispose?.();
     this.mask?.dispose();
     this.morph?.dispose();
+    this.star?.dispose();
     this.vector?.dispose();
     this.ring?.matcap.dispose();
     this.ring?.dayMatcap.dispose();

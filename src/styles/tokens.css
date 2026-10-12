@@ -54,8 +54,8 @@
 :root {
   /* hairline for ink surfaces: --border-hairline's 14% alpha, taken from plum-100 instead of plum-800 */
   --border-on-dark: rgba(243,231,233,.14);
-  /* the top bar height from the TopBar component spec (56px) */
-  --topbar-h: 56px;
+  /* the top bar: the TopBar component spec's 56px, raised to 64px for the larger mark and wordmark */
+  --topbar-h: 64px;
   /* side margin of the stage layout: space-6 on small screens, space-8 from tablet up */
   --stage-gutter: var(--space-6);
   /* layer order for the fixed stage, content and chrome */

@@ -65,11 +65,18 @@ export function setupCursor() {
     clip(x, y);
   };
 
+  // a modal dialog (the core team's spotlight) is drawn in the top layer, above every z-index on
+  // the page: while one is open, the drawn cursor lives inside it, so it stays on top
+  const home = el.parentElement;
+  const rehome = (host) => { if (el.parentElement !== host) host.append(el); };
+  const onDialogClose = () => rehome(home);
+
   // what is under the pointer: once a frame is plenty for this
   const update = () => {
     raf = 0;
     if (!last) return;
     const { x, y, target } = last;
+    rehome(target?.closest?.('dialog[open]') ?? home);
     root.classList.toggle('is-over-text', overText(x, y, target));
     root.classList.toggle('is-over-link', !!target?.closest?.(LINKS));
     box = target?.closest?.(BOXES) ?? null;
@@ -106,8 +113,11 @@ export function setupCursor() {
   window.addEventListener('pointermove', onMove, { passive: true });
   window.addEventListener('scroll', onScroll, { passive: true });
   root.addEventListener('pointerleave', onLeave);
+  document.addEventListener('close', onDialogClose, true); // 'close' does not bubble
   return () => {
     cancelAnimationFrame(raf);
+    document.removeEventListener('close', onDialogClose, true);
+    rehome(home);
     if (rawEvents) window.removeEventListener('pointerrawupdate', onRaw);
     window.removeEventListener('pointermove', onMove);
     window.removeEventListener('scroll', onScroll);
