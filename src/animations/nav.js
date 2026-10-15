@@ -1,4 +1,5 @@
-// Top bar: hides on scroll down, returns on scroll up, gains the blurred ground once scrolled.
+// Top bar: slides away to the right on scroll down (Apply now and Become a sponsor stay), returns on
+// scroll up, gains the blurred ground once scrolled.
 // Our outputs is a menu that drops from its button on hover (fine pointers), focus or click.
 // Each page link opens its own page (the curtain between pages is src/site/transition.js). On wide
 // screens a gold rule slides under the link the pointer is on and rests under the current page;
@@ -42,10 +43,22 @@ export function setupNav({ reduced }) {
   toggle.addEventListener('click', onToggle);
   window.addEventListener('keydown', onKey);
   // the sheet only exists below the wide layout: close it if the window grows past it
-  const wide = matchMedia('(min-width: 1024px)');
+  const wide = matchMedia('(min-width: 1100px)');
   const onWide = () => { if (wide.matches) setMenu(false); };
   wide.addEventListener('change', onWide);
 
+  // Scrolling down, the bar slides away to the right but for its two buttons, which stay where they
+  // are (CSS)
+  const hide = () => bar.classList.add('is-hidden');
+  // the home page's footer can be taller than the screen: once its top has passed under the bar its
+  // columns would scroll up under the two buttons, so they fade out where they are (CSS is-curtain)
+  const home = document.querySelector('.curtain--home');
+  const curtainWatch = home ? ScrollTrigger.create({
+    trigger: home,
+    start: () => `top ${bar.offsetHeight}px`,
+    end: 'bottom top', // never reached (the page ends first), so it stays on to the very end
+    onToggle: (self) => bar.classList.toggle('is-curtain', self.isActive),
+  }) : null;
   const scrollWatch = ScrollTrigger.create({
     start: 0,
     end: 'max',
@@ -53,7 +66,7 @@ export function setupNav({ reduced }) {
       const y = self.scroll();
       bar.classList.toggle('is-scrolled', y > 24);
       if (menuOpen) return;
-      if (self.direction === 1 && y > 160) bar.classList.add('is-hidden');
+      if (self.direction === 1 && y > 160) hide();
       else if (self.direction === -1) bar.classList.remove('is-hidden');
     },
   });
@@ -126,6 +139,8 @@ export function setupNav({ reduced }) {
 
   return () => {
     scrollWatch.kill();
+    curtainWatch?.kill();
+    bar.classList.remove('is-hidden', 'is-curtain');
     sheetTl?.kill();
     glintCleanup();
     dropdownCleanup();

@@ -1,15 +1,15 @@
 /* Page structure: a fixed stage (stars + WebGL) under scrolling scenes, a solid curtain-call footer. */
 
 /* ---- Fixed stage ---- */
-/* Layers: the sky (and the still picture) sit under the footer; the WebGL stage sits over it, but
-   draws only the logo where the footer is (Stage._draw), so the footer covers the ring and the
-   shadows while the logo stays in front of it; the content is over both. */
+/* Layers, bottom up: the sky (and the still picture), the WebGL stage, the footer (it cuts the ring
+   and the 3D logo at its edge, moved by the browser with the scroll, so always in step), the flat
+   vector logo (the only part of the logo in front of the footer), then the content. */
 .stage { position: fixed; inset: 0; z-index: var(--z-stars); pointer-events: none; }
 .stage__stars { position: absolute; inset: 0; width: 100%; height: 100%; }
 .stage__gl { position: fixed; inset: 0; z-index: var(--z-stage); pointer-events: none; }
 /* the logo's flat vector stand-in, laid over the 3D logo by the stage (src/scene/vectorLogo.js);
-   in front of the footer like the logo, or behind it on phones */
-.vector-logo { position: fixed; left: 0; top: 0; z-index: var(--z-stage); transform-origin: 0 0; pointer-events: none; overflow: visible; visibility: hidden; }
+   in front of the footer, or behind it on phones until it starts to dock */
+.vector-logo { position: fixed; left: 0; top: 0; z-index: var(--z-vector); transform-origin: 0 0; pointer-events: none; overflow: visible; visibility: hidden; }
 .vector-logo--behind { z-index: var(--z-stars); }
 .stage__gl canvas { display: block; width: 100%; height: 100%; }
 /* the still is a transparent frame of the hero composition, so it fills the stage like the canvas
@@ -126,7 +126,12 @@ html.has-js.is-loading, html.has-js.is-loading body { overflow: hidden; height: 
 main { position: relative; z-index: var(--z-content); }
 /* the home page scrolls 5.4 screens: the statue's sequence is laid out in screens of scroll
    (src/scene/sequence.js), and five acts after the hero are a little short of it */
-.stage-main { min-height: 640vh; overflow-x: clip; } /* the right-hand acts' feathered grounds reach past the edge */
+.stage-main { --hold-run: calc(4 * 55vh); min-height: 640vh; overflow-x: clip; }
+/* act four's held stretch (below) is taken out of the stage's sequence (scenes.js), so the floor
+   rises by it and the sequence keeps the length it was laid out for */
+@media (min-height: 600px) {
+  .stage-main:has(.scene--hold) { min-height: calc(640vh + var(--hold-run)); }
+} /* the right-hand acts' feathered grounds reach past the edge */
 
 /* ---- Intro: the hero copy waits in the dark until the curtain goes up ---- */
 .is-intro [data-intro] { visibility: hidden; }
@@ -148,7 +153,6 @@ main { position: relative; z-index: var(--z-content); }
   letter-spacing: var(--ls-display);
 }
 .hero__content .rule { margin: var(--space-4) 0; }
-.hero__tagline { font-size: var(--size-body-l); color: var(--fg-strong); margin: 0; }
 .hero__cue {
   position: absolute;
   left: 50%;
@@ -173,6 +177,121 @@ main { position: relative; z-index: var(--z-content); }
 .scene__content > .section-heading + * { margin-top: 0; }
 
 .scene h3 { font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: var(--size-subheading); color: var(--fg-strong); line-height: var(--lh-tight); }
+
+/* Act one: the statement */
+.scene .lead { line-height: var(--lh-body); }
+
+/* Act two: the countdown to the production (src/sections/countdown.js; .count itself is in
+   pages.css, shared with the production page's event card) */
+.premiere { display: grid; gap: var(--space-5); }
+.premiere__count { gap: var(--space-4) var(--space-5); }
+.premiere__count .count__digit { font-size: clamp(36px, 4.2vw, 64px); }
+.premiere__meta { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: var(--space-4) var(--space-5); margin: 0; padding-top: var(--space-4); border-top: 1px solid var(--line); }
+.premiere__meta div { display: grid; gap: var(--space-1); align-content: start; }
+.premiere__meta dt { font-family: var(--font-ui); font-size: var(--size-micro); font-weight: var(--weight-bold); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; color: var(--fg-muted); }
+.premiere__meta dd { margin: 0; font-family: var(--font-display); font-size: var(--size-subheading); line-height: var(--lh-title); color: var(--fg-strong); }
+.premiere__foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-5); }
+.premiere__foot .fine { margin: 0; }
+
+/* Act three: this month's publication. A lead piece over four more, after a magazine's front page;
+   the art is a placeholder plate (the pieces' own pictures come with their copy). Every piece opens
+   The publication until each has its own page. */
+.issue { display: grid; gap: var(--space-5); }
+.issue a { color: inherit; text-decoration: none; }
+.issue__art {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  /* a plate, not a page colour: the same deep plum in both themes, as a photograph would be */
+  background:
+    radial-gradient(120% 90% at 78% 12%, rgb(243 231 184 / .2), rgb(243 231 184 / 0) 60%),
+    linear-gradient(160deg, var(--plum-700), var(--plum-900) 70%);
+  box-shadow: inset 0 0 0 1px rgb(235 216 140 / .22);
+}
+.issue__art > span {
+  position: absolute;
+  right: 6%; bottom: -.12em;
+  font-family: var(--font-display);
+  font-size: clamp(64px, 9vw, 132px);
+  line-height: 1;
+  color: var(--gold-500);
+  opacity: .32;
+  transition: transform var(--dur-slow) var(--ease-out), opacity var(--dur-slow) var(--ease-out);
+}
+.issue__lead { position: relative; display: block; color: var(--plum-100); }
+.issue__lead .issue__text {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-7) var(--space-5) var(--space-5);
+  background: var(--scrim-bottom);
+}
+.issue__lead .issue__title { font-size: clamp(24px, 2.2vw, 32px); color: var(--plum-50); }
+.issue__lead .issue__kicker { color: var(--gold-500); }
+.issue__lead .issue__by { color: var(--plum-200); }
+.issue__lead:hover .issue__art > span, .issue__item:hover .issue__art > span { transform: translateY(-6%); opacity: .5; }
+.issue__list { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4) var(--space-5); }
+.issue__item { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: var(--space-3); align-items: start; }
+.issue__art--sm { aspect-ratio: 1; }
+.issue__art--sm > span { font-size: 40px; right: 10%; }
+.issue__text { display: grid; gap: 4px; min-width: 0; }
+.issue__kicker { font-family: var(--font-ui); font-size: var(--size-micro); font-weight: var(--weight-bold); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; color: var(--accent); }
+.issue__title { font-family: var(--font-display); font-size: 19px; line-height: var(--lh-tight); color: var(--fg-strong); transition: color var(--dur-base) var(--ease-curtain); }
+.issue__item:hover .issue__title, .issue__item:focus-visible .issue__title { color: var(--accent); }
+.issue__by { font-size: var(--size-caption); color: var(--fg-muted); }
+.issue__more {
+  justify-self: start;
+  font-family: var(--font-ui);
+  font-size: var(--size-micro);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-strong);
+  padding-bottom: 4px;
+  border-bottom: 2px solid var(--rule-color);
+}
+.issue__more:hover, .issue__more:focus-visible { color: var(--accent); }
+
+/* Act four is held: the section is as tall as a screen plus a stretch of scroll for its cards, and its
+   column stays on screen (sticky) through that stretch while the scroll turns the cards
+   (src/sections/pillars.js) and the stage holds still (src/sections/scenes.js). --hold-run is the
+   stretch: one card's worth (55% of a screen) for each card after the first (on .stage-main). Only
+   where the screen is tall enough to hold the column (the same query in pillars.js and scenes.js);
+   on a shorter one the act scrolls by like the others. */
+.scene__hold { grid-column: 1 / span 5; } /* the column, held or not */
+.scene--text-right .scene__hold { grid-column: 8 / span 5; }
+@media (min-height: 600px) {
+  .scene--hold {
+    min-height: calc(100vh + var(--hold-run));
+    min-height: calc(100svh + var(--hold-run));
+    grid-template-rows: minmax(0, 1fr);
+    align-content: stretch;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .scene--hold .scene__hold {
+    align-self: start;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: var(--topbar-h);
+  }
+}
+
+/* Act five: the footer's columns, as wide as the footer's slot they dock into */
+.curtain-call { grid-column: 1 / span 6; }
+
+/* Act five: the curtain call, carried down into the footer (src/sections/dock.js sets --dock, how far
+   it has moved, and --over, how much of it is over the footer, both 0..1). Its feathered ground
+   gives way only where the footer's own ground is under it. */
+.curtain-call.is-docking { will-change: transform; }
+.curtain-call::before { opacity: calc(1 - var(--over, 0)); }
 
 /* Act two: the programme */
 .production { display: grid; gap: var(--space-3); }
@@ -224,83 +343,80 @@ main { position: relative; z-index: var(--z-content); }
 .fine { font-size: var(--size-caption); color: var(--fg-muted); }
 
 /* ---- Footer: the curtain call ---- */
-/* It fills the screen at the end of the page: the copy on the left, the Collective's mark docked
-   on the right (the stage moves the vector logo into .curtain__mark as the footer rises), and the
-   credits and the CHIREC endorsement along the foot. */
+/* Every page: the Collective's mark, every page in three columns, and the credits and the CHIREC
+   endorsement along the foot, only as tall as its contents. It lies over the WebGL stage, an opaque
+   layer the browser moves with the page, so the ring is cut by its edge exactly at any scroll speed.
+   On the home page the columns are the last act's: they are carried down into the empty
+   .curtain__intro on the left as the footer rises (src/sections/dock.js), while the stage moves the
+   vector logo into .curtain__mark on the right, the two in step. */
 .curtain {
   position: relative;
   z-index: var(--z-footer);
   background: var(--curtain-bg);
   border-top: var(--rule-thick) solid var(--rule-color);
-  padding: calc(var(--space-9) + var(--space-5)) var(--stage-gutter) var(--space-6);
+  padding: var(--space-8) var(--stage-gutter) var(--space-6);
   overflow: hidden;
-  min-height: 100vh;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
 }
 .curtain__grid {
   position: relative;
-  flex: 1;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  align-items: center;
+  align-items: start;
   column-gap: var(--gutter);
   row-gap: var(--space-6);
   width: 100%;
   max-width: var(--container);
   margin: 0 auto;
 }
-.curtain__intro { grid-column: 1 / span 6; }
-/* every page, in three columns: the Collective, its outputs, and who to write to */
+/* the other pages: the mark beside the three columns */
+.curtain__mark { grid-column: 1 / span 3; grid-row: 1; justify-self: start; width: min(100%, 220px); aspect-ratio: 1; }
 .curtain__links {
-  grid-column: 1 / -1;
+  grid-column: 4 / -1;
+  grid-row: 1;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.4fr);
   gap: var(--space-6);
-  padding-top: var(--space-6);
-  border-top: 1px solid var(--line);
 }
+/* the home page: the slot the last act's columns land in, on the left; the mark the stage's logo
+   docks into, on the right */
+.curtain--home .curtain__grid { align-items: center; }
+.curtain__intro { grid-column: 1 / span 7; grid-row: 1; }
+.curtain--home .curtain__mark { grid-column: 8 / span 5; justify-self: center; width: min(100%, 40svh); }
+/* the last act's columns: two across, who to write to beneath them */
+.curtain__links--dock { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); }
+.curtain__links--dock .curtain__col--contact { grid-column: 1 / -1; }
+.curtain__col > .eyebrow { font-size: 12px; }
 .curtain__col ul { list-style: none; display: grid; gap: var(--space-2); margin-top: var(--space-3); }
-.curtain__col a { font-family: var(--font-display); font-size: 20px; line-height: 1.25; color: var(--fg-strong); text-decoration: none; }
+.curtain__col a { font-family: var(--font-ui); font-size: 18px; line-height: 1.4; letter-spacing: .01em; color: var(--fg-strong); text-decoration: none; }
 .curtain__col a:hover, .curtain__col a:focus-visible { color: var(--accent); }
 .curtain__col a[aria-current="page"] { color: var(--accent); }
 .curtain__col--contact li { display: grid; gap: 2px; }
-.curtain__col--contact li + li { margin-top: var(--space-2); }
-.curtain__who { font-size: var(--size-caption); color: var(--fg-muted); }
-.curtain__col--contact a { font-family: var(--font-body); font-size: var(--size-body-s); overflow-wrap: anywhere; color: var(--fg); }
-.curtain__col--contact a.curtain__social { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-display); font-size: 20px; color: var(--fg-strong); }
-.curtain__social svg { width: 20px; height: 20px; flex: none; }
-.curtain__mark { grid-column: 8 / span 5; justify-self: center; width: min(100%, 46svh); aspect-ratio: 1; }
-.curtain__title { font-size: var(--size-display-m); margin-top: var(--space-3); }
-.curtain__contacts { grid-column: 1 / span 7; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
-.curtain__contacts .name { font-family: var(--font-display); font-size: var(--size-heading); color: var(--fg-strong); display: block; margin-top: var(--space-2); }
-.curtain__contacts a { font-size: var(--size-body-s); overflow-wrap: anywhere; }
-.curtain__event { grid-column: 8 / span 5; margin: 0; display: grid; gap: var(--space-3); align-content: start; }
-.curtain__event dt { font-family: var(--font-ui); font-size: var(--size-micro); font-weight: var(--weight-bold); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; color: var(--fg-muted); }
-.curtain__event dd { margin: 0 0 var(--space-2); color: var(--fg-strong); }
+.curtain__col--contact li + li { margin-top: var(--space-3); }
+.curtain__who { font-size: var(--size-body-s); color: var(--fg-muted); }
+.curtain__col--contact a { font-family: var(--font-body); font-size: var(--size-body); overflow-wrap: anywhere; color: var(--fg); }
+.curtain__col--contact a.curtain__social { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-ui); font-size: 18px; color: var(--fg-strong); }
+.curtain__social svg { width: 22px; height: 22px; flex: none; }
 .curtain__base {
   position: relative;
   width: 100%;
   margin: var(--space-7) auto 0;
   padding-top: var(--space-5);
   border-top: 1px solid var(--line);
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-5);
+  gap: var(--space-5) var(--space-7);
   max-width: var(--container);
 }
 .curtain__legal { display: grid; gap: var(--space-2); max-width: 40rem; }
-.legal { font-family: var(--font-ui); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-muted); margin: 0; }
-.credits { font-size: var(--size-caption); line-height: 1.5; color: var(--fg-muted); margin: 0; max-width: none; }
+.legal { font-family: var(--font-ui); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-muted); margin: 0; }
+.credits { font-size: var(--size-body-s); line-height: 1.5; color: var(--fg-muted); margin: 0; max-width: none; }
 .credits a { color: var(--fg); }
-/* Chirec endorsement: right-aligned, smaller than the Collective's mark, with its own line */
-.endorsement { display: flex; align-items: center; gap: var(--space-4); color: var(--fg); text-decoration: none; }
-.endorsement:hover { color: var(--fg-strong); text-decoration: none; }
-.endorsement__logo { background: var(--white); padding: 6px 10px; width: 132px; height: auto; box-shadow: inset 0 0 0 1px var(--line); }
-.endorsement span { font-size: var(--size-caption); line-height: 1.4; max-width: 18em; }
+/* CHIREC's endorsement: its logo large on a white plate, its line in the footer's strongest text */
+.endorsement { display: flex; align-items: center; gap: var(--space-5); color: var(--fg-strong); text-decoration: none; }
+.endorsement:hover { color: var(--accent); text-decoration: none; }
+.endorsement__logo { background: var(--white); padding: 10px 16px; width: 220px; height: auto; box-shadow: var(--shadow-md); }
+.endorsement span { font-family: var(--font-ui); font-size: var(--size-body-l); font-weight: var(--weight-bold); line-height: 1.35; max-width: 17em; }
 
 /* ---- Text grounds: a feathered panel of the page colour behind the hero copy (every width) and
    each scene's text column (tablet and up; phones use the scrim further down), so copy stays
@@ -345,6 +461,19 @@ main { position: relative; z-index: var(--z-content); }
 /* ---- Tablet ---- */
 @media (max-width: 1100px) {
   .scene__content { grid-column: 1 / span 6; }
+  .scene__hold { grid-column: 1 / span 6; }
+  .scene--text-right .scene__hold { grid-column: 7 / span 6; }
+  .curtain--home .curtain__intro { grid-column: 1 / span 6; }
+  /* the footer's foot: the credits, then CHIREC beneath them */
+  .curtain__base { grid-template-columns: minmax(0, 1fr); }
+  /* the footer's three columns in two, who to write to beneath */
+  .curtain__links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .curtain__links .curtain__col--contact { grid-column: 1 / -1; }
+  /* the half-width column: the publication's list in one column, the countdown's four units on one row */
+  .issue__list { grid-template-columns: minmax(0, 1fr); }
+  .premiere__count { gap: var(--space-3) var(--space-4); }
+  .premiere__count .count__digit { font-size: clamp(30px, 4.4vw, 48px); }
+  .premiere__count .count__unit dt { letter-spacing: .12em; }
   .scene--text-right .scene__content { grid-column: 7 / span 6; }
 }
 
@@ -362,12 +491,25 @@ main { position: relative; z-index: var(--z-content); }
     padding: var(--space-8) var(--stage-gutter) var(--space-8);
     background: linear-gradient(to bottom, rgb(var(--scrim-rgb) / 0) 0, rgb(var(--scrim-rgb)) var(--space-8));
   }
-  .stats, .people, .curtain__contacts { grid-template-columns: minmax(0, 1fr); }
-  .curtain__intro, .curtain__contacts, .curtain__event { grid-column: 1 / -1; }
-  .curtain__links { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
-  .curtain { padding-top: var(--space-8); }
-  .curtain__grid { align-content: center; }
-  .curtain__mark { grid-column: 1 / -1; grid-row: 1; justify-self: start; width: min(56vw, 30svh); }
+  .stats, .people, .curtain__contacts, .issue__list { grid-template-columns: minmax(0, 1fr); }
+  /* the held act on a phone: the statue above, the column at the foot of the held screen */
+  @media (min-height: 600px) {
+    .scene--hold { padding: 0; min-height: calc(100vh + var(--hold-run)); min-height: calc(100svh + var(--hold-run)); }
+    .scene--hold .scene__hold { justify-content: flex-end; padding-top: 0; }
+  }
+  .premiere__meta { grid-template-columns: minmax(0, 1fr); }
+  .premiere__count { gap: var(--space-3) var(--space-4); }
+  .premiere__count .count__unit dt { letter-spacing: .12em; }
+  /* the curtain call's scrim gives way to the footer's ground as it lands there */
+  /* the columns keep their ground until they have nearly landed, so the logo rising behind them is
+     never seen through their text */
+  .curtain-call { background: linear-gradient(to bottom, rgb(var(--scrim-rgb) / 0) 0, rgb(var(--scrim-rgb) / max(calc(1 - var(--over, 0)), calc(1 - var(--dock, 0)))) var(--space-8)); }
+  .curtain__links, .curtain__links--dock { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+  .curtain__links, .curtain__intro { grid-column: 1 / -1; grid-row: 2; }
+  .curtain__mark { grid-column: 1 / -1; grid-row: 1; width: min(40vw, 160px); }
+  .curtain--home .curtain__mark { grid-column: 1 / -1; justify-self: start; width: min(56vw, 30svh); }
+  .endorsement { flex-wrap: wrap; }
+  .endorsement__logo { width: 180px; }
 }
 
 /* ---- Reduced motion: transitions collapse to near-instant; JS skips the intro and motion ---- */

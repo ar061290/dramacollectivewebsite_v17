@@ -23,6 +23,7 @@ import { buildLogoGeometry } from './logo.js';
 import { buildMorph, growAt, MORPH } from './morph.js';
 import { VectorLogo } from './vectorLogo.js';
 import { LogoStar } from './star.js';
+import { hexToVec3, flattenStar } from './flat.js';
 
 const DEG = Math.PI / 180;
 const DRAG_RAD_PER_PX = Math.PI / 420; // a 420 px drag turns the statue half way round
@@ -36,6 +37,14 @@ const CLOSE_UP = { height: 0.45, width: 0.7 };
 const CLOSE_UP_SIZE = { width: 0.42, height: 0.4 }; // statue units, about her head, hand and mask, until the morph is built
 const UP = new THREE.Vector3(0, 1, 0);
 const smoothstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+// the vector track: the 3D logo goes flat over its first FLAT_BY; there the vector, by then the same
+// picture, replaces it in one frame, and over the rest it may start on its way into the footer
+const FLAT_BY = 0.8;
+const mixHex = (a, b, t) => {
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  const ch = (n) => Math.round(((pa >> n) & 255) + (((pb >> n) & 255) - ((pa >> n) & 255)) * t);
+  return `#${((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, '0')}`;
+};
 
 export class Stage {
   /**
@@ -338,6 +347,14 @@ export class Stage {
     this.logoFlat = logo.flat;
     this.vector = new VectorLogo(svgText, { after: this.container, outline: logo.flat.outline });
     this.vector.setBehind(this.logoInFront === false);
+    // before it hands over, the 3D logo goes flat (src/scene/flat.js): into the plane of its front
+    // face, in the vector's gradient, which runs from the top of the SVG's box to its foot
+    const f = logo.flat, S = this.vector.size;
+    const top = new THREE.Vector3(S.w / 2, 0, f.z).applyMatrix4(f.svgToLocal);
+    const foot = new THREE.Vector3(S.w / 2, S.h, f.z).applyMatrix4(f.svgToLocal);
+    this.morph.uniforms.uFlatY.value.set(top.y, foot.y);
+    this.morph.uniforms.uFlatZ.value = top.z;
+    if (this.star) flattenStar(this.star.material, this.morph.uniforms, this.star.home);
     this._setEmblem(0); // from now on the stage's logo brings the footer's mark in
     this._applyPose(arm, head);
     // arriving in the middle of the close-up, its framing eases over from the stand-in's
@@ -427,9 +444,12 @@ export class Stage {
       grow = m.update(tr.morph);
       // once the vector is fully in, the 3D logo stops drawing colour; it still casts its shadow
       // and keeps the stars clear of the mark
-      const solid = !(this.vector && tr.vector >= 1);
+      const solid = !(this.vector && tr.vector >= FLAT_BY);
       m.mesh.material.colorWrite = solid;
       m.mesh.material.depthWrite = solid;
+      // first it goes flat, exactly into the vector's look (src/scene/flat.js); only then does the
+      // vector come in over it (_draw), so the change is a morph, not one picture fading over another
+      m.uniforms.uFlat.value = this.vector ? smoothstep(0, FLAT_BY, tr.vector) : 0;
     }
     tr.grow = grow; // for the ?debug readout
     // the logo is far wider than the statue: on a narrow (portrait) screen it shrinks into the
@@ -521,7 +541,7 @@ export class Stage {
       cam.updateMatrixWorld();
       this.star.update(tr.morph, {
         fit: m.current, center: c, camera: cam, height: h, time: this.time,
-        day: s.daylight, solid: !(this.vector && tr.vector >= 1),
+        day: s.daylight, solid: !(this.vector && tr.vector >= FLAT_BY),
       });
     }
   }
@@ -571,6 +591,14 @@ export class Stage {
   _tick() {
     const dt = Math.min(0.1, this.clock.getDelta());
     this._updateRig(dt);
+    if (this._settling) {
+      // stopWhenSettled(): stop once the sequence and the footer have held still for a moment (the
+      // cursor's parallax does not count: nothing it moves is in view by then)
+      const still = `${this.seqOverride ?? this.state.seq},${this._occluderTop()},${this.state.spin}`;
+      this._still = still === this._stillSig ? this._still + 1 : 0;
+      this._stillSig = still;
+      if (this._still > 20) { this.stop(); return; }
+    }
     const sig = this._signature();
     if (sig === this._lastSig) return; // nothing moved: skip the frame
     this._lastSig = sig;
@@ -606,11 +634,13 @@ export class Stage {
   }
 
   /**
-   * The element that covers the stage from below (the curtain-call footer). The WebGL canvas is
-   * layered over it, so the stage draws in two passes: everything, clipped above the element's top
-   * edge (there the footer covers the ring, the floor and the shadows), then the logo alone over the
-   * element, so the logo stays in front of the footer. With `logoInFront` false (phones, where the
-   * footer fills the screen and the copy above it sits on a solid scrim) the footer covers it all.
+   * The element that rises over the stage at the end (the curtain-call footer). It is layered above
+   * the WebGL canvas (--z-footer), an opaque layer the browser moves with the scroll itself, so it
+   * cuts the ring, the floor and the shadows exactly at its edge however fast the page moves; the
+   * stage need not clip its frame to it (which ran a frame behind a fast scroll). The logo meets the
+   * footer as its flat vector, which is layered above the footer (--z-vector) and docks into its
+   * slot. With `logoInFront` false (phones, where the copy above it sits on a solid scrim) the vector
+   * stays behind the footer until it starts to dock.
    */
   setOccluder(el, { logoInFront = true } = {}) {
     this.occluder = el;
@@ -624,12 +654,15 @@ export class Stage {
 
   /**
    * How far the vector has docked into the footer's slot: 0 while the footer is below the screen,
-   * 1 once its top reaches the top of the screen (the end of the page), eased.
+   * 1 once it has risen as far as it will (all of it on screen at the end of the page, or its top at
+   * the top of the screen if it is taller than that), eased. src/sections/dock.js carries the last
+   * act's columns into the footer on exactly this measure, so the two arrive together.
    */
   _dock() {
     if (!this.dockSlot) return 0;
     const top = this._occluderTop();
-    const t = Math.min(1, Math.max(0, 1 - top / this.height));
+    const end = Math.max(0, this.height - this.occluder.offsetHeight);
+    const t = Math.min(1, Math.max(0, (this.height - top) / Math.max(1, this.height - end)));
     return 0.5 - 0.5 * Math.cos(Math.PI * t);
   }
 
@@ -639,15 +672,16 @@ export class Stage {
   }
 
   _draw() {
-    const r = this.renderer;
     const v = this.vector && this.morph?.mesh.visible ? this.tracks.vector : 0;
     if (v > 0) this._sampleVectorColors();
     this._drawStage();
     if (this.vector) {
-      // docked in the footer, the vector hands over to the footer's own mark (the same as every
-      // other page's), so what is left there is crisp and of one weight
+      // the vector comes in only once the 3D logo has gone flat into its exact look (uFlat), and then
+      // in the same frame as the 3D logo stops drawing, so it replaces it rather than fading over it
+      // (or leaving it behind if the footer is already rising); docked in the footer, it hands over
+      // to the footer's own mark (the same as every other page's), which by then it matches exactly
       const hand = v > 0 ? this._placeVector(v) : 0;
-      this.vector.setOpacity(v * (1 - hand));
+      this.vector.setOpacity((v >= FLAT_BY ? 1 : 0) * (1 - hand));
       this._setEmblem(hand);
     }
   }
@@ -674,7 +708,7 @@ export class Stage {
     const { o, x, y } = this._vectorCorners();
     const S = this.vector.size;
     const m = [(x.x - o.x) / S.w, (x.y - o.y) / S.w, (y.x - o.x) / S.h, (y.y - o.y) / S.h, o.x, o.y];
-    const k = this._dock() * v * v;
+    const k = this._dock() * smoothstep(FLAT_BY, 1, v);
     this.vector.setBehind(!this.logoInFront && k <= 0);
     if (k > 0) {
       const r = this.dockSlot.getBoundingClientRect();
@@ -683,7 +717,26 @@ export class Stage {
       for (let i = 0; i < 6; i++) m[i] += (to[i] - m[i]) * k;
     }
     this.vector.setTransform(...m);
-    return k > 0 ? smoothstep(0.62, 0.97, k) : 0;
+    // on its way down it takes on the footer mark's colours and loses the bevel's flare (the
+    // footer's mark has neither), so that once in the slot the two are the same picture
+    const emblem = this._emblemColors();
+    const base = this._vectorBase;
+    if (base && emblem) this.vector.setColors(mixHex(base[0], emblem[0], k), mixHex(base[1], emblem[1], k));
+    this.vector.setOutline(1 - k);
+    return k > 0 ? smoothstep(0.96, 1, k) : 0;
+  }
+
+  /** The footer mark's gradient (its CSS custom properties), per theme. */
+  _emblemColors() {
+    if (!this.emblem) return null;
+    const key = Math.round(this.state.daylight);
+    if (this._emblemKey !== key) {
+      const css = getComputedStyle(this.emblem);
+      const top = css.getPropertyValue('--emblem-top').trim(), foot = css.getPropertyValue('--emblem-foot').trim();
+      this._emblemRGB = /^#[0-9a-f]{6}$/i.test(top) && /^#[0-9a-f]{6}$/i.test(foot) ? [top, foot] : null;
+      this._emblemKey = key;
+    }
+    return this._emblemRGB;
   }
 
   /** The footer's own mark: shown as the stage's logo settles into its slot. */
@@ -705,12 +758,13 @@ export class Stage {
     const key = `${Math.round(day)},${this.width}x${this.height}`;
     if (this._vectorKey === key) return;
     this._vectorKey = key;
-    const r = this.renderer, mat = this.morph.mesh.material;
-    const cw = mat.colorWrite, dw = mat.depthWrite, shadows = r.shadowMap.needsUpdate;
+    const r = this.renderer, mat = this.morph.mesh.material, flat = this.morph.uniforms.uFlat;
+    const cw = mat.colorWrite, dw = mat.depthWrite, shadows = r.shadowMap.needsUpdate, fv = flat.value;
     mat.colorWrite = mat.depthWrite = true;
+    flat.value = 0; // the lit stone, not its flat stand-in
     r.render(this.scene, this.camera);
     r.shadowMap.needsUpdate = shadows;
-    mat.colorWrite = cw; mat.depthWrite = dw;
+    mat.colorWrite = cw; mat.depthWrite = dw; flat.value = fv;
     // the mark's box on screen, in drawing-buffer pixels
     const { o, x, y } = this._vectorCorners();
     const xs = [o.x, x.x, y.x, x.x + y.x - o.x], ys = [o.y, x.y, y.y, x.y + y.y - o.y];
@@ -737,41 +791,22 @@ export class Stage {
     }
     // lifted a little: the flat mark loses the bevel's bright edges, which make the 3D one read lighter
     const hex = (s) => '#' + s.slice(0, 3).map((c) => Math.min(255, Math.round((c / s[3]) * 1.08)).toString(16).padStart(2, '0')).join('');
-    if (sum[0][3] && sum[1][3]) this.vector.setColors(hex(sum[0]), hex(sum[1]));
-    else this._vectorKey = null; // nothing to see yet: try again next frame
+    if (sum[0][3] && sum[1][3]) {
+      this._vectorBase = [hex(sum[0]), hex(sum[1])];
+      this.vector.setColors(...this._vectorBase);
+      // the colours the 3D logo goes flat in are the vector's, to the value
+      hexToVec3(this._vectorBase[0], this.morph.uniforms.uFlatTop.value);
+      hexToVec3(this._vectorBase[1], this.morph.uniforms.uFlatFoot.value);
+    } else this._vectorKey = null; // nothing to see yet: try again next frame
   }
 
   _drawStage() {
-    const r = this.renderer;
-    const top = this._occluderTop();
-    if (top >= this.height) { r.render(this.scene, this.camera); return; }
-    const w = this.width, h = this.height, cut = Math.max(0, top);
-    r.autoClear = false;
-    r.setScissorTest(false);
-    r.clear();
-    r.setScissorTest(true);
-    if (cut > 0) {
-      // 1. the whole stage, above the footer
-      r.setScissor(0, h - cut, w, cut);
-      r.render(this.scene, this.camera);
-    }
-    const logo = this.morph?.mesh;
-    if (logo?.visible && this.logoInFront) {
-      // 2. the logo alone, over the footer (the shadow map is the first pass's)
-      const hidden = [this.ring.root, this.floor.shadow, this.floor.pool, this.skinned, this.star?.glow].filter((o) => o?.visible);
-      for (const o of hidden) o.visible = false;
-      const shadows = r.shadowMap.needsUpdate;
-      r.shadowMap.needsUpdate = false;
-      r.setScissor(0, 0, w, h - cut);
-      r.render(this.scene, this.camera);
-      r.shadowMap.needsUpdate = shadows;
-      for (const o of hidden) o.visible = true;
-    }
-    r.setScissorTest(false);
-    r.autoClear = true;
+    // the whole stage; the footer, layered above the canvas, covers what it should (setOccluder)
+    this.renderer.render(this.scene, this.camera);
   }
 
   start() {
+    this._settling = false;
     if (this.running || this.disposed || !this.statue) return;
     this.running = true;
     this.clock.start();
@@ -779,10 +814,26 @@ export class Stage {
   }
 
   stop() {
+    this._settling = false;
     if (!this.running) return;
     this.running = false;
     this.clock.stop();
     this.renderer.setAnimationLoop(null);
+  }
+
+  /**
+   * Stop, but only once the sequence has caught up with the scroll and the footer is still: the
+   * footer covers the stage, and a fast scroll to the end leaves the scrubbed sequence (and the
+   * logo's hand-over to the footer's mark) still on its way there.
+   */
+  stopWhenSettled() {
+    // stopped already (the tab was hidden mid-way), it must run again to finish: start() first, as it
+    // clears _settling
+    if (this.disposed || !this.statue) return;
+    this.start();
+    this._settling = true;
+    this._still = 0;
+    this._stillSig = '';
   }
 
   /** True if the CSS pixel (x, y) is covered by the statue. */

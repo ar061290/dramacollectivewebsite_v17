@@ -52,7 +52,8 @@ export function setupStatueInteraction({ stage, sky }) {
 
   const onMove = (e) => {
     if (!drag) {
-      if (e.pointerType === 'mouse') setHover(onStatue(e));
+      // a card of act four's deck held and dragged across her is not a pointer over the statue
+      if (e.pointerType === 'mouse') setHover(!root.classList.contains('is-turning-deck') && onStatue(e));
       return;
     }
     if (e.pointerId !== drag.id) return;

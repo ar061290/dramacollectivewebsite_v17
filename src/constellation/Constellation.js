@@ -51,7 +51,7 @@ export class ConstellationField {
    * @param {(x:number,y:number)=>boolean} [o.covers]  true where the statue hides the sky
    * @param {string} [o.maskSelector]    text blocks the sky must stay clear of
    */
-  constructor({ canvas, theme, reducedMotion, covers = () => false, maskSelector = '[data-mask], .topbar' }) {
+  constructor({ canvas, theme, reducedMotion, covers = () => false, maskSelector = '[data-mask], .topbar:not(.is-hidden), .topbar.is-hidden > .btn' }) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.reducedMotion = reducedMotion;

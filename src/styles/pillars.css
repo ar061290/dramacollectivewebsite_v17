@@ -1,0 +1,246 @@
+/* Act four, what we do: the five pillars as prompt cards on two gold rings (src/sections/pillars.js).
+   The cards keep the site's card idiom (square corners, a hairline, the 3px gold rule that grows to
+   5px on the card in front, Production on the feature ground with a gold eyebrow, the others with a
+   tag) and add only what a card needs to turn on a ring: a binding margin with two punched holes,
+   the rings through them, and the stack's thickness in the hairline edges of the cards behind.
+   Without JS the cards are a plain list. html.has-js (set in the head before first paint) stacks them
+   in one grid cell, so the deck is exactly as tall as its longest card and nothing shifts when the
+   script runs. Colours read the theme roles only. */
+
+.pillars {
+  container: pillars / inline-size;
+  --pillars-ring: var(--rule-color);
+  --pillars-hole: color-mix(in srgb, var(--surface-ink-deep) 75%, transparent);
+  --pillars-shade: .55;
+  max-width: 464px;
+}
+/* house lights up: the rings go to the deeper gold so they hold on white; holes and shade are a
+   shadow on paper rather than a hole into the dark */
+[data-theme="light"] .pillars {
+  --pillars-ring: var(--star);
+  --pillars-hole: color-mix(in srgb, var(--surface-ink-deep) 24%, transparent);
+  --pillars-shade: .22;
+}
+
+/* ---- the cards (also the plain list, before or without JS) ---- */
+.pillars__cards { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); }
+.pillars__card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: start;
+  align-items: start;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--card-bg);
+  color: var(--fg);
+  border: var(--border-width) solid var(--line);
+  border-radius: var(--radius-none);
+  box-shadow: var(--shadow-sm);
+}
+.pillars__card--feature { background-color: var(--card-feature-bg); }
+/* the gold rule along the top, 3px; 5px on the card in front (the cards' hover growth) */
+.pillars__card::before {
+  content: "";
+  position: absolute;
+  left: -1px; right: -1px; top: -1px;
+  z-index: 1;
+  height: var(--rule-thick);
+  background: var(--rule-color);
+  transform-origin: top;
+  transition: transform var(--dur-base) var(--ease-curtain);
+}
+.pillars__slot.is-front .pillars__card::before { transform: scaleY(1.6667); }
+/* the name: the eyebrow on the feature card, a tag on the others (.eyebrow / .tag in components.css;
+   restated here because .scene h3 would otherwise set it as a subheading) */
+.pillars .pillars__name {
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-micro);
+  line-height: 1.1;
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.pillars__text {
+  align-self: center;
+  margin: 0;
+  max-width: none;
+  font-family: var(--font-body);
+  font-size: clamp(var(--size-body), 3.9cqw, var(--size-body-l));
+  line-height: 1.5;
+  color: var(--fg-strong);
+}
+/* the way to the pillar's own page: the ghost button's register, a 44px target */
+.pillars__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: var(--ls-button);
+  text-transform: uppercase;
+  color: var(--accent);
+  text-decoration: none;
+}
+.pillars__link:hover { color: var(--accent-hover); text-decoration: underline 1px; text-underline-offset: 4px; }
+.pillars__link svg { width: 14px; height: 14px; flex: none; }
+/* keyboard: the whole card is ringed as well as its link, since the card is what turns */
+.pillars__slot:has(.pillars__link:focus-visible) .pillars__card { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+/* ---- the deck: one grid cell, every card the height of the longest (5:3 at the least) ---- */
+.has-js .pillars {
+  padding-top: var(--space-3); /* with the heading's margin, room for the card's edge as it comes toward you */
+  perspective: 900px; /* for the stack's lean toward the mouse */
+}
+.has-js .pillars__hand {
+  --hole-x: 18px;      /* the punched holes' centre, from the card's left edge */
+  --bind: 52px;        /* the binding margin the text keeps clear of */
+  --ring-a: .24;       /* the two rings, as fractions of the card's height */
+  --ring-b: .76;
+  position: relative;
+  padding: 0 12px 16px 12px; /* left: the rings' loop past the edge; right and below: the cards behind, (n - 1) x 4 px */
+}
+.has-js .pillars__cards { gap: 0; }
+.has-js .pillars__slot {
+  grid-area: 1 / 1;
+  position: relative;
+  display: grid;
+  perspective: 2600px; /* PERSPECTIVE in pillars.js: the swing's angle is worked out for this */
+  perspective-origin: 0 50%;
+}
+.has-js .pillars__card {
+  min-height: calc((100cqw - 24px) * .6);
+  padding: 22px var(--space-5) var(--space-2) var(--bind);
+  isolation: isolate;
+  transform-origin: 0 50%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  /* the punched holes: quiet, a little darker than the card, with a hairline edge */
+  background-image:
+    radial-gradient(circle 5px at var(--hole-x) calc(var(--ring-a) * 100%), var(--pillars-hole) 3px, var(--line) 3.75px 4.25px, transparent 5px),
+    radial-gradient(circle 5px at var(--hole-x) calc(var(--ring-b) * 100%), var(--pillars-hole) 3px, var(--line) 3.75px 4.25px, transparent 5px);
+}
+/* the rings: each loop lies across the cards' edge, out from the hole and round behind the stack,
+   seen a little from above, so the half of it behind the cards is hidden (clipped) and only its near
+   arc crosses the card to the hole. Drawn over the whole stack: the cards turn about them. */
+.pillars__ring {
+  position: absolute;
+  left: 2px; /* 10px out from the cards' edge */
+  top: calc((100% - 16px) * var(--at) - 6px);
+  z-index: 300;
+  width: calc(10px + var(--hole-x) + 1px); /* to the hole's centre */
+  height: 12px;
+  border: 2px solid var(--pillars-ring);
+  border-radius: 50%;
+  clip-path: polygon(0 0, 11px 0, 11px 50%, 100% 50%, 100% 100%, 0 100%);
+  pointer-events: none;
+}
+.pillars__ring--a { --at: var(--ring-a); }
+.pillars__ring--b { --at: var(--ring-b); }
+/* the light on the card in front: a faint warm wash raking in from the right wing, warmest at the top
+   corner. Static; the script fades it with the card's place in the stack (only the front is lit). */
+.pillars__light {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 90% at 100% 0, rgb(var(--spot-rgb) / .1), rgb(var(--spot-rgb) / 0) 70%),
+    linear-gradient(to left, rgb(var(--spot-rgb) / .07), rgb(var(--spot-rgb) / 0) 60%);
+}
+/* the shade: the cards behind sit in it, and a turning card darkens as it turns from the light */
+.pillars__shade { position: absolute; inset: -1px; z-index: 2; opacity: 0; pointer-events: none; }
+.pillars__shade > span { position: absolute; inset: 0; background: var(--surface-ink-deep); opacity: var(--pillars-shade); }
+/* only while something is moving, so the text is drawn sharp again at rest */
+.pillars.is-turning .pillars__slot, .pillars.is-turning .pillars__card { will-change: transform; }
+
+/* in the hand: vertical swipes still scroll the page; sideways ones turn the cards */
+.pillars.is-live .pillars__hand { touch-action: pan-y pinch-zoom; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.pillars.is-live .pillars__link { -webkit-user-drag: none; }
+@media (pointer: fine) {
+  /* a drag with the mouse turns the cards rather than selecting their text */
+  .pillars.is-live .pillars__cards { -webkit-user-select: none; user-select: none; }
+}
+
+/* ---- the running order: the names, the current one under the top bar's star and glint ---- */
+/* one row where five fit, wrapping where they do not (the glint follows a name onto the next row) */
+.pillars__order { position: relative; display: flex; flex-wrap: wrap; gap: 0 14px; margin-top: var(--space-4); }
+.pillars__order button {
+  position: relative;
+  justify-self: start;
+  min-height: 44px;
+  padding: 16px 0 10px;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-none);
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-micro);
+  line-height: 1;
+  letter-spacing: .1em; /* five names on one row of a desktop deck */
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--fg);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-curtain);
+}
+.pillars__order button:hover, .pillars__order button[aria-current="true"] { color: var(--accent); }
+/* the current card by shape as well as colour: the nav's four-point star */
+.pillars__order button[aria-current="true"]::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 4px;
+  width: 7px; height: 7px;
+  margin-left: -3.5px;
+  background: var(--accent);
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+}
+.pillars__glint {
+  position: absolute;
+  left: 0; top: 0;
+  width: 1px; height: var(--rule-thick);
+  background: var(--rule-color);
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+/* how to turn them, for whoever has not yet; it goes after the first turn and keeps its room */
+.pillars__hint {
+  margin: var(--space-1) 0 0;
+  max-width: none;
+  font-size: var(--size-caption);
+  line-height: 1.4;
+  color: var(--fg-muted);
+  visibility: hidden;
+}
+.pillars.is-live .pillars__hint { visibility: visible; }
+.pillars__hint-touch { display: none; }
+@media (hover: none), (pointer: coarse) {
+  .pillars__hint-fine { display: none; }
+  .pillars__hint-touch { display: inline; }
+}
+html:not(.has-js) .pillars__order, html:not(.has-js) .pillars__hint { display: none; }
+
+/* ---- narrow columns (the tablet column, phones, and wide screens just over 1100px) ---- */
+@container pillars (max-width: 415px) {
+  /* the running order in rows of two (the last alone); the glint moves down as well as across */
+  .pillars__order { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-4); }
+}
+@container pillars (max-width: 400px) {
+  .has-js .pillars__hand { --hole-x: 15px; --bind: 40px; }
+  .has-js .pillars__card { padding: 18px var(--space-4) var(--space-1) var(--bind); }
+}
+
+/* the cursor's star (src/animations/cursor.js) turns and grows a little while the cards are held:
+   the one rule here outside .pillars, since the star is drawn outside it */
+html.is-turning-deck .cursor__star { transform: rotate(45deg) scale(1.15); }
+/* outside the boxes the native star is the cursor: it shows the held card there too */
+html.has-cursor.is-turning-deck:not(.is-on-box), html.has-cursor.is-turning-deck:not(.is-on-box) * { cursor: var(--cursor-star-grabbing); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pillars__card::before, .pillars__order button { transition: none; }
+}

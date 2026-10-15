@@ -4,6 +4,8 @@
 //   <!-- site:stage -->   the star sky and the drawn cursor (pages other than the home page,
 //                         which has its own stage)
 //   <!-- site:footer -->  the curtain-call footer
+//   <!-- site:links -->   index.html only: the footer's columns, as the last act (they dock into the
+//                         footer as it rises)
 //   <!-- site:team -->    team.html only: the core team's cards, from content/team.json
 //   <!-- site:contacts --> contact.html only: who to write to (CONTACTS)
 // Run after editing this file or content/team.json:  npm run pages
@@ -16,7 +18,8 @@ import { dirname, join } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 // The pages. In the top bar: About us, Core team, Our outputs (a menu that drops on hover, focus or
-// click) and Contact us; Become a sponsor is the button. The footer lists every page, the outputs
+// click) and Contact us. Apply now and Become a sponsor are the buttons; they stay on screen when the
+// rest of the bar slides away (src/animations/nav.js). The footer lists every page, the outputs
 // under their own heading.
 export const OUTPUTS = [
   { key: 'publication', href: './publication.html', label: 'The publication' },
@@ -30,6 +33,8 @@ const TEAM = { key: 'team', href: './team.html', label: 'Core team' };
 const CONTACT = { key: 'contact', href: './contact.html', label: 'Contact us' };
 const HOME = { key: 'home', href: './index.html', label: 'Home' };
 const CTA = { key: 'sponsor', href: './sponsor.html', label: 'Become a sponsor' };
+// TODO: where applications go (no form or page was given yet; until then it opens Contact us)
+const APPLY = { key: 'apply', href: './contact.html', label: 'Apply now' };
 export const NAV = [ABOUT, TEAM, ...OUTPUTS, CONTACT];
 
 // The Collective's Instagram. TODO: the handle (it was not given; this opens Instagram itself).
@@ -37,7 +42,7 @@ export const INSTAGRAM = { href: 'https://www.instagram.com/', label: 'Instagram
 // Who to write to (Contact us and the footer)
 export const CONTACTS = [
   { name: 'Aadi Ramnani', role: 'President', email: 'aadir6405@students.chirec.ac.in' },
-  { name: 'Aripra Sharma', role: 'Executive President', email: 'Aripras111460@students.chirec.ac.in' },
+  { name: 'Aripra Sharma', role: 'Executive President', email: 'aripras111460@students.chirec.ac.in' },
 ];
 
 export const PAGES = [
@@ -88,10 +93,12 @@ const header = (page) => {
   </div>
 
   <header class="topbar" data-topbar>
+    <span class="topbar__ground" aria-hidden="true"></span>
     <a class="topbar__brand" href="${page === 'home' ? '#top' : './index.html'}" aria-label="The Drama Collective, ${page === 'home' ? 'back to top' : 'home'}">
       <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
       <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
     </a>
+    <a class="btn btn--inverse btn--sm topbar__apply" href="${APPLY.href}" data-topbar-keep>${APPLY.label}</a>
     <nav class="topbar__nav" aria-label="Main">
       <ul class="topbar__links">
         <li>${link(ABOUT, page)}</li>
@@ -117,7 +124,7 @@ ${OUTPUTS.map((o) => `            <li>${link(o, page)}</li>`).join('\n')}
       </button>
     </div>
     <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu-sheet" data-menu-toggle>Menu</button>
-    <a class="btn btn--inverse btn--sm topbar__cta" href="${CTA.href}"${current(CTA.key, page)}>${CTA.label}</a>
+    <a class="btn btn--inverse btn--sm topbar__cta" href="${CTA.href}"${current(CTA.key, page)} data-topbar-keep>${CTA.label}</a>
     <div class="topbar__sheet" id="menu-sheet" data-menu-sheet>
       <ul>
 ${[HOME, ABOUT, TEAM].map((n) => `        <li>${link(n, page)}</li>`).join('\n')}
@@ -126,7 +133,7 @@ ${[HOME, ABOUT, TEAM].map((n) => `        <li>${link(n, page)}</li>`).join('\n')
 ${OUTPUTS.map((o) => `            <li>${link(o, page)}</li>`).join('\n')}
           </ul>
         </li>
-${[CONTACT, CTA].map((n) => `        <li>${link(n, page)}</li>`).join('\n')}
+${[CONTACT, APPLY, CTA].map((n) => `        <li>${link(n, page)}</li>`).join('\n')}
         <li><a href="${INSTAGRAM.href}" target="_blank" rel="noopener">Instagram</a></li>
       </ul>
     </div>
@@ -142,39 +149,44 @@ const stage = () => `<div class="stage" aria-hidden="true">
     <svg class="cursor__star" viewBox="-12 -17 24 34" focusable="false"><path class="cursor__star-plain" d="M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z"/><path class="cursor__star-text" d="M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z"/></svg>
   </div>`;
 
-// Every page shows the mark in the slot; on the home page the stage's own logo flies down into it and
-// hands over to it (Stage._placeVector), so the two are the same in the end.
-const footer = (page) => `<footer class="curtain" id="contact" aria-labelledby="contact-title">
+// The footer's columns: every page in them, the outputs under their own heading, and who to write
+// to. `pad` is the indent of the <nav> line; `cls` an extra class.
+const pageLinks = (page, pad = '      ', cls = '') => {
+  const i = (n) => pad + '  '.repeat(n);
+  return `<nav class="curtain__links${cls ? ` ${cls}` : ''}" aria-label="All pages">
+${i(1)}<div class="curtain__col">
+${i(2)}<p class="eyebrow">The Collective</p>
+${i(2)}<ul>
+${[HOME, ABOUT, TEAM, CONTACT, CTA].map((n) => `${i(3)}<li>${link(n, page)}</li>`).join('\n')}
+${i(2)}</ul>
+${i(1)}</div>
+${i(1)}<div class="curtain__col">
+${i(2)}<p class="eyebrow">Our outputs</p>
+${i(2)}<ul>
+${OUTPUTS.map((o) => `${i(3)}<li>${link(o, page)}</li>`).join('\n')}
+${i(3)}<li><a href="./stage-planner.html">Stage planner</a></li>
+${i(2)}</ul>
+${i(1)}</div>
+${i(1)}<div class="curtain__col curtain__col--contact">
+${i(2)}<p class="eyebrow">Write to us</p>
+${i(2)}<ul>
+${CONTACTS.map((c) => `${i(3)}<li><span class="curtain__who">${esc(c.name)}, ${esc(c.role)}</span><a href="mailto:${c.email}">${c.email}</a></li>`).join('\n')}
+${i(3)}<li><a class="curtain__social" href="${INSTAGRAM.href}" target="_blank" rel="noopener">${ICON_INSTAGRAM}<span>Instagram</span></a></li>
+${i(2)}</ul>
+${i(1)}</div>
+${pad}</nav>`;
+};
+
+// Every page shows the mark; on the home page the stage's own logo flies down into it and hands over
+// to it (Stage._placeVector), so the two are the same in the end. On the other pages the columns
+// stand beside the mark. On the home page they are the last act (<!-- site:links --> in index.html):
+// as the footer rises they are carried down into its empty slot (.curtain__intro) in step with the
+// logo (src/sections/dock.js), so the footer has no copy of its own there.
+const footer = (page) => `<footer class="curtain${page === 'home' ? ' curtain--home' : ''}" id="contact" aria-label="${page === 'home' ? 'Credits' : 'Pages and contacts'}">
     <div class="curtain__grid">
-      <div class="curtain__intro">
-        <p class="eyebrow">Curtain call · Placeholder</p>
-        <h2 id="contact-title" class="curtain__title">Placeholder heading</h2>
-        <span class="rule" aria-hidden="true"></span>
-        <p>Placeholder text for the footer. Event details come later.</p>
-      </div>
-      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>
-      <nav class="curtain__links" aria-label="All pages">
-        <div class="curtain__col">
-          <p class="eyebrow">The Collective</p>
-          <ul>
-${[HOME, ABOUT, TEAM, CONTACT, CTA].map((n) => `            <li>${link(n, page)}</li>`).join('\n')}
-          </ul>
-        </div>
-        <div class="curtain__col">
-          <p class="eyebrow">Our outputs</p>
-          <ul>
-${OUTPUTS.map((o) => `            <li>${link(o, page)}</li>`).join('\n')}
-            <li><a href="./stage-planner.html">Stage planner</a></li>
-          </ul>
-        </div>
-        <div class="curtain__col curtain__col--contact">
-          <p class="eyebrow">Write to us</p>
-          <ul>
-${CONTACTS.map((c) => `            <li><span class="curtain__who">${esc(c.name)}, ${esc(c.role)}</span><a href="mailto:${c.email}">${c.email}</a></li>`).join('\n')}
-            <li><a class="curtain__social" href="${INSTAGRAM.href}" target="_blank" rel="noopener">${ICON_INSTAGRAM}<span>Instagram</span></a></li>
-          </ul>
-        </div>
-      </nav>
+${page === 'home'
+    ? '      <div class="curtain__intro" data-dock-slot aria-hidden="true"></div>\n      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>'
+    : `      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>\n      ${pageLinks(page)}`}
     </div>
     <div class="curtain__base">
       <div class="curtain__legal">
@@ -183,7 +195,7 @@ ${CONTACTS.map((c) => `            <li><span class="curtain__who">${esc(c.name)}
       </div>
       <a class="endorsement" href="https://www.chirec.ac.in" rel="noopener">
         <img class="endorsement__logo" src="./assets/brand/chirec.webp" alt="CHIREC International School" width="475" height="140">
-        <span>CHIREC International School: the No. 1 school in Hyderabad and Telangana</span>
+        <span>CHIREC International School: the No.&nbsp;1 school in Hyderabad and Telangana</span>
       </a>
     </div>
   </footer>`;
@@ -271,6 +283,7 @@ export function build() {
     out = fill(out, 'header', header(key));
     if (key !== 'home') out = fill(out, 'stage', stage());
     out = fill(out, 'footer', footer(key));
+    if (key === 'home') out = fill(out, 'links', pageLinks('home', '        ', 'curtain__links--dock'), '        ');
     if (key === 'team') out = fill(out, 'team', team(), '      ');
     if (key === 'contact') out = fill(out, 'contacts', contacts(), '      ');
     out = out.replace(/(<a [^>]*data-instagram[^>]*href=")[^"]*(")/g, `$1${INSTAGRAM.href}$2`);

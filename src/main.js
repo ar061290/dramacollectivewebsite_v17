@@ -16,6 +16,9 @@ import { setupCursor } from './animations/cursor.js';
 import { setupReveals } from './sections/reveals.js';
 import { setupCounters } from './sections/counters.js';
 import { setupScenes } from './sections/scenes.js';
+import { setupCountdown } from './sections/countdown.js';
+import { setupDock } from './sections/dock.js';
+import { setupPillars } from './sections/pillars.js';
 import { setupTheme, skyTheme, currentTheme } from './ui/theme.js';
 import { setupMusic } from './ui/music.js';
 import { tilt } from './site/tilt.js';
@@ -140,7 +143,13 @@ async function boot() {
   cleanups.push(setupNav({ reduced }));
   cleanups.push(setupCursor({ reduced }));
   cleanups.push(setupReveals({ reduced }));
+  // act four: the five pillars, prompt cards on a ring, turned by the scroll (and touch, mouse, keys)
+  cleanups.push(setupPillars({ reduced, sky }));
   cleanups.push(setupCounters({ reduced }));
+  // act two counts down to the production; the last act's copy docks into the footer
+  const countdown = document.querySelector('[data-countdown]');
+  if (countdown) cleanups.push(setupCountdown(countdown, reduced));
+  cleanups.push(setupDock());
   // the Lotties load alongside the intro, never ahead of it (the hero's words must not wait on them)
   const lotties = setupLotties();
 
@@ -201,36 +210,22 @@ async function setupLotties() {
     app.scrollCue = reduced ? null : cue;
     cleanups.push(() => cue.destroy());
   }
-
-  // CTA flourish: a gold rule draws under the button, then a small star
-  const ctaHost = document.querySelector('[data-lottie="cta-flourish"]');
-  const flourish = await loadLottie(ctaHost, 'cta-flourish');
-  if (flourish) {
-    const button = document.querySelector('[data-cta]');
-    const on = () => { if (reduced) freeze(flourish, flourish.totalFrames - 1); else { flourish.setDirection(1); flourish.play(); } };
-    const off = () => { if (reduced) freeze(flourish, 0); else { flourish.setDirection(-1); flourish.play(); } };
-    button.addEventListener('mouseenter', on);
-    button.addEventListener('focus', on);
-    button.addEventListener('mouseleave', off);
-    button.addEventListener('blur', off);
-    cleanups.push(() => {
-      button.removeEventListener('mouseenter', on);
-      button.removeEventListener('focus', on);
-      button.removeEventListener('mouseleave', off);
-      button.removeEventListener('blur', off);
-      flourish.destroy();
-    });
-  }
 }
 
-// Pause both canvases when the tab is hidden or the stage is covered by the footer.
+// Pause both canvases when the tab is hidden or the stage is covered by the footer. Covered by the
+// footer, the stage first plays out to where the scroll has got to (a fast scroll to the end leaves
+// the scrubbed sequence behind it) and only then stops, so it never freezes mid-morph over the footer.
 function watchVisibility() {
   let stageInView = true;
   const apply = () => {
-    const run = !document.hidden && stageInView;
-    if (run) { stage?.start(); sky?.start(); } else { stage?.stop(); sky?.stop(); }
+    if (document.hidden) { stage?.stop(); sky?.stop(); return; }
+    if (stageInView) { stage?.start(); sky?.start(); return; }
+    sky?.stop();
+    stage?.stopWhenSettled();
   };
-  const io = new IntersectionObserver(([entry]) => { stageInView = entry.isIntersecting; apply(); });
+  // a pixel off the top: at the end of the page <main>'s foot sits exactly on the screen's top edge,
+  // which an observer still counts as in view
+  const io = new IntersectionObserver(([entry]) => { stageInView = entry.isIntersecting; apply(); }, { rootMargin: '-1px 0px 0px 0px' });
   io.observe(document.querySelector('main'));
   document.addEventListener('visibilitychange', apply);
   cleanups.push(() => { io.disconnect(); document.removeEventListener('visibilitychange', apply); });

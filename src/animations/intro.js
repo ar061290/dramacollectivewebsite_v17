@@ -1,5 +1,5 @@
 // Curtain-up: the spotlight fades up as the name rises letter by letter, the ring appears, then the
-// tagline and the scroll cue. About 1.6 s, the words from the first moment; any input skips to the end.
+// scroll cue. About 1.6 s, the words from the first moment; any input skips to the end.
 import gsap from 'gsap';
 import { SplitText } from 'gsap/SplitText.js';
 
@@ -7,7 +7,7 @@ const SKIP_EVENTS = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
 
 export function playIntro({ hero, light, scrollCue, reduced, onComplete }) {
   const q = (name) => hero.querySelector(`[data-intro="${name}"]`);
-  const eyebrow = q('eyebrow'), title = q('title'), rule = q('rule'), tagline = q('tagline'), cue = q('cue');
+  const eyebrow = q('eyebrow'), title = q('title'), rule = q('rule'), cue = q('cue');
   const finish = () => {
     document.documentElement.classList.remove('is-intro');
     scrollCue?.play();
@@ -17,7 +17,7 @@ export function playIntro({ hero, light, scrollCue, reduced, onComplete }) {
   if (reduced) {
     // no sequence: everything is simply there
     light.set(1, 1);
-    gsap.set([eyebrow, title, rule, tagline, cue], { autoAlpha: 1, clearProps: 'transform' });
+    gsap.set([eyebrow, title, rule, cue].filter(Boolean), { autoAlpha: 1, clearProps: 'transform' });
     finish();
     return null;
   }
@@ -37,7 +37,6 @@ export function playIntro({ hero, light, scrollCue, reduced, onComplete }) {
     .fromTo(eyebrow, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.45 }, 0.15)
     .from(split.chars, { yPercent: 115, duration: 0.6, stagger: 0.022 }, 0.25)
     .fromTo(rule, { autoAlpha: 1, scaleX: 0 }, { scaleX: 1, duration: 0.45 }, 0.7)
-    .fromTo(tagline, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5 }, 0.8)
     .fromTo(cue, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4 }, 1.2);
 
   const skip = () => tl.progress(1);

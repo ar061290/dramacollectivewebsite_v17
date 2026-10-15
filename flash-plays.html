@@ -42,10 +42,12 @@
   </div>
 
   <header class="topbar" data-topbar>
+    <span class="topbar__ground" aria-hidden="true"></span>
     <a class="topbar__brand" href="./index.html" aria-label="The Drama Collective, home">
       <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
       <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
     </a>
+    <a class="btn btn--inverse btn--sm topbar__apply" href="./contact.html" data-topbar-keep>Apply now</a>
     <nav class="topbar__nav" aria-label="Main">
       <ul class="topbar__links">
         <li><a href="./about.html">About us</a></li>
@@ -75,7 +77,7 @@
       </button>
     </div>
     <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu-sheet" data-menu-toggle>Menu</button>
-    <a class="btn btn--inverse btn--sm topbar__cta" href="./sponsor.html">Become a sponsor</a>
+    <a class="btn btn--inverse btn--sm topbar__cta" href="./sponsor.html" data-topbar-keep>Become a sponsor</a>
     <div class="topbar__sheet" id="menu-sheet" data-menu-sheet>
       <ul>
         <li><a href="./index.html">Home</a></li>
@@ -91,6 +93,7 @@
           </ul>
         </li>
         <li><a href="./contact.html">Contact us</a></li>
+        <li><a href="./contact.html">Apply now</a></li>
         <li><a href="./sponsor.html">Become a sponsor</a></li>
         <li><a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a></li>
       </ul>
@@ -132,14 +135,8 @@
   </main>
 
   <!-- site:footer -->
-  <footer class="curtain" id="contact" aria-labelledby="contact-title">
+  <footer class="curtain" id="contact" aria-label="Pages and contacts">
     <div class="curtain__grid">
-      <div class="curtain__intro">
-        <p class="eyebrow">Curtain call · Placeholder</p>
-        <h2 id="contact-title" class="curtain__title">Placeholder heading</h2>
-        <span class="rule" aria-hidden="true"></span>
-        <p>Placeholder text for the footer. Event details come later.</p>
-      </div>
       <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>
       <nav class="curtain__links" aria-label="All pages">
         <div class="curtain__col">
@@ -167,7 +164,7 @@
           <p class="eyebrow">Write to us</p>
           <ul>
             <li><span class="curtain__who">Aadi Ramnani, President</span><a href="mailto:aadir6405@students.chirec.ac.in">aadir6405@students.chirec.ac.in</a></li>
-            <li><span class="curtain__who">Aripra Sharma, Executive President</span><a href="mailto:Aripras111460@students.chirec.ac.in">Aripras111460@students.chirec.ac.in</a></li>
+            <li><span class="curtain__who">Aripra Sharma, Executive President</span><a href="mailto:aripras111460@students.chirec.ac.in">aripras111460@students.chirec.ac.in</a></li>
             <li><a class="curtain__social" href="https://www.instagram.com/" target="_blank" rel="noopener"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg><span>Instagram</span></a></li>
           </ul>
         </div>
@@ -180,7 +177,7 @@
       </div>
       <a class="endorsement" href="https://www.chirec.ac.in" rel="noopener">
         <img class="endorsement__logo" src="./assets/brand/chirec.webp" alt="CHIREC International School" width="475" height="140">
-        <span>CHIREC International School: the No. 1 school in Hyderabad and Telangana</span>
+        <span>CHIREC International School: the No.&nbsp;1 school in Hyderabad and Telangana</span>
       </a>
     </div>
   </footer>

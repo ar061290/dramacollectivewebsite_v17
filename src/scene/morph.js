@@ -28,9 +28,15 @@
 // flames and crescent, the parts close up into the logo's own layout and the logo grows out to its
 // place in the ring. It stays the statue's own stone throughout.
 // Everything here runs once, in well under a second for 160k triangles.
+//
+// At the very end (the stage's vector track) the logo goes flat before its vector stand-in takes
+// over (src/scene/flat.js): its relief sinks into the plane of its front face and its light settles
+// into the vector's own two colours, sweeping down from the top, so that when the vector appears it
+// is already exactly what is on screen and nothing fades over anything.
 
 import * as THREE from 'three';
 import { PARTS } from './logo.js';
+import { FLAT_HEAD, FLAT_FRAGMENT, flatUniforms } from './flat.js';
 
 export const MORPH = {
   swirl: 1, // radians of turn about the axis at mid-flight, scaled per part and by smooth noise
@@ -332,6 +338,8 @@ const VERTEX_HEAD = /* glsl */`
   uniform float uSwirl;
   uniform float uLift;
   varying float vMorph;
+  uniform float uFlatZ; // the front face's depth (logo space): the relief sinks into it
+  ${FLAT_HEAD}
   float morphS() {
     float s = clamp((uMorph - aParams.x) / aParams.y, 0.0, 1.0);
     return s * s * (3.0 - 2.0 * s);
@@ -347,8 +355,11 @@ const BEGIN_VERTEX = /* glsl */`
   vPart = aPart;
   float bump = sin(3.14159265 * mS);
   float turn = uSwirl * bump * aParams.z;
+  // flattening at the end: the relief sinks into the front face, from the top down
+  vFlatT = flatT(aPosB.y);
+  vec3 posB = vec3(aPosB.xy, mix(aPosB.z, uFlatZ, flatK(vFlatT)));
   // the logo as it stands now: a uniform scale and shift, so its normals (aNormB) need no transform
-  vec3 target = uFit.xyz + uFit.w * (aPosB - uCenter) + uSettle * uShift[int(aPart + 0.5)];
+  vec3 target = uFit.xyz + uFit.w * (posB - uCenter) + uSettle * uShift[int(aPart + 0.5)];
   // the mask, hand and face change in place at the logo's small size: they rise in proportion
   float lift = uLift * (aPart < 0.5 ? 1.0 : uFit.w) * bump;
   vec3 transformed = uCenter + swirl(mix(position, target, mS) - uCenter, turn) + vec3(0.0, lift, 0.0);
@@ -362,6 +373,7 @@ const BEGIN_NORMAL = /* glsl */`
 `;
 
 const FRAGMENT_HEAD = /* glsl */`
+  ${FLAT_HEAD}
   uniform vec3 uStone;
   uniform float uShowParts;
   varying float vMorph;
@@ -537,6 +549,8 @@ export function buildMorph({ skinned, space, logo, center, origin }) {
     uLift: { value: MORPH.lift },
     uStone: { value: new THREE.Color(0xd8d3ca) }, // set by the stage: the statue's average stone colour
     uShowParts: { value: 0 }, // ?debug: tint each part (mask gold, hand green, face blue, body grey)
+    uFlatZ: { value: center.z }, // set by the stage, from the logo's flat outline
+    ...flatUniforms(),
   };
 
   // colour pass: the statue's own material all the way. The logo is carved from the same stone:
@@ -548,7 +562,8 @@ export function buildMorph({ skinned, space, logo, center, origin }) {
     shader.fragmentShader = FRAGMENT_HEAD + shader.fragmentShader
       .replace('#include <map_fragment>', '#include <map_fragment>\n  diffuseColor.rgb = mix(diffuseColor.rgb, uStone, vMorph);\n  if (uShowParts > 0.5) diffuseColor.rgb = partColor(vPart);')
       // the statue's normal map belongs to the statue; the logo's faces are smooth stone
-      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n  normal = normalize(mix(normal, nonPerturbedNormal, vMorph));');
+      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n  normal = normalize(mix(normal, nonPerturbedNormal, vMorph));')
+      .replace('#include <colorspace_fragment>', `#include <colorspace_fragment>\n${FLAT_FRAGMENT}`);
   };
   material.customProgramCacheKey = () => 'dc-morph';
 

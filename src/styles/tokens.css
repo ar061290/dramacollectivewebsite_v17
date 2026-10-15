@@ -59,8 +59,9 @@
   /* side margin of the stage layout: space-6 on small screens, space-8 from tablet up */
   --stage-gutter: var(--space-6);
   /* layer order for the fixed stage, content and chrome */
-  /* the footer sits between the sky and the WebGL stage, so the 3D logo stays in front of it */
-  --z-stars: 0; --z-footer: 1; --z-stage: 2; --z-content: 3; --z-topbar: 10; --z-veil: 15; --z-cursor: 20; --z-loader: 30;
+  /* the footer covers the WebGL stage (the browser moves it with the page, so the ring is cut by its
+     edge exactly at any scroll speed); the flat vector logo docks over it */
+  --z-stars: 0; --z-stage: 1; --z-footer: 2; --z-vector: 3; --z-content: 4; --z-topbar: 10; --z-veil: 15; --z-cursor: 20; --z-loader: 30;
 }
 @media (min-width: 768px) {
   :root { --stage-gutter: var(--space-8); }

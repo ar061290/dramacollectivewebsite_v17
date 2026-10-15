@@ -4,7 +4,10 @@
 // what slides over the footer is a crisp vector at any size, not a rendered 3D surface.
 //
 // Its colour is the stone's as the stage lights it (sampled from the 3D logo by the stage): a
-// gradient from the lit top to the darker foot.
+// gradient from the lit top to the darker foot. The 3D logo goes flat into exactly this look before
+// the vector appears (src/scene/flat.js); on its way into the footer the vector then takes on the
+// footer mark's colours and sheds the bevel's flare (setColors, setOutline), so it hands over to it
+// unseen.
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -39,6 +42,7 @@ export class VectorLogo {
     defs.append(grad);
     svg.append(defs);
     let inner = null; // potrace's group transform (it flips y)
+    this.strokes = []; // [group, full stroke width]
     for (const g of src.querySelectorAll(':scope > g')) {
       const copy = document.importNode(g, true);
       inner ??= copy.transform.baseVal.consolidate()?.matrix ?? null;
@@ -47,6 +51,7 @@ export class VectorLogo {
       // the stroke draws the bevel's flare, so the flat mark covers the 3D one's silhouette
       const scale = inner ? Math.sqrt(Math.abs(inner.a * inner.d - inner.b * inner.c)) : 1;
       copy.setAttribute('stroke-width', (outline * 2) / scale);
+      this.strokes.push([copy, (outline * 2) / scale]);
       copy.setAttribute('stroke-linejoin', 'round');
       svg.append(copy);
     }
@@ -65,6 +70,14 @@ export class VectorLogo {
   setColors(top, bottom) {
     this.stops[0].setAttribute('stop-color', top);
     this.stops[1].setAttribute('stop-color', bottom);
+  }
+
+  /** The bevel's flare: 1 full (over the 3D logo), 0 none (as the footer's mark). */
+  setOutline(k) {
+    const v = Math.round(Math.max(0, k) * 1000) / 1000;
+    if (v === this._outline) return;
+    this._outline = v;
+    for (const [g, w] of this.strokes) g.setAttribute('stroke-width', w * v);
   }
 
   setOpacity(v) {

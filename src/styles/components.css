@@ -164,11 +164,38 @@
   align-items: center;
   gap: var(--space-5);
   padding: 0 var(--stage-gutter);
-  transition: transform var(--dur-slow) var(--ease-curtain), background-color var(--dur-base) var(--ease-curtain);
+  overflow-x: clip; /* the parts that slide away leave by the right edge, never widening the page */
 }
-/* Blur is used in exactly one place: the top bar over scrolled content (plum 800 at 88%, 10px). */
-.topbar.is-scrolled { background: var(--bar-bg); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-.topbar.is-hidden { transform: translateY(-100%); }
+/* the bar's ground, its own layer so it can slide away with the rest of the bar. Blur is used in
+   exactly one place: the top bar over scrolled content (plum 800 at 88%, 10px). */
+.topbar__ground { position: absolute; inset: 0; z-index: -1; pointer-events: none; transition: background-color var(--dur-base) var(--ease-curtain); }
+.topbar.is-scrolled .topbar__ground { background: var(--bar-bg); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+/* Scrolling down, the bar slides away to the right, the far end first, as a curtain is drawn
+   off; Apply now and Become a sponsor stay where they are (the two buttons, the same btn--inverse).
+   Scrolling up brings it all back. */
+.topbar > .topbar__ground, .topbar > .topbar__brand, .topbar > .topbar__nav, .topbar > .topbar__tools, .topbar > .topbar__menu {
+  transition: transform .62s var(--ease-in-out) calc(var(--slide, 0) * 55ms), opacity .62s var(--ease-in-out) calc(var(--slide, 0) * 55ms);
+}
+.topbar > .topbar__ground { --slide: 2; transition-property: transform, opacity, background-color; }
+.topbar > .topbar__brand { --slide: 3; }
+.topbar > .topbar__nav { --slide: 2; }
+.topbar > .topbar__tools, .topbar > .topbar__menu { --slide: 1; }
+.topbar.is-hidden > .topbar__ground, .topbar.is-hidden > .topbar__brand, .topbar.is-hidden > .topbar__nav,
+.topbar.is-hidden > .topbar__tools, .topbar.is-hidden > .topbar__menu { transform: translateX(100vw); opacity: 0; pointer-events: none; }
+.topbar > .btn { white-space: nowrap; }
+/* the slid-away bar lets the page under it be clicked; only its two buttons still take the pointer */
+.topbar.is-hidden { pointer-events: none; }
+.topbar.is-hidden > .btn { pointer-events: auto; }
+/* at the end of the home page, where the footer is taller than the screen and its columns scroll up
+   under the bar, the two buttons fade where they stand rather than sit over them (nav.js) */
+.topbar > .btn { transition: var(--transition-ui), opacity var(--dur-slow) var(--ease-curtain); }
+.topbar.is-hidden.is-curtain > .btn { opacity: 0; pointer-events: none; }
+/* Apply now stands beside the brand; the free space falls after it (below 761 px it is in the Menu,
+   and the brand takes the space again) */
+@media (min-width: 761px) {
+  .topbar > .topbar__brand { margin-right: 0; }
+  .topbar > .topbar__apply { margin-right: auto; }
+}
 .topbar__brand {
   display: inline-flex;
   align-items: center;
@@ -364,9 +391,10 @@ html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links
   .topbar__word > span { display: block; }
   .topbar__links { gap: 16px; }
 }
-/* below this the pages move into the Menu: a full-screen sheet that drops like a curtain, the
-   pages in Raung, rising in one after another (the outputs indented under their heading) */
-@media (max-width: 1023px) {
+/* below this (where the two buttons no longer fit beside the links) the pages move into the Menu: a
+   full-screen sheet that drops like a curtain, the pages in Raung, rising in one after another (the
+   outputs indented under their heading) */
+@media (max-width: 1099px) {
   .topbar nav { display: none; }
   .topbar__menu { display: inline-flex; align-items: center; }
   .topbar__word { font-size: 24px; }
@@ -402,6 +430,16 @@ html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links
   .topbar__sheet-group ul { list-style: none; display: grid; gap: 0; padding-left: var(--space-5); border-left: 2px solid var(--rule-color); }
   .topbar__sheet-group a { font-size: clamp(22px, 4.8vw, 34px); }
 }
+/* narrower, the bar makes room for its two buttons: the wordmark stacks again and Instagram is left
+   to the Menu and the footer; below 760 px Apply now moves into the Menu too */
+@media (max-width: 900px) {
+  .topbar__word { font-size: 21px; line-height: .98; }
+  .topbar__word > span { display: block; }
+  .topbar__tools > a.icon-btn { display: none; }
+}
+@media (max-width: 760px) {
+  .topbar > .topbar__apply { display: none; }
+}
 @media (max-width: 640px) {
   .topbar__brand { gap: 8px; }
   .topbar__mark { width: 40px; height: 40px; }
@@ -410,6 +448,11 @@ html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links
 }
 html.is-locked { overflow: hidden; }
 /* phones: the sheet's sponsor link stands in for the button */
-@media (max-width: 480px) {
+@media (max-width: 560px) {
   .topbar > .btn { display: none; }
+}
+/* the narrowest phones: the bar's right-hand gaps close up so Menu (and Close) stay whole */
+@media (max-width: 400px) {
+  .topbar { gap: var(--space-2); padding-right: var(--space-4); }
+  .topbar__menu { padding-inline: 0; }
 }

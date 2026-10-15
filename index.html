@@ -50,10 +50,12 @@
   </div>
 
   <header class="topbar" data-topbar>
+    <span class="topbar__ground" aria-hidden="true"></span>
     <a class="topbar__brand" href="#top" aria-label="The Drama Collective, back to top">
       <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
       <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
     </a>
+    <a class="btn btn--inverse btn--sm topbar__apply" href="./contact.html" data-topbar-keep>Apply now</a>
     <nav class="topbar__nav" aria-label="Main">
       <ul class="topbar__links">
         <li><a href="./about.html">About us</a></li>
@@ -83,7 +85,7 @@
       </button>
     </div>
     <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu-sheet" data-menu-toggle>Menu</button>
-    <a class="btn btn--inverse btn--sm topbar__cta" href="./sponsor.html">Become a sponsor</a>
+    <a class="btn btn--inverse btn--sm topbar__cta" href="./sponsor.html" data-topbar-keep>Become a sponsor</a>
     <div class="topbar__sheet" id="menu-sheet" data-menu-sheet>
       <ul>
         <li><a href="./index.html" aria-current="page">Home</a></li>
@@ -99,6 +101,7 @@
           </ul>
         </li>
         <li><a href="./contact.html">Contact us</a></li>
+        <li><a href="./contact.html">Apply now</a></li>
         <li><a href="./sponsor.html">Become a sponsor</a></li>
         <li><a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a></li>
       </ul>
@@ -270,7 +273,6 @@
         <p class="eyebrow" data-intro="eyebrow">CHIREC International School</p>
         <h1 class="hero__title" id="hero-title" data-intro="title">The Drama Collective</h1>
         <span class="rule" data-intro="rule" aria-hidden="true"></span>
-        <p class="hero__tagline" data-intro="tagline">Placeholder tagline.</p>
       </div>
       <div class="hero__cue" data-lottie="scroll-cue" data-intro="cue" aria-hidden="true"></div>
     </section>
@@ -279,11 +281,11 @@
       data-scene data-frame="0.24" data-light="0.1" data-key="0.92">
       <div class="scene__content">
         <header class="section-heading" data-mask>
-          <p class="eyebrow">Act one · Placeholder</p>
-          <h2 id="about-title" data-reveal>Placeholder heading</h2>
+          <p class="eyebrow">The Collective</p>
+          <h2 id="about-title" data-reveal>Two masks? More than just a stage.</h2>
           <span class="rule" aria-hidden="true"></span>
         </header>
-        <p data-mask data-reveal>Placeholder text for this section. The real copy comes later.</p>
+        <p class="lead" data-mask data-reveal>A student-led performing arts collective. We are not a collective in the traditional sense; our purpose goes beyond putting up a single production. We are building something that lasts.</p>
       </div>
     </section>
 
@@ -291,11 +293,27 @@
       data-scene data-frame="-0.24" data-light="1" data-key="0.86">
       <div class="scene__content">
         <header class="section-heading" data-mask>
-          <p class="eyebrow">Act two · Placeholder</p>
-          <h2 id="productions-title" data-reveal>Placeholder heading</h2>
+          <p class="eyebrow">The production</p>
+          <h2 id="productions-title" data-reveal>Curtain up in</h2>
           <span class="rule" aria-hidden="true"></span>
         </header>
-        <p data-mask data-reveal>Placeholder text for this section. The real copy comes later.</p>
+        <!-- the same countdown as the production page's event card (src/sections/countdown.js) -->
+        <div class="premiere" data-mask>
+          <dl class="count premiere__count" data-countdown="2026-11-30T00:00:00+05:30" aria-label="Time until the production, 30 November 2026">
+            <div class="count__unit"><dt>Days</dt><dd data-unit="days">--</dd></div>
+            <div class="count__unit"><dt>Hours</dt><dd data-unit="hours">--</dd></div>
+            <div class="count__unit"><dt>Minutes</dt><dd data-unit="minutes">--</dd></div>
+            <div class="count__unit"><dt>Seconds</dt><dd data-unit="seconds">--</dd></div>
+          </dl>
+          <dl class="premiere__meta">
+            <div><dt>Date</dt><dd>30 November 2026*</dd></div>
+            <div><dt>Venue</dt><dd>CHIREC International School, ISRP Campus</dd></div>
+          </dl>
+          <div class="premiere__foot">
+            <a class="btn btn--secondary btn--sm" href="./production.html">The production</a>
+            <p class="fine">*The date may change.</p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -303,84 +321,182 @@
       data-scene data-frame="0.24" data-light="0.85" data-key="0.9">
       <div class="scene__content">
         <header class="section-heading" data-mask>
-          <p class="eyebrow">Act three · Placeholder</p>
-          <h2 id="impact-title" data-reveal>Placeholder heading</h2>
+          <p class="eyebrow">The publication</p>
+          <h2 id="impact-title" data-reveal>This month’s publication</h2>
           <span class="rule" aria-hidden="true"></span>
         </header>
-        <p data-mask data-reveal>Placeholder text for this section. The real copy comes later.</p>
-      </div>
-    </section>
-
-    <section class="scene scene--text-right" id="leadership" aria-labelledby="leadership-title"
-      data-scene data-frame="-0.24" data-light="0.25" data-key="0.95">
-      <div class="scene__content">
-        <header class="section-heading" data-mask>
-          <p class="eyebrow">Act four · Placeholder</p>
-          <h2 id="leadership-title" data-reveal>Placeholder heading</h2>
-          <span class="rule" aria-hidden="true"></span>
-        </header>
-        <p data-mask data-reveal>Placeholder text for this section. The real copy comes later.</p>
-      </div>
-    </section>
-
-    <section class="scene" id="support" aria-labelledby="support-title"
-      data-scene data-frame="0.24" data-light="0" data-key="1">
-      <div class="scene__content">
-        <header class="section-heading" data-mask>
-          <p class="eyebrow">Act five · Placeholder</p>
-          <h2 id="support-title" data-reveal>Placeholder heading</h2>
-          <span class="rule" aria-hidden="true"></span>
-        </header>
-        <p data-mask data-reveal>Placeholder text for this section. The real copy comes later.</p>
-        <div class="cta" data-mask>
-          <a class="btn btn--inverse btn--lg" data-cta href="#contact">Placeholder button</a>
-          <div class="cta__flourish" data-lottie="cta-flourish" aria-hidden="true"></div>
+        <!-- five pieces: titles, authors and art to come (each will get its own page; until then they
+             open The publication) -->
+        <div class="issue" data-mask>
+          <a class="issue__lead" href="./publication.html">
+            <span class="issue__art" aria-hidden="true"><span>01</span></span>
+            <span class="issue__text">
+              <span class="issue__kicker">Category</span>
+              <span class="issue__title">Title of the first piece</span>
+              <span class="issue__by">Author name</span>
+            </span>
+          </a>
+          <ol class="issue__list" data-stagger>
+            <li>
+              <a class="issue__item" href="./publication.html">
+                <span class="issue__art issue__art--sm" aria-hidden="true"><span>02</span></span>
+                <span class="issue__text">
+                  <span class="issue__kicker">Category</span>
+                  <span class="issue__title">Title of the second piece</span>
+                  <span class="issue__by">Author name</span>
+                </span>
+              </a>
+            </li>
+            <li>
+              <a class="issue__item" href="./publication.html">
+                <span class="issue__art issue__art--sm" aria-hidden="true"><span>03</span></span>
+                <span class="issue__text">
+                  <span class="issue__kicker">Category</span>
+                  <span class="issue__title">Title of the third piece</span>
+                  <span class="issue__by">Author name</span>
+                </span>
+              </a>
+            </li>
+            <li>
+              <a class="issue__item" href="./publication.html">
+                <span class="issue__art issue__art--sm" aria-hidden="true"><span>04</span></span>
+                <span class="issue__text">
+                  <span class="issue__kicker">Category</span>
+                  <span class="issue__title">Title of the fourth piece</span>
+                  <span class="issue__by">Author name</span>
+                </span>
+              </a>
+            </li>
+            <li>
+              <a class="issue__item" href="./publication.html">
+                <span class="issue__art issue__art--sm" aria-hidden="true"><span>05</span></span>
+                <span class="issue__text">
+                  <span class="issue__kicker">Category</span>
+                  <span class="issue__title">Title of the fifth piece</span>
+                  <span class="issue__by">Author name</span>
+                </span>
+              </a>
+            </li>
+          </ol>
+          <a class="issue__more" href="./publication.html">See more</a>
         </div>
+      </div>
+    </section>
+
+    <!-- held: the act stays on screen while the scroll turns its cards, and the stage holds still
+         (src/sections/pillars.js, src/sections/scenes.js) -->
+    <section class="scene scene--text-right scene--hold" id="leadership" aria-labelledby="leadership-title"
+      data-scene data-frame="-0.24" data-light="0.25" data-key="0.95" data-hold>
+      <div class="scene__hold">
+      <div class="scene__content">
+        <header class="section-heading" data-mask>
+          <p class="eyebrow">What we do</p>
+          <h2 id="leadership-title" data-reveal>Five ways onto the stage</h2>
+          <span class="rule" aria-hidden="true"></span>
+        </header>
+        <!-- the five pillars: prompt cards on a ring, turned by the scroll while the act is held on screen
+             (src/sections/pillars.js, src/styles/pillars.css); without JS, a plain list of five cards -->
+        <div class="pillars" data-pillars data-mask>
+          <div class="pillars__hand" data-pillars-hand>
+            <ol class="pillars__cards">
+              <li class="pillars__slot">
+                <article class="pillars__card pillars__card--feature" id="pillar-production" aria-labelledby="pillar-production-name">
+                  <h3 class="pillars__name eyebrow" id="pillar-production-name">Production</h3>
+                  <p class="pillars__text" id="pillar-production-text">Once a year, a full-scale play — written, directed, designed, performed and managed entirely by students.</p>
+                  <a class="pillars__link" href="./production.html" aria-describedby="pillar-production-text">The production<svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M5 3l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+                </article>
+              </li>
+              <li class="pillars__slot">
+                <article class="pillars__card" id="pillar-flash-plays" aria-labelledby="pillar-flash-plays-name">
+                  <h3 class="pillars__name tag" id="pillar-flash-plays-name">Flash plays</h3>
+                  <p class="pillars__text" id="pillar-flash-plays-text">Short plays that take on the real issues students deal with: academic and peer pressure, cyberbullying and safeguarding.</p>
+                  <a class="pillars__link" href="./flash-plays.html" aria-describedby="pillar-flash-plays-text">Flash plays<svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M5 3l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+                </article>
+              </li>
+              <li class="pillars__slot">
+                <article class="pillars__card" id="pillar-workshops" aria-labelledby="pillar-workshops-name">
+                  <h3 class="pillars__name tag" id="pillar-workshops-name">Workshops</h3>
+                  <p class="pillars__text" id="pillar-workshops-text">Bi-weekly, senior-led. Improvisation, method acting, miming and staging, alongside theatre history.</p>
+                  <a class="pillars__link" href="./workshops.html" aria-describedby="pillar-workshops-text">Workshops<svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M5 3l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+                </article>
+              </li>
+              <li class="pillars__slot">
+                <article class="pillars__card" id="pillar-publication" aria-labelledby="pillar-publication-name">
+                  <h3 class="pillars__name tag" id="pillar-publication-name">Publication</h3>
+                  <p class="pillars__text" id="pillar-publication-text">Our own independent title: theatre history, reflections, interviews, and original student work.</p>
+                  <a class="pillars__link" href="./publication.html" aria-describedby="pillar-publication-text">The publication<svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M5 3l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+                </article>
+              </li>
+              <li class="pillars__slot">
+                <article class="pillars__card" id="pillar-outreach" aria-labelledby="pillar-outreach-name">
+                  <h3 class="pillars__name tag" id="pillar-outreach-name">Outreach</h3>
+                  <p class="pillars__text" id="pillar-outreach-text">Mime and mute theatre with Project SignVerse, and collaborations with Chirec Radio.</p>
+                  <a class="pillars__link" href="./outreach.html" aria-describedby="pillar-outreach-text">Social outreach<svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M5 3l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+                </article>
+              </li>
+            </ol>
+          </div>
+          <div class="pillars__order" role="group" aria-label="Running order" data-pillars-order>
+            <button type="button" aria-controls="pillar-production">Production</button>
+            <button type="button" aria-controls="pillar-flash-plays">Flash plays</button>
+            <button type="button" aria-controls="pillar-workshops">Workshops</button>
+            <button type="button" aria-controls="pillar-publication">Publication</button>
+            <button type="button" aria-controls="pillar-outreach">Outreach</button>
+          </div>
+          <p class="pillars__hint" aria-hidden="true"><span class="pillars__hint-fine">Scroll, drag a card, or choose a name</span><span class="pillars__hint-touch">Scroll, swipe a card, or tap a name</span></p>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section class="scene" id="support" aria-label="Pages and contacts"
+      data-scene data-frame="0.24" data-light="0" data-key="1">
+      <!-- the last act is the footer's columns: as the footer rises they are carried down into it,
+           beside the mark, in step with the logo (src/sections/dock.js). Written by
+           tools/pages/build.mjs, like the footer. -->
+      <div class="scene__content curtain-call" data-dock data-mask>
+        <!-- site:links -->
+        <nav class="curtain__links curtain__links--dock" aria-label="All pages">
+          <div class="curtain__col">
+            <p class="eyebrow">The Collective</p>
+            <ul>
+              <li><a href="./index.html" aria-current="page">Home</a></li>
+              <li><a href="./about.html">About us</a></li>
+              <li><a href="./team.html">Core team</a></li>
+              <li><a href="./contact.html">Contact us</a></li>
+              <li><a href="./sponsor.html">Become a sponsor</a></li>
+            </ul>
+          </div>
+          <div class="curtain__col">
+            <p class="eyebrow">Our outputs</p>
+            <ul>
+              <li><a href="./publication.html">The publication</a></li>
+              <li><a href="./production.html">The production</a></li>
+              <li><a href="./flash-plays.html">Flash plays</a></li>
+              <li><a href="./workshops.html">Workshops</a></li>
+              <li><a href="./outreach.html">Social outreach</a></li>
+              <li><a href="./stage-planner.html">Stage planner</a></li>
+            </ul>
+          </div>
+          <div class="curtain__col curtain__col--contact">
+            <p class="eyebrow">Write to us</p>
+            <ul>
+              <li><span class="curtain__who">Aadi Ramnani, President</span><a href="mailto:aadir6405@students.chirec.ac.in">aadir6405@students.chirec.ac.in</a></li>
+              <li><span class="curtain__who">Aripra Sharma, Executive President</span><a href="mailto:aripras111460@students.chirec.ac.in">aripras111460@students.chirec.ac.in</a></li>
+              <li><a class="curtain__social" href="https://www.instagram.com/" target="_blank" rel="noopener"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg><span>Instagram</span></a></li>
+            </ul>
+          </div>
+        </nav>
+        <!-- /site:links -->
       </div>
     </section>
   </main>
 
   <!-- site:footer -->
-  <footer class="curtain" id="contact" aria-labelledby="contact-title">
+  <footer class="curtain curtain--home" id="contact" aria-label="Credits">
     <div class="curtain__grid">
-      <div class="curtain__intro">
-        <p class="eyebrow">Curtain call · Placeholder</p>
-        <h2 id="contact-title" class="curtain__title">Placeholder heading</h2>
-        <span class="rule" aria-hidden="true"></span>
-        <p>Placeholder text for the footer. Event details come later.</p>
-      </div>
+      <div class="curtain__intro" data-dock-slot aria-hidden="true"></div>
       <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>
-      <nav class="curtain__links" aria-label="All pages">
-        <div class="curtain__col">
-          <p class="eyebrow">The Collective</p>
-          <ul>
-            <li><a href="./index.html" aria-current="page">Home</a></li>
-            <li><a href="./about.html">About us</a></li>
-            <li><a href="./team.html">Core team</a></li>
-            <li><a href="./contact.html">Contact us</a></li>
-            <li><a href="./sponsor.html">Become a sponsor</a></li>
-          </ul>
-        </div>
-        <div class="curtain__col">
-          <p class="eyebrow">Our outputs</p>
-          <ul>
-            <li><a href="./publication.html">The publication</a></li>
-            <li><a href="./production.html">The production</a></li>
-            <li><a href="./flash-plays.html">Flash plays</a></li>
-            <li><a href="./workshops.html">Workshops</a></li>
-            <li><a href="./outreach.html">Social outreach</a></li>
-            <li><a href="./stage-planner.html">Stage planner</a></li>
-          </ul>
-        </div>
-        <div class="curtain__col curtain__col--contact">
-          <p class="eyebrow">Write to us</p>
-          <ul>
-            <li><span class="curtain__who">Aadi Ramnani, President</span><a href="mailto:aadir6405@students.chirec.ac.in">aadir6405@students.chirec.ac.in</a></li>
-            <li><span class="curtain__who">Aripra Sharma, Executive President</span><a href="mailto:Aripras111460@students.chirec.ac.in">Aripras111460@students.chirec.ac.in</a></li>
-            <li><a class="curtain__social" href="https://www.instagram.com/" target="_blank" rel="noopener"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg><span>Instagram</span></a></li>
-          </ul>
-        </div>
-      </nav>
     </div>
     <div class="curtain__base">
       <div class="curtain__legal">
@@ -389,7 +505,7 @@
       </div>
       <a class="endorsement" href="https://www.chirec.ac.in" rel="noopener">
         <img class="endorsement__logo" src="./assets/brand/chirec.webp" alt="CHIREC International School" width="475" height="140">
-        <span>CHIREC International School: the No. 1 school in Hyderabad and Telangana</span>
+        <span>CHIREC International School: the No.&nbsp;1 school in Hyderabad and Telangana</span>
       </a>
     </div>
   </footer>
