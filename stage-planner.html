@@ -23,8 +23,11 @@
   }
   </script>
   <script>
-    // arriving through the curtain (src/site/transition.js): it starts closed and parts on the hall
+    // arriving through the curtain (src/site/transition.js): it starts closed and parts on the
+    // conditions, or on the hall once they are confirmed
     try { if (sessionStorage.getItem('dc-veil') === '1') { sessionStorage.removeItem('dc-veil'); document.documentElement.classList.add('is-veiled'); } } catch (e) {}
+    // the conditions were confirmed earlier this visit (src/planner/main.js): straight to the hall
+    try { if (sessionStorage.getItem('dc-planner-ok') === '1') document.documentElement.classList.add('planner-ok'); } catch (e) {}
   </script>
 </head>
 <body>
@@ -33,6 +36,53 @@
   <div class="veil" aria-hidden="true">
     <div class="veil__half veil__half--l"></div>
     <div class="veil__half veil__half--r"></div>
+  </div>
+  <!-- The conditions, shown before anything heavy loads (src/planner/main.js): what the planner asks
+       of the visitor's computer, read from what it does (src/planner/app.js and its parts; keep this
+       in step with them). Confirm fetches the planner and builds the hall, and lasts the visit. -->
+  <div id="gate" class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title" aria-describedby="gate-lead">
+    <header class="topbar gate-bar">
+      <a class="btn back" href="./production.html" title="Back to The production"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/><path d="M8 12h12"/></svg></span><span>The production</span></a>
+      <a class="brand" href="./index.html" aria-label="The Drama Collective, home">
+        <span class="brand-mark" aria-hidden="true"><img src="./assets/brand/mark-gold.png" alt=""></span>
+        <div class="brand-text"><div class="brand-sub">The Drama Collective</div><div class="brand-name">Stage planner</div></div>
+      </a>
+    </header>
+    <div class="gate-body">
+      <div class="gate-card" data-gate-card>
+        <div class="gate-intro">
+          <p class="gate-eyebrow">Before the hall opens</p>
+          <h2 class="gate-title" id="gate-title" tabindex="-1">What your computer needs</h2>
+          <span class="gate-rule" aria-hidden="true"></span>
+          <p class="gate-lead" id="gate-lead">The planner builds the school hall in 3D inside your browser, as you work: the stage and its sets, the LED wall, every spotlight and hundreds of audience seats. It is made for a computer like this.</p>
+        </div>
+        <dl class="gate-list">
+          <div class="gate-item"><dt>Computer</dt><dd><strong>A laptop or desktop.</strong> Phones and tablets can open it, but the panels and controls are made for a larger screen, a mouse and a keyboard.</dd></div>
+          <div class="gate-item"><dt>Browser</dt><dd><strong>A recent Chrome, Edge, Firefox or Safari, with hardware acceleration on.</strong> The planner draws with WebGL 2 and cannot start without it.</dd></div>
+          <div class="gate-item"><dt>Graphics</dt><dd><strong>Built-in graphics are enough for the hall in fast mode.</strong> Balanced and best are for a computer with a separate graphics card.</dd></div>
+          <div class="gate-item"><dt>Memory</dt><dd><strong>8&nbsp;GB or more.</strong> With the hall open, the browser uses about 0.5 to 0.75&nbsp;GB, and saving a 4K picture can take it towards 2&nbsp;GB.</dd></div>
+          <div class="gate-item"><dt>Screen</dt><dd><strong>1280 × 720 or larger.</strong> Where the top bar has no room for them, the camera, snapping and quality menus move into its File menu.</dd></div>
+          <div class="gate-item"><dt>Controls</dt><dd><strong>A mouse or trackpad, and a keyboard.</strong> Drag to move a part, right-drag to pan, scroll to zoom; R rotates, Ctrl + Z undoes.</dd></div>
+          <div class="gate-item"><dt>Walk through</dt><dd><strong>The mouse to look around, the keyboard to walk.</strong> Click the hall, then W A S D or the arrow keys; Esc frees the mouse. Touch screens get arrows on screen.</dd></div>
+          <div class="gate-item"><dt>Snapshot</dt><dd><strong>Pictures up to 3840 × 2160 (4K), with the best shadows in any mode.</strong> The first picture takes longest, while those shadows are prepared: on built-in graphics, allow up to a minute.</dd></div>
+        </dl>
+        <div class="gate-modes">
+          <h3 class="gate-label" id="gate-modes-title">Quality</h3>
+          <ul class="gate-mode-list" aria-labelledby="gate-modes-title">
+            <li class="is-start" data-quality="low"><b>Fast</b><span>Every spotlight still lights the hall, but none casts a shadow; no glow or smoothing.</span><em class="gate-tag" data-gate-start>Opens in this</em></li>
+            <li data-quality="medium"><b>Balanced</b><span>Shadows from the 4 brightest spotlights, glow and smoothing; sharper on high-resolution screens.</span></li>
+            <li data-quality="high"><b>Best</b><span>Shadows from the 8 brightest spotlights, and sharper still.</span></li>
+          </ul>
+          <p class="gate-note">Change it at any time from the quality menu, in the top bar or, on a narrower window, in its File menu.</p>
+        </div>
+        <div class="gate-actions">
+          <button type="button" class="btn primary gate-go" data-gate-go>Confirm and open the planner</button>
+          <a class="btn gate-back" href="./production.html">Back to The production</a>
+          <p class="gate-fine">Nothing on your computer is checked: the planner takes your word for it, and will not ask again during this visit.</p>
+        </div>
+      </div>
+      <p class="gate-wait" data-gate-wait role="status" tabindex="-1" hidden></p>
+    </div>
   </div>
   <div id="app" class="app" data-mode="design">
     <header id="topbar" class="topbar"></header>
@@ -44,7 +94,7 @@
       <div id="walkhud" class="walkhud" hidden></div>
       <div id="modehint" class="modehint" role="status"></div>
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
-      <div id="loading" class="loading">Setting up the hall…</div>
+      <div id="loading" class="loading" role="status">Setting up the hall…</div>
     </main>
   </div>
   <script type="module" src="./src/planner/main.js"></script>

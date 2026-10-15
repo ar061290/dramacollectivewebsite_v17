@@ -1,6 +1,7 @@
 // Boot for the inner pages (the home page has its own, src/main.js): the curtain between pages,
-// theme, music, the star sky, the top bar, the cursor, text reveals, the nav mark and the footer's
-// mark. A page passes `setup(ctx)` for its own pieces; the curtain parts once they are in place.
+// theme, music, the star sky, the top bar, the cursor, text reveals, the nav mark, the footer's mark
+// and the bar's two buttons flying to their spots on the page. A page passes `setup(ctx)` for its own
+// pieces; the curtain parts once they are in place.
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
 import { SplitText } from 'gsap/SplitText.js';
@@ -16,12 +17,13 @@ import { setupReveals } from '../sections/reveals.js';
 import { setupTheme, skyTheme } from '../ui/theme.js';
 import { setupMusic } from '../ui/music.js';
 import { tilt } from './tilt.js';
+import { setupFlyIn } from './flyin.js';
 
 gsap.registerPlugin(ScrollTrigger, SplitText, ScrollToPlugin, CustomEase);
 CustomEase.create('curtain', '.22,.61,.36,1'); // --ease-curtain from the design system
 
 /**
- * @param {(ctx: { reduced: boolean, sky: ConstellationField|null, onTheme: (fn) => void, opened: Promise<void> }) => (void|(() => void))} [setup]
+ * @param {(ctx: { reduced: boolean, sky: ConstellationField|null, onTheme: (fn: (theme: string, opts: { instant?: boolean }) => void) => void, opened: Promise<void> }) => (void|(() => void))} [setup]
  */
 export async function bootPage(setup) {
   const reduced = reducedMotion();
@@ -34,9 +36,13 @@ export async function bootPage(setup) {
   cleanups.push(setupMusic({ reduced }));
   cleanups.push(setupTheme({
     reduced,
-    onChange: (theme) => {
+    // `instant`: the new theme is being captured for the circle that reveals it (src/ui/theme.js),
+    // so every canvas must take its final look at once, in this frame, rather than ease into it. The
+    // sky's colours change at once already (its running loop paints them before the capture); the
+    // page's own canvases are told the same (onTheme listeners get it as their second argument).
+    onChange: (theme, opts = {}) => {
       sky?.setTheme(skyTheme());
-      themeListeners.forEach((fn) => fn(theme));
+      themeListeners.forEach((fn) => fn(theme, opts));
     },
   }));
   const canvas = document.querySelector('.stage__stars');
@@ -69,6 +75,8 @@ export async function bootPage(setup) {
   await transitions.open();
   parted();
   ScrollTrigger.refresh();
+  // only now, with the curtain open, may the bar's buttons fly to their spots on the page
+  cleanups.push(setupFlyIn({ reduced }));
   window.addEventListener('pagehide', (e) => { if (!e.persisted) cleanups.forEach((c) => c?.()); });
   return ctx;
 }

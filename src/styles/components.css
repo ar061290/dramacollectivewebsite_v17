@@ -69,6 +69,22 @@
 .btn--ghost:hover { color: var(--accent-hover); text-decoration: underline 1px; text-underline-offset: 4px; }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; box-shadow: none; }
 
+/* ---- The word Instagram, in a script close to the app's own wordmark (Grand Hotel, fonts.css) ----
+   wherever it is shown: the footer, the Menu and Contact us. A script's small letters stand well under
+   Lato's capitals, so it is set larger than the text around it, and the capitals and tracking of a
+   button or label are undone for it. */
+.ig-word {
+  font-family: "Grand Hotel", var(--font-display);
+  font-weight: 400;
+  font-style: normal;
+  font-size: 1.5em;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+}
+/* among the Menu's pages, set large in Raung (whose capitals stand tall), it needs far less help */
+.topbar__sheet .ig-word { font-size: 1.15em; }
+
 /* ---- Tag ---- */
 .tag {
   font-family: var(--font-ui);
@@ -164,32 +180,51 @@
   align-items: center;
   gap: var(--space-5);
   padding: 0 var(--stage-gutter);
-  overflow-x: clip; /* the parts that slide away leave by the right edge, never widening the page */
+  overflow-x: clip; /* nothing in the bar ever widens the page */
 }
-/* the bar's ground, its own layer so it can slide away with the rest of the bar. Blur is used in
+/* the bar's ground, its own layer so it can glide away with the rest of the bar. Blur is used in
    exactly one place: the top bar over scrolled content (plum 800 at 88%, 10px). */
 .topbar__ground { position: absolute; inset: 0; z-index: -1; pointer-events: none; transition: background-color var(--dur-base) var(--ease-curtain); }
 .topbar.is-scrolled .topbar__ground { background: var(--bar-bg); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-/* Scrolling down, the bar slides away to the right, the far end first, as a curtain is drawn
-   off; Apply now and Become a sponsor stay where they are (the two buttons, the same btn--inverse).
-   Scrolling up brings it all back. */
+/* Scrolling down, the bar glides up out of view in one piece (ground, brand, pages, tools and Menu,
+   all the same distance at the same pace); Apply now and Become a sponsor stay exactly where they
+   are (the two buttons, the same btn--inverse). Scrolling up brings it back down. */
 .topbar > .topbar__ground, .topbar > .topbar__brand, .topbar > .topbar__nav, .topbar > .topbar__tools, .topbar > .topbar__menu {
-  transition: transform .62s var(--ease-in-out) calc(var(--slide, 0) * 55ms), opacity .62s var(--ease-in-out) calc(var(--slide, 0) * 55ms);
+  transition: transform .62s var(--ease-curtain);
 }
-.topbar > .topbar__ground { --slide: 2; transition-property: transform, opacity, background-color; }
-.topbar > .topbar__brand { --slide: 3; }
-.topbar > .topbar__nav { --slide: 2; }
-.topbar > .topbar__tools, .topbar > .topbar__menu { --slide: 1; }
+.topbar > .topbar__ground { transition-property: transform, background-color; }
 .topbar.is-hidden > .topbar__ground, .topbar.is-hidden > .topbar__brand, .topbar.is-hidden > .topbar__nav,
-.topbar.is-hidden > .topbar__tools, .topbar.is-hidden > .topbar__menu { transform: translateX(100vw); opacity: 0; pointer-events: none; }
+.topbar.is-hidden > .topbar__tools, .topbar.is-hidden > .topbar__menu {
+  transform: translateY(calc(-1 * (var(--topbar-h) + var(--space-2))));
+  pointer-events: none;
+}
 .topbar > .btn { white-space: nowrap; }
-/* the slid-away bar lets the page under it be clicked; only its two buttons still take the pointer */
+/* the hidden bar lets the page under it be clicked; only its two buttons still take the pointer */
 .topbar.is-hidden { pointer-events: none; }
 .topbar.is-hidden > .btn { pointer-events: auto; }
 /* at the end of the home page, where the footer is taller than the screen and its columns scroll up
    under the bar, the two buttons fade where they stand rather than sit over them (nav.js) */
 .topbar > .btn { transition: var(--transition-ui), opacity var(--dur-slow) var(--ease-curtain); }
 .topbar.is-hidden.is-curtain > .btn { opacity: 0; pointer-events: none; }
+/* A page's own Apply now or Become a sponsor ([data-fly]) waits unseen in its place until the bar's
+   button flies down to it (src/site/flyin.js); while it is there, the bar's button is away (at once,
+   so the two are never seen together). The copy in flight is drawn every frame by the script, so it
+   has no transitions of its own; it travels over the bar and under the curtain between pages. */
+.has-js [data-fly] { opacity: 0; }
+.topbar > .btn.is-away { visibility: hidden; pointer-events: none; transition: none; }
+.fly-clone {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: calc(var(--z-topbar) + 1);
+  margin: 0;
+  min-height: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  will-change: transform;
+  transition: none !important;
+}
 /* Apply now stands beside the brand; the free space falls after it (below 761 px it is in the Menu,
    and the brand takes the space again) */
 @media (min-width: 761px) {
@@ -339,33 +374,34 @@ html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links
 .music-toggle.is-playing .bar:nth-child(3) { animation-duration: 1.3s; animation-delay: -.6s; }
 .music-toggle.is-playing .bar:nth-child(4) { animation-duration: .95s; animation-delay: -.15s; }
 .music-toggle.is-loading .bar { animation: music-wait 1.2s var(--ease-in-out) infinite alternate; }
+/* wanted, but held back by the browser until the visitor taps (src/ui/music.js): not on, so the bars
+   rest low and still, but lit on a tint, as waiting to be started */
+.music-toggle.is-blocked { color: var(--accent); background: var(--tag-bg); }
 @keyframes music-bar { from { transform: scaleY(.3); } to { transform: scaleY(1); } }
 @keyframes music-wait { from { opacity: .35; } to { opacity: 1; } }
 /* theme: the sun turns the house lights up; the moon brings them down */
 .icon-btn .theme-toggle__moon, [data-theme="light"] .icon-btn .theme-toggle__sun { display: none; }
 [data-theme="light"] .icon-btn .theme-toggle__moon { display: block; }
-/* Now playing: while the music plays, YouTube's player in view in the corner (its terms want the
-   player visible, at least 200 x 200 px), with the piece's name and a way to stop it (music.js) */
-.now-playing {
+/* The switch itself (src/ui/theme.js): a view transition, the page as it was held still underneath
+   while the page as it now is grows over it in a circle from the button (the script animates the
+   circle), so the pictures' own cross-fade is turned off. While the new page is being pictured,
+   nothing eases into its new colours. */
+:root.is-theming::view-transition-old(root),
+:root.is-theming::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+.theme-snap, .theme-snap *, .theme-snap *::before, .theme-snap *::after { transition: none !important; }
+/* the ring on the circle's edge (src/ui/themeRing.js): over everything but the curtain between
+   pages; during a view transition it is pictured on its own, live, above both pages */
+.theme-ring {
   position: fixed;
-  left: var(--space-4);
-  bottom: var(--space-4);
-  z-index: 12; /* over the page and the stage, under the curtain between pages */
-  width: min(372px, calc(100vw - 2 * var(--space-4)));
-  background: var(--card-bg);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-lg);
-  color: var(--fg);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: calc(var(--z-veil) - 1);
+  pointer-events: none;
+  view-transition-name: dc-theme-ring;
 }
-.now-playing::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: var(--rule-thick); background: var(--rule-color); z-index: 1; }
-.now-playing__player { position: relative; width: 100%; height: 200px; background: var(--black); }
-.now-playing__player iframe, .now-playing__player > div { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
-.now-playing__meta { padding: var(--space-3) calc(var(--space-4) + 40px) var(--space-3) var(--space-4); display: grid; gap: 2px; }
-.now-playing__label { margin: 0; }
-.now-playing__title { margin: 0; font-family: var(--font-display); font-size: 17px; line-height: 1.2; color: var(--fg-strong); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.now-playing__by { font-size: var(--size-caption); color: var(--fg-muted); }
-.now-playing__close { position: absolute; right: var(--space-1); bottom: var(--space-2); }
-@media (prefers-reduced-motion: reduce) { .now-playing { transition: none; } }
+::view-transition-group(dc-theme-ring), ::view-transition-new(dc-theme-ring) { animation: none; }
+::view-transition-old(dc-theme-ring) { display: none; }
 
 .topbar__menu {
   display: none;

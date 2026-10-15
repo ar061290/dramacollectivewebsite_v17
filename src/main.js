@@ -22,6 +22,7 @@ import { setupPillars } from './sections/pillars.js';
 import { setupTheme, skyTheme, currentTheme } from './ui/theme.js';
 import { setupMusic } from './ui/music.js';
 import { tilt } from './site/tilt.js';
+import { setupFlyIn } from './site/flyin.js';
 
 gsap.registerPlugin(ScrollTrigger, SplitText, ScrollToPlugin, CustomEase);
 CustomEase.create('curtain', '.22,.61,.36,1'); // --ease-curtain from the design system
@@ -52,9 +53,19 @@ async function boot() {
   cleanups.push(setupMusic({ reduced }));
   cleanups.push(setupTheme({
     reduced,
-    onChange: (theme) => {
+    onChange: (theme, { instant = false } = {}) => {
       sky?.setTheme(skyTheme());
-      if (stage) gsap.to(stage.state, { daylight: theme === 'light' ? 1 : 0, duration: reduced ? 0 : 0.7, ease: 'sine.inOut', overwrite: 'auto' });
+      if (!stage) return;
+      const daylight = theme === 'light' ? 1 : 0;
+      // the new theme is being pictured for the circle that reveals it (src/ui/theme.js): the stage
+      // takes its new light at once and draws it now, so the picture is already right
+      if (instant) {
+        gsap.killTweensOf(stage.state, 'daylight');
+        stage.state.daylight = daylight;
+        stage.renderOnce();
+        return;
+      }
+      gsap.to(stage.state, { daylight, duration: reduced ? 0 : 0.7, ease: 'sine.inOut', overwrite: 'auto' });
     },
   }));
 
@@ -141,6 +152,8 @@ async function boot() {
   sky.start();
 
   cleanups.push(setupNav({ reduced }));
+  // the bar's Apply now and Become a sponsor fly to their own spots on the page, if it has any
+  cleanups.push(setupFlyIn({ reduced }));
   cleanups.push(setupCursor({ reduced }));
   cleanups.push(setupReveals({ reduced }));
   // act four: the five pillars, prompt cards on a ring, turned by the scroll (and touch, mouse, keys)

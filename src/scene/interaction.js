@@ -5,7 +5,7 @@
 // The statue sits on the fixed stage under the scrolling content, so hits are tested against the
 // stage's silhouette mask rather than DOM targets. Text, links and controls always win.
 
-const BLOCKERS = 'a, button, input, select, textarea, label, [data-mask], .topbar, .curtain';
+const BLOCKERS = 'a, button, input, select, textarea, label, [data-mask], [data-pillars], .topbar, .curtain';
 
 export function setupStatueInteraction({ stage, sky }) {
   const root = document.documentElement;

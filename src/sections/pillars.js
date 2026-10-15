@@ -126,6 +126,13 @@ export function setupPillars({ reduced = false, sky = null } = {}) {
     shade: shades.map((s) => gsap.quickSetter(s, 'opacity')),
     light: lights.map((l) => gsap.quickSetter(l, 'opacity')),
   };
+  // a card's face: the cards are a little see-through (the sky shows through the one in front), so a
+  // card behind shows only its edges, its face coming up as the card above it turns away (CSS --face)
+  const faces = [], solids = [];
+  const face = (i, v) => { const r = Math.round(v * 100) / 100; if (faces[i] !== r) { faces[i] = r; cards[i].style.setProperty('--face', r); } };
+  // a card on its way over the rings turns solid at once (--solid), so the face coming up beneath it
+  // is never read through it
+  const solid = (i, v) => { const r = Math.round(v * 100) / 100; if (solids[i] !== r) { solids[i] = r; cards[i].style.setProperty('--solid', r); } };
   const zs = [];
   const z = (i, v) => { if (zs[i] !== v) { zs[i] = v; slots[i].style.zIndex = v; } };
 
@@ -141,13 +148,19 @@ export function setupPillars({ reduced = false, sky = null } = {}) {
         z(i, 100);
         set.shade[i](0.8 * v ** 1.5); // it darkens as it turns away from the light
         set.light[i](1 - v);
+        face(i, 1);
+        solid(i, Math.min(1, v * 5));
       } else {
         set.rot[i](0);
         set.x[i](t * off.x);
         set.y[i](t * off.y);
         z(i, 50 - Math.round(t * 10));
-        set.shade[i](Math.min(1, t) * 0.45 + Math.max(0, t - 1) * 0.2);
+        // the next card comes up out of shade (none at rest, so nothing dims as a turn starts); those
+        // behind are only edges
+        set.shade[i](t < 1 ? 0.45 * t * Math.min(1, (1 - t) / 0.2) : 0);
         set.light[i](Math.max(0, 1 - t)); // only the front card is in the light
+        face(i, Math.max(0, 1 - t));
+        solid(i, 0);
       }
     }
   }
@@ -583,6 +596,8 @@ export function setupPillars({ reduced = false, sky = null } = {}) {
       else el.setAttribute(name, value);
     }
     slots.forEach((s) => s.classList.remove('is-front'));
+    cards.forEach((c) => { c.style.removeProperty('--face'); c.style.removeProperty('--solid'); });
+    faces.length = solids.length = 0;
     root.classList.remove('is-live');
   };
 }

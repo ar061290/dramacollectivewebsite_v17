@@ -11,7 +11,7 @@
 // The drawn cursor is placed on the earliest pointer event there is (pointerrawupdate, where the
 // browser has it), straight away, with no easing and no frame batching.
 
-const BOXES = '[data-mask], .curtain, .topbar__sheet, .spotlight, .event, .ticket__body, .book, .now-playing, .contact-card, .topbar__dropdown';
+const BOXES = '[data-mask], .curtain, .topbar__sheet, .spotlight, .event, .ticket__body, .book, .contact-card, .topbar__dropdown';
 const LINKS = 'a, button, label, [role="button"]';
 const NOT_TEXT = `${LINKS}, input, select, textarea, .cursor, .loader`;
 const R = 32; // half the glow's size (layout.css)

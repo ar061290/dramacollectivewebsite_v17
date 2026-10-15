@@ -19,8 +19,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 // The pages. In the top bar: About us, Core team, Our outputs (a menu that drops on hover, focus or
 // click) and Contact us. Apply now and Become a sponsor are the buttons; they stay on screen when the
-// rest of the bar slides away (src/animations/nav.js). The footer lists every page, the outputs
-// under their own heading.
+// rest of the bar glides up out of view (src/animations/nav.js), and fly down to their own spot on a
+// page that has one (src/site/flyin.js). The footer lists every page, the outputs under their own
+// heading.
 export const OUTPUTS = [
   { key: 'publication', href: './publication.html', label: 'The publication' },
   { key: 'production', href: './production.html', label: 'The production' },
@@ -134,7 +135,7 @@ ${OUTPUTS.map((o) => `            <li>${link(o, page)}</li>`).join('\n')}
           </ul>
         </li>
 ${[CONTACT, APPLY, CTA].map((n) => `        <li>${link(n, page)}</li>`).join('\n')}
-        <li><a href="${INSTAGRAM.href}" target="_blank" rel="noopener">Instagram</a></li>
+        <li><a href="${INSTAGRAM.href}" target="_blank" rel="noopener"><span class="ig-word">${INSTAGRAM.label}</span></a></li>
       </ul>
     </div>
   </header>`;
@@ -150,28 +151,31 @@ const stage = () => `<div class="stage" aria-hidden="true">
   </div>`;
 
 // The footer's columns: every page in them, the outputs under their own heading, and who to write
-// to. `pad` is the indent of the <nav> line; `cls` an extra class.
-const pageLinks = (page, pad = '      ', cls = '') => {
+// to. `pad` is the indent of the <nav> line; `cls` an extra class. `dock`: the home page's last act,
+// whose columns each travel to their own place in the footer (data-dock-col, src/sections/dock.js)
+// and each keep the sky clear of themselves on the way (data-mask).
+const pageLinks = (page, pad = '      ', cls = '', dock = false) => {
   const i = (n) => pad + '  '.repeat(n);
+  const col = (name) => (dock ? ` data-dock-col="${name}" data-mask` : '');
   return `<nav class="curtain__links${cls ? ` ${cls}` : ''}" aria-label="All pages">
-${i(1)}<div class="curtain__col">
+${i(1)}<div class="curtain__col"${col('collective')}>
 ${i(2)}<p class="eyebrow">The Collective</p>
 ${i(2)}<ul>
 ${[HOME, ABOUT, TEAM, CONTACT, CTA].map((n) => `${i(3)}<li>${link(n, page)}</li>`).join('\n')}
 ${i(2)}</ul>
 ${i(1)}</div>
-${i(1)}<div class="curtain__col">
+${i(1)}<div class="curtain__col"${col('outputs')}>
 ${i(2)}<p class="eyebrow">Our outputs</p>
 ${i(2)}<ul>
 ${OUTPUTS.map((o) => `${i(3)}<li>${link(o, page)}</li>`).join('\n')}
 ${i(3)}<li><a href="./stage-planner.html">Stage planner</a></li>
 ${i(2)}</ul>
 ${i(1)}</div>
-${i(1)}<div class="curtain__col curtain__col--contact">
+${i(1)}<div class="curtain__col curtain__col--contact"${col('contact')}>
 ${i(2)}<p class="eyebrow">Write to us</p>
 ${i(2)}<ul>
 ${CONTACTS.map((c) => `${i(3)}<li><span class="curtain__who">${esc(c.name)}, ${esc(c.role)}</span><a href="mailto:${c.email}">${c.email}</a></li>`).join('\n')}
-${i(3)}<li><a class="curtain__social" href="${INSTAGRAM.href}" target="_blank" rel="noopener">${ICON_INSTAGRAM}<span>Instagram</span></a></li>
+${i(3)}<li><a class="curtain__social" href="${INSTAGRAM.href}" target="_blank" rel="noopener">${ICON_INSTAGRAM}<span class="ig-word">${INSTAGRAM.label}</span></a></li>
 ${i(2)}</ul>
 ${i(1)}</div>
 ${pad}</nav>`;
@@ -180,12 +184,14 @@ ${pad}</nav>`;
 // Every page shows the mark; on the home page the stage's own logo flies down into it and hands over
 // to it (Stage._placeVector), so the two are the same in the end. On the other pages the columns
 // stand beside the mark. On the home page they are the last act (<!-- site:links --> in index.html):
-// as the footer rises they are carried down into its empty slot (.curtain__intro) in step with the
-// logo (src/sections/dock.js), so the footer has no copy of its own there.
+// as the footer rises each is carried down into its own empty slot, in one row (who to write to, the
+// Collective, its outputs, then the mark), in step with the logo (src/sections/dock.js), so the
+// footer has no copy of its own there.
 const footer = (page) => `<footer class="curtain${page === 'home' ? ' curtain--home' : ''}" id="contact" aria-label="${page === 'home' ? 'Credits' : 'Pages and contacts'}">
     <div class="curtain__grid">
 ${page === 'home'
-    ? '      <div class="curtain__intro" data-dock-slot aria-hidden="true"></div>\n      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>'
+    ? ['contact', 'collective', 'outputs'].map((k) => `      <div class="curtain__slot curtain__slot--${k}" data-dock-slot="${k}" aria-hidden="true"></div>`).join('\n')
+      + '\n      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>'
     : `      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>\n      ${pageLinks(page)}`}
     </div>
     <div class="curtain__base">
@@ -283,7 +289,7 @@ export function build() {
     out = fill(out, 'header', header(key));
     if (key !== 'home') out = fill(out, 'stage', stage());
     out = fill(out, 'footer', footer(key));
-    if (key === 'home') out = fill(out, 'links', pageLinks('home', '        ', 'curtain__links--dock'), '        ');
+    if (key === 'home') out = fill(out, 'links', pageLinks('home', '        ', 'curtain__links--dock', true), '        ');
     if (key === 'team') out = fill(out, 'team', team(), '      ');
     if (key === 'contact') out = fill(out, 'contacts', contacts(), '      ');
     out = out.replace(/(<a [^>]*data-instagram[^>]*href=")[^"]*(")/g, `$1${INSTAGRAM.href}$2`);

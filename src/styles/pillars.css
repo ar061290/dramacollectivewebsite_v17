@@ -32,13 +32,22 @@
   align-items: start;
   gap: var(--space-3);
   padding: var(--space-5);
-  background: var(--card-bg);
+  /* a little see-through, so the sky shows through the card in front; a card behind is only its edges
+     until it comes up, and a card turning over the rings is solid (pillars.js sets --face, --solid) */
+  background: color-mix(in srgb, var(--card-bg) calc(var(--face, 1) * (var(--card-mix) + var(--solid, 0) * (100% - var(--card-mix)))), transparent);
   color: var(--fg);
   border: var(--border-width) solid var(--line);
   border-radius: var(--radius-none);
   box-shadow: var(--shadow-sm);
 }
-.pillars__card--feature { background-color: var(--card-feature-bg); }
+.pillars__card--feature { background-color: color-mix(in srgb, var(--card-feature-bg) calc(var(--face, 1) * (var(--card-mix) + var(--solid, 0) * (100% - var(--card-mix)))), transparent); }
+/* how solid a resting card is: see-through enough on wide screens for the stars to show (a little
+   more in the light theme, whose stars are paler); solid on phones, where the statue, not the sky,
+   is behind the deck */
+.pillars { --card-mix: 64%; }
+[data-theme="light"] .pillars { --card-mix: 52%; }
+@media (max-width: 767px) { .pillars { --card-mix: 100%; } }
+.pillars__card > .pillars__name, .pillars__card > .pillars__text, .pillars__card > .pillars__link { opacity: var(--face, 1); }
 /* the gold rule along the top, 3px; 5px on the card in front (the cards' hover growth) */
 .pillars__card::before {
   content: "";
@@ -49,6 +58,7 @@
   background: var(--rule-color);
   transform-origin: top;
   transition: transform var(--dur-base) var(--ease-curtain);
+  opacity: var(--face, 1); /* a card behind is not seen through the one in front */
 }
 .pillars__slot.is-front .pillars__card::before { transform: scaleY(1.6667); }
 /* the name: the eyebrow on the feature card, a tag on the others (.eyebrow / .tag in components.css;
@@ -105,6 +115,20 @@
   padding: 0 12px 16px 12px; /* left: the rings' loop past the edge; right and below: the cards behind, (n - 1) x 4 px */
 }
 .has-js .pillars__cards { gap: 0; }
+/* the stack's thickness: the edges of the cards behind, as offset layers of an empty box the size of
+   a card under them all. A box's own shadow is never drawn under the box, so none of it shows
+   through the see-through card in front, only where it stands out past it. */
+.has-js .pillars__cards::after {
+  content: "";
+  grid-area: 1 / 1;
+  z-index: 0;
+  pointer-events: none;
+  box-shadow:
+    3px 4px 0 -1px var(--card-bg), 3px 4px 0 0 var(--line),
+    6px 8px 0 -1px var(--card-bg), 6px 8px 0 0 var(--line),
+    9px 12px 0 -1px var(--card-bg), 9px 12px 0 0 var(--line),
+    12px 16px 0 -1px var(--card-bg), 12px 16px 0 0 var(--line);
+}
 .has-js .pillars__slot {
   grid-area: 1 / 1;
   position: relative;
@@ -113,6 +137,11 @@
   perspective-origin: 0 50%;
 }
 .has-js .pillars__card {
+  /* everything of a card behind (its border, its shadow, its holes) waits on its face (--face), so
+     nothing of it shows through the see-through card in front; the stack's thickness is drawn once,
+     outside the cards, by .pillars__cards::after */
+  border-color: color-mix(in srgb, var(--line) calc(var(--face, 1) * 100%), transparent);
+  box-shadow: 0 1px 2px rgb(42 13 28 / calc(.1 * var(--face, 1)));
   min-height: calc((100cqw - 24px) * .6);
   padding: 22px var(--space-5) var(--space-2) var(--bind);
   isolation: isolate;
@@ -121,8 +150,8 @@
   backface-visibility: hidden;
   /* the punched holes: quiet, a little darker than the card, with a hairline edge */
   background-image:
-    radial-gradient(circle 5px at var(--hole-x) calc(var(--ring-a) * 100%), var(--pillars-hole) 3px, var(--line) 3.75px 4.25px, transparent 5px),
-    radial-gradient(circle 5px at var(--hole-x) calc(var(--ring-b) * 100%), var(--pillars-hole) 3px, var(--line) 3.75px 4.25px, transparent 5px);
+    radial-gradient(circle 5px at var(--hole-x) calc(var(--ring-a) * 100%), color-mix(in srgb, var(--pillars-hole) calc(var(--face, 1) * 100%), transparent) 3px, color-mix(in srgb, var(--line) calc(var(--face, 1) * 100%), transparent) 3.75px 4.25px, transparent 5px),
+    radial-gradient(circle 5px at var(--hole-x) calc(var(--ring-b) * 100%), color-mix(in srgb, var(--pillars-hole) calc(var(--face, 1) * 100%), transparent) 3px, color-mix(in srgb, var(--line) calc(var(--face, 1) * 100%), transparent) 3.75px 4.25px, transparent 5px);
 }
 /* the rings: each loop lies across the cards' edge, out from the hole and round behind the stack,
    seen a little from above, so the half of it behind the cards is hidden (clipped) and only its near

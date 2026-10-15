@@ -7,3 +7,6 @@
 @font-face { font-family: "Open Sans"; src: url("../../assets/fonts/OpenSans-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: "Open Sans"; src: url("../../assets/fonts/OpenSans-400i.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
 @font-face { font-family: "Open Sans"; src: url("../../assets/fonts/OpenSans-600.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+/* Grand Hotel (SIL Open Font License, Latin subset): a free script close to Instagram's classic
+   wordmark, used for that one word only (.ig-word in components.css), so it is never preloaded. */
+@font-face { font-family: "Grand Hotel"; src: url("../../assets/fonts/GrandHotel-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }

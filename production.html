@@ -95,7 +95,7 @@
         <li><a href="./contact.html">Contact us</a></li>
         <li><a href="./contact.html">Apply now</a></li>
         <li><a href="./sponsor.html">Become a sponsor</a></li>
-        <li><a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a></li>
+        <li><a href="https://www.instagram.com/" target="_blank" rel="noopener"><span class="ig-word">Instagram</span></a></li>
       </ul>
     </div>
   </header>
@@ -122,18 +122,21 @@
 
     <section class="lamps-act" aria-labelledby="lamps-title" data-lamps>
       <h2 class="sr-only" id="lamps-title">Made by students, from start to finish</h2>
-      <p class="eyebrow lamps-hint ground" data-mask data-lamps-hint>Turn on the lights</p>
-      <ul class="lamps">
-        <li><button class="lamp" type="button" aria-pressed="false"><span class="lamp__head"></span><span class="lamp__beam"></span><span class="lamp__word">Written</span></button></li>
-        <li><button class="lamp" type="button" aria-pressed="false"><span class="lamp__head"></span><span class="lamp__beam"></span><span class="lamp__word">Directed</span></button></li>
-        <li><button class="lamp" type="button" aria-pressed="false"><span class="lamp__head"></span><span class="lamp__beam"></span><span class="lamp__word">Designed</span></button></li>
-        <li><button class="lamp" type="button" aria-pressed="false"><span class="lamp__head"></span><span class="lamp__beam"></span><span class="lamp__word">Performed</span></button></li>
-        <li><button class="lamp" type="button" aria-pressed="false"><span class="lamp__head"></span><span class="lamp__beam"></span><span class="lamp__word">Managed</span></button></li>
-      </ul>
-      <div class="lamps-coda">
-        <p class="lamps-coda__line">Entirely by students.</p>
-        <span class="lamps-coda__spark" data-lottie="spark" aria-hidden="true"></span>
+      <!-- the lamps stay put in this frame while the scroll runs past them (.lamps-run) -->
+      <div class="lamps-frame" data-lamps-frame>
+        <p class="eyebrow lamps-hint ground" data-mask data-lamps-hint>Turn on the lights</p>
+        <ul class="lamps">
+          <li><button class="lamp" type="button" aria-pressed="false"><span class="lamp__head"></span><span class="lamp__beam"></span><span class="lamp__word">Written</span></button></li>
+          <li><button class="lamp" type="button" aria-pressed="false"><span class="lamp__head"></span><span class="lamp__beam"></span><span class="lamp__word">Directed</span></button></li>
+          <li><button class="lamp" type="button" aria-pressed="false"><span class="lamp__head"></span><span class="lamp__beam"></span><span class="lamp__word">Designed</span></button></li>
+          <li><button class="lamp" type="button" aria-pressed="false"><span class="lamp__head"></span><span class="lamp__beam"></span><span class="lamp__word">Performed</span></button></li>
+          <li><button class="lamp" type="button" aria-pressed="false"><span class="lamp__head"></span><span class="lamp__beam"></span><span class="lamp__word">Managed</span></button></li>
+        </ul>
+        <div class="lamps-coda">
+          <p class="lamps-coda__line">Entirely by students.<span class="lamps-coda__spark" data-lottie="spark" aria-hidden="true"></span></p>
+        </div>
       </div>
+      <div class="lamps-run" aria-hidden="true" data-lamps-run></div>
     </section>
 
     <section class="act ground" aria-labelledby="output-title" data-mask>
@@ -162,24 +165,29 @@
 
     <section class="act planner-act" aria-labelledby="planner-title">
       <div class="planner-act__copy ground" data-mask>
-        <p class="eyebrow">Stage planner</p>
+        <p class="eyebrow">Stage planner and renderer</p>
         <h2 class="act__title" id="planner-title" data-reveal>Build the set before the set is built</h2>
         <span class="rule" aria-hidden="true"></span>
-        <p>The school hall in 3D: lay out the stage, stairs and risers, hang the box sets and the LED wall, light it from the rig and the floor, and seat the audience. Then walk through it from the front row, or save a picture.</p>
+        <p>The school hall in 3D: lay out the stage, stairs and risers, hang the box sets and the LED wall, light it from the rig and the floor, and seat the audience. Then walk through it from the front row, and render the stage: save the view as a high-resolution picture, export the 3D model, or save the design to open again.</p>
       </div>
       <a class="planner-door" href="./stage-planner.html" data-planner-door>
         <span class="planner-door__glow" aria-hidden="true"></span>
         <span class="planner-door__label">
           <span class="eyebrow">Open</span>
-          <span class="planner-door__title">The stage planner</span>
+          <span class="planner-door__title">The stage planner and renderer</span>
         </span>
         <svg class="planner-door__arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </a>
     </section>
 
     <div class="prod-cta">
-      <a class="btn btn--inverse btn--lg" href="./sponsor.html" data-cta>Become a sponsor</a>
-      <div class="cta__flourish" data-lottie="cta-flourish" aria-hidden="true"></div>
+      <!-- in the top bar's order, Apply now then Become a sponsor, so the two never cross as they fly in
+           from it (src/site/flyin.js); Apply now goes to the same place as the top bar's -->
+      <a class="btn btn--inverse btn--lg" href="./contact.html" data-fly="apply">Apply now</a>
+      <div class="prod-cta__sponsor">
+        <a class="btn btn--inverse btn--lg" href="./sponsor.html" data-cta data-fly="sponsor">Become a sponsor</a>
+        <div class="cta__flourish" data-lottie="cta-flourish" aria-hidden="true"></div>
+      </div>
     </div>
   </main>
 
@@ -214,7 +222,7 @@
           <ul>
             <li><span class="curtain__who">Aadi Ramnani, President</span><a href="mailto:aadir6405@students.chirec.ac.in">aadir6405@students.chirec.ac.in</a></li>
             <li><span class="curtain__who">Aripra Sharma, Executive President</span><a href="mailto:aripras111460@students.chirec.ac.in">aripras111460@students.chirec.ac.in</a></li>
-            <li><a class="curtain__social" href="https://www.instagram.com/" target="_blank" rel="noopener"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg><span>Instagram</span></a></li>
+            <li><a class="curtain__social" href="https://www.instagram.com/" target="_blank" rel="noopener"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg><span class="ig-word">Instagram</span></a></li>
           </ul>
         </div>
       </nav>

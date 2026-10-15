@@ -5,6 +5,12 @@
 // Touch it and the cloth ripples from that point; drag across it and it parts a sliver, showing
 // the lit stage behind, then falls closed again. The cloth sways slowly; nothing else moves on its
 // own. Reduced motion: no sway and no ripples, and frames are drawn only when something changes.
+//
+// The page shows the same set as a still before three.js has loaded (soon.css draws it, in the
+// same place and the same light), so this one starts at the still's light, hidden: load() builds
+// it and compiles its shaders while the still is up, and reveal() brings the rig up once the page
+// has faded it in: the bulbs warm up across the board, the glow grows and the follow-spot rises.
+// The board's size and place are mirrored in soon.css; keep the two in step.
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -31,6 +37,15 @@ const FOV = 35;
 const CAM_Z = 6;
 const MAX_PART = 0.24; // how far a drag can part the curtain (fraction of a panel)
 const PLEAT = 0.3; // world units between pleats
+// the words' set width in canvas pixels (Lato Black at 180px, 10px tracking), for one line and for
+// two: fixed, so the board has the same size here as in the still that soon.css draws
+const SIGN_TEXT = { one: 1420, two: 814 };
+// the still's light (what soon.css draws), as a share of the full rig: the follow-spot and the
+// bulbs are low and nothing glows yet; reveal() raises them to 1 over LIGHT_UP seconds
+const STILL = { spot: 0.4, bulbs: 0.42 };
+const LIGHT_UP = 1.8;
+const LIGHT_DELAY = 0.3; // after reveal(): the page's fade lands on the still's light first
+const BLOOM = 0.75;
 
 const DRAPE = /* glsl */ `
 uniform float uTime, uPart, uSide, uPush, uSway, uWidth, uHeight, uPleats;
@@ -91,22 +106,23 @@ export class CurtainStage {
     this.day = theme === 'light' ? 1 : 0;
     this.dayTarget = this.day;
     this.velvetMats = [];
+    // the light cue: 0 the still's light, 1 the full rig (reveal() starts it; -1 not yet)
+    this.lit = 0;
+    this.litFrom = -1;
+    this.spotLevel = STILL.spot;
+    this.ready = false;
 
     const r = (this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' }));
     r.setPixelRatio(Math.min(devicePixelRatio, 1.75));
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.toneMappingExposure = 1.05;
-    r.domElement.style.opacity = '0';
-    r.domElement.style.transition = 'opacity .9s cubic-bezier(.22,.61,.36,1)';
+    // the canvas stays hidden until the page fades it in over the still (soon.css)
     container.append(r.domElement);
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#150408');
-    const pmrem = new THREE.PMREMGenerator(r);
-    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    this.scene.environmentIntensity = 0.22;
-    pmrem.dispose();
+    this.scene.environmentIntensity = 0.22; // the room's light itself is made in load()
 
     this.camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 50);
     this.camera.position.set(0, 0, CAM_Z);
@@ -148,25 +164,81 @@ export class CurtainStage {
     window.addEventListener('pointercancel', this._onUp);
 
     let resizeTimer = 0;
-    this.ro = new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => this._layout(), 120); });
+    this.ro = new ResizeObserver(() => {
+      // (its first call, as it starts observing, finds the set already built for this size)
+      const v = this.view;
+      if (v && v.px === this.container.clientWidth && v.py === this.container.clientHeight) return;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => this._layout(), 120);
+    });
     this.io = new IntersectionObserver(([e]) => { this.visible = e.isIntersecting; this._sync(); });
     this._onVisibility = () => this._sync();
     document.addEventListener('visibilitychange', this._onVisibility);
   }
 
-  /** Load the mark and the type, build the set, and start. Resolves once the first frame is up. */
+  /**
+   * Load the mark and the type, build the set, compile it and start drawing, still hidden and at
+   * the still's light. Resolves once frames are being drawn, ready to be faded in (then reveal()).
+   * The heavy steps are spread over separate frames so the page never stalls for long.
+   */
   async load() {
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
     const manager = new THREE.LoadingManager();
     const loaded = new Promise((resolve) => { manager.onLoad = resolve; manager.onError = resolve; });
     this.markTex = new THREE.TextureLoader(manager).load(this.markUrl, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; });
     await Promise.all([loaded, document.fonts.load('900 200px Lato').catch(() => {})]);
     if (this.disposed) return;
+    const r = this.renderer;
+    // shaders are compiled for a render target (no tone mapping there, so the programs match the
+    // ones drawn into the composer's targets), in parallel where the browser can, so building the
+    // set never stalls the page for long
+    const compile = (scene) => {
+      r.setRenderTarget(this.composer.readBuffer);
+      const done = r.compileAsync(scene, this.camera);
+      r.setRenderTarget(null);
+      return done.catch(() => {});
+    };
+    // the room's soft light for the sheen and the gold
+    const room = new RoomEnvironment();
+    await compile(room);
+    await frame();
+    if (this.disposed) return;
+    const pmrem = new THREE.PMREMGenerator(r);
+    this.scene.environment = pmrem.fromScene(room, 0.04).texture;
+    pmrem.dispose();
+    room.dispose?.();
+    await frame();
+    if (this.disposed) return;
     this._layout();
+    this._applyLit();
+    // the set, and the glow's and the vignette's own passes (on stand-in quads)
+    const passes = new THREE.Scene();
+    const quad = new THREE.PlaneGeometry(2, 2);
+    const b = this.bloom;
+    for (const m of [b.materialHighPassFilter, ...(b.separableBlurMaterials ?? []), b.compositeMaterial, b.blendMaterial, this.vignette.material]) {
+      if (m?.isMaterial) passes.add(new THREE.Mesh(quad, m));
+    }
+    await Promise.all([compile(this.scene), compile(passes)]);
+    quad.dispose();
+    if (this.disposed) return;
+    await frame();
+    if (this.disposed) return;
+    this.ready = true;
+    this._render(); // the first frame, hidden
     this.ro.observe(this.container);
     this.io.observe(this.container);
-    this._render();
-    requestAnimationFrame(() => { this.renderer.domElement.style.opacity = '1'; });
     this._sync();
+    // two frames drawn by the loop before the page shows it
+    await frame();
+    await frame();
+  }
+
+  /** Bring the rig up from the still's light (the page fades the canvas in as this starts). */
+  reveal() {
+    if (this.litFrom >= 0) return;
+    this.litFrom = performance.now() + (this.reduced ? 0 : LIGHT_DELAY * 1000);
+    if (!this.running) this._pausedAt = performance.now();
+    this._wake();
   }
 
   // ---- the set ----
@@ -189,7 +261,7 @@ export class CurtainStage {
   _buildComposer() {
     const c = (this.composer = new EffectComposer(this.renderer));
     c.addPass(new RenderPass(this.scene, this.camera));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.75, 0.5, 1.05);
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), BLOOM, 0.5, 1.05);
     c.addPass(this.bloom);
     // the house is dark at the edges: a soft vignette (no grain, no other screen effect)
     c.addPass((this.vignette = new ShaderPass({
@@ -321,30 +393,33 @@ export class CurtainStage {
 
     this.scene.add(set);
     this._applyDay();
-    // the spot keeps its place in the new frame
+    // the spot keeps its place in the new frame (the first one waits for the shaders: load())
     this.dirty = true;
-    this._render();
+    if (this.ready) this._render();
   }
 
   _buildSign(set, viewW, viewH, hangY, goldMat) {
     const twoLines = this.camera.aspect < 0.85;
     const lines = twoLines ? ['COMING', 'SOON'] : ['COMING SOON'];
     // rasterise the words in Lato Black and put a bulb on every lit cell of a grid
-    const fontPx = 180;
     const step = 13;
     const cv = document.createElement('canvas');
     const ctx = cv.getContext('2d', { willReadFrequently: true });
-    ctx.font = `900 ${fontPx}px Lato, "Helvetica Neue", Arial, sans-serif`;
-    if ('letterSpacing' in ctx) ctx.letterSpacing = '10px';
-    const widths = lines.map((l) => ctx.measureText(l).width);
-    cv.width = Math.ceil(Math.max(...widths)) + 40;
-    cv.height = Math.ceil(fontPx * 1.05 * lines.length) + 20;
-    ctx.font = `900 ${fontPx}px Lato, "Helvetica Neue", Arial, sans-serif`;
-    if ('letterSpacing' in ctx) ctx.letterSpacing = '10px';
+    const type = (px) => {
+      ctx.font = `900 ${px}px Lato, "Helvetica Neue", Arial, sans-serif`;
+      if ('letterSpacing' in ctx) ctx.letterSpacing = `${px / 18}px`;
+    };
+    // the words fill their set width: a fallback face, or no tracking, is scaled to it
+    const setW = twoLines ? SIGN_TEXT.two : SIGN_TEXT.one;
+    type(180);
+    const fontPx = Math.min(180, 180 * (setW / Math.max(...lines.map((l) => ctx.measureText(l).width))));
+    cv.width = setW + 40;
+    cv.height = Math.ceil(180 * 1.05 * lines.length) + 20;
+    type(fontPx);
     ctx.fillStyle = '#fff';
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'center';
-    lines.forEach((l, i) => ctx.fillText(l, cv.width / 2, 10 + fontPx * 1.05 * (i + 0.5)));
+    lines.forEach((l, i) => ctx.fillText(l, cv.width / 2, 10 + 180 * 1.05 * (i + 0.5)));
     const data = ctx.getImageData(0, 0, cv.width, cv.height).data;
     const pts = [];
     for (let y = step / 2; y < cv.height; y += step) {
@@ -404,18 +479,27 @@ export class CurtainStage {
     this._lightBulbs(true);
   }
 
-  /** Bulb brightness: steady, brighter near the pointer, and swept once after a touch. */
+  /**
+   * Bulb brightness: warmed up across the board by the light cue, then steady, brighter near the
+   * pointer, and swept once after a touch.
+   */
   _lightBulbs(force = false) {
     const b = this.bulbs;
     if (!b) return;
     const near = this.state.push > 0.02;
-    if (!force && !near && this.chase < 0 && !this._bulbsHot) return;
+    const lit = this.lit;
+    if (!force && !near && this.chase < 0 && !this._bulbsHot && this._bulbsLit === lit) return;
     const c = this._c ??= new THREE.Color();
     // the pointer in the board's space
     const local = this.sign.worldToLocal((this._v ??= new THREE.Vector3()).set(this.state.x, this.state.y, this.sign.position.z));
     let hot = false;
     for (let i = 0; i < b.count; i++) {
       let k = 1;
+      if (lit < 1) {
+        // each bulb warms up in turn from the left, over half the cue
+        const q = Math.min(1, Math.max(0, (lit - this.bulbX[i] * 0.5) / 0.5));
+        k = STILL.bulbs + (1 - STILL.bulbs) * q * q * (3 - 2 * q);
+      }
       if (near) {
         const dx = this.bulbPos[i * 2] - local.x, dy = this.bulbPos[i * 2 + 1] - local.y;
         k += 0.9 * this.state.push * Math.exp(-(dx * dx + dy * dy) * 9);
@@ -425,6 +509,7 @@ export class CurtainStage {
       b.setColorAt(i, c.copy(this.bulbBase).multiplyScalar(k));
     }
     this._bulbsHot = hot;
+    this._bulbsLit = lit;
     b.instanceColor.needsUpdate = true;
   }
 
@@ -505,10 +590,14 @@ export class CurtainStage {
     const go = this.visible && !document.hidden && !this.disposed;
     if (go && !this.running) {
       this.running = true;
+      // a light cue not yet seen, or cut short, plays on from where it was when it comes into view
+      if (this._pausedAt !== undefined && this.litFrom >= 0) this.litFrom += performance.now() - this._pausedAt;
+      this._pausedAt = undefined;
       this.clock.getDelta();
       this.renderer.setAnimationLoop(this._tick);
     } else if (!go && this.running) {
       this.running = false;
+      if (this.lit < 1) this._pausedAt = performance.now();
       this.renderer.setAnimationLoop(null);
     }
   }
@@ -530,6 +619,13 @@ export class CurtainStage {
     if (this.sign) this.sign.rotation.z = this.reduced ? 0 : this.swing.a;
     if (this.chase >= 0) { this.chase += dt * 1.5; if (this.chase > 1.3) this.chase = -1; }
     this.flash = Math.max(0, this.flash - dt * 2.5);
+    if (this.litFrom >= 0 && this.lit < 1) {
+      // the light cue, by the wall clock too; reduced motion: at once (the page's fade is the change)
+      const p = (performance.now() - this.litFrom) / (LIGHT_UP * 1000);
+      this.lit = this.reduced ? 1 : Math.min(1, Math.max(0, p));
+      this._applyLit();
+      this.dirty = true;
+    }
     if (this.day !== this.dayTarget) {
       // by the wall clock (a slow frame must not stretch the change): 0.7 s from end to end
       const now = performance.now();
@@ -549,7 +645,7 @@ export class CurtainStage {
     this.u.uPush.value = s.push;
     this.u.uPointer.value.set(s.x, s.y, 0);
     this.spot.target.position.set(s.x * 0.85, s.y * 0.85, 0);
-    this.spot.intensity = this.spotBase * (0.75 + 0.25 * Math.max(s.push, 0.5)) * (1 + this.flash * (this.v.flash - 1));
+    this.spot.intensity = this.spotBase * this.spotLevel * (0.75 + 0.25 * Math.max(s.push, 0.5)) * (1 + this.flash * (this.v.flash - 1));
     this.behind.uniforms.uGlow.value = 0.12 + (s.part / MAX_PART) * 1.9;
     this._lightBulbs();
     this._render();
@@ -557,10 +653,30 @@ export class CurtainStage {
 
   _render() { this.composer.render(); }
 
-  /** Follow the site theme: 'light' raises the house lights and hangs the pale curtain. */
-  setTheme(theme) {
+  /** The rig at the light cue's level: the follow-spot rises and the glow grows (bulbs: above). */
+  _applyLit() {
+    const rise = (a, b) => {
+      const t = Math.min(1, Math.max(0, (this.lit - a) / (b - a)));
+      return t * t * (3 - 2 * t);
+    };
+    this.spotLevel = STILL.spot + (1 - STILL.spot) * rise(0.1, 1);
+    this.bloom.strength = BLOOM * rise(0, 0.85);
+  }
+
+  /**
+   * Follow the site theme: 'light' raises the house lights and hangs the pale curtain. It eases
+   * there, unless `instant` (the switch is being pictured for its reveal, src/ui/theme.js).
+   */
+  setTheme(theme, { instant = false } = {}) {
     this.dayTarget = theme === 'light' ? 1 : 0;
     this._dayAt = performance.now();
+    // and before it is shown at all: the still has changed at once, and this one must land on the
+    // still's picture when it fades in
+    if ((instant || this.litFrom < 0) && this.day !== this.dayTarget) {
+      this.day = this.dayTarget;
+      this._applyDay();
+      if (instant && this.ready) this._render(); // drawn now, in time for the picture
+    }
     this._wake();
   }
 

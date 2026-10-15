@@ -1,0 +1,257 @@
+/* The About us page (about.html, src/pages/about.js): its own rules, after pages.css. */
+
+/* ---- Who we are: the statement takes the whole column (the ring that stood beside it is now
+   around the five words, further down) ---- */
+.about-who { display: grid; gap: var(--space-6); }
+.about-who .statement { font-size: clamp(30px, 3.9vw, 56px); line-height: 1.2; max-width: 24em; }
+
+/* ---- Skills: the light walks along them as the page scrolls, the walk the five words used to
+   have; the frame stays on screen meanwhile (src/pages/about.js) ---- */
+.skills-run { height: 170vh; } /* six steps in under two screens */
+.skills-frame {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: grid;
+  align-content: center;
+  gap: var(--space-8);
+  padding-top: var(--topbar-h);
+}
+/* set as the five words were set (Lato black, open tracking), in their own capitals, and spread:
+   three and three, each row pushed out to the edges of the column */
+.skills { list-style: none; position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 var(--space-6); margin: 0; }
+.skills::after { content: ""; flex-basis: 100%; height: 0; order: 2; } /* the break after the third */
+.skill:nth-of-type(n+4) { order: 3; }
+.skill {
+  position: relative;
+  padding: var(--space-3) 0;
+  font-family: var(--font-ui);
+  font-weight: var(--weight-black);
+  font-size: clamp(20px, 2.7vw, 40px);
+  line-height: 1.2;
+  letter-spacing: .08em;
+  color: var(--fg-muted);
+  transition: color var(--dur-slow) var(--ease-curtain);
+}
+.skill.is-lit { color: var(--spot-lit); }
+.skills .spot-glow { --spot-r: clamp(90px, 14vw, 220px); opacity: 1; }
+
+/* ---- Courage: the line on the right, and its reason sliding out from behind its gold rule to
+   stand on the left as the page scrolls ---- */
+.courage { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--space-7); align-items: end; }
+@media (prefers-reduced-motion: no-preference) and (min-height: 561px) {
+  .skills-act + .courage { margin-top: 0; } /* the held frame above already ends in half a screen of room */
+}
+.courage .quote { grid-column: 2; grid-row: 1; }
+.courage .quote p { font-size: var(--size-display-m); line-height: 1.2; max-width: 16em; margin: 0; }
+.courage__aside { grid-column: 1; grid-row: 1; }
+/* the reason is only seen on its own side of the rule: the clip reaches across the gap to it */
+.courage__clip { overflow: clip; margin: -6px calc(-1 * var(--space-7)) -6px -6px; padding: 6px var(--space-7) 6px 6px; }
+.courage__text { margin: 0; }
+
+/* ---- What we stand for: they come in one by one as the page scrolls (--in 0..1 draws the gold
+   rule out with each) and take light from the follow-spot (--lit 0..1) ---- */
+.values { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-7); margin-top: var(--space-6); }
+.value {
+  position: relative;
+  padding: var(--space-5) 0 var(--space-5) var(--space-6);
+  font-family: var(--font-display);
+  font-size: clamp(22px, 2.3vw, 32px);
+  line-height: var(--lh-title);
+  color: color-mix(in srgb, var(--spot-lit) calc(var(--lit, 0) * 100%), var(--fg-strong));
+}
+.value::before {
+  content: "";
+  position: absolute;
+  left: 0; top: calc(var(--space-5) + .55em);
+  width: 20px; height: var(--rule-thick);
+  background: var(--rule-color);
+  transform-origin: left center;
+  transform: scaleX(calc((.6 + var(--lit, 0) * .8) * var(--in, 1)));
+}
+
+/* ---- LEARN · CREATE · COLLABORATE · PERFORM · GROW (src/sections/lexicon.js) ----
+   A stage the height of the screen holds while the page scrolls four screens past it: the gold
+   line-work at the back, the marble ring (or its drawn stand-in), the word, then the scale and the
+   count. The ring and the type are sized from the stage by the script (--ring-px, --word-em,
+   --ins-px, --hair). */
+.lexicon { position: relative; max-width: none; width: auto; margin-inline: calc(-1 * var(--stage-gutter)); }
+.lexicon__run { height: 480vh; }
+/* The stage is the small viewport's height, so the ring and the word sit in the middle of what is
+   seen while a phone's toolbar shows. When the toolbar slides away the screen grows by the
+   difference; the clip reaches that far past the stage, so the line-work runs on into the space
+   instead of stopping on a straight edge above a bare band (where the margin is not supported, as
+   in Safari, it clips at the stage as before; .page__main still stops any sideways overflow). */
+.lexicon__stage {
+  position: sticky; top: 0; height: 100svh;
+  overflow: hidden;
+  overflow: clip;
+  overflow-clip-margin: calc(100lvh - 100svh);
+  isolation: isolate;
+  --word-em: 64px; --ring-px: 600px; --ins-px: 1500px; --hair: 1;
+}
+.lexicon__lines, .lexicon__ring { position: absolute; inset: 0; pointer-events: none; }
+
+/* the line-work: three dials and a few constellations, in the stars' gold */
+.lexicon__lines { z-index: 0; color: var(--star); --ins-a: .5; }
+[data-theme="light"] .lexicon__lines { --ins-a: .62; }
+.lexicon__layer {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: var(--ins-px); height: var(--ins-px);
+  margin: calc(var(--ins-px) / -2) 0 0 calc(var(--ins-px) / -2);
+  overflow: visible;
+  will-change: transform;
+}
+.lexicon__layer *, .lexicon__stars * { fill: none; stroke: currentColor; stroke-width: var(--hair); opacity: var(--ins-a); }
+.lexicon__lines .ins-fine { stroke-width: calc(var(--hair) * .75); }
+.lexicon__lines .ins-faint { opacity: calc(var(--ins-a) * .5); }
+.lexicon__lines .ins-star, .lexicon__lines .ins-dot { fill: currentColor; stroke: none; opacity: calc(var(--ins-a) * 1.4); }
+.lexicon__stars { position: absolute; width: clamp(110px, 14vw, 230px); height: auto; overflow: visible; --hair: 1.1; }
+.lexicon__stars.is-a { left: 7%; top: 13%; }
+.lexicon__stars.is-b { right: 6%; bottom: 11%; }
+.lexicon__stars.is-c { right: 12%; top: 15%; width: clamp(80px, 10vw, 170px); }
+
+/* the ring: the marble one is a canvas over the whole stage, faded in once it has drawn; the drawn
+   stand-in (pale stone, a band the ring's size) shows until then, or instead */
+.lexicon__ring { z-index: 1; }
+.lexicon__canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; opacity: 0; transition: opacity .9s var(--ease-curtain); }
+.lexicon__ring.is-live .lexicon__canvas { opacity: 1; }
+.lexicon__still {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: var(--ring-px); height: var(--ring-px);
+  margin: calc(var(--ring-px) / -2) 0 0 calc(var(--ring-px) / -2);
+  overflow: visible;
+  transition: opacity .9s var(--ease-curtain);
+  will-change: transform; /* turned and drawn back by the scroll: moved as a layer, not repainted */
+}
+.lexicon__ring.is-live .lexicon__still { opacity: 0; visibility: hidden; transition: opacity .9s var(--ease-curtain), visibility 0s .9s; }
+.lexicon__band { fill: none; stroke-width: 27; }
+.lexicon__stone-hi { stop-color: var(--gold-100); }
+.lexicon__stone-mid { stop-color: color-mix(in srgb, var(--slate-100) 70%, var(--gold-300)); }
+.lexicon__stone-lo { stop-color: color-mix(in srgb, var(--slate-300) 75%, var(--gold-700)); }
+.lexicon__edge { fill: none; stroke: var(--slate-700); stroke-width: 1.5; opacity: .45; }
+.lexicon__edge--out { opacity: .3; }
+
+/* the word: the font's outlines in one path, lit like the walk's lit word; the stroke, the fill's
+   own colour, is only drawn (its width set by the script) while a word swells into or settles out
+   of a morph */
+.lexicon__word {
+  position: absolute;
+  left: 50%; top: 50%;
+  z-index: 2;
+  width: calc(var(--word-em) * 6);
+  height: calc(var(--word-em) * 1.04);
+  margin: calc(var(--word-em) * -.52) 0 0 calc(var(--word-em) * -3);
+  overflow: visible;
+  fill: var(--spot-lit);
+  fill-rule: evenodd;
+  stroke: var(--spot-lit);
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+/* the scale: the sentence's start, then the five words, the one shown marked with the gold rule;
+   on the text ground (as .ground in pages.css), so the line-work turning behind stays clear of it */
+.lexicon__side { position: absolute; z-index: 3; left: var(--stage-gutter); top: 50%; transform: translateY(-50%); display: grid; gap: var(--space-5); justify-items: start; isolation: isolate; }
+.lexicon__side::before {
+  content: "";
+  position: absolute;
+  inset: -40px -40px;
+  z-index: -1;
+  pointer-events: none;
+  background: rgb(var(--scrim-rgb) / .84);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent), linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 40px), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent), linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 40px), transparent);
+  mask-composite: intersect;
+}
+.lexicon__lead { max-width: 18em; }
+.lexicon__scale { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.lexicon__step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 32px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-micro);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  transition: color var(--dur-slow) var(--ease-curtain);
+}
+.lexicon__step i { display: block; width: 8px; height: 1px; background: currentColor; transition: width var(--dur-slow) var(--ease-curtain); }
+.lexicon__step:hover { color: var(--fg-strong); }
+.lexicon__step[aria-current="step"] { color: var(--fg-strong); }
+/* the accent, not the gold rule: in the light theme gold on the pale ground is fainter than the
+   plum of the other marks (in the dark theme the accent is that same gold) */
+.lexicon__step[aria-current="step"] i { width: 26px; height: 2px; background: var(--accent); }
+.lexicon__count {
+  position: absolute;
+  z-index: 3;
+  right: var(--stage-gutter); top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  writing-mode: vertical-rl;
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-micro);
+  letter-spacing: var(--ls-eyebrow);
+  color: var(--accent);
+}
+
+.lexicon__note { max-width: var(--container); margin: var(--space-9) auto 0; padding-inline: var(--stage-gutter); box-sizing: content-box; }
+.lexicon__note p { max-width: 40em; }
+.lexicon__note p:last-child { margin-bottom: 0; }
+
+/* without the script the words are the scale's own, in the middle of the stage */
+html:not(.has-js) .lexicon__run { height: auto; }
+html:not(.has-js) .lexicon__stage { position: relative; height: auto; padding: var(--space-9) var(--stage-gutter); }
+html:not(.has-js) .lexicon__side { position: static; transform: none; }
+
+/* ---- Tablet and phone ---- */
+@media (max-width: 1099px) {
+  /* no room beside the ring: the sentence's start above it, the scale and count below it */
+  .lexicon__side { display: contents; }
+  .lexicon__side::before { display: none; }
+  .lexicon__lead { position: absolute; z-index: 3; top: calc(var(--topbar-h) + var(--space-2)); left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 2 * var(--stage-gutter)); text-align: center; }
+  .lexicon__scale { position: absolute; z-index: 3; left: 50%; bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; gap: 0; }
+  .lexicon__step { min-width: 40px; min-height: 40px; justify-content: center; }
+  .lexicon__step span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .lexicon__step i { width: 14px; }
+  .lexicon__step[aria-current="step"] i { width: 30px; }
+  .lexicon__count { top: auto; right: auto; left: 50%; bottom: calc(var(--space-5) + 44px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); writing-mode: horizontal-tb; }
+}
+@media (max-width: 1023px) {
+  .courage { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+  .courage .quote, .courage__aside { grid-column: 1; grid-row: auto; }
+  .courage__clip { margin: -6px; padding: 6px; } /* stacked: it comes out from the line of the rule */
+}
+@media (max-width: 767px) {
+  .skills { flex-direction: column; align-items: flex-start; }
+  .skills::after { display: none; }
+  .skill { font-size: clamp(22px, 6.2vw, 30px); padding: var(--space-2) 0; }
+  .skills-frame { gap: var(--space-6); }
+  .values { grid-template-columns: minmax(0, 1fr); }
+}
+/* too short a screen to hold the skills still: they simply scroll, and the light still walks */
+@media (max-height: 560px) {
+  .skills-run { height: auto; }
+  .skills-frame { position: static; height: auto; padding-top: 0; }
+}
+
+/* ---- Reduced motion: the skills are shown lit and still, the stage is shorter (the words change
+   in place) ---- */
+@media (prefers-reduced-motion: reduce) {
+  .skills-run { height: auto; }
+  .skills-frame { position: static; height: auto; padding-top: 0; }
+  .skill { color: var(--fg-strong); }
+  .lexicon__run { height: 300vh; }
+  .lexicon__canvas, .lexicon__still, .lexicon__step, .lexicon__step i { transition: none; }
+}

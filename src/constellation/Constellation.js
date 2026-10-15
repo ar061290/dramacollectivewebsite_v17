@@ -50,13 +50,17 @@ export class ConstellationField {
    * @param {boolean} o.reducedMotion    lines appear without drawing on; no twinkle
    * @param {(x:number,y:number)=>boolean} [o.covers]  true where the statue hides the sky
    * @param {string} [o.maskSelector]    text blocks the sky must stay clear of
+   * @param {string} [o.quietSelector]   blocks the stars may show through but where nothing is drawn
+   *                                     on them: no constellations and no glow round the cursor
+   *                                     (act four's see-through cards: the stars, not lines under text)
    */
-  constructor({ canvas, theme, reducedMotion, covers = () => false, maskSelector = '[data-mask], .topbar:not(.is-hidden), .topbar.is-hidden > .btn' }) {
+  constructor({ canvas, theme, reducedMotion, covers = () => false, maskSelector = '[data-mask], .topbar:not(.is-hidden), .topbar.is-hidden > .btn:not(.is-away)', quietSelector = '[data-quiet]' }) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.reducedMotion = reducedMotion;
     this.covers = covers;
     this.maskSelector = maskSelector;
+    this.quietSelector = quietSelector;
     this.grid = new SpatialGrid(64);
     this.stars = [];
     this.constellations = [];
@@ -66,6 +70,7 @@ export class ConstellationField {
     this.pointer = null; // current pointer position for the glow
     this.touch = null;
     this.maskRects = [];
+    this.quietRects = [];
     this.running = false;
     this.suspended = false; // true while the statue is being turned: no new constellations
     this.raf = 0;
@@ -237,6 +242,11 @@ export class ConstellationField {
   _blocked(s) {
     if (this.covers(s.x, s.y)) return true;
     for (const r of this.maskRects) if (s.x >= r.x && s.x <= r.x + r.w && s.y >= r.y && s.y <= r.y + r.h) return true;
+    return this._quiet(s);
+  }
+
+  _quiet(s) {
+    for (const r of this.quietRects) if (s.x >= r.x && s.x <= r.x + r.w && s.y >= r.y && s.y <= r.y + r.h) return true;
     return false;
   }
 
@@ -302,6 +312,13 @@ export class ConstellationField {
       rects.push({ x: r.left - MASK_PAD, y: r.top - MASK_PAD, w: r.width + MASK_PAD * 2, h: r.height + MASK_PAD * 2 });
     }
     this.maskRects = rects;
+    const quiet = [];
+    for (const el of document.querySelectorAll(this.quietSelector)) {
+      const r = el.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > this.h || r.width === 0) continue;
+      quiet.push({ x: r.left, y: r.top, w: r.width, h: r.height });
+    }
+    this.quietRects = quiet;
   }
 
   _frame(now) {
@@ -337,7 +354,7 @@ export class ConstellationField {
       const R = GLOW_RADIUS;
       this.grid.query(p.x - R, p.y - R, p.x + R, p.y + R, (s) => {
         const d = Math.hypot(s.x - p.x, s.y - p.y);
-        if (d >= R) return;
+        if (d >= R || this._quiet(s)) return;
         const k = 1 - d / R;
         s.boost = Math.max(s.boost, k * k * (3 - 2 * k)); // smooth falloff
       });

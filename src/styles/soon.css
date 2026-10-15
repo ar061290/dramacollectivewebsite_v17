@@ -1,0 +1,227 @@
+/* The coming-soon pages (flash-plays, workshops, outreach; src/pages/soon.js): their own rules, after pages.css. */
+
+/* ---- The live curtain (src/scene/curtain/CurtainStage.js), over the still ----
+   Hidden until it has drawn its first frames at the still's light, then faded in (soon.js adds
+   .is-on) so that it lands on the same picture; its lamps come up once it is there. The still's
+   sign lies under it, the title and the hint over it. */
+.soon { --soon-fade: 900ms; }
+.soon__stage canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity var(--soon-fade) var(--ease-curtain);
+}
+.soon__stage.is-on canvas { opacity: 1; }
+.soon__copy, .soon__hint { z-index: 2; }
+/* the hint only once there is a curtain to drag */
+.soon__hint { opacity: 0; transition: opacity var(--dur-slow) var(--ease-curtain) var(--soon-fade); }
+.soon__stage.is-on ~ .soon__hint { opacity: 1; }
+
+/* ---- The still: the house curtain drawn in CSS ----
+   What the page shows before the live curtain has loaded, and wherever it does not run: the same
+   set, in the same place and at the light the live one starts at, so the one can fade into the
+   other without a jump. The velvet and its pleats, the pelmet with its gold trim and the mark, and
+   the marquee board on its two cables, the words in bulbs.
+   The stage is a size container and the set is measured in its units the way the camera sees it:
+   one unit of the set at the curtain is 26.43cqh (the stage's height over the camera's view,
+   2 x 6 x tan 17.5 deg), and anything nearer is scaled by 6 / (6 - its depth). The numbers mirror
+   CurtainStage.js; keep the two in step. The colours are the set's, not the interface's: each was
+   read off the live curtain's first frame (its velvet, gold and board under the still's light), per
+   page and per theme. Browsers without container units keep pages.css's plainer still. */
+@supports (width: 1cqh) {
+  .soon { container-type: size; }
+  .soon__stage, .soon__sign {
+    --bar: min(20cqh, 64px);                                  /* the top bar's band: --topbar-h */
+    --drop: 10cqh;                                            /* the pelmet below it */
+    --hang: calc(50cqh - var(--drop) - var(--bar) + .2643cqh); /* the pelmet's foot, above the middle */
+    /* the board: the words' width, one canvas pixel of the words, and the board's drop */
+    --sign-w: min(64cqw, 95.15cqh);
+    --cv-w: 1460; --cv-h: 209; --board-w: 1560.32; --board-h: 309.32; --sign-drop: 7cqh;
+    --px: calc(var(--sign-w) / var(--cv-w));
+    --near: 1.1236;                                           /* the board's depth, 0.66: 6 / 5.34 */
+    --frame: .925cqh;                                         /* its gold frame, 0.035 */
+  }
+  /* a tall stage: a shallower pelmet, and the words on two lines */
+  @container (aspect-ratio < .8) {
+    .soon__stage, .soon__sign { --drop: 8cqh; }
+  }
+  @container (aspect-ratio < .85) {
+    .soon__stage, .soon__sign { --sign-w: min(60cqw, 95.15cqh); --cv-w: 854; --cv-h: 398; --board-w: 965.44; --board-h: 509.44; --sign-drop: 8cqh; }
+  }
+
+  /* the light on the set: a soft vignette over the whole frame, and the follow-spot's pool (at the
+     still's level) falling off past a unit either side of the middle; the dark theatre darkens to
+     black, the lit house only a little, towards plum */
+  .soon__stage, .soon__sign {
+    --shade: 0 0 0;
+    --vig1: .05; --vig2: .16; --vig3: .28; --vig4: .34; --pool: .36;
+    --vignette: radial-gradient(ellipse 86.96cqw 100cqh at 50cqw 50cqh, transparent 20%,
+      rgb(var(--shade) / var(--vig1)) 36.25%, rgb(var(--shade) / var(--vig2)) 52.5%,
+      rgb(var(--shade) / var(--vig3)) 68.75%, rgb(var(--shade) / var(--vig4)) 85%);
+    --falloff: radial-gradient(ellipse 72cqh 95cqh at 50cqw 50cqh, transparent 38.9%,
+      rgb(var(--shade) / calc(var(--pool) * .16)) 54.2%, rgb(var(--shade) / calc(var(--pool) * .5)) 69.4%,
+      rgb(var(--shade) / calc(var(--pool) * .84)) 84.7%, rgb(var(--shade) / var(--pool)) 100%);
+  }
+  [data-theme="light"] .soon__stage, [data-theme="light"] .soon__sign {
+    --shade: 64 20 42;
+    --vig1: .013; --vig2: .043; --vig3: .073; --vig4: .086; --pool: .05;
+  }
+
+  /* the velvet: a pleat every 0.3 of a unit, from each panel's edge at the gap outwards (the right
+     panel's edge 0.05 left of the middle, in front; the left one's 0.05 right of it, behind), with
+     the light catching each fold (--a: how far along the pleat each colour falls) */
+  .soon__stage {
+    --pleat: 7.93cqh;
+    --a1: .27; --a2: .33; --a3: .435; --a4: .55; --a5: .65; --a6: .8;
+    --folds: var(--c0) 0, var(--c1) calc(var(--pleat) * var(--a1)), var(--c2) calc(var(--pleat) * var(--a2)),
+      var(--c3) calc(var(--pleat) * var(--a3)), var(--c4) calc(var(--pleat) * var(--a4)),
+      var(--c5) calc(var(--pleat) * var(--a5)), var(--c6) calc(var(--pleat) * var(--a6)), var(--c0) var(--pleat);
+  }
+  [data-theme="light"] .soon__stage { --a1: .1; --a2: .2; --a3: .27; --a4: .4; --a5: .55; --a6: .75; }
+  .soon__stage[data-curtain="flash-plays"] { --c0: #3d111a; --c1: #3f101d; --c2: #44121d; --c3: #62262d; --c4: #42171e; --c5: #2f0d15; --c6: #340f16; --pelmet: #44131f; }
+  .soon__stage[data-curtain="workshops"] { --c0: #351417; --c1: #300e16; --c2: #3b161a; --c3: #6b3931; --c4: #46221f; --c5: #260d10; --c6: #301414; --pelmet: #34111a; }
+  .soon__stage[data-curtain="outreach"] { --c0: #2c0e13; --c1: #280c13; --c2: #310f15; --c3: #572428; --c4: #39161a; --c5: #210a0f; --c6: #280e11; --pelmet: #2d1016; }
+  [data-theme="light"] .soon__stage[data-curtain="flash-plays"] { --c0: #cba2b4; --c1: #d4adbe; --c2: #d5afc0; --c3: #dbb7c7; --c4: #d3afbb; --c5: #c198a6; --c6: #be93a5; --pelmet: #dcbaca; }
+  [data-theme="light"] .soon__stage[data-curtain="workshops"] { --c0: #c99aad; --c1: #d1a6b8; --c2: #d2a8ba; --c3: #d9afc2; --c4: #d0a8b5; --c5: #be91a0; --c6: #bb8b9e; --pelmet: #dab3c5; }
+  [data-theme="light"] .soon__stage[data-curtain="outreach"] { --c0: #c594aa; --c1: #ce9fb4; --c2: #d0a2b7; --c3: #d6a9be; --c4: #cda4b2; --c5: #ba8c9d; --c6: #b7849b; --pelmet: #d7adc1; }
+  /* (over pages.css's striped velvet, in both themes) */
+  .soon .soon__stage,
+  [data-theme="light"] .soon .soon__stage {
+    background:
+      var(--vignette),
+      var(--falloff),
+      repeating-linear-gradient(to right, var(--folds)) right / calc(50% + 1.33cqh) 100% no-repeat,
+      repeating-linear-gradient(to left, var(--folds)) left / calc(50% + 1.32cqh) 100% no-repeat,
+      var(--c0);
+  }
+  /* the pelmet, down to the far edge of its gold trim's underside (the trim: 0.03 tall, its face at
+     depth 0.41, its underside back to 0.25); the spot catches the middle of the gold */
+  .soon__stage::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: calc(50cqh - 1.0435 * (var(--hang) - .3965cqh));
+    --under: calc(.0299 * (var(--hang) - .3965cqh));
+    background:
+      linear-gradient(to right, var(--trim-under)) left bottom / 100% var(--under) no-repeat,
+      linear-gradient(to right, var(--trim-face)) left bottom var(--under) / 100% calc(1.0734 * .793cqh) no-repeat,
+      var(--vignette),
+      var(--falloff),
+      var(--pelmet);
+    pointer-events: none;
+  }
+  /* the mark on the pelmet, centred below the top bar */
+  .soon__stage::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: calc(50cqh - 1.0697 * (50cqh - var(--drop) / 2 - var(--bar) + .2643cqh));
+    width: calc(1.0697 * .8 * var(--drop));
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    background: url("../../assets/brand/mark-gold.png") center / contain no-repeat;
+    opacity: .92;
+    filter: var(--mark-tone, none);
+    pointer-events: none;
+  }
+
+  /* the gold and the board, the same on every page */
+  .soon__stage, .soon__sign {
+    --trim-face: #806832, #9f8a4b 14%, #c9b678 28%, #e4d9aa 42%, #e7dfb2 50%, #e0d4a1 58%, #c9b678 72%, #9f8a4b 86%, #806832;
+    --trim-under: #4c3c20, #584727 14%, #61502d 28%, #68552f 42%, #675632 50%, #68552f 58%, #61502d 72%, #584727 86%, #4c3c20;
+    --bar-top: #9d884a, #b59f62 10%, #d0c185 25%, #dfd3a1 39%, #e2d7a4 50%, #dfd3a1 61%, #d0c185 75%, #b59f62 90%, #9d884a;
+    --bar-foot: #967c3d, #ab8f4f 10%, #bda661 25%, #c3ae6c 39%, #c4af6d 50%, #c3ae6c 61%, #bda661 75%, #ab8f4f 90%, #967c3d;
+    --bar-side: #9c874c, #957a40;
+    --board: #150c0c, #1c1010 10%, #271918 25%, #2d1d1d 39%, #2e1f1e 50%, #2d1d1d 61%, #271918 75%, #1c1010 90%, #150c0c;
+    --board-foot: rgb(0 0 0 / .14);
+    --bulb: #e8dad2;
+    --bulb-glow: rgb(255 214 170 / .3);
+    --cable: #9a7848;
+  }
+  [data-theme="light"] .soon__stage, [data-theme="light"] .soon__sign {
+    --trim-face: #cfc088, #dcd1a0 14%, #e7deba 28%, #f2ead2 42%, #f2ebd3 50%, #efe8cd 58%, #e7deba 72%, #dcd1a0 86%, #cfc088;
+    --trim-under: #a19064, #a79269 14%, #aa966b 28%, #ad986c 42%, #ac986f 50%, #ad986c 58%, #aa966b 72%, #a79269 86%, #a19064;
+    --bar-top: #d8cd9a, #ded6a7 10%, #e9e0b9 25%, #ede7c6 39%, #ede9c7 50%, #ede7c6 61%, #e9e0b9 75%, #ded6a7 90%, #d8cd9a;
+    --bar-foot: #cdbc80, #d5c38a 10%, #dacc96 25%, #dfd19d 39%, #dfd19e 50%, #dfd19d 61%, #dacc96 75%, #d5c38a 90%, #cdbc80;
+    --bar-side: #d8cc9e, #ccbb81;
+    --board: #4e2534, #532937 10%, #5b313d 25%, #5f3541 39%, #603642 50%, #5f3541 61%, #5b313d 75%, #532937 90%, #4e2534;
+    --board-foot: rgb(42 13 28 / .1);
+    --bulb: #eed5d1;
+    --bulb-glow: rgb(255 226 210 / .3);
+    --cable: #d2b796;
+    --mark-tone: saturate(.45) brightness(1.06);
+  }
+
+  /* the marquee board, hung from the pelmet: its frame is this box's border, painted as four gold
+     bars (the spot catches the middle of the top and the foot) */
+  .soon .soon__sign {
+    --rail: calc(var(--near) * var(--frame));
+    left: 50%;
+    top: calc(50cqh - var(--near) * (var(--hang) - var(--sign-drop) + var(--frame) / 2));
+    transform: translateX(-50%);
+    box-sizing: border-box;
+    width: calc(var(--near) * (var(--board-w) * var(--px) + var(--frame)));
+    height: calc(var(--near) * (var(--board-h) * var(--px) + var(--frame)));
+    display: grid;
+    place-items: center;
+    margin: 0;
+    padding: 0;
+    border: var(--rail) solid transparent;
+    background:
+      linear-gradient(to right, var(--bar-top)) top / 100% var(--rail) no-repeat border-box,
+      linear-gradient(to right, var(--bar-foot)) bottom / 100% var(--rail) no-repeat border-box,
+      linear-gradient(var(--bar-side)) left / var(--rail) 100% no-repeat border-box,
+      linear-gradient(var(--bar-side)) right / var(--rail) 100% no-repeat border-box,
+      linear-gradient(transparent 35%, var(--board-foot)) padding-box,
+      linear-gradient(to right, var(--board)) padding-box;
+  }
+  /* the two cables up to the pelmet (0.38 of the board's width either side, at depth 0.61) */
+  .soon__sign::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + var(--rail));
+    box-sizing: border-box;
+    width: calc(1.1132 * .76 * var(--board-w) * var(--px) + .35cqh);
+    height: calc(1.1132 * var(--hang) - var(--near) * (var(--hang) - var(--sign-drop) + var(--frame) / 2));
+    translate: -50% 0;
+    border-inline: .35cqh solid var(--cable);
+    pointer-events: none;
+  }
+  /* the words in bulbs: the bulbs CurtainStage.js puts on the words (a grid of 13 canvas pixels,
+     alternate rows offset by half, a bulb wherever Lato Black at 180px covers a cell's centre), set
+     down once from that grid as a mask, for one line and for two, so they are whole bulbs in the
+     same places. The words themselves stay as text for screen readers, unseen. */
+  .soon__words {
+    --bulbs: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1460 209'%3E%3Cpath d='M71.5 32.5h39.1M201.5 32.5h39.1M318.5 32.5h26.1M435.5 32.5h13.1M500.5 32.5h13.1M565.5 32.5h13.1M656.5 32.5h13.1M747.5 32.5h52.1M903.5 32.5h52.1M1033.5 32.5h52.1M1189.5 32.5h52.1M1306.5 32.5h13.1M1397.5 32.5h13.1M52 45.5h78.1M182 45.5h78.1M325 45.5h26.1M429 45.5h26.1M507 45.5h13.1M572 45.5h13.1M650 45.5h13.1M728 45.5h78.1M897 45.5h65.1M1014 45.5h91.1M1170 45.5h91.1M1313 45.5h26.1M1404 45.5h13.1M32.5 58.5h26.1M123.5 58.5h0.1M162.5 58.5h26.1M253.5 58.5h26.1M318.5 58.5h39.1M422.5 58.5h26.1M500.5 58.5h13.1M565.5 58.5h39.1M656.5 58.5h13.1M708.5 58.5h26.1M799.5 58.5h0.1M890.5 58.5h13.1M955.5 58.5h0.1M1007.5 58.5h26.1M1085.5 58.5h26.1M1163.5 58.5h13.1M1241.5 58.5h26.1M1306.5 58.5h39.1M1397.5 58.5h13.1M26 71.5h26.1M156 71.5h26.1M260 71.5h13.1M325 71.5h39.1M416 71.5h39.1M507 71.5h13.1M572 71.5h39.1M650 71.5h13.1M702 71.5h26.1M884 71.5h26.1M1001 71.5h13.1M1092 71.5h26.1M1157 71.5h13.1M1248 71.5h26.1M1313 71.5h39.1M1404 71.5h13.1M32.5 84.5h13.1M162.5 84.5h13.1M266.5 84.5h13.1M318.5 84.5h13.1M357.5 84.5h13.1M409.5 84.5h39.1M500.5 84.5h13.1M565.5 84.5h13.1M604.5 84.5h13.1M656.5 84.5h13.1M708.5 84.5h13.1M890.5 84.5h52.1M994.5 84.5h26.1M1098.5 84.5h26.1M1150.5 84.5h13.1M1254.5 84.5h13.1M1306.5 84.5h13.1M1345.5 84.5h26.1M1397.5 84.5h13.1M26 97.5h26.1M156 97.5h26.1M260 97.5h26.1M325 97.5h13.1M364 97.5h13.1M403 97.5h13.1M442 97.5h13.1M507 97.5h13.1M572 97.5h13.1M611 97.5h52.1M702 97.5h26.1M780 97.5h26.1M910 97.5h52.1M1001 97.5h13.1M1105 97.5h13.1M1144 97.5h26.1M1261 97.5h13.1M1313 97.5h13.1M1352 97.5h26.1M1404 97.5h13.1M32.5 110.5h13.1M162.5 110.5h13.1M266.5 110.5h13.1M318.5 110.5h13.1M370.5 110.5h39.1M435.5 110.5h13.1M500.5 110.5h13.1M565.5 110.5h13.1M617.5 110.5h52.1M708.5 110.5h13.1M773.5 110.5h39.1M942.5 110.5h26.1M994.5 110.5h26.1M1098.5 110.5h13.1M1150.5 110.5h26.1M1254.5 110.5h13.1M1306.5 110.5h13.1M1358.5 110.5h52.1M39 123.5h13.1M169 123.5h13.1M260 123.5h13.1M325 123.5h13.1M377 123.5h26.1M442 123.5h13.1M507 123.5h13.1M572 123.5h13.1M624 123.5h39.1M715 123.5h13.1M793 123.5h13.1M949 123.5h13.1M1001 123.5h26.1M1092 123.5h26.1M1157 123.5h26.1M1248 123.5h13.1M1313 123.5h13.1M1378 123.5h39.1M45.5 136.5h78.1M175.5 136.5h91.1M318.5 136.5h13.1M383.5 136.5h13.1M435.5 136.5h13.1M500.5 136.5h13.1M565.5 136.5h13.1M643.5 136.5h26.1M721.5 136.5h39.1M786.5 136.5h26.1M890.5 136.5h65.1M1007.5 136.5h91.1M1163.5 136.5h91.1M1306.5 136.5h13.1M1384.5 136.5h26.1M52 149.5h65.1M182 149.5h65.1M325 149.5h13.1M442 149.5h13.1M507 149.5h13.1M572 149.5h13.1M650 149.5h13.1M728 149.5h78.1M897 149.5h52.1M1027 149.5h65.1M1183 149.5h65.1M1313 149.5h13.1M1391 149.5h26.1' fill='none' stroke='%23000' stroke-width='8.84' stroke-linecap='round' stroke-dasharray='0 13'/%3E%3C/svg%3E");
+    position: relative;
+    display: block;
+    width: calc(var(--near) * var(--cv-w) * var(--px));
+    height: calc(var(--near) * var(--cv-h) * var(--px));
+    overflow: hidden;
+    color: transparent;
+    filter: drop-shadow(0 0 calc(var(--near) * 4 * var(--px)) var(--bulb-glow));
+  }
+  .soon__words::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--bulb);
+    -webkit-mask: var(--bulbs) 0 0 / 100% 100% no-repeat;
+    mask: var(--bulbs) 0 0 / 100% 100% no-repeat;
+  }
+  @container (aspect-ratio < .85) {
+    .soon__words {
+      --bulbs: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 854 398'%3E%3Cpath d='M71.5 32.5h39.1M201.5 32.5h39.1M318.5 32.5h26.1M435.5 32.5h13.1M500.5 32.5h13.1M565.5 32.5h13.1M656.5 32.5h13.1M747.5 32.5h52.1M52 45.5h78.1M182 45.5h78.1M325 45.5h26.1M429 45.5h26.1M507 45.5h13.1M572 45.5h13.1M650 45.5h13.1M728 45.5h78.1M32.5 58.5h26.1M123.5 58.5h0.1M162.5 58.5h26.1M253.5 58.5h26.1M318.5 58.5h39.1M422.5 58.5h26.1M500.5 58.5h13.1M565.5 58.5h39.1M656.5 58.5h13.1M708.5 58.5h26.1M799.5 58.5h0.1M39 71.5h13.1M156 71.5h26.1M260 71.5h13.1M325 71.5h39.1M416 71.5h39.1M507 71.5h13.1M572 71.5h39.1M650 71.5h13.1M702 71.5h26.1M32.5 84.5h13.1M162.5 84.5h13.1M266.5 84.5h13.1M318.5 84.5h13.1M357.5 84.5h13.1M409.5 84.5h39.1M500.5 84.5h13.1M565.5 84.5h13.1M604.5 84.5h13.1M656.5 84.5h13.1M708.5 84.5h13.1M26 97.5h26.1M156 97.5h26.1M260 97.5h26.1M325 97.5h13.1M364 97.5h13.1M403 97.5h13.1M442 97.5h13.1M507 97.5h13.1M572 97.5h13.1M611 97.5h52.1M702 97.5h26.1M780 97.5h26.1M32.5 110.5h13.1M162.5 110.5h13.1M266.5 110.5h13.1M318.5 110.5h13.1M370.5 110.5h39.1M435.5 110.5h13.1M500.5 110.5h13.1M565.5 110.5h13.1M617.5 110.5h52.1M708.5 110.5h13.1M773.5 110.5h39.1M39 123.5h13.1M169 123.5h13.1M260 123.5h13.1M325 123.5h13.1M377 123.5h26.1M442 123.5h13.1M507 123.5h13.1M572 123.5h13.1M624 123.5h39.1M715 123.5h13.1M793 123.5h13.1M45.5 136.5h78.1M175.5 136.5h91.1M318.5 136.5h13.1M383.5 136.5h13.1M435.5 136.5h13.1M500.5 136.5h13.1M565.5 136.5h13.1M643.5 136.5h26.1M721.5 136.5h39.1M786.5 136.5h26.1M52 149.5h65.1M182 149.5h65.1M325 149.5h13.1M442 149.5h13.1M507 149.5h13.1M572 149.5h13.1M650 149.5h13.1M728 149.5h78.1M169 227.5h65.1M286 227.5h78.1M442 227.5h78.1M572 227.5h26.1M663 227.5h13.1M162.5 240.5h26.1M214.5 240.5h13.1M279.5 240.5h39.1M344.5 240.5h26.1M435.5 240.5h26.1M487.5 240.5h39.1M578.5 240.5h26.1M669.5 240.5h13.1M156 253.5h13.1M273 253.5h13.1M364 253.5h13.1M429 253.5h13.1M520 253.5h13.1M572 253.5h39.1M663 253.5h13.1M162.5 266.5h26.1M266.5 266.5h13.1M370.5 266.5h13.1M422.5 266.5h13.1M526.5 266.5h13.1M578.5 266.5h52.1M669.5 266.5h13.1M169 279.5h52.1M260 279.5h26.1M364 279.5h26.1M416 279.5h26.1M520 279.5h26.1M572 279.5h65.1M663 279.5h13.1M188.5 292.5h39.1M266.5 292.5h13.1M370.5 292.5h13.1M422.5 292.5h13.1M526.5 292.5h13.1M578.5 292.5h13.1M630.5 292.5h13.1M669.5 292.5h13.1M221 305.5h13.1M273 305.5h13.1M364 305.5h13.1M416 305.5h26.1M520 305.5h13.1M572 305.5h26.1M637 305.5h39.1M162.5 318.5h0.1M214.5 318.5h13.1M279.5 318.5h26.1M357.5 318.5h26.1M422.5 318.5h26.1M500.5 318.5h26.1M578.5 318.5h13.1M643.5 318.5h39.1M156 331.5h65.1M286 331.5h78.1M442 331.5h78.1M572 331.5h26.1M663 331.5h13.1M175.5 344.5h39.1M305.5 344.5h39.1M461.5 344.5h39.1M578.5 344.5h13.1M669.5 344.5h13.1' fill='none' stroke='%23000' stroke-width='8.84' stroke-linecap='round' stroke-dasharray='0 13'/%3E%3C/svg%3E");
+    }
+  }
+}
+
+/* ---- Reduced motion: the live curtain comes in with a plain quick fade, already lit ---- */
+@media (prefers-reduced-motion: reduce) {
+  .soon { --soon-fade: 250ms; }
+  /* (layout.css collapses every transition; this one is a change of light, not of place) */
+  .soon__stage canvas { transition-duration: var(--soon-fade) !important; }
+  .soon__hint { transition-delay: 0s; }
+}

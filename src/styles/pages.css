@@ -97,101 +97,7 @@
 }
 .statement { font-family: var(--font-display); font-size: var(--size-display-m); line-height: 1.24; margin: 0; max-width: 26em; }
 
-/* ---- About us ---- */
-/* the stone ring: fixed, half off the right edge, over the sky and under the page; the copy keeps
-   to the left of it on wide screens */
-.about-ring {
-  --ring: min(86vh, 64vw);
-  position: fixed;
-  top: 50%;
-  right: 0;
-  width: var(--ring);
-  height: var(--ring);
-  transform: translate(46%, -50%);
-  z-index: 1;
-  pointer-events: none;
-}
-.about-ring[hidden] { display: none; }
-.about-ring canvas { display: block; width: 100%; height: 100%; }
-@media (min-width: 1024px) {
-  .page--about .page__main { padding-right: calc(var(--stage-gutter) + var(--ring-room, min(43vh, 32vw))); }
-}
-@media (max-width: 1023px) {
-  .about-ring { --ring: min(72vw, 60vh); top: 34%; transform: translate(50%, -50%); opacity: .55; }
-}
-.about-who { display: grid; gap: var(--space-6); }
-.skills { list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-5); }
-.skill {
-  font-family: var(--font-display);
-  font-size: clamp(26px, 3.6vw, 52px);
-  line-height: 1.2;
-  color: var(--fg-muted);
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-5);
-  transform: translateY(calc(var(--lit, 0) * -4px));
-}
-.skill span { color: color-mix(in srgb, var(--spot-lit) calc(var(--lit, 0) * 100%), var(--fg-muted)); }
-.skill:not(:last-child)::after {
-  content: "";
-  width: 9px; height: 9px;
-  align-self: center;
-  background: var(--rule-color);
-  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
-}
-.courage { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--space-7); align-items: end; }
-.courage .quote p { font-size: var(--size-display-m); line-height: 1.2; max-width: 16em; }
-.courage p { margin: 0; }
-.values { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-7); margin-top: var(--space-6); counter-reset: none; }
-.value {
-  position: relative;
-  padding: var(--space-5) 0 var(--space-5) var(--space-6);
-  font-family: var(--font-display);
-  font-size: clamp(22px, 2.3vw, 32px);
-  line-height: var(--lh-title);
-  color: color-mix(in srgb, var(--spot-lit) calc(var(--lit, 0) * 100%), var(--fg-strong));
-}
-.value::before {
-  content: "";
-  position: absolute;
-  left: 0; top: calc(var(--space-5) + .55em);
-  width: 20px; height: var(--rule-thick);
-  background: var(--rule-color);
-  transform-origin: left center;
-  transform: scaleX(calc(.6 + var(--lit, 0) * .8));
-}
-
-/* LEARN · CREATE · COLLABORATE · PERFORM · GROW: the light walks along the verbs as the page
-   scrolls (the verbs stay put in a sticky frame); a verb can also be tapped */
-.verbs-act { position: relative; }
-.verbs-scroll { height: 140vh; } /* the light walks the five verbs in under a screen and a half */
-.verbs-frame {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  display: grid;
-  align-content: center;
-  gap: var(--space-6);
-}
-.verbs { list-style: none; position: relative; display: flex; justify-content: space-between; gap: var(--space-4); }
-.verb {
-  position: relative;
-  background: none;
-  border: 0;
-  padding: var(--space-3) 0;
-  cursor: pointer;
-  font-family: var(--font-ui);
-  font-weight: var(--weight-black);
-  font-size: clamp(20px, 2.7vw, 40px);
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--fg-muted);
-  transition: color var(--dur-slow) var(--ease-curtain);
-}
-.verb[aria-current="step"] { color: var(--spot-lit); }
-.verbs .spot-glow { --spot-r: clamp(90px, 14vw, 220px); opacity: 1; }
-.verbs-note { max-width: 40em; }
-.verbs-note p:last-child { margin-bottom: 0; }
+/* ---- About us: its rules are in about.css (loaded after this file) ---- */
 
 /* ---- Core team ---- */
 .team-filter { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-7) auto var(--space-6); }
@@ -847,9 +753,6 @@
   .member__name { font-size: 18px; }
   .act { margin-top: var(--space-9); }
   .values, .funds-list { grid-template-columns: minmax(0, 1fr); }
-  .verbs { flex-direction: column; gap: 0; }
-  .verbs-scroll { height: 130vh; }
-  .verb { font-size: clamp(30px, 10vw, 48px); text-align: left; }
   .team-filter { flex-wrap: nowrap; overflow-x: auto; margin-inline: calc(-1 * var(--stage-gutter)); padding: 0 var(--stage-gutter) var(--space-2); scrollbar-width: none; }
   .team-filter::-webkit-scrollbar { display: none; }
   .lamps { gap: var(--space-1); }
@@ -867,9 +770,6 @@
 
 /* ---- Reduced motion: the walks and tilts stop; everything is shown lit ---- */
 @media (prefers-reduced-motion: reduce) {
-  .verbs-scroll { height: auto; }
-  .verbs-frame { position: static; height: auto; padding: var(--space-8) 0; }
-  .verb { color: var(--fg-strong); }
   .member__photo::after { opacity: 0; }
 }
 

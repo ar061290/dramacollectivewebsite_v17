@@ -1,0 +1,55 @@
+/* The production page (production.html, src/pages/production.js): its own rules, after pages.css. */
+
+/* ---- The five stage lights ---- */
+/* The hold: the frame sticks in the middle of the screen, below the top bar (production.js measures
+   it into --lamps-frame-h), while .lamps-run, a screen and a fifth of empty scroll, goes by under
+   it: that run is the stretch the scroll walks the light along (production.js walks it only when
+   the run takes room). It is set here, not by the script, so the page below is in its final place
+   from the first paint. With reduced motion, or no script, there is no run and the lamps simply
+   scroll by. */
+.lamps-run { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .has-js .lamps-frame {
+    position: sticky;
+    top: max(calc(var(--topbar-h) + var(--space-3)), calc((100vh - var(--lamps-frame-h, 0px)) / 2));
+    top: max(calc(var(--topbar-h) + var(--space-3)), calc((100svh - var(--lamps-frame-h, 0px)) / 2));
+  }
+  .has-js .lamps-run { display: block; height: 120vh; height: 120svh; }
+  /* A screen too short to hold the whole frame below the bar (a phone held sideways): held there,
+     its foot and "Entirely by students." would hang off the bottom for the whole hold, so there is
+     no hold and the lamps scroll by as with reduced motion (production.js sets .no-hold). Squeezing
+     the frame up instead would put it under the bar when the bar comes back on a scroll up. */
+  .has-js .lamps-act.no-hold .lamps-frame { position: static; }
+  .has-js .lamps-act.no-hold .lamps-run { display: none; }
+}
+
+/* the lamp above the pointer: the real pointer lights it by :hover, the scroll's own pointer by
+   .is-aimed, and both look the same; the word under it comes most of the way up to lit. The pale
+   gold beam needs more of itself to show on the light theme's pale rose. */
+.lamps-act { --lamp-aimed: .18; }
+[data-theme="light"] .lamps-act { --lamp-aimed: .34; }
+.lamp:hover:not([aria-pressed="true"]) .lamp__beam,
+.lamp.is-aimed:not([aria-pressed="true"]) .lamp__beam { opacity: var(--lamp-aimed); }
+.lamp.is-aimed:not([aria-pressed="true"]) .lamp__word { color: color-mix(in srgb, var(--fg-strong) 70%, var(--fg-muted)); }
+@media (hover: hover) {
+  .lamp:hover:not([aria-pressed="true"]) .lamp__word { color: color-mix(in srgb, var(--fg-strong) 70%, var(--fg-muted)); }
+}
+/* while the scroll has the light, a mouse resting on another lamp does not light that one as well */
+.lamps-act.is-swept .lamp:hover:not(.is-aimed):not([aria-pressed="true"]) .lamp__beam { opacity: 0; }
+.lamps-act.is-swept .lamp:hover:not(.is-aimed):not([aria-pressed="true"]) .lamp__word { color: var(--fg-muted); }
+
+/* "Entirely by students." in the middle, under the five; its spark sits just off the end of the
+   line, out of the centring */
+.lamps-coda { justify-content: center; text-align: center; }
+.lamps-coda__line { position: relative; }
+.lamps-coda__spark { position: absolute; left: calc(100% + var(--space-3)); top: 50%; margin-top: -24px; }
+
+/* ---- Become a sponsor and Apply now ---- */
+/* side by side, the sponsor button with its gold rule beneath it; one above the other where the
+   line is too narrow for both */
+.prod-cta { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-4) var(--space-5); }
+.prod-cta__sponsor { display: grid; justify-items: start; gap: var(--space-2); }
+
+@media (max-width: 767px) {
+  .lamps-coda__spark { left: calc(100% + var(--space-1)); width: 40px; height: 40px; margin-top: -20px; }
+}

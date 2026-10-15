@@ -84,6 +84,12 @@ button, input, select { font: inherit; color: inherit; }
   flex-shrink: 0;
 }
 .tb-group.push { margin-left: auto; }
+/* the camera, snapping and quality menus' place, empty once they are in the File menu (ui.js) */
+.tb-group:empty { display: none; }
+/* a bar still too long for the window with those menus in File (ui.js): the brand and the way back
+   keep only their marks (the way back keeps its name in its title) */
+.topbar.is-tight .brand-text { display: none; }
+.topbar.is-tight .btn.back > span:not(.ic) { display: none; }
 
 .seg {
   display: inline-flex;
@@ -216,6 +222,11 @@ button, input, select { font: inherit; color: inherit; }
 .menu-item span { font-weight: 600; }
 .menu-item small { color: var(--muted); font-size: 12px; }
 .menu-item:hover { background: var(--raise); }
+/* the camera, snapping and quality menus, moved here where the bar has no room for them (ui.js);
+   empty, and so not shown, on a window wide enough */
+.menu-tools { display: grid; gap: 6px; margin-top: 4px; padding: 10px 10px 4px; border-top: 1px solid var(--line); }
+.menu-tools:empty { display: none; }
+.menu-tools .sel { width: 100%; }
 
 /* ---------- stage area and panels ---------- */
 .stagewrap { position: relative; overflow: hidden; min-height: 0; }
@@ -591,10 +602,6 @@ input[type='range']::-moz-range-thumb { width: 14px; height: 14px; border: 0; bo
 
 .panels-toggle { display: none; }
 
-@media (max-width: 1100px) {
-  .hide-sm { display: none; }
-}
-
 @media (max-width: 760px) {
   .topbar { gap: 8px; padding-inline: 10px; }
   .brand-text { display: none; }
@@ -610,6 +617,168 @@ input[type='range']::-moz-range-thumb { width: 14px; height: 14px; border: 0; bo
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
+}
+
+/* ---------- the conditions, before the hall opens (#gate in stage-planner.html, src/planner/main.js) ---------- */
+/* A sheet over the still-empty planner, with the desk's own top bar so the way back is where it
+   always is. It keeps the planner's dark register in either site theme, as the site's loader does
+   (.theme-ink in tokens.css): the hall it opens onto is dark. Once confirmed this visit, the page's
+   inline script marks <html> .planner-ok before paint and the sheet never shows. */
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  /* max-content: the bar scrolls sideways (overflow), so 'auto' would let it be squeezed */
+  grid-template-rows: max-content 1fr;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #6d2751 transparent;
+  /* the house spot from above, as --scrim-spotlight in the design system */
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 0%, rgba(235, 216, 140, 0.11), rgba(235, 216, 140, 0) 70%),
+    var(--ink);
+}
+.planner-ok .gate { display: none; }
+.gate-bar { position: sticky; top: 0; }
+.gate-body {
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vh, 48px) 16px calc(clamp(16px, 4vh, 48px) + env(safe-area-inset-bottom, 0px));
+}
+.gate-card {
+  width: min(1120px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  /* the list runs down the right beside the introduction and the quality levels; the buttons
+     close the sheet across both columns */
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas: 'intro list' 'modes list' 'act act';
+  gap: 26px clamp(28px, 4vw, 56px);
+  padding: clamp(22px, 3.2vw, 40px);
+  background: var(--bar);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+.gate-intro { grid-area: intro; min-width: 0; }
+.gate-eyebrow,
+.gate-label {
+  margin: 0 0 10px;
+  font: 700 11px/1.3 var(--font-display);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+/* the title in Raung, as the site's titles and the planner's own name are */
+.gate-title {
+  margin: 0;
+  font: 400 clamp(30px, 3.3vw, 44px)/1.08 "Raung", Georgia, serif;
+  color: var(--text);
+}
+.gate-title:focus { outline: none; }
+.gate-rule { display: block; width: 56px; height: 3px; margin: 16px 0 18px; background: var(--amber); }
+.gate-lead { margin: 0; max-width: 48ch; font-size: 15px; line-height: 1.6; color: var(--text); }
+
+.gate-list { grid-area: list; margin: 0; min-width: 0; }
+.gate-item {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 4px 18px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.gate-item:first-child { padding-top: 2px; border-top: 0; }
+.gate-item:last-child { padding-bottom: 0; }
+.gate-item dt {
+  padding-top: 2px;
+  font: 700 11px/1.5 var(--font-display);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+/* what is needed in the bright text, why in the muted */
+.gate-item dd { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--muted); }
+.gate-item strong { font-weight: 600; color: var(--text); }
+
+.gate-modes { grid-area: modes; align-self: start; min-width: 0; }
+.gate-mode-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.gate-mode-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 10px;
+  padding: 9px 12px 10px;
+  background: var(--raise);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.gate-mode-list li.is-start { border-color: var(--amber); }
+.gate-mode-list b { font: 700 12px/1.4 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text); }
+.gate-mode-list span { order: 2; flex-basis: 100%; }
+.gate-tag {
+  order: 1;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--amber);
+  color: var(--amber-ink);
+  font: 700 10px/1.4 var(--font-display);
+  font-style: normal;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.gate-note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+
+.gate-actions {
+  grid-area: act;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.gate-actions .btn { height: 44px; padding: 0 18px; font-size: 14px; text-decoration: none; }
+.gate-fine { flex: 1 1 260px; margin: 0 0 0 8px; max-width: 46ch; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+/* while the hall is set up: the loading screen's line, in the sheet */
+.gate-wait {
+  margin: 0;
+  padding: 0 16px;
+  text-align: center;
+  font: 600 15px/1.4 var(--font-display);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.gate-wait:focus { outline: none; }
+
+/* a short laptop window (1280 x 720 and the like): tighter, so the buttons stay in view */
+@media (min-width: 901px) and (max-height: 800px) {
+  .gate-body { padding-block: 12px; }
+  .gate-card { row-gap: 18px; padding-block: 22px; }
+  .gate-title { font-size: clamp(30px, 2.9vw, 38px); }
+  .gate-rule { margin: 12px 0 14px; }
+  .gate-item { padding: 8px 0; }
+  .gate-mode-list li { padding-block: 7px 8px; }
+  .gate-actions { padding-top: 16px; }
+}
+@media (max-width: 900px) {
+  .gate-card {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: 'intro' 'list' 'modes' 'act';
+    gap: 24px;
+  }
+}
+@media (max-width: 520px) {
+  .gate-item { grid-template-columns: minmax(0, 1fr); }
+  .gate-actions .btn { width: 100%; }
+  .gate-fine { margin: 2px 0 0; }
 }
 
 /* ---------- the site's curtain between pages (src/site/transition.js; as in pages.css) ---------- */

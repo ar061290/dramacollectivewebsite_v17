@@ -435,6 +435,7 @@ export function createUI(ctx) {
     refs.quality.addEventListener('change', () => ctx.setQuality(refs.quality.value));
     refs.menu = buildMenu();
     refs.shot = buildShotMenu();
+    const tools = h('div', { class: 'tb-group' });
     topbar.replaceChildren(
       h('a', { class: 'btn back', href: './production.html', title: 'Back to The production' }, icon('back'), h('span', {}, 'The production')),
       h('a', { class: 'brand', href: './index.html', 'aria-label': 'The Drama Collective, home' },
@@ -446,9 +447,27 @@ export function createUI(ctx) {
       h('div', { class: 'tb-group' },
         h('label', { class: 'switch', for: 'tb-house', title: 'Ceiling lights' }, refs.house, h('span', {}, 'General lights')),
         h('label', { class: 'switch', for: 'tb-haze' }, refs.haze, h('span', {}, 'Haze'))),
-      h('div', { class: 'tb-group hide-sm' }, refs.view, refs.snap, refs.quality),
+      tools,
       h('div', { class: 'tb-group push' }, refs.shot.wrap, refs.menu.wrap));
     topbar.querySelector('.brand-mark').innerHTML = `<img src="${MARK}" alt="">`;
+
+    // The bar keeps to one line, and Snapshot and File at its end stay in sight. Where the camera,
+    // snapping and quality menus would push it past the window's edge (on most laptop windows),
+    // they move into the File menu, as the conditions page says, so quality and the camera views
+    // can always be reached; moved, not copied, so each keeps one value. Where the bar is still too
+    // long, the brand and the way back keep only their marks (.is-tight). Measured rather than set
+    // at a fixed width, as the bar's length follows its type.
+    const fit = () => {
+      topbar.classList.remove('is-tight');
+      tools.append(refs.view, refs.snap, refs.quality);
+      if (topbar.scrollWidth <= topbar.clientWidth) return;
+      refs.menu.tools.append(refs.view, refs.snap, refs.quality);
+      topbar.classList.toggle('is-tight', topbar.scrollWidth > topbar.clientWidth);
+    };
+    let fitting = 0;
+    window.addEventListener('resize', () => { if (!fitting) fitting = requestAnimationFrame(() => { fitting = 0; fit(); }); });
+    document.fonts.ready.then(fit);
+    fit();
   }
 
   function popover(trigger, content) {
@@ -473,14 +492,18 @@ export function createUI(ctx) {
       if (f) ctx.io.openDesign(await f.text());
     });
     const item = (label, fn, sub) => h('button', { type: 'button', class: 'menu-item', onclick: () => { document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }); fn(); } }, h('span', {}, label), sub ? h('small', {}, sub) : null);
-    return popover(
+    // the camera, snapping and quality menus, when the bar is too narrow for them (buildTopbar)
+    const tools = h('div', { class: 'menu-tools', role: 'group', 'aria-label': 'View and quality' });
+    const menu = popover(
       h('button', { type: 'button', class: 'btn', 'aria-label': 'File menu' }, 'File', icon('dots')),
       h('div', { class: 'menu' },
         item('Save design', () => ctx.io.saveDesign(), '.json file you can open again'),
         item('Open design…', () => file.click(), 'Load a saved .json file'),
         item('Export 3D model', () => ctx.io.exportGLB(), '.glb for Blender, SketchUp and web viewers'),
         item('Start over', () => { ctx.select(null); store.commit((s) => PRESETS.scenes[0].apply(s)); toast('Back to the starting scene'); }, 'Undo brings your design back'),
+        tools,
         file));
+    return { ...menu, tools };
   }
 
   function buildShotMenu() {
@@ -500,7 +523,7 @@ export function createUI(ctx) {
     return popover(
       h('button', { type: 'button', class: 'btn primary', 'aria-label': 'Snapshot' }, icon('camera'), h('span', { class: 'hide-xs' }, 'Snapshot')),
       h('div', { class: 'menu shot' },
-        h('p', { class: 'sec-note' }, 'Renders the current view with high-resolution shadows, without selection outlines.'),
+        h('p', { class: 'sec-note' }, 'Renders the current view with the best shadows, whatever the quality, without selection outlines. The first picture takes longest.'),
         h('label', { class: 'field-label', for: 'shot-size' }, 'Size'), sizeSel, go));
   }
 

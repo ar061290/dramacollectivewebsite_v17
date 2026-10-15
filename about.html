@@ -95,7 +95,7 @@
         <li><a href="./contact.html">Contact us</a></li>
         <li><a href="./contact.html">Apply now</a></li>
         <li><a href="./sponsor.html">Become a sponsor</a></li>
-        <li><a href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a></li>
+        <li><a href="https://www.instagram.com/" target="_blank" rel="noopener"><span class="ig-word">Instagram</span></a></li>
       </ul>
     </div>
   </header>
@@ -112,9 +112,6 @@
   </div>
   <!-- /site:stage -->
 
-  <!-- the stone ring, half off the right edge, turning as the page scrolls (src/scene/aboutRing.js) -->
-  <div class="about-ring" data-about-ring aria-hidden="true"></div>
-
   <main id="main" class="page__main">
     <header class="act-head ground" data-mask>
       <p class="eyebrow">About us</p>
@@ -130,27 +127,37 @@
       </div>
     </section>
 
-    <section class="act" aria-labelledby="skills-title">
-      <div class="ground" data-mask>
-        <h2 class="act__title" id="skills-title" data-reveal>Skills that stay after the curtain closes</h2>
-        <span class="rule" aria-hidden="true"></span>
-        <p>These students are not only putting on a show for you, they are building skills that will stay with them long after the curtain closes.</p>
+    <!-- the skills: the light walks along them as the page scrolls, in a frame that stays put -->
+    <section class="act skills-act" aria-labelledby="skills-title">
+      <div class="skills-run" data-skills-walk>
+        <div class="skills-frame">
+          <div class="ground" data-mask>
+            <h2 class="act__title" id="skills-title" data-reveal>Skills that stay after the curtain closes</h2>
+            <span class="rule" aria-hidden="true"></span>
+            <p>These students are not only putting on a show for you, they are building skills that will stay with them long after the curtain closes.</p>
+          </div>
+          <ul class="skills" data-skills>
+            <li class="skill">Communication</li>
+            <li class="skill">Collaboration</li>
+            <li class="skill">Discipline</li>
+            <li class="skill">Empathy</li>
+            <li class="skill">Leadership</li>
+            <li class="skill">Creative problem solving</li>
+          </ul>
+        </div>
       </div>
-      <ul class="skills" data-spot data-skills>
-        <li class="skill"><span>Communication</span></li>
-        <li class="skill"><span>Collaboration</span></li>
-        <li class="skill"><span>Discipline</span></li>
-        <li class="skill"><span>Empathy</span></li>
-        <li class="skill"><span>Leadership</span></li>
-        <li class="skill"><span>Creative problem solving</span></li>
-      </ul>
     </section>
 
-    <section class="act courage" aria-label="An act of courage">
+    <!-- the line, and its reason sliding out from behind it as the page scrolls -->
+    <section class="act courage" aria-label="An act of courage" data-courage>
       <blockquote class="quote ground" data-mask>
         <p data-reveal>For a young performer, stepping on a stage is an act of courage.</p>
       </blockquote>
-      <p class="ground" data-mask>It takes confidence to face an audience, discipline to rehearse, teamwork to create a production and creativity to turn a script into a living experience.</p>
+      <div class="courage__aside ground" data-mask>
+        <div class="courage__clip">
+          <p class="courage__text">It takes confidence to face an audience, discipline to rehearse, teamwork to create a production and creativity to turn a script into a living experience.</p>
+        </div>
+      </div>
     </section>
 
     <section class="act" aria-labelledby="values-title">
@@ -168,23 +175,43 @@
       </ul>
     </section>
 
-    <section class="act verbs-act" aria-labelledby="verbs-title">
+    <!-- the five words, each turning into the next inside the marble ring (src/sections/lexicon.js) -->
+    <section class="act lexicon" aria-labelledby="verbs-title" data-lexicon>
       <h2 class="sr-only" id="verbs-title">Learn, create, collaborate, perform, grow</h2>
-      <div class="verbs-scroll" data-verbs>
-        <div class="verbs-frame">
-          <p class="eyebrow">A platform where young performers can</p>
-          <ol class="verbs">
-            <li><button class="verb" type="button">Learn</button></li>
-            <li><button class="verb" type="button">Create</button></li>
-            <li><button class="verb" type="button">Collaborate</button></li>
-            <li><button class="verb" type="button">Perform</button></li>
-            <li><button class="verb" type="button">Grow</button></li>
-          </ol>
-          <div class="verbs-note ground" data-mask>
-            <p>We are building a sustainable platform where young performers can learn, collaborate and experiment through productions, workshops and future theatre initiatives.</p>
-            <p>We hope to make theatre more accessible to young people and encourage a new generation to discover, enjoy, and pursue the performing arts.</p>
+      <div class="lexicon__run">
+        <div class="lexicon__stage" data-quiet>
+          <div class="lexicon__lines" aria-hidden="true"></div>
+          <div class="lexicon__ring" aria-hidden="true">
+            <svg class="lexicon__still" viewBox="-250 -250 500 500" focusable="false">
+              <defs>
+                <linearGradient id="lexicon-stone" x1=".8" y1="0" x2=".2" y2="1">
+                  <stop offset="0" class="lexicon__stone-hi"/>
+                  <stop offset=".55" class="lexicon__stone-mid"/>
+                  <stop offset="1" class="lexicon__stone-lo"/>
+                </linearGradient>
+              </defs>
+              <ellipse class="lexicon__band" rx="117.5" ry="167.5" stroke="url(#lexicon-stone)"/>
+              <ellipse class="lexicon__edge" rx="103.5" ry="154"/>
+              <ellipse class="lexicon__edge lexicon__edge--out" rx="131.5" ry="181"/>
+            </svg>
           </div>
+          <div class="lexicon__side">
+            <p class="eyebrow lexicon__lead">A platform where young performers can</p>
+            <ol class="lexicon__scale">
+              <li><button class="lexicon__step" type="button"><i aria-hidden="true"></i><span>Learn</span></button></li>
+              <li><button class="lexicon__step" type="button"><i aria-hidden="true"></i><span>Create</span></button></li>
+              <li><button class="lexicon__step" type="button"><i aria-hidden="true"></i><span>Collaborate</span></button></li>
+              <li><button class="lexicon__step" type="button"><i aria-hidden="true"></i><span>Perform</span></button></li>
+              <li><button class="lexicon__step" type="button"><i aria-hidden="true"></i><span>Grow</span></button></li>
+            </ol>
+          </div>
+          <svg class="lexicon__word" aria-hidden="true" focusable="false"></svg>
+          <p class="lexicon__count" aria-hidden="true"><span data-lexicon-count>01</span> / 05</p>
         </div>
+      </div>
+      <div class="lexicon__note ground" data-mask>
+        <p>We are building a sustainable platform where young performers can learn, collaborate and experiment through productions, workshops and future theatre initiatives.</p>
+        <p>We hope to make theatre more accessible to young people and encourage a new generation to discover, enjoy, and pursue the performing arts.</p>
       </div>
     </section>
 
@@ -225,7 +252,7 @@
           <ul>
             <li><span class="curtain__who">Aadi Ramnani, President</span><a href="mailto:aadir6405@students.chirec.ac.in">aadir6405@students.chirec.ac.in</a></li>
             <li><span class="curtain__who">Aripra Sharma, Executive President</span><a href="mailto:aripras111460@students.chirec.ac.in">aripras111460@students.chirec.ac.in</a></li>
-            <li><a class="curtain__social" href="https://www.instagram.com/" target="_blank" rel="noopener"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg><span>Instagram</span></a></li>
+            <li><a class="curtain__social" href="https://www.instagram.com/" target="_blank" rel="noopener"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg><span class="ig-word">Instagram</span></a></li>
           </ul>
         </div>
       </nav>

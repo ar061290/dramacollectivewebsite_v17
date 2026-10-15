@@ -1,5 +1,5 @@
-// Top bar: slides away to the right on scroll down (Apply now and Become a sponsor stay), returns on
-// scroll up, gains the blurred ground once scrolled.
+// Top bar: glides up out of view on scroll down (Apply now and Become a sponsor stay), comes back
+// down on scroll up, gains the blurred ground once scrolled.
 // Our outputs is a menu that drops from its button on hover (fine pointers), focus or click.
 // Each page link opens its own page (the curtain between pages is src/site/transition.js). On wide
 // screens a gold rule slides under the link the pointer is on and rests under the current page;
@@ -47,7 +47,7 @@ export function setupNav({ reduced }) {
   const onWide = () => { if (wide.matches) setMenu(false); };
   wide.addEventListener('change', onWide);
 
-  // Scrolling down, the bar slides away to the right but for its two buttons, which stay where they
+  // Scrolling down, the bar glides up out of view but for its two buttons, which stay where they
   // are (CSS)
   const hide = () => bar.classList.add('is-hidden');
   // the home page's footer can be taller than the screen: once its top has passed under the bar its
