@@ -47,7 +47,7 @@
       <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
       <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
     </a>
-    <a class="btn btn--inverse btn--sm topbar__apply" href="./contact.html" data-topbar-keep>Apply now</a>
+    <a class="btn btn--inverse btn--sm topbar__apply" href="./apply.html" data-topbar-keep>Apply now</a>
     <nav class="topbar__nav" aria-label="Main">
       <ul class="topbar__links">
         <li><a href="./about.html">About us</a></li>
@@ -68,7 +68,7 @@
     </nav>
     <div class="topbar__tools">
       <a class="icon-btn" href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="The Drama Collective on Instagram" title="Instagram"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg></a>
-      <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Music" title="Play music" data-music-toggle>
+      <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Music" aria-keyshortcuts="K" title="Play music (K)" data-music-toggle>
         <svg viewBox="0 0 20 20" aria-hidden="true"><rect class="bar" x="2.5" y="8" width="2.2" height="9"/><rect class="bar" x="6.9" y="3" width="2.2" height="14"/><rect class="bar" x="11.3" y="6" width="2.2" height="11"/><rect class="bar" x="15.7" y="9" width="2.2" height="8"/></svg>
       </button>
       <button class="icon-btn theme-toggle" type="button" aria-pressed="false" aria-label="Light mode" title="House lights" data-theme-toggle>
@@ -93,7 +93,7 @@
           </ul>
         </li>
         <li><a href="./contact.html">Contact us</a></li>
-        <li><a href="./contact.html">Apply now</a></li>
+        <li><a href="./apply.html">Apply now</a></li>
         <li><a href="./sponsor.html" aria-current="page">Become a sponsor</a></li>
         <li><a href="https://www.instagram.com/" target="_blank" rel="noopener"><span class="ig-word">Instagram</span></a></li>
       </ul>
@@ -131,58 +131,22 @@
       <div class="medallion" data-medallion>
         <span class="medallion__still" aria-hidden="true"></span>
       </div>
-      <div>
+      <div id="tiers">
         <div class="tiers-head ground" data-mask>
           <p class="eyebrow">Sponsorship opportunities</p>
           <h2 class="act__title" id="tiers-title" data-reveal>Sponsorship tiers</h2>
           <span class="rule" aria-hidden="true"></span>
         </div>
         <ul class="tickets" role="radiogroup" aria-labelledby="tiers-title" data-tickets>
-          <li class="ticket ticket--bronze" data-tier="bronze">
-            <input type="radio" name="tier" value="bronze" id="tier-bronze">
-            <div class="ticket__body">
-              <label class="ticket__stub" for="tier-bronze">
-                <span class="ticket__metal" aria-hidden="true"></span>
-                <span class="ticket__name">Bronze sponsor</span>
-                <span class="ticket__price">₹10,000</span>
-              </label>
-              <div class="ticket__main">
-                <p class="ticket__kind">Visibility &amp; recognition</p>
-                <ul>
-                  <li>Brand logo on event posters</li>
-                  <li>Brand mention during the performance</li>
-                  <li>Sponsor name included in the event programme</li>
-                </ul>
-              </div>
-              <span class="ticket__spark" data-spark aria-hidden="true"></span>
-            </div>
-          </li>
-          <li class="ticket ticket--silver" data-tier="silver">
-            <input type="radio" name="tier" value="silver" id="tier-silver">
-            <div class="ticket__body">
-              <label class="ticket__stub" for="tier-silver">
-                <span class="ticket__metal" aria-hidden="true"></span>
-                <span class="ticket__name">Silver sponsor</span>
-                <span class="ticket__price">₹25,000</span>
-              </label>
-              <div class="ticket__main">
-                <p class="ticket__kind">Enhanced visibility &amp; engagement</p>
-                <ul>
-                  <li>Brand logo on event posters and banners</li>
-                  <li>Social media promotion</li>
-                  <li>Brand mention during the performance</li>
-                  <li>Brand logo or name in the event programme</li>
-                </ul>
-              </div>
-              <span class="ticket__spark" data-spark aria-hidden="true"></span>
-            </div>
-          </li>
           <li class="ticket ticket--gold" data-tier="gold">
             <input type="radio" name="tier" value="gold" id="tier-gold">
             <div class="ticket__body">
               <label class="ticket__stub" for="tier-gold">
                 <span class="ticket__metal" aria-hidden="true"></span>
-                <span class="ticket__name">Gold sponsor</span>
+                <span class="ticket__title">
+                  <span class="ticket__name">Standing ovation</span>
+                  <span class="ticket__tier">Gold tier sponsorship</span>
+                </span>
                 <span class="ticket__price">₹50,000</span>
               </label>
               <div class="ticket__main">
@@ -198,8 +162,55 @@
               <span class="ticket__spark" data-spark aria-hidden="true"></span>
             </div>
           </li>
+          <li class="ticket ticket--silver" data-tier="silver">
+            <input type="radio" name="tier" value="silver" id="tier-silver">
+            <div class="ticket__body">
+              <label class="ticket__stub" for="tier-silver">
+                <span class="ticket__metal" aria-hidden="true"></span>
+                <span class="ticket__title">
+                  <span class="ticket__name">Headliner</span>
+                  <span class="ticket__tier">Silver tier sponsorship</span>
+                </span>
+                <span class="ticket__price">₹25,000</span>
+              </label>
+              <div class="ticket__main">
+                <p class="ticket__kind">Enhanced visibility &amp; engagement</p>
+                <ul>
+                  <li>Brand logo on event posters and banners</li>
+                  <li>Social media promotion</li>
+                  <li>Brand mention during the performance</li>
+                  <li>Brand logo or name in the event programme</li>
+                </ul>
+              </div>
+              <span class="ticket__spark" data-spark aria-hidden="true"></span>
+            </div>
+          </li>
+          <li class="ticket ticket--bronze" data-tier="bronze">
+            <input type="radio" name="tier" value="bronze" id="tier-bronze">
+            <div class="ticket__body">
+              <label class="ticket__stub" for="tier-bronze">
+                <span class="ticket__metal" aria-hidden="true"></span>
+                <span class="ticket__title">
+                  <span class="ticket__name">Spotlight</span>
+                  <span class="ticket__tier">Bronze tier sponsorship</span>
+                </span>
+                <span class="ticket__price">₹10,000</span>
+              </label>
+              <div class="ticket__main">
+                <p class="ticket__kind">Visibility &amp; recognition</p>
+                <ul>
+                  <li>Brand logo on event posters</li>
+                  <li>Brand mention during the performance</li>
+                  <li>Sponsor name included in the event programme</li>
+                </ul>
+              </div>
+              <span class="ticket__spark" data-spark aria-hidden="true"></span>
+            </div>
+          </li>
         </ul>
         <p class="fine tiers-note">All tiers are negotiable.</p>
+        <!-- the way to the sponsorship form (sponsor-apply.html, which links back here to #tiers) -->
+        <a class="btn btn--inverse btn--lg tiers-apply" href="./sponsor-apply.html">Apply to be a sponsor</a>
       </div>
     </section>
 
@@ -231,6 +242,7 @@
 
     <section class="act coda ground" aria-label="Closing" data-mask>
       <p>Because every great performance begins with someone believing in the performer.</p>
+      <a class="btn btn--inverse btn--lg" href="./sponsor-apply.html">Apply to be a sponsor</a>
     </section>
   </main>
 
@@ -246,6 +258,7 @@
             <li><a href="./about.html">About us</a></li>
             <li><a href="./team.html">Core team</a></li>
             <li><a href="./contact.html">Contact us</a></li>
+            <li><a href="./apply.html">Apply now</a></li>
             <li><a href="./sponsor.html" aria-current="page">Become a sponsor</a></li>
           </ul>
         </div>

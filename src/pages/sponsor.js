@@ -1,8 +1,8 @@
-// Become a sponsor: three tiers as tickets, each stub struck in its metal (bronze, silver, gold),
-// catching the pointer's light like the medallion does. Pointing at a ticket shows its metal on the medallion;
-// choosing one (click, tap, or the arrow keys: they are radio buttons) turns the medallion to it
-// with a full turn, and a spark goes off on the ticket. Below, what the support pays for lights up
-// under the spot.
+// Become a sponsor: three tiers as tickets (Standing ovation, Headliner, Spotlight), each stub struck
+// in its metal (bronze, silver, gold), catching the pointer's light like the medallion does. Pointing
+// at a ticket shows its metal on the medallion; choosing one (click, tap, or the arrow keys: they are
+// radio buttons) turns the medallion to it with a full turn, and a spark goes off on the ticket.
+// Below, what the support pays for lights up under the spot.
 import { bootPage } from '../site/boot.js';
 import { followSpot, falloff } from '../site/spotlight.js';
 import { loadLottie, freeze } from '../animations/lottie.js';

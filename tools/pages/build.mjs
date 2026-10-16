@@ -7,7 +7,7 @@
 //   <!-- site:links -->   index.html only: the footer's columns, as the last act (they dock into the
 //                         footer as it rises)
 //   <!-- site:team -->    team.html only: the core team's cards, from content/team.json
-//   <!-- site:contacts --> contact.html only: who to write to (CONTACTS)
+//   <!-- site:contacts --> contact.html and sponsor-apply.html: who to write to (CONTACTS)
 // Run after editing this file or content/team.json:  npm run pages
 // Each file keeps its own line endings.
 
@@ -34,8 +34,10 @@ const TEAM = { key: 'team', href: './team.html', label: 'Core team' };
 const CONTACT = { key: 'contact', href: './contact.html', label: 'Contact us' };
 const HOME = { key: 'home', href: './index.html', label: 'Home' };
 const CTA = { key: 'sponsor', href: './sponsor.html', label: 'Become a sponsor' };
-// TODO: where applications go (no form or page was given yet; until then it opens Contact us)
-const APPLY = { key: 'apply', href: './contact.html', label: 'Apply now' };
+// Apply now: the roles and the Collective's application form (a Fillout form)
+const APPLY = { key: 'apply', href: './apply.html', label: 'Apply now' };
+// Apply to be a sponsor: the sponsorship application form, reached from Become a sponsor
+export const SPONSOR_APPLY = { key: 'sponsor-apply', href: './sponsor-apply.html', label: 'Apply to be a sponsor' };
 export const NAV = [ABOUT, TEAM, ...OUTPUTS, CONTACT];
 
 // The Collective's Instagram. TODO: the handle (it was not given; this opens Instagram itself).
@@ -50,6 +52,8 @@ export const PAGES = [
   { file: 'index.html', key: 'home' },
   ...NAV.map((n) => ({ file: n.href.slice(2), key: n.key })),
   { file: 'sponsor.html', key: 'sponsor' },
+  { file: APPLY.href.slice(2), key: APPLY.key },
+  { file: SPONSOR_APPLY.href.slice(2), key: SPONSOR_APPLY.key },
   // the stage planner, opened from The production: a full-screen app with its own top bar (no
   // shared parts are written into it; it is listed here so Vite builds it)
   { file: 'stage-planner.html', key: 'planner' },
@@ -99,7 +103,7 @@ const header = (page) => {
       <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
       <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
     </a>
-    <a class="btn btn--inverse btn--sm topbar__apply" href="${APPLY.href}" data-topbar-keep>${APPLY.label}</a>
+    <a class="btn btn--inverse btn--sm topbar__apply" href="${APPLY.href}"${current(APPLY.key, page)} data-topbar-keep>${APPLY.label}</a>
     <nav class="topbar__nav" aria-label="Main">
       <ul class="topbar__links">
         <li>${link(ABOUT, page)}</li>
@@ -116,7 +120,7 @@ ${OUTPUTS.map((o) => `            <li>${link(o, page)}</li>`).join('\n')}
     </nav>
     <div class="topbar__tools">
       <a class="icon-btn" href="${INSTAGRAM.href}" target="_blank" rel="noopener" aria-label="The Drama Collective on Instagram" title="Instagram">${ICON_INSTAGRAM}</a>
-      <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Music" title="Play music" data-music-toggle>
+      <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Music" aria-keyshortcuts="K" title="Play music (K)" data-music-toggle>
         <svg viewBox="0 0 20 20" aria-hidden="true"><rect class="bar" x="2.5" y="8" width="2.2" height="9"/><rect class="bar" x="6.9" y="3" width="2.2" height="14"/><rect class="bar" x="11.3" y="6" width="2.2" height="11"/><rect class="bar" x="15.7" y="9" width="2.2" height="8"/></svg>
       </button>
       <button class="icon-btn theme-toggle" type="button" aria-pressed="false" aria-label="Light mode" title="House lights" data-theme-toggle>
@@ -161,7 +165,7 @@ const pageLinks = (page, pad = '      ', cls = '', dock = false) => {
 ${i(1)}<div class="curtain__col"${col('collective')}>
 ${i(2)}<p class="eyebrow">The Collective</p>
 ${i(2)}<ul>
-${[HOME, ABOUT, TEAM, CONTACT, CTA].map((n) => `${i(3)}<li>${link(n, page)}</li>`).join('\n')}
+${[HOME, ABOUT, TEAM, CONTACT, APPLY, CTA].map((n) => `${i(3)}<li>${link(n, page)}</li>`).join('\n')}
 ${i(2)}</ul>
 ${i(1)}</div>
 ${i(1)}<div class="curtain__col"${col('outputs')}>
@@ -265,7 +269,7 @@ function contacts() {
 ${CONTACTS.map((c) => `        <li class="contact-card">
           <p class="eyebrow">${esc(c.role)}</p>
           <p class="contact-card__name">${esc(c.name)}</p>
-          <a class="contact-card__email" href="mailto:${c.email}">${c.email}</a>
+          <a class="contact-card__email" href="mailto:${c.email}">${c.email.replace('@', '@<wbr>')}</a>
           <button class="btn btn--secondary btn--sm contact-card__copy" type="button" data-copy="${c.email}">Copy address</button>
           <span class="contact-card__spark" data-spark aria-hidden="true"></span>
         </li>`).join('\n')}
@@ -291,7 +295,7 @@ export function build() {
     out = fill(out, 'footer', footer(key));
     if (key === 'home') out = fill(out, 'links', pageLinks('home', '        ', 'curtain__links--dock', true), '        ');
     if (key === 'team') out = fill(out, 'team', team(), '      ');
-    if (key === 'contact') out = fill(out, 'contacts', contacts(), '      ');
+    if (key === 'contact' || key === SPONSOR_APPLY.key) out = fill(out, 'contacts', contacts(), '      ');
     out = out.replace(/(<a [^>]*data-instagram[^>]*href=")[^"]*(")/g, `$1${INSTAGRAM.href}$2`);
     if (crlf) out = out.replace(/\n/g, '\r\n');
     if (out !== src) { writeFileSync(path, out); console.log(`wrote ${file}`); }

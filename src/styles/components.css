@@ -50,6 +50,7 @@
   transition: var(--transition-ui);
   text-decoration: none;
   line-height: 1;
+  text-align: center;
   font-size: 14px;
   padding: 12px 22px;
   min-height: 44px;
@@ -491,4 +492,9 @@ html.is-locked { overflow: hidden; }
 @media (max-width: 400px) {
   .topbar { gap: var(--space-2); padding-right: var(--space-4); }
   .topbar__menu { padding-inline: 0; }
+}
+
+/* the narrowest phones: a long label on a large button ("Apply to be a sponsor") keeps to one line */
+@media (max-width: 359px) {
+  .btn--lg { padding-inline: 20px; }
 }

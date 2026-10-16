@@ -620,6 +620,8 @@
 .sponsor-intro { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--space-7); align-items: end; margin-top: var(--space-8); }
 .sponsor-intro p:last-child { margin-bottom: 0; }
 .tiers-act { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--space-7); align-items: start; }
+/* reached from the sponsorship form's page (sponsor-apply.html links to #tiers): clear of the top bar */
+#tiers { scroll-margin-top: calc(var(--topbar-h) + var(--space-5)); }
 .medallion {
   position: sticky;
   top: calc(var(--topbar-h) + var(--space-6));
@@ -656,7 +658,7 @@
 }
 /* the stub is struck in the tier's metal, always: brushed grain, a streak of reflected light across
    it and a hot spot, both following the pointer (sponsor.js sets --mx, --my, --band, --spec); the
-   name, star and price are engraved into it */
+   star, the tier's name and metal, and the price are engraved into it */
 .ticket__stub {
   --mx: 18%; --my: 12%; --band: 30%; --spec: .45;
   position: relative;
@@ -688,7 +690,11 @@
   background: radial-gradient(circle at var(--mx) var(--my), rgb(255 255 255 / calc(var(--spec) * .85)) 0, rgb(255 250 235 / calc(var(--spec) * .3)) 18%, rgb(255 255 255 / 0) 46%);
 }
 .ticket__metal { width: 14px; height: 14px; background: var(--metal-ink); clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); filter: drop-shadow(0 1px 0 rgb(255 255 255 / .5)); }
-.ticket__name { font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: var(--size-body-s); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; color: var(--metal-ink); margin: 0; text-shadow: 0 1px 0 rgb(255 255 255 / .45); }
+/* the tier's name in the display face, and under it, smaller, its metal (the name alone would not
+   say which tier it is) */
+.ticket__title { display: grid; gap: var(--space-1); }
+.ticket__name { font-family: var(--font-display); font-size: clamp(22px, 2vw, 28px); line-height: 1.05; color: var(--metal-ink); margin: 0; text-shadow: 0 1px 0 rgb(255 255 255 / .45); text-wrap: balance; }
+.ticket__tier { font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: var(--size-caption); line-height: 1.3; letter-spacing: .02em; color: var(--metal-ink); text-shadow: 0 1px 0 rgb(255 255 255 / .45); text-wrap: balance; }
 .ticket__price { font-family: var(--font-ui); font-weight: var(--weight-black); font-size: clamp(28px, 2.8vw, 36px); line-height: 1; color: var(--metal-ink); margin: 0; font-variant-numeric: tabular-nums; text-shadow: 0 1px 0 rgb(255 255 255 / .5), 0 -1px 0 rgb(0 0 0 / .18); }
 .ticket__main { padding: var(--space-5) var(--space-5) var(--space-5) var(--space-6); }
 .ticket__kind { font-family: var(--font-display); font-size: var(--size-heading); line-height: var(--lh-title); color: var(--fg-strong); margin: 0 0 var(--space-3); }
@@ -703,10 +709,13 @@
 .ticket input:checked + .ticket__body .ticket__stub { border-right-color: var(--border-gold); }
 .ticket input:focus-visible + .ticket__body { outline: 2px solid var(--focus); outline-offset: 3px; }
 /* the three metals, matched to the medallion's finishes (src/scene/medallion.js) */
-.ticket--bronze { --metal-1: #f1c9a2; --metal-2: #c58a5a; --metal-3: #7d4a28; --metal-4: #d29a69; --metal-5: #8a5634; --metal-ink: #3a1f0e; }
+/* bronze is the darkest metal: its middle band, which the name and the tier line sit on, is kept light
+   enough for the ink to be read on it (4.5:1), its depth left to the edges */
+.ticket--bronze { --metal-1: #f1c9a2; --metal-2: #c58a5a; --metal-3: #b8845c; --metal-4: #d29a69; --metal-5: #9a6238; --metal-ink: #3a1f0e; }
 .ticket--silver { --metal-1: #ffffff; --metal-2: #d6dade; --metal-3: #8f969e; --metal-4: #eceef0; --metal-5: #a3a9b0; --metal-ink: #262c33; }
 .ticket--gold { --metal-1: #fff4cc; --metal-2: #f0cf7e; --metal-3: #a98236; --metal-4: #f6dc96; --metal-5: #b8923f; --metal-ink: #3f2f08; }
 .tiers-note { margin-top: var(--space-4); }
+.tiers-apply { margin-top: var(--space-5); }
 .funds-act { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--space-7); }
 .funds-list { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-6); }
 .funds-list li {
@@ -761,6 +770,7 @@
   .ticket__body { grid-template-columns: minmax(0, 1fr);
     -webkit-mask: radial-gradient(circle 11px at 0 var(--stub-h, 112px), transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 11px at 100% var(--stub-h, 112px), transparent 98%, #000) right / 51% 100% no-repeat;
     mask: radial-gradient(circle 11px at 0 var(--stub-h, 112px), transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 11px at 100% var(--stub-h, 112px), transparent 98%, #000) right / 51% 100% no-repeat; }
+  .ticket__body { --stub-h: 148px; } /* the name, its metal and the price, one under another */
   .ticket__stub { border-right: 0; border-bottom: 2px dashed rgb(42 13 28 / .35); grid-template-columns: auto 1fr; align-items: center; height: var(--stub-h, 112px); }
   .ticket__stub .ticket__price { grid-column: 1 / -1; }
   .ticket input:checked + .ticket__body .ticket__stub { border-bottom-color: var(--border-gold); }
@@ -774,7 +784,9 @@
 }
 
 /* ---- Contact us ---- */
-.contact-cards { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); margin-top: var(--space-7); }
+/* side by side only where each card can hold its address on one line (the longer one needs about
+   330px), so an address never breaks in the middle of its domain */
+.contact-cards { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); gap: var(--space-6); margin-top: var(--space-7); }
 .contact-card {
   position: relative;
   display: grid;
@@ -788,9 +800,10 @@
 .contact-card::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: var(--rule-thick); background: var(--rule-color); }
 .contact-card .eyebrow { margin: 0; }
 .contact-card__name { font-family: var(--font-display); font-size: var(--size-display-m); line-height: var(--lh-title); color: var(--fg-strong); margin: 0; }
-.contact-card__email { font-size: var(--size-body-l); overflow-wrap: anywhere; }
+/* an address breaks only where build.mjs allows it (after its @), never inside the domain */
+.contact-card__email { font-size: var(--size-body-l); overflow-wrap: break-word; }
 .contact-card__copy { margin-top: var(--space-4); }
 .contact-card__spark { position: absolute; right: var(--space-4); top: var(--space-4); width: 48px; height: 48px; pointer-events: none; }
 .contact-more { margin-top: var(--space-9); }
 .contact-more__links { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
-@media (max-width: 767px) { .contact-cards { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 767px) { .contact-cards { grid-template-columns: minmax(0, 1fr); } .contact-card__email { font-size: var(--size-body); } }

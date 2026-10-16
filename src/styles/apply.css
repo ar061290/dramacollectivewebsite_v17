@@ -1,0 +1,175 @@
+/* The two application pages (apply.html, sponsor-apply.html; src/pages/apply.js,
+   src/pages/sponsor-apply.js) and the Fillout forms they hold (src/site/fillout.js). */
+
+/* ---- a Fillout form in its box (src/site/fillout.js) ----
+   The form itself is Fillout's, on a light page of its own, in an iframe this page cannot style; it
+   sits in a box like a programme page held up on the stage: the form's own white paper, a gold rule
+   along the top. The box keeps a height while the form loads, says so, and offers the form on
+   Fillout's own site for anyone whose browser blocks the embed.
+   The form's height is Fillout's to set: its script writes the form's height onto the
+   [data-fillout-id] element as the form grows or shrinks (data-fillout-dynamic-resize), over the
+   500px the embed code starts it at, so the whole form shows with no scrollbar of its own. While the
+   form is there, nothing here sets that element's height. */
+.form-box {
+  position: relative;
+  max-width: 760px;
+  margin-inline: auto;
+  background: #fff;
+  color: #2a0d1c;
+  border-top: var(--rule-thick) solid var(--rule-color);
+  box-shadow: var(--shadow-md);
+}
+/* on the light page the paper needs an edge as well as its shadow */
+[data-theme="light"] .form-box { box-shadow: var(--shadow-md), 0 0 0 1px var(--border-hairline); }
+/* the form lies over the line that says it is loading, so its own white page covers the line as soon
+   as it paints (the iframe's load event, which takes the line away, can come seconds after that) */
+.form-box [data-fillout-id] { position: relative; z-index: 1; display: block; width: 100%; min-height: 500px; }
+/* once the form is in, it is as tall as Fillout says, even when that is shorter (its thank-you page) */
+.form-box.is-ready [data-fillout-id] { min-height: 0; }
+/* the iframe: square, like every box on the site (Fillout rounds it, from a sheet it adds to the page
+   after this one, hence the longer selector). When the form moves to its next page Fillout scrolls
+   the iframe's top back into view: the margin keeps it clear of the top bar. */
+.form-box [data-fillout-id] .fillout-embed-iframe-container iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  scroll-margin-top: calc(var(--topbar-h) + var(--space-4));
+}
+/* Fillout's own spinner (grey and white) gives way to the box's line, below */
+.form-box .fillout-embed-loading { display: none !important; }
+.form-box__status {
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  max-width: none;
+  padding: var(--space-6) var(--space-5);
+  text-align: center;
+  font-family: var(--font-ui);
+  font-size: var(--size-body-s);
+  letter-spacing: .04em;
+  color: #6d2751;
+  pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease-curtain);
+}
+/* a small star, twinkling while the form loads (still, with reduced motion: layout.css stops it) */
+.form-box__status::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  flex: none;
+  background: var(--gold-700);
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+  animation: form-box-twinkle 1.2s var(--ease-in-out) infinite alternate;
+}
+@keyframes form-box-twinkle { from { opacity: .35; scale: .8; } to { opacity: 1; scale: 1.1; } }
+.form-box.is-ready .form-box__status, .form-box.is-failed .form-box__status { opacity: 0; }
+.form-box.is-ready .form-box__status::before { animation: none; }
+.form-box__alt { margin: 0; max-width: none; padding: var(--space-3) var(--space-5) var(--space-4); font-size: var(--size-caption); color: #6d2751; text-align: center; }
+.form-box__alt a, .form-box__noscript a { color: #6d2751; }
+.form-box__alt a:hover, .form-box__noscript a:hover { color: #2a0d1c; }
+.form-box :focus-visible { outline-color: #863469; }
+/* the form could not be loaded: its way round is all the box holds */
+.form-box.is-failed [data-fillout-id] { min-height: 0; height: 0 !important; overflow: hidden; }
+.form-box.is-failed .form-box__alt { padding-block: var(--space-6); font-size: var(--size-body); }
+/* without a script there is no form here, only the way to it on Fillout's site */
+html:not(.has-js) .form-box [data-fillout-id], html:not(.has-js) .form-box__status, html:not(.has-js) .form-box__alt { display: none; }
+.form-box__noscript { margin: 0; max-width: none; padding: var(--space-6) var(--space-5); text-align: center; color: #2a0d1c; }
+/* on a phone the paper reaches nearer the screen's edges than the text does, so the form's fields,
+   inside its own margins, keep a usable width */
+@media (max-width: 767px) {
+  .form-box { margin-inline: calc(var(--space-3) - var(--stage-gutter)); }
+}
+
+/* ---- Apply now: the roles, billed as in a programme's cast list ----
+   Each role is a row between hairlines: its name large on the left, with the way down to the form
+   under it; what the role does, the skills it asks for and any note on the right. The follow-spot
+   lights the row it is over (apply.js sets --lit 0..1): the name warms to the lit colour and the
+   gold rule over it draws out along the hairline; a focused link lights its row the same way. */
+.roles { list-style: none; display: grid; margin-top: var(--space-6); }
+.role {
+  --lit: 0;
+  --focus-lit: 0;
+  --l: max(var(--lit), var(--focus-lit));
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "name body" "apply body";
+  gap: var(--space-5) var(--space-7);
+  padding: var(--space-7) 0;
+  border-top: 1px solid var(--line);
+}
+.role:last-child { border-bottom: 1px solid var(--line); }
+.role:focus-within { --focus-lit: 1; }
+.role::before {
+  content: "";
+  position: absolute;
+  left: 0; top: -2px;
+  width: 96px;
+  height: var(--rule-thick);
+  background: var(--rule-color);
+  transform-origin: left center;
+  transform: scaleX(var(--l));
+}
+.role__name {
+  grid-area: name;
+  font-size: clamp(34px, 3.6vw, 52px);
+  line-height: var(--lh-display);
+  color: color-mix(in srgb, var(--spot-lit) calc(var(--l) * 100%), var(--fg-strong));
+}
+.role__body { grid-area: body; display: grid; align-content: start; gap: var(--space-5); }
+.role__duties { list-style: none; display: grid; gap: var(--space-3); }
+.role__duties li { position: relative; padding-left: var(--space-5); max-width: 40em; }
+.role__duties li::before { content: ""; position: absolute; left: 0; top: calc(.8em - 1px); width: 12px; height: 2px; background: var(--rule-color); }
+.role__skills { display: grid; gap: var(--space-3); }
+.role__skills .eyebrow { color: var(--fg-muted); }
+.role__skills ul { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.role__skills li {
+  padding: 6px 12px;
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-caption);
+  line-height: 1.3;
+  letter-spacing: .03em;
+  background: var(--tag-bg);
+  color: var(--accent);
+}
+.role__note { margin: 0; max-width: 40em; padding-left: var(--space-4); border-left: var(--rule-thick) solid var(--rule-color); font-size: var(--size-body-s); color: var(--fg-strong); }
+.role__apply { grid-area: apply; justify-self: start; align-self: start; }
+.role__apply svg { width: 12px; height: 12px; flex: none; transition: transform var(--dur-base) var(--ease-out); }
+.role__apply:hover svg { transform: translateY(2px); }
+
+/* ---- Apply now: the form ----
+   Its heading stays beside it while the form scrolls by. A link to the form (each role's) scrolls
+   the section's top to the top of the screen (nav.js): the room the bar needs is inside the section,
+   taken from the space above it, so the heading lands clear of the bar. */
+.apply-form {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: var(--space-7);
+  align-items: start;
+  margin-top: calc(var(--space-10) - var(--topbar-h) - var(--space-6));
+  padding-top: calc(var(--topbar-h) + var(--space-6));
+}
+/* focused by nav.js after that scroll, so the next Tab goes into the form; the scroll shows where */
+.apply-form:focus { outline: none; }
+.apply-form__head { position: sticky; top: calc(var(--topbar-h) + var(--space-6)); }
+.apply-form__head p { margin: 0; }
+.apply-form .form-box { margin-inline: 0; }
+
+@media (max-width: 1023px) {
+  .role { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "name" "body" "apply"; gap: var(--space-4); padding: var(--space-6) 0; }
+  .apply-form { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+  .apply-form__head { position: relative; top: 0; }
+}
+@media (max-width: 767px) {
+  .apply-form { margin-top: calc(var(--space-9) - var(--topbar-h) - var(--space-6)); }
+  .apply-form .form-box { margin-inline: calc(var(--space-3) - var(--stage-gutter)); }
+  .role__name { font-size: 34px; }
+}

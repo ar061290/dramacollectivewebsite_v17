@@ -50,19 +50,38 @@ export function setupNav({ reduced }) {
   // Scrolling down, the bar glides up out of view but for its two buttons, which stay where they
   // are (CSS)
   const hide = () => bar.classList.add('is-hidden');
-  // the home page's footer can be taller than the screen: once its top has passed under the bar its
-  // columns would scroll up under the two buttons, so they fade out where they are (CSS is-curtain)
+  // Once the bar has gone, the two buttons fade out where they stand (CSS is-curtain) wherever
+  // something must not lie under them: the home page's footer, which can be taller than the screen
+  // (its columns would scroll up under them), and a form (src/site/fillout.js), whose fields would
+  // otherwise pass under them, so that a tap meant for a field would take the visitor off the page
+  // and lose what they had typed. They come back when it has gone by, or with the bar.
+  const under = new Set();
+  const covering = (el, on) => {
+    if (on) under.add(el); else under.delete(el);
+    bar.classList.toggle('is-curtain', under.size > 0);
+  };
   const home = document.querySelector('.curtain--home');
-  const curtainWatch = home ? ScrollTrigger.create({
-    trigger: home,
-    start: () => `top ${bar.offsetHeight}px`,
-    end: 'bottom top', // never reached (the page ends first), so it stays on to the very end
-    onToggle: (self) => bar.classList.toggle('is-curtain', self.isActive),
-  }) : null;
+  const curtainWatches = [
+    ...(home ? [ScrollTrigger.create({
+      trigger: home,
+      start: () => `top ${bar.offsetHeight}px`,
+      end: 'bottom top', // never reached (the page ends first), so it stays on to the very end
+      onToggle: (self) => covering(home, self.isActive),
+    })] : []),
+    ...[...document.querySelectorAll('[data-form]')].map((form) => ScrollTrigger.create({
+      trigger: form,
+      start: () => `top ${bar.offsetHeight}px`,
+      end: 'bottom top',
+      onToggle: (self) => covering(form, self.isActive),
+    })),
+  ];
   const scrollWatch = ScrollTrigger.create({
     start: 0,
     end: 'max',
     onUpdate(self) {
+      // a re-measure of the page (a resize, or a form growing: src/site/fillout.js) briefly scrolls it
+      // to the top and back; that is not the visitor scrolling up, so the bar stays as it is
+      if (ScrollTrigger.isRefreshing) return;
       const y = self.scroll();
       bar.classList.toggle('is-scrolled', y > 24);
       if (menuOpen) return;
@@ -139,7 +158,7 @@ export function setupNav({ reduced }) {
 
   return () => {
     scrollWatch.kill();
-    curtainWatch?.kill();
+    curtainWatches.forEach((w) => w.kill());
     bar.classList.remove('is-hidden', 'is-curtain');
     sheetTl?.kill();
     glintCleanup();

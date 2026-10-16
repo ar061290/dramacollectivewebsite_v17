@@ -1,5 +1,9 @@
-// Music, off by default and only ever started by the visitor: "the smell of old books, reading,
-// writing and studying (a dark academia playlist)" by Dark Enigmatic (credited in the footer).
+// Music, on by default: "the smell of old books, reading, writing and studying (a dark academia
+// playlist)" by Dark Enigmatic (credited in the footer). The site opens with it playing unless the
+// visitor has turned it off on an earlier page of this visit, or has asked their browser to save data.
+// No browser lets a page start sound before the visitor has done anything on it (a scroll does not
+// count), so on a first page the button shows that it is waiting, and the music starts with the
+// visitor's first tap, click or key anywhere on the page.
 // It plays from the site's own MP3 (public/music/the-smell-of-old-books.mp3) in a plain audio
 // element. The file is the whole playlist (some 47 MB), so it is streamed: nothing of it is asked for
 // until the music is wanted, and then only its first few bytes (the length) before playing from the
@@ -11,6 +15,16 @@
 // page carries on playing if the browser lets it (a click on a link of the same site normally does;
 // otherwise the button shows that it is waiting, and it starts with the visitor's next tap, click or
 // key, on the button or anywhere else). It fades in and out, and pauses while the tab is hidden.
+//
+// Besides the button, it answers the play and pause shortcuts people already use:
+//   - the system's own media controls, through the browser's media session: media keys, a touchpad
+//     gesture set to play/pause (a three-finger tap on many laptops), headset buttons, the browser's
+//     and the phone's own controls. Playing it from there while the tab is hidden is heard there too
+//     (the visitor asked for it); otherwise a hidden tab still pauses it.
+//   - K on the page, as on video sites, wherever the visitor is not typing;
+//   - a three-finger tap on a touch screen.
+// All of them turn it on or off just as the button does (and are remembered as the button is); a
+// pause from outside the page with no media session (a headset unplugged) counts as turning it off.
 import gsap from 'gsap';
 
 export const TRACK = {
@@ -18,6 +32,8 @@ export const TRACK = {
   by: 'Dark Enigmatic',
 };
 const VOLUME = 0.6; // of full volume: background music, under the page
+// the mark, shown with the track by the system's media controls
+const ARTWORK = new URL('../../assets/brand/mark-gold.png', import.meta.url).href;
 // the site's own recording: under Vite, public/ is the site's root; run without a build, it is the folder
 const FILE = import.meta.env
   ? new URL('music/the-smell-of-old-books.mp3', document.baseURI).href
@@ -58,6 +74,13 @@ export function setupMusic({ reduced }) {
   let fade = null;
   let waitGesture = null; // while it is blocked: the next tap, click or key starts it
   const level = { v: 0 }; // the volume being faded (0..VOLUME)
+  let sounding = false; // playing, as far as this page knows ('playing' to 'pause')
+  let ownPause = false; // a pause this page asked for, not one from outside (see 'pause')
+  let fromAway = false; // started from the system's controls while the tab is hidden: heard there too
+  let multiTouch = false; // a touch of two or more fingers is under way (or just ended)
+  let everPlayed = false; // played on this page at least once: the browser then sends media keys to its media session
+  const session = 'mediaSession' in navigator ? navigator.mediaSession : null;
+  const saveData = navigator.connection?.saveData === true; // the visitor's browser asks to save data
   const last = read().t; // where the previous page had got to, to start well away from it
 
   const setUi = (state) => {
@@ -68,9 +91,12 @@ export function setupMusic({ reduced }) {
     button.classList.toggle('is-playing', on && state === 'playing');
     button.classList.toggle('is-loading', on && state === 'loading');
     button.classList.toggle('is-blocked', wanted && blocked);
-    button.title = !wanted ? 'Play music'
-      : blocked ? 'Play music (your browser waits for a tap, click or key to start it)'
-        : `Now playing: ${TRACK.title}, ${TRACK.by}`;
+    button.title = !wanted ? 'Play music (K)'
+      : blocked ? 'Play music (K; your browser waits for a tap, click or key to start it)'
+        : `Now playing: ${TRACK.title}, ${TRACK.by} (K to pause)`;
+    if (session) {
+      try { session.playbackState = on && state === 'playing' ? 'playing' : audio ? 'paused' : 'none'; } catch { /* older browsers */ }
+    }
   };
 
   const fadeTo = (to, duration, onComplete) => {
@@ -88,7 +114,15 @@ export function setupMusic({ reduced }) {
   const rise = () => {
     if (!audio) return;
     audio.muted = false;
+    // a hidden tab is given no frames to fade in (started there from the system's controls): set
+    if (document.hidden) { fade?.kill(); level.v = VOLUME; audio.volume = VOLUME; return; }
     fadeTo(VOLUME, 1.6);
+  };
+  // every pause this page makes itself goes through here, so 'pause' can tell it from one from outside
+  const halt = () => {
+    if (!audio || audio.paused) return;
+    ownPause = true;
+    audio.pause();
   };
 
   const forgetGesture = () => {
@@ -104,6 +138,10 @@ export function setupMusic({ reduced }) {
     if (waitGesture) return;
     waitGesture = (e) => {
       if (button.contains(e.target)) return;
+      // the shortcuts start it themselves (K, a three-finger tap): this would start it, then the
+      // shortcut would turn it off again
+      if (e.type === 'keydown' && (isShortcut(e) || isMediaKey(e))) return;
+      if (multiTouch && e.type !== 'keydown') return;
       if (wanted && audio?.paused && !document.hidden) play();
     };
     for (const type of GESTURES) document.addEventListener(type, waitGesture, true);
@@ -137,15 +175,30 @@ export function setupMusic({ reduced }) {
     audio.volume = 0;
     level.v = 0;
     audio.addEventListener('playing', () => {
+      sounding = true;
+      everPlayed = true;
       blocked = false;
       forgetGesture();
+      // playing although it is off (resumed by the browser or the phone after it paused it, or after
+      // a pause from outside): stopped, silently, so the button and what is heard agree
+      if (!wanted) { fade?.kill(); level.v = 0; audio.volume = 0; halt(); return; }
       setUi('playing');
       // only if it is still wanted: turned off while it was finding its place, it is stop()'s fade-out
       // that pauses it, and a fade up here would cut that short and leave it playing, the button off
-      if (wanted && !document.hidden) rise();
+      if (wanted && (!document.hidden || fromAway)) rise();
     });
     audio.addEventListener('waiting', () => setUi('loading'));
-    audio.addEventListener('pause', () => setUi('paused'));
+    audio.addEventListener('pause', () => {
+      const own = ownPause;
+      ownPause = false;
+      // paused from outside the page while it was playing and in view (a headset unplugged, the
+      // phone's own controls where there is no media session): the visitor's doing, so it is off
+      if (!own && sounding && wanted && !document.hidden) { wanted = false; forgetGesture(); remember(); }
+      // stopped from outside with its level up: back to nothing, so it fades in when next turned on
+      if (!own) { fade?.kill(); level.v = 0; if (audio) audio.volume = 0; }
+      sounding = false;
+      setUi('paused');
+    });
     audio.addEventListener('error', () => {
       if (!audio?.error) return;
       console.warn('Music could not load.', audio.error);
@@ -180,7 +233,7 @@ export function setupMusic({ reduced }) {
     forgetGesture();
     blocked = false;
     if (!audio) return;
-    audio.pause();
+    halt();
     audio.removeAttribute('src');
     audio.load(); // drop the stream
     audio = null;
@@ -190,10 +243,29 @@ export function setupMusic({ reduced }) {
     forgetGesture();
     blocked = false;
     // not heard yet (still finding its place, or held back by the browser): nothing to fade, so it
-    // stops at once
-    if (!audio || audio.paused || level.v <= 0) { fade?.kill(); audio?.pause(); setUi('paused'); return; }
+    // stops at once; so it does in a hidden tab (paused there from the system's controls), which is
+    // given no frames to fade out in. The level goes back to nothing, so it fades in when next on.
+    if (!audio || audio.paused || level.v <= 0 || document.hidden) {
+      fade?.kill();
+      level.v = 0;
+      if (audio) audio.volume = 0;
+      halt();
+      setUi('paused');
+      return;
+    }
     // the element is kept, paused where it is: turned on again on this page, it carries on from there
-    fadeTo(0, 0.6, () => { audio?.pause(); setUi('paused'); });
+    fadeTo(0, 0.6, () => { halt(); setUi('paused'); });
+    // and if the tab is hidden during the fade (which is then given no frames), a timer, which still
+    // runs there, finishes it
+    const a = audio;
+    setTimeout(() => {
+      if (wanted || audio !== a || a.paused) return;
+      fade?.kill();
+      level.v = 0;
+      a.volume = 0;
+      halt();
+      setUi('paused');
+    }, 700);
   };
 
   const remember = () => {
@@ -201,21 +273,140 @@ export function setupMusic({ reduced }) {
     write({ on: wanted, t: typeof t === 'number' ? t : last });
   };
 
-  const toggle = () => {
-    // held back by the browser, it is not on in the visitor's eyes: this click starts it (and, being
-    // their own, is let through) rather than turning it off
-    if (wanted && blocked) { play(); return; }
-    wanted = !wanted;
+  // the button answers at once; the audio's own events then say when it is really playing
+  const turnOn = () => {
+    // wanted already (held back by the browser, or paused while the tab was hidden): this, the
+    // visitor's own doing, starts it
+    if (wanted) { if (!audio || audio.paused) start(); return; }
+    wanted = true;
     remember();
-    // the button answers at once; the audio's own events then say when it is really playing
-    setUi(wanted ? 'loading' : 'paused');
-    if (wanted) start(); else stop();
+    setUi('loading');
+    start();
   };
+  const turnOff = () => {
+    if (!wanted) return;
+    wanted = false;
+    fromAway = false;
+    remember();
+    setUi('paused');
+    stop();
+  };
+  // held back by the browser, it is not on in the visitor's eyes: the button (or a shortcut) starts
+  // it then, rather than turning it off
+  const toggle = () => { if (wanted && !blocked && !(audio?.paused && document.hidden)) turnOff(); else turnOn(); };
+
+  // ---- the shortcuts ----
+  // K, wherever the visitor is not typing (and not with Ctrl, Alt or Cmd: those are the browser's). A
+  // radio button or a checkbox takes no text, so K there is the shortcut too.
+  const NOT_TEXT = ['radio', 'checkbox', 'button', 'submit', 'reset', 'range', 'color', 'file', 'image'];
+  function isShortcut(e) {
+    if (e.key !== 'k' && e.key !== 'K') return false;
+    if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return false;
+    const el = e.target;
+    if (el?.tagName === 'INPUT') return NOT_TEXT.includes(el.type);
+    return !el?.closest?.('textarea, select, [contenteditable]:not([contenteditable="false"])');
+  }
+  // the play/pause media keys (and a touchpad gesture set to send them) reach the page as keys while
+  // nothing has played on it: the browser has no media session to give them to yet. Once the music
+  // has played, the browser sends them to the session instead (ACTIONS below), never to both.
+  function isMediaKey(e) {
+    return !everPlayed && ['MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop'].includes(e.key);
+  }
+  const onKey = (e) => {
+    if (e.repeat || e.defaultPrevented) return;
+    if (isMediaKey(e)) {
+      if (e.key === 'MediaPlayPause') toggle();
+      else if (e.key === 'MediaPlay') turnOn();
+      else turnOff();
+      return;
+    }
+    if (isShortcut(e)) toggle();
+  };
+  // a three-finger tap: three fingers down together, none moved far, all lifted quickly. Its last
+  // touchend is the visitor's own doing, inside which every browser lets the music start.
+  let tap = null; // { t0, max, starts: Map(id -> [x, y]), moved }
+  const onTouchStart = (e) => {
+    if (e.touches.length === e.changedTouches.length) {
+      // a new touch: fingers already on the screen are not part of it
+      multiTouch = false;
+      tap = { t0: e.timeStamp, max: 0, starts: new Map(), moved: false };
+    }
+    if (!tap) return;
+    for (const t of e.changedTouches) tap.starts.set(t.identifier, [t.clientX, t.clientY]);
+    tap.max = Math.max(tap.max, e.touches.length);
+    if (e.touches.length >= 2) multiTouch = true;
+  };
+  const onTouchMove = (e) => {
+    if (!tap) return;
+    for (const t of e.changedTouches) {
+      const s = tap.starts.get(t.identifier);
+      if (s && Math.hypot(t.clientX - s[0], t.clientY - s[1]) > 24) tap.moved = true;
+    }
+  };
+  // once the last finger is off: the multi-finger touch's own events have gone by, so the next
+  // click (a mouse, a touchpad) may start the music again
+  const touchOver = () => setTimeout(() => { multiTouch = false; });
+  const onTouchEnd = (e) => {
+    if (!e.touches.length) touchOver();
+    if (!tap || e.touches.length) return;
+    const t = tap;
+    tap = null;
+    if (t.max === 3 && !t.moved && e.timeStamp - t.t0 < 450) toggle();
+  };
+  const onTouchCancel = (e) => { tap = null; if (!e.touches.length) touchOver(); };
+  document.addEventListener('keydown', onKey);
+  document.addEventListener('touchstart', onTouchStart, { passive: true });
+  document.addEventListener('touchmove', onTouchMove, { passive: true });
+  document.addEventListener('touchend', onTouchEnd, { passive: true });
+  document.addEventListener('touchcancel', onTouchCancel, { passive: true });
+
+  // the system's own controls (media keys, touchpad gestures, headsets, the browser's and the phone's
+  // controls): the same on and off. They reach the page once its music has played.
+  // (pause and stop also stop it if it is still fading out, already off)
+  const silence = () => { if (wanted) turnOff(); else if (audio && !audio.paused) stop(); };
+  const ACTIONS = {
+    play: () => { fromAway = document.hidden; turnOn(); },
+    pause: silence,
+    stop: silence,
+  };
+  if (session) {
+    try {
+      if (typeof MediaMetadata === 'function') {
+        session.metadata = new MediaMetadata({
+          title: TRACK.title,
+          artist: TRACK.by,
+          album: 'The Drama Collective',
+          artwork: [{ src: ARTWORK, sizes: '615x615', type: 'image/png' }],
+        });
+      }
+    } catch { /* no metadata: the controls still work */ }
+    for (const [action, fn] of Object.entries(ACTIONS)) {
+      try { session.setActionHandler(action, fn); } catch { /* an action this browser does not know */ }
+    }
+  }
 
   const timer = setInterval(() => { if (wanted) remember(); }, 2000);
 
+  // the visitor's choice as stored for this visit (another page may have changed it since this one
+  // was last in view: back to it from the back/forward cache)
+  const storedWant = () => read().on ?? !saveData;
   const onVisibility = () => {
+    // hidden while it is still fading out, after being turned off: stopped at once (no frames there)
+    if (document.hidden && audio && !wanted && !audio.paused) {
+      fade?.kill();
+      level.v = 0;
+      audio.volume = 0;
+      halt();
+      setUi('paused');
+      return;
+    }
+    // back in view: if the visitor turned it on or off on another page meanwhile, that choice holds
+    if (!document.hidden) {
+      const want = storedWant();
+      if (want !== wanted) { if (want) turnOn(); else turnOff(); return; }
+    }
     if (!wanted || !audio) return;
+    fromAway = false;
     if (document.hidden) {
       remember();
       // paused at once, not faded: a fade is drawn frame by frame, and a hidden tab is given no frames,
@@ -224,19 +415,26 @@ export function setupMusic({ reduced }) {
       fade?.kill();
       level.v = 0;
       audio.volume = 0;
-      audio.pause();
+      halt();
     } else play();
   };
 
+  const onPageShow = (e) => {
+    if (!e.persisted) return;
+    const want = storedWant();
+    if (want !== wanted) { if (want) turnOn(); else turnOff(); }
+  };
   button.addEventListener('click', toggle);
   document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener('pageshow', onPageShow);
   window.addEventListener('pagehide', remember);
   setUi('paused');
 
-  // the visitor turned it on on an earlier page: carry on, from a new point. It is asked to play at
-  // once, silent (volume 0, but not muted: a browser may let a muted start through, then stop it when
-  // it is unmuted), so that a refusal shows on the button straight away.
-  if (read().on) {
+  // on unless the visitor turned it off earlier in this visit (or their browser is set to save data:
+  // the playlist is a large file): from a new point. It is asked to play at once, silent (volume 0,
+  // but not muted: a browser may let a muted start through, then stop it when it is unmuted), so that
+  // a refusal shows on the button straight away, and the visitor's first tap, click or key starts it.
+  if (storedWant()) {
     wanted = true;
     build();
     if (document.hidden) setUi('paused'); else play();
@@ -246,7 +444,17 @@ export function setupMusic({ reduced }) {
     clearInterval(timer);
     if (wanted) remember();
     button.removeEventListener('click', toggle);
+    document.removeEventListener('keydown', onKey);
+    document.removeEventListener('touchstart', onTouchStart);
+    document.removeEventListener('touchmove', onTouchMove);
+    document.removeEventListener('touchend', onTouchEnd);
+    document.removeEventListener('touchcancel', onTouchCancel);
+    if (session) {
+      for (const action of Object.keys(ACTIONS)) { try { session.setActionHandler(action, null); } catch { /* unknown */ } }
+      try { session.metadata = null; session.playbackState = 'none'; } catch { /* older browsers */ }
+    }
     document.removeEventListener('visibilitychange', onVisibility);
+    window.removeEventListener('pageshow', onPageShow);
     window.removeEventListener('pagehide', remember);
     teardown();
   };

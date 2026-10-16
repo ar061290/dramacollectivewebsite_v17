@@ -1,0 +1,58 @@
+/* Apply to be a sponsor (sponsor-apply.html, src/pages/sponsor-apply.js): the way back to the tiers,
+   the sponsorship form in its paper box (apply.css) and, for questions, the leads' cards (pages.css,
+   as on Contact us). On wide screens the cards stand beside the form, so who to ask stays in sight
+   while it is filled in; narrower, they follow it. */
+
+/* the way back to the tiers, above the heading: a plain link, its arrow pointing the way it goes */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  margin: calc(-1 * var(--space-3)) 0 var(--space-4);
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: var(--size-body-s);
+  letter-spacing: .02em;
+}
+.back-link svg { width: 16px; height: 16px; flex: none; transition: transform var(--dur-base) var(--ease-out); }
+.back-link:hover svg { transform: translateX(-3px); }
+
+.sponsor-form { margin-top: var(--space-8); }
+/* in line with the heading above it, not centred under it (on phones it keeps the wider margins
+   every form box has there, apply.css) */
+@media (min-width: 768px) {
+  .sponsor-form .form-box { margin-inline: 0; }
+}
+.sponsor-contacts .contact-cards { margin-top: var(--space-6); }
+/* under the cards, the way back to the tiers (as the link above the heading) */
+.sponsor-contacts__back { margin-top: var(--space-6); }
+.sponsor-contacts__back svg { width: 16px; height: 16px; flex: none; transition: transform var(--dur-base) var(--ease-out); }
+.sponsor-contacts__back:hover svg { transform: translateX(-3px); }
+
+@media (min-width: 1200px) {
+  /* the page's column is split, the form on the left and the cards on the right; the padding keeps
+     the two inside the site's column, as its width does for every other page's blocks */
+  .page--sponsor-apply .page__main {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    column-gap: var(--space-7);
+    align-items: start;
+    padding-inline: max(var(--stage-gutter), (100% - var(--container)) / 2);
+  }
+  .page--sponsor-apply .act-head { grid-column: 1 / -1; }
+  .sponsor-form .form-box { max-width: none; }
+  /* level with the form's top */
+  .sponsor-contacts { margin-top: var(--space-8); }
+  .sponsor-contacts .contact-cards { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+}
+/* the form is long: where the screen can hold the two cards and the button under them whole (about
+   610px under the bar), they stay beside it as it scrolls by (the section runs the form's length; its
+   heading goes on up with the page) */
+@media (min-width: 1200px) and (min-height: 720px) {
+  .sponsor-contacts { align-self: stretch; }
+  .sponsor-contacts__stick { position: sticky; top: calc(var(--topbar-h) + var(--space-5)); }
+}
+@media (max-width: 767px) {
+  .sponsor-form { margin-top: var(--space-7); }
+}
