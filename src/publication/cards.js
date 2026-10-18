@@ -57,14 +57,18 @@ export function pieceCard(p, { level = 3 } = {}) {
  * writer, and "Remind me", which goes down to the newsletter on the same page.
  */
 export function pieceRow(p, { next = false } = {}) {
-  return `<li class="pub-row${next ? ' is-next' : ''}" data-tone="${toneOf(p)}">
+  // a special piece: twice the height, larger, and stars that come out round it when pointed at
+  const sparks = p.special ? `<span class="pub-row__sparks" aria-hidden="true">${'<i></i>'.repeat(7)}</span>` : '';
+  const lang = p.lang ? ` lang="${esc(p.lang)}"` : '';
+  const form = p.special ? 'Special' : p.form;
+  return `<li class="pub-row${next ? ' is-next' : ''}${p.special ? ' is-special' : ''}" data-tone="${toneOf(p)}">
   <span class="pub-row__when"><span class="pub-row__dot" aria-hidden="true"></span><span class="pub-label">${esc(p.issue)}</span></span>
   <span class="pub-row__tile" aria-hidden="true"><span class="pub-mark"></span></span>
-  <div class="pub-row__text">
-    <span class="pub-label pub-row__form">${esc(p.form)}</span>
-    <h3 class="pub-row__title">${esc(p.title)}</h3>
+  <div class="pub-row__text">${form ? `
+    <span class="pub-label pub-row__form">${esc(form)}</span>` : ''}
+    <h3 class="pub-row__title"${lang}>${esc(p.title)}</h3>
     <p class="pub-row__by${p.author ? '' : ' is-tba'}">${esc(byline(p))}</p>
   </div>
-  <a class="pub-btn pub-row__remind" href="#news" data-to-news>Remind me<span class="sr-only">: ${esc(p.title)}</span></a>
+  <a class="pub-btn pub-row__remind" href="#news" data-to-news>Remind me<span class="sr-only">: ${esc(p.title)}</span></a>${sparks}
 </li>`;
 }

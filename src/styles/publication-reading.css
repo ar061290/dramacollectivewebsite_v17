@@ -400,3 +400,9 @@
   .read__step--next { align-items: flex-start; text-align: left; }
   .read__step-sub:not(.read__step-sub--note) { font-size: 20px; }
 }
+
+/* the stone masks beside a piece (src/publication/masks.js): one canvas over the whole screen, behind
+   the text and under the footer, holding still while the page scrolls */
+.read-masks { position: fixed; inset: 0; z-index: var(--z-stage); pointer-events: none; }
+.read-masks[hidden] { display: none; }
+.read-masks > canvas { display: block; width: 100%; height: 100%; }

@@ -22,6 +22,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
 import HEADS from '../../assets/type/publication-heads.js';
 import { PIECES, PUBLISHED, LATEST_SHOWN } from './pieces-data.js';
+const PHONE_SHOWN = 3; // the latest pieces a phone's grid shows before All the pieces
 import { pieceCard, pieceRow, esc } from './cards.js';
 import { morphHeading } from '../type/morphHeading.js';
 import { mountStatue } from './statue.js';
@@ -69,7 +70,7 @@ export function setupPieces({ reduced, onTheme, opened }) {
   let refreshCall = null;
 
   // ---- the filter's chips: All forms, then every form in the data ----
-  const forms = [...new Set(PIECES.map((p) => p.form))].sort((a, b) => a.localeCompare(b, 'en-IN'));
+  const forms = [...new Set(PIECES.map((p) => p.form).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'en-IN'));
   panel.innerHTML = [null, ...forms].map((f) => `<button type="button" class="pub-pieces__chip" data-form="${f === null ? '' : esc(f)}" aria-pressed="${f === null}">${f === null ? 'All forms' : esc(f)}</button>`).join('');
   const chips = [...panel.querySelectorAll('.pub-pieces__chip')];
 
@@ -93,14 +94,16 @@ export function setupPieces({ reduced, onTheme, opened }) {
     lists[m].innerHTML = items.length
       ? (m === 'latest'
         ? items.slice(0, LATEST_SHOWN).map((p) => pieceCard(p)).join('')
-        : items.map((p, i) => pieceRow(p, { next: i === 0 })).join(''))
+        : items.map((p) => pieceRow(p, { next: p === items.find((q) => q.issue !== 'TBA') })).join(''))
       : empty(m, form);
     if (m === 'upcoming') fadeSoon();
     return items.length;
   };
   const say = () => {
     const n = shownIn(mode).length;
-    const shown = mode === 'latest' ? Math.min(n, LATEST_SHOWN) : n;
+    // (on a phone the grid shows three: publication-pieces.css)
+    const most = matchMedia('(max-width: 767px)').matches ? PHONE_SHOWN : LATEST_SHOWN;
+    const shown = mode === 'latest' ? Math.min(n, most) : n;
     status.textContent = `Showing ${shown < n ? `${shown} of ${n}` : n} ${MODES[mode].word} ${n === 1 ? 'piece' : 'pieces'}${form ? `: ${form}` : ''}.`;
   };
   draw('latest');

@@ -4,3 +4,5 @@ dist/
 assets/models/*.source.glb
 .DS_Store
 Thumbs.db
+# the masks' source model (tools/masks/build-masks.mjs); the site uses assets/models/masks.glb
+tools/masks/source/

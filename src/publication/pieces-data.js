@@ -9,12 +9,14 @@
 //   title   as printed
 //   author  as printed under the title ("By ..."); null where not yet known
 //   form    its form ("Essay", "One-act play", ...); the filter lists every form found here
-//   issue   the issue it is in, as printed ("Oct 2026")
+//   issue   the issue it is in, as printed ("Oct 2026"; "TBA" while it has no date)
 //   status  'latest' (out now: it has its own page) or 'upcoming' (announced: no page yet)
 //   order   its place in its issue (pages run in this order: "Next piece", "Previous piece")
 //   quote   a line from it (not shown at present: the grid's cards show the title large instead)
 //   tone    1 to 5, one of the brand's five colours (publication.css --pub-tone-1..5): the card's
 //           colour in the grid, the logo mark's in the list; fixed per piece so it never changes
+//   lang    (optional) the title's language, where it is not English ('te': Telugu)
+//   special (optional) a special piece: in the upcoming list it stands larger, and sparkles
 //   dek     (optional) a line under the title on the piece's page ("A short story performed as a soliloquy")
 //   photo   (optional) a picture shown in the piece's page, under its title
 
@@ -100,15 +102,25 @@ export const PIECES = [
     tone: 3,
   },
 
-  // ---- upcoming: the November issue. PLACEHOLDER: replace with the real pieces when announced ----
-  { slug: 'the-understudy', title: 'The understudy', author: null, form: 'Monologue', issue: 'Nov 2026', status: 'upcoming', order: 1, tone: 2 },
-  { slug: 'blackout', title: 'Blackout', author: null, form: 'One-act play', issue: 'Nov 2026', status: 'upcoming', order: 2, tone: 3 },
-  { slug: 'why-we-still-need-the-stage', title: 'Why we still need the stage', author: null, form: 'Essay', issue: 'Nov 2026', status: 'upcoming', order: 3, tone: 1 },
-  { slug: 'house-lights', title: 'House lights', author: null, form: 'Poem', issue: 'Nov 2026', status: 'upcoming', order: 4, tone: 5 },
-  { slug: 'the-inter-school-festival', title: 'The inter-school festival, reviewed', author: null, form: 'Review', issue: 'Nov 2026', status: 'upcoming', order: 5, tone: 4 },
-  { slug: 'a-letter-to-the-audience', title: 'A letter to the audience', author: null, form: 'Monologue', issue: 'Nov 2026', status: 'upcoming', order: 6, tone: 3 },
-  { slug: 'the-costume-trunk', title: 'The costume trunk', author: null, form: 'Reflection', issue: 'Nov 2026', status: 'upcoming', order: 7, tone: 5 },
-  { slug: 'notes-from-the-wings', title: 'Notes from the wings', author: null, form: 'Essay', issue: 'Nov 2026', status: 'upcoming', order: 8, tone: 2 },
+  // ---- upcoming, in the order the list shows them: the celebrity special first (larger, with a
+  // sparkle), then the issues as they come, then those still to be dated. `form: null` where it is
+  // not yet known (no form shown, and not in the filter) ----
+  {
+    slug: 'prakatinchali',
+    title: 'ప్రకటించాలి',
+    lang: 'te',
+    author: 'Venkatesh Kalasamudram',
+    form: null,
+    issue: 'TBA',
+    status: 'upcoming',
+    order: 1,
+    tone: 3,
+    special: true,
+  },
+  { slug: 'the-modern-drama-and-the-unities', title: 'The Modern Drama and the Unities', author: 'Kodela Gautam', form: null, issue: 'Nov 2026', status: 'upcoming', order: 2, tone: 1 },
+  { slug: 'i-cant-stop-thinking-about-you-yes-you', title: 'I Can’t Stop Thinking About You. Yes, You', author: 'Aadi Ramnani', form: null, issue: 'Nov 2026', status: 'upcoming', order: 3, tone: 2 },
+  { slug: 'the-you-inside-of-you-doesnt-exist', title: 'The ‘You’ Inside of You Doesn’t Exist', author: 'Aadi Ramnani', form: null, issue: 'Dec 2026', status: 'upcoming', order: 4, tone: 4 },
+  { slug: 'change', title: 'change', author: 'Anika Megha Kruthiventi', form: 'Shakespearean verse', issue: 'TBA', status: 'upcoming', order: 5, tone: 5 },
 ];
 
 /** The pieces that are out, in reading order: by issue (oldest first), then their place in it. */

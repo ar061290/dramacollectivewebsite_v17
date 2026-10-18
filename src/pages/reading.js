@@ -4,15 +4,17 @@
 // site's [data-reveal]), and the banner along the bottom (src/publication/ticker.js). As on the
 // publication below its opening, there is no star sky and the cursor's glow is everywhere
 // (html.is-glow-everywhere, set in the page's own markup so it holds from the first move); the top
-// bar waits out of sight until it is wanted (src/publication/peekbar.js).
+// bar waits out of sight until it is wanted (src/publication/peekbar.js). Beside a piece stand two
+// stone masks, lit by the cursor's glow (src/publication/masks.js).
 import gsap from 'gsap';
 import { bootPage } from '../site/boot.js';
 import { setupTicker } from '../publication/ticker.js';
 import { setupPeekBar } from '../publication/peekbar.js';
+import { setupMasks } from '../publication/masks.js';
 
 bootPage((ctx) => {
   document.documentElement.classList.add('is-glow-everywhere');
-  const cleanups = [setupTicker(ctx), setupPeekBar(), footnotes(ctx)];
+  const cleanups = [setupTicker(ctx), setupPeekBar(), setupMasks(ctx), footnotes(ctx)];
   return () => cleanups.forEach((c) => c());
 });
 
