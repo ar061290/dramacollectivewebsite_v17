@@ -1,0 +1,189 @@
+/* The publication's writers: Meet our writers (writers.html, src/pages/writers.js) and each writer's
+   own page (writer-<slug>.html, src/pages/writer.js), both written by tools/pages/build.mjs from
+   content/writers.json. Meet our writers is Core team's page (pages.css: the filter, the grid, the
+   cards, the spotlight panel) with the writers issue by issue. A writer's page is a reading page
+   (publication-reading.css) with the publication's pieces section (publication-pieces.css) for their
+   pieces only. What is here is only what they add. */
+
+/* ==== Meet our writers ==== */
+
+/* the filter by issue is Core team's department filter; it works only with scripts */
+html:not(.has-js) .writers-filter { display: none; }
+
+/* the issues, one under another: each a heading (the month, and whether its pieces are out yet)
+   over a grid of Core team's cards */
+.writers-months { display: grid; gap: var(--space-9); }
+.writers-month__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-5);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+.writers-month__title { font-size: var(--size-display-m); line-height: var(--lh-title); color: var(--fg-strong); }
+
+/* a card is a link to the writer's page (with scripts it opens their panel first): no underline */
+a.member__card, a.member__card:hover { color: inherit; text-decoration: none; }
+/* under the name, the titles of their pieces in that issue */
+.member__works { display: grid; gap: 4px; margin-top: 4px; }
+.member__work { font-size: var(--size-body-s); line-height: 1.4; color: var(--fg); text-wrap: balance; }
+/* (the celebrity special's title is in Telugu: the display face has no Telugu, so the system's) */
+.member__work[lang="te"], .writer-works__title[lang="te"] { font-family: var(--font-display), "Noto Serif Telugu", "Nirmala UI", "Gautami", serif; }
+.member__work[lang="te"] { font-size: 17px; }
+
+/* a writer without a photo yet: the mark on a tile in their colour (publication-pieces.css
+   .pub-tile), stone until the spot finds it like the photos */
+.member__photo--mark { display: grid; place-items: center; background: var(--tile); }
+.member__photo--mark .pub-mark { width: 44%; color: var(--mark); }
+/* in the panel, and on its way there, it is in the light */
+.spotlight__photo .member__photo--mark { position: absolute; inset: 0; aspect-ratio: auto; margin: 0; box-shadow: none; }
+.spotlight__photo .member__photo--mark::after, .member__photo--mark.spotlight__flyer::after { display: none; }
+.spotlight__photo .member__photo--mark .pub-mark, .member__photo--mark.spotlight__flyer .pub-mark { width: 36%; }
+
+/* the panel: after the introduction, their pieces (each title a link once the piece is out) and
+   the way to their own page */
+.writer-soon { color: var(--fg-muted); font-style: italic; }
+.writer-panel__label { margin: var(--space-6) 0 var(--space-3); }
+.writer-works { list-style: none; border-top: 1px solid var(--line); }
+.writer-works__item { display: grid; gap: 6px; padding: var(--space-3) 0; border-bottom: 1px solid var(--line); }
+.writer-works__title { font-family: var(--font-display); font-size: 21px; line-height: 1.25; color: var(--fg-strong); }
+a.writer-works__title { text-decoration: underline 1px color-mix(in srgb, currentColor 30%, transparent); text-underline-offset: 5px; transition: text-decoration-color var(--dur-base) var(--ease-curtain); }
+a.writer-works__title:hover { color: var(--fg-strong); text-decoration-color: var(--accent); }
+.writer-works__meta { font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: var(--size-micro); line-height: 1.3; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-muted); }
+/* (the button rises into place with the panel's words, by GSAP: the site's buttons ease every
+   property, which would make its rise's opacity and transform lag behind, so here only its colours
+   ease) */
+.writer-panel__more { margin-top: var(--space-6); transition-property: background-color, color, border-color, box-shadow; }
+.writer-panel__more .read__arrow { width: 14px; height: 10px; transition: transform var(--dur-base) var(--ease-curtain); }
+.writer-panel__more:hover .read__arrow { transform: translateX(3px); }
+
+/* the way on: to write for us */
+.writers-coda { width: fit-content; max-width: 100%; margin-top: var(--space-9); font-size: var(--size-body-l); color: var(--fg-strong); }
+
+/* ==== A writer's page ==== */
+
+/* the head: their photo on the left (at most 400px wide), and their name and introduction */
+.writer-head { padding-block: clamp(40px, 6vw, 80px) clamp(48px, 6vw, 88px); }
+.writer-head .read__back { margin-bottom: clamp(28px, 4vw, 48px); }
+.writer-head__grid {
+  display: grid;
+  grid-template-columns: minmax(0, min(400px, 34%)) minmax(0, 1fr);
+  gap: clamp(32px, 5vw, 80px);
+  align-items: start;
+}
+/* the photo under the house's gold rule, as Core team's cards have it when lit */
+.writer-head__photo {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--card-bg);
+  box-shadow: 0 0 0 1px var(--pub-hair), 0 22px 48px rgb(42 13 28 / .22);
+}
+.writer-head__photo::before { content: ""; position: absolute; left: 0; right: 0; top: 0; z-index: 1; height: var(--rule-thick); background: var(--rule-color); }
+.writer-head__photo img { width: 100%; height: 100%; object-fit: cover; }
+.writer-head__photo--mark { display: grid; place-items: center; background: var(--tile); }
+.writer-head__photo--mark .pub-mark { width: 40%; color: var(--mark); }
+.writer-head__text { padding-top: clamp(0px, 2vw, 24px); }
+.writer-head__name { max-width: 14ch; }
+.writer-head__intro { margin-top: 28px; max-width: 38em; font-size: 18px; line-height: 1.7; color: var(--fg); }
+.writer-head__intro p { max-width: none; margin: 0 0 1em; }
+
+/* their pieces: under a hairline; everything shows (no cap on the grid, three or six), and the list
+   runs its whole length (no fixed height, no fade: the page scrolls) */
+.pub-pieces--writer > .pub-wrap { padding-top: clamp(32px, 4vw, 48px); border-top: 1px solid var(--pub-hair); }
+.pub-pieces--writer .pub-pieces__grid > .pub-piece:nth-child(n + 4) { display: block; }
+.pub-pieces--writer .pub-pieces__list { height: auto; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+/* without scripts there is no toggle: both views show, one under the other */
+html:not(.has-js) .pub-pieces--writer .pub-pieces__view--grid[hidden] { display: block; }
+html:not(.has-js) .pub-pieces--writer .pub-pieces__view--list[hidden] { display: grid; }
+html:not(.has-js) .pub-pieces--writer .pub-pieces__view + .pub-pieces__view { margin-top: var(--space-8); }
+
+/* beside the list, in the statue's place and light (publication-pieces.css .pub-pieces__stand),
+   their photo, standing on the floor's hairline (89% down the box, where the statue's feet are),
+   short enough for the beam to show above it, and lit by it: brighter at the top, falling off to
+   the foot. On hover or focus their introduction comes up over it, on a plum veil, scrolling inside
+   it when it is longer than the photo is tall (the wheel goes on to the page at its ends; while the
+   focus is in it, it stays up, so the arrow keys can scroll it). */
+.writer-stand { position: relative; }
+.writer-stand__frame {
+  position: absolute;
+  left: 50%;
+  bottom: 11%;
+  height: 74%;
+  aspect-ratio: 4 / 5;
+  margin: 0;
+  translate: -50% 0;
+  overflow: hidden;
+  background: var(--card-bg);
+  box-shadow: 0 0 0 1px var(--pub-hair), 0 24px 48px rgb(21 4 8 / .4);
+  cursor: default;
+}
+.writer-stand__frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 60% at 50% -12%, rgb(243 231 184 / .2), rgb(243 231 184 / 0) 70%),
+    linear-gradient(rgb(21 4 8 / 0) 55%, rgb(21 4 8 / .22));
+}
+/* (with the house lights up the foot falls off only a little, toward plum) */
+:root[data-theme="light"] .writer-stand__frame::after {
+  background:
+    radial-gradient(120% 60% at 50% -12%, rgb(250 244 222 / .3), rgb(250 244 222 / 0) 70%),
+    linear-gradient(rgb(64 20 42 / 0) 60%, rgb(64 20 42 / .12));
+}
+:root[data-theme="light"] .writer-stand__frame { box-shadow: 0 0 0 1px var(--pub-hair), 0 24px 48px rgb(64 20 42 / .22); }
+.writer-stand__frame:focus { outline: none; }
+.writer-stand__frame:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.writer-stand__photo { display: block; width: 100%; height: 100%; }
+.writer-stand__photo img { width: 100%; height: 100%; object-fit: cover; }
+.writer-stand__photo--mark { display: grid; place-items: center; background: var(--tile); }
+.writer-stand__photo--mark .pub-mark { width: 42%; color: var(--mark); }
+.writer-stand__intro {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  overflow-y: auto;
+  padding: 24px 24px 12px;
+  background: linear-gradient(rgb(42 13 28 / .94), rgb(42 13 28 / .86));
+  color: var(--plum-100);
+  font-size: 14px;
+  line-height: 1.55;
+  opacity: 0;
+  visibility: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-600) transparent;
+  transition: opacity var(--dur-slow) var(--ease-curtain), visibility 0s linear var(--dur-slow);
+}
+/* (an intro long enough to scroll takes the focus itself: its ring inside the frame, which clips) */
+.writer-stand__intro:focus { outline: none; }
+.writer-stand__intro:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.writer-stand__intro > * { translate: 0 8px; transition: translate var(--dur-slow) var(--ease-curtain); }
+.writer-stand__intro p { max-width: none; margin: 0 0 .9em; }
+.writer-stand__intro .writer-soon { color: var(--plum-200); }
+.writer-stand__name { display: block; margin-bottom: 12px; color: var(--gold-500); }
+.writer-stand__frame:is(:hover, :focus-within) .writer-stand__intro { opacity: 1; visibility: visible; transition: opacity var(--dur-slow) var(--ease-curtain); }
+.writer-stand__frame:is(:hover, :focus-within) .writer-stand__intro > * { translate: 0 0; }
+
+@media (max-width: 767px) {
+  .writer-head__grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .writer-head__photo { width: min(62%, 260px); }
+  .writer-head__intro { font-size: 17px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .writer-stand__intro, .writer-stand__intro > * { transition: none; translate: none; }
+}
+
+/* ==== The reading pages: the byline is a link to the writer's page ==== */
+a.read__author {
+  text-decoration: underline 1px;
+  text-decoration-color: color-mix(in srgb, currentColor 30%, transparent);
+  text-underline-offset: 4px;
+  transition: text-decoration-color var(--dur-base) var(--ease-curtain);
+}
+a.read__author:hover { color: var(--fg-strong); text-decoration-color: var(--accent); }

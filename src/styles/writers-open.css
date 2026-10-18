@@ -1,0 +1,214 @@
+/* Meet our writers' opening (writers.html's [data-writers-open], src/writers/opening.js): one
+   screen, held in place while it plays. The marble statue stands in its box among the stars, the
+   heading and its line beside it (under it on a phone); the camera comes to the book in its hand,
+   the October cover takes the book's place, comes forward, opens on its spine, and its first page is
+   the writers below (.writers.is-paged: pulled up under the opening, so that when the hold lets go
+   it stands exactly where the page's picture of it stood).
+   The canvas fills the opening; the statue's box (.writers-open__statue) only says where the
+   statue stands in it, and holds its still picture. Without scripts the opening is the picture and
+   the words; with reduced motion the book stands open under them as a still (.is-still). */
+
+/* the page starts at the top of the screen, under the top bar (as .page__main--soon does): the
+   opening is the first screen, whatever the page's padding above would have been on this width */
+.page__main--writers { padding-top: 0; }
+/* (and its hold's spacer, ScrollTrigger's, which takes its place in the page while it is held) */
+.page__main > .writers-open, .page__main > .pin-spacer:has(> .writers-open) {
+  width: calc(100% + 2 * var(--stage-gutter));
+  max-width: none;
+  /* the whole screen's width: out of the page's padding */
+  margin: 0 calc(-1 * var(--stage-gutter));
+}
+.writers-open {
+  --open-gutter: var(--stage-gutter);
+  --open-top: calc(var(--topbar-h) + 8px);
+  --open-pad: clamp(12px, 3svh, 32px);
+  --frame: min(100% - 2 * var(--open-gutter), 1240px);
+  /* the statue's box: as tall as the screen under the top bar allows, at the still picture's
+     proportions (.82), and never more than 46% of the width (the words need the rest) */
+  --box-h: min(calc(100svh - var(--open-top) - 2 * var(--open-pad)), 880px);
+  --box-w: min(calc(var(--box-h) * .82), 46vw);
+  position: relative;
+  z-index: 0;
+  height: 100svh;
+}
+
+/* the stage: the canvas's box, the whole opening (the script fades it as the cover comes forward) */
+.writers-open__stage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.writers-open__stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.writers-open__statue {
+  position: absolute;
+  right: calc((100% - var(--frame)) / 2);
+  top: calc(var(--open-top) + (100svh - var(--open-top) - var(--box-w) / .82) / 2);
+  width: var(--box-w);
+  aspect-ratio: .82;
+}
+.writers-open__statue .statue-slot__still { background-image: url("../../assets/writers/statue-dark.webp"); }
+:root[data-theme="light"] .writers-open__statue .statue-slot__still { background-image: url("../../assets/writers/statue-light.webp"); }
+/* (the live statue's canvas is the stage's, not the box's: a lost context shows the picture again) */
+.writers-open__stage.is-lost .statue-slot__still { opacity: 1; transition: none; }
+.writers-open__stage.is-lost canvas { visibility: hidden; }
+
+/* the words: beside the statue, in the middle of the screen's height under the top bar */
+.writers-open__words {
+  position: absolute;
+  left: calc((100% - var(--frame)) / 2);
+  top: var(--open-top);
+  bottom: 0;
+  width: calc(var(--frame) - var(--box-w) - clamp(24px, 4vw, 72px));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.writers-open__words .lead { max-width: 30em; }
+
+/* ---- stacked: phones, and tablets held upright: the statue above, the words under it ---- */
+@media (max-width: 767px), (max-width: 1023px) and (orientation: portrait) {
+  .writers-open {
+    --open-gutter: max(16px, var(--stage-gutter));
+    --box-h: min(calc((100svh - var(--open-top)) * .56), calc((100vw - 2 * var(--open-gutter)) / .82));
+    --box-w: calc(var(--box-h) * .82);
+  }
+  .writers-open__statue { right: auto; left: calc(50% - var(--box-w) / 2); top: var(--open-top); }
+  .writers-open__words {
+    left: var(--open-gutter);
+    right: var(--open-gutter);
+    width: auto;
+    top: calc(var(--open-top) + var(--box-h) + 4px);
+    bottom: clamp(16px, 3svh, 32px);
+    justify-content: flex-start;
+  }
+  .writers-open__words .act-head__title { font-size: clamp(34px, min(9.4vw, 5.6svh), 60px); }
+  .writers-open__words .rule { margin-block: 12px; }
+  .writers-open__words .lead { font-size: clamp(15px, min(4.2vw, 2.2svh), 19px); }
+}
+
+/* ---- the book ---- */
+/* the cover forward, in the middle of the screen (its size and place are the script's): the page
+   under it, then the cover, which swings open on its spine (its left edge) */
+.wbook {
+  --paper: var(--plum-800);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  width: var(--book-w, 300px);
+  height: var(--book-h, 425px);
+  transform-origin: 0 0;
+  perspective: calc(var(--book-h, 425px) * 3.2);
+  perspective-origin: 0 50%;
+  pointer-events: none;
+}
+:root[data-theme="light"] .wbook { --paper: var(--plum-50); }
+html:not(.has-js) .wbook, .writers-open:not(.is-scene):not(.is-still) .wbook, .wbook.is-done { display: none; }
+/* (while it plays, the book and its page are layers of their own: the cover turns and the view goes
+   into the page without the page being painted again each frame) */
+.writers-open.is-scene .wbook, .writers-open.is-scene .wbook__page { will-change: transform; }
+
+/* the first page: the page's own ground once the view is inside it, a paper a shade off it before
+   (the paper and the shadow at the spine fade as the view goes in) */
+.wbook__page {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+}
+.wbook__paper, .wbook__gutter { position: absolute; inset: 0; pointer-events: none; }
+.wbook__paper { background: var(--paper); }
+.wbook__gutter {
+  z-index: 2;
+  background: linear-gradient(to right, rgb(21 4 8 / .32), rgb(21 4 8 / 0) 9%), linear-gradient(to left, rgb(21 4 8 / .12), rgb(21 4 8 / 0) 3%);
+}
+/* the picture of the writers below, at the page's scale (the script sets its width and scale) */
+.wbook__leaf { position: absolute; left: 0; top: 0; z-index: 1; transform-origin: 0 0; }
+.wbook__section { position: absolute; display: flow-root; margin: 0; max-width: none; }
+.wbook__title { display: none; }
+
+.wbook__cover {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  transform-style: preserve-3d;
+}
+.wbook__front, .wbook__inside, .wbook__shadow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.wbook__front { display: block; object-fit: fill; }
+/* its shadow (it comes as the cover leaves the hand: the script sets its opacity) */
+.wbook__shadow { opacity: 0; box-shadow: 0 28px 64px rgb(21 4 8 / .5); }
+/* the inside of the cover: a plum paper, its gutter at the spine (its right edge, once open) */
+.wbook__inside {
+  transform: rotateY(180deg);
+  background:
+    linear-gradient(to left, rgb(21 4 8 / .38), rgb(21 4 8 / 0) 10%),
+    radial-gradient(130% 90% at 30% 40%, rgb(250 243 244 / .07), rgb(250 243 244 / 0) 70%),
+    repeating-linear-gradient(90deg, rgb(250 243 244 / .018) 0 1px, rgb(250 243 244 / 0) 1px 3px),
+    var(--plum-800);
+  box-shadow: inset 0 0 0 1px rgb(235 216 140 / .14);
+}
+
+/* ---- with the script: the section below is the book's page ---- */
+.writers.is-paged {
+  position: relative;
+  z-index: 1;
+  display: flow-root; /* (its first margin inside it, as the page's picture of it has it) */
+  margin-top: calc(-100svh + var(--topbar-h) + var(--space-6));
+}
+/* (behind the book while the hold plays: out of sight, but still in the page for the keyboard and
+   for screen readers; a focus inside it lets the hold go, src/writers/opening.js) */
+.writers.is-behind { opacity: 0; pointer-events: none; }
+
+/* ---- reduced motion: no hold; the book open as a still under the statue ---- */
+.writers-open.is-still { height: auto; padding-top: 100svh; }
+.writers-open.is-still .writers-open__stage { bottom: auto; height: 100svh; }
+.writers-open.is-still .writers-open__words { bottom: auto; height: calc(100svh - var(--open-top)); }
+@media (max-width: 767px), (max-width: 1023px) and (orientation: portrait) {
+  .writers-open.is-still .writers-open__words { height: auto; }
+}
+.wbook.is-still {
+  --book-w: min(30vw, 320px, calc((100vw - 2 * var(--stage-gutter)) / 2));
+  --book-h: calc(var(--book-w) / .7064);
+  position: relative;
+  left: auto;
+  top: auto;
+  margin: var(--space-6) auto var(--space-8);
+  translate: calc(var(--book-w) / 2) 0;
+}
+.wbook.is-still .wbook__cover { transform: rotateY(-180deg); }
+.wbook.is-still .wbook__leaf { display: none; }
+.wbook.is-still .wbook__title {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  height: 100%;
+  padding: 14%;
+  text-align: center;
+}
+.wbook__title-name { margin: 0; font-family: var(--font-display); font-size: clamp(26px, 3.2vw, 38px); line-height: 1.1; color: var(--fg-strong); }
+.wbook__title-line { margin: 0; font-family: var(--font-display); font-size: clamp(15px, 1.5vw, 19px); color: var(--fg); }
+.wbook__title .eyebrow { margin: 0; }
+/* (on a phone the book is wider, and its title page's type smaller, so the title fits on the page) */
+@media (max-width: 767px) {
+  .wbook.is-still { --book-w: min(42vw, 320px); }
+  .wbook.is-still .wbook__title { gap: 6px; padding: 10% 8%; }
+  .wbook.is-still .wbook__title .eyebrow { font-size: 10px; letter-spacing: .14em; }
+  .wbook.is-still .wbook__title-name { font-size: 20px; }
+  .wbook.is-still .wbook__title-line { font-size: 13px; }
+}

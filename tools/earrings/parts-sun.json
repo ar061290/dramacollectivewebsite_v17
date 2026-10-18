@@ -1,55 +1,41 @@
 {
- "about": "The sun earring's part map for build-earrings.mjs, in the source's units (x right, y up, front +z). Polygons marked first claim before the contested places; then a contested place is split between its two parts by the cheapest seam; then the other polygons claim in the order of the parts. Each jump ring goes with the part below it, so the cut falls where the part above passes through it; the S link under the star goes with the sun.",
+ "about": "The sun earring's part map for build-earrings.mjs, in the source's units (x right, y up, front +z). Polygons marked first claim before the contested places; then a contested place is split between its two parts by the cheapest seam; then the other polygons claim in the order of the parts. Each jump ring goes with the part below it, so the cut falls where the part above passes through it; the S link under the star goes with the sun. The ear wire, its coil and its bronze bead (the hook) are cut away and left out of the model (remove): the earring hangs from the star's top loop, the round loop in the star's own plane that the wire passed through, which stays with the star. The end of the wire, wrapped over the front of the loop's top, goes with the hook (by its depth), and the hole it leaves in the loop is closed (cap); then the loop's top, spoilt there, is mended from its sound side (mend).",
  "crease": 40,
  "island": 60,
  "parts": [
   {
    "name": "hook",
+   "remove": true,
+   "cap": true,
    "parent": null,
-   "swing": { "inPlane": 35, "outOfPlane": 20 },
    "polys": [
-    [[-0.3, 0.98], [0.2, 0.98], [0.2, 0.668], [-0.3, 0.668]],
+    [[-0.3, 0.98], [0.2, 0.98], [0.2, 0.69], [-0.3, 0.69]],
     {
      "first": true,
-     "pts": [[-0.13, 0.7], [-0.09, 0.7], [-0.09, 0.613], [-0.13, 0.613]]
-    },
-    {
-     "first": true,
-     "pts": [[-0.036, 0.7], [0, 0.7], [0, 0.613], [-0.036, 0.613]]
-    },
-    {
-     "first": true,
-     "pts": [[-0.09, 0.7], [-0.036, 0.7], [-0.036, 0.668], [-0.09, 0.668]]
-    },
-    {
-     "first": true,
-     "pts": [[-0.09, 0.668], [-0.082, 0.668], [-0.082, 0.646], [-0.09, 0.646]]
-    },
-    {
-     "first": true,
-     "pts": [[-0.043, 0.668], [-0.036, 0.668], [-0.036, 0.646], [-0.043, 0.646]]
+     "z": [-0.0245, 0.2],
+     "pts": [[-0.085, 0.69], [-0.04, 0.69], [-0.04, 0.668], [-0.085, 0.668]]
     }
    ]
   },
   {
    "name": "star",
-   "parent": "hook",
+   "parent": null,
    "swing": { "inPlane": 60, "outOfPlane": 25 },
    "polys": [
     [[-0.21, 0.6], [0.08, 0.6], [0.08, 0.4], [-0.21, 0.4]],
     {
      "first": true,
-     "pts": [[-0.1, 0.613], [-0.03, 0.613], [-0.03, 0.585], [-0.1, 0.585]]
-    },
-    {
-     "first": true,
-     "pts": [[-0.08, 0.646], [-0.046, 0.646], [-0.046, 0.613], [-0.08, 0.613]]
-    },
-    {
-     "first": true,
-     "pts": [[-0.079, 0.646], [-0.053, 0.646], [-0.06, 0.664], [-0.072, 0.664]]
+     "pts": [[-0.14, 0.672], [0, 0.672], [0, 0.585], [-0.14, 0.585]]
     }
-   ]
+   ],
+   "mend": {
+    "about": "The top of the star's loop, where the ear wire's end was wrapped over it and cut away, is made again as a smooth tube from the loop's sound metal on the left to its sound metal on the right (build-earrings.mjs, mendLoop).",
+    "centre": [-0.0605, 0.6575],
+    "radii": [0.026, 0.019],
+    "span": [50, 130],
+    "overlap": 4,
+    "rho": [0.3, 2.2]
+   }
   },
   {
    "name": "a1",
@@ -183,7 +169,7 @@
     "hook",
     "star"
    ],
-   "pts": [[-0.09, 0.668], [-0.036, 0.668], [-0.036, 0.613], [-0.09, 0.613]]
+   "pts": [[-0.11, 0.69], [-0.015, 0.69], [-0.015, 0.672], [-0.11, 0.672]]
   },
   {
    "parts": [

@@ -4,6 +4,26 @@ This is the brief for the earrings that hang from the theme switch. It is writte
 says what to build, why, and how to tell when it is right. Everything here applies to v14 of the
 CHIREC Drama Collective site (`dramacollectivewebsite_v14`: Vite, vanilla JS, three.js 0.170, GSAP).
 
+## 0. Revision, after the owner saw the first build (this overrides anything below)
+
+1. **No ear wire.** The hook (the ear wire, its coil and bronze bead, and the link under them) is
+   gone. The earring hangs from the switch by the **top loop of the star connector**, as in a photo
+   of the sun earring with its star at the top. The star's top loop is the anchor, pinned just
+   under the button, so the earring reads as hanging from the button itself. Remove the hook from
+   the asset (`tools/earrings/parts-*.json`, `build-earrings.mjs`, `assets/models/earrings.glb`
+   and `earrings.json`), not only at runtime.
+2. **Much larger.** On a laptop the earring, from the star's top loop to the lowest charm, is about
+   **60% of the screen's height**: about 540 px at 1440 × 900. Use something like
+   `clamp(380px, 60vh, 640px)`. Its top sits right under the switch, and it hangs down over the
+   page, beside the heading, not over the bar. The canvas, its grab zone and the drag reach scale
+   with it.
+3. **No earrings on phones.** Below 768 px wide there are none: no model loaded, no canvas, no
+   WebGL context. The switch works as before. Tablets and laptops keep them.
+4. **It does not stay.** It comes down, lands with its small jump, dangles, and **goes back up on
+   its own**: about 3 s after it has settled, so about 5 s after the click, unless the pointer is
+   on it or it is held. Pointing at it or holding it keeps it down until a moment after it is let
+   go. A second switch, or the bar sliding away, still sends it up at once.
+
 ## 1. What the visitor sees
 
 The top bar has a theme switch (`button.theme-toggle[data-theme-toggle]`, a sun or moon icon;

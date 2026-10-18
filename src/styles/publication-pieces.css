@@ -301,15 +301,16 @@ html:not(.has-js) .pub-pieces__controls { display: none; }
   container-type: size;
 }
 /* the statue's box: his own proportions (.82), the column's whole height, or narrower where the
-   column is (the canvas stays only as large as he needs) */
-.pub-pieces__statue { height: min(100cqh, 100cqw / .82); aspect-ratio: .82; }
-.pub-pieces__statue::before, .pub-pieces__statue::after {
+   column is (the canvas stays only as large as he needs). On a writer's page their photo stands in
+   the same box and the same light (.pub-pieces__stand, src/styles/writers.css). */
+.pub-pieces__statue, .pub-pieces__stand { height: min(100cqh, 100cqw / .82); aspect-ratio: .82; }
+:is(.pub-pieces__statue, .pub-pieces__stand)::before, :is(.pub-pieces__statue, .pub-pieces__stand)::after {
   content: "";
   position: absolute;
   z-index: -1;
   pointer-events: none;
 }
-.pub-pieces__statue::before {
+:is(.pub-pieces__statue, .pub-pieces__stand)::before {
   inset: -4% -60% 11%;
   background: conic-gradient(from 162deg at 50% 0, transparent, var(--beam) 7deg, var(--beam) 29deg, transparent 36deg);
   -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, rgb(0 0 0 / .5));
@@ -317,7 +318,7 @@ html:not(.has-js) .pub-pieces__controls { display: none; }
 }
 /* (the floor's hairline runs the column's width exactly, fading out at both ends: 100cqw is the
    column's width, the statue standing in its middle) */
-.pub-pieces__statue::after {
+:is(.pub-pieces__statue, .pub-pieces__stand)::after {
   left: calc((100% - 100cqw) / 2);
   right: calc((100% - 100cqw) / 2);
   top: 89%;
@@ -347,7 +348,8 @@ html:not(.has-js) .pub-pieces__controls { display: none; }
 .pub-pieces__list.is-fits { -webkit-mask-image: none; mask-image: none; }
 
 /* a row: the issue with its dot, the picture (the mark in one of the brand's colours, on a tile of
-   another that it reads on), the form over the title and the writer, and Remind me (houseofheat:
+   another that it reads on; .pub-tile is the same pair elsewhere, as the placeholder photo of a
+   writer whose own has not come in), the form over the title and the writer, and Remind me (houseofheat:
    the countdown, the brand over the title, the temperature) */
 .pub-row {
   display: grid;
@@ -362,11 +364,11 @@ html:not(.has-js) .pub-pieces__controls { display: none; }
 .pub-row__when { grid-area: when; display: flex; align-items: center; gap: 8px; padding-top: 3px; color: var(--fg-strong); white-space: nowrap; }
 .pub-row__dot { width: 6px; height: 6px; flex: none; border: 1px solid var(--fg-muted); border-radius: 50%; }
 .pub-row.is-next .pub-row__dot { border-color: var(--accent); background: var(--accent); }
-.pub-row[data-tone="1"] { --tile: var(--gold-500); --mark: var(--plum-800); }
-.pub-row[data-tone="2"] { --tile: var(--plum-100); --mark: var(--plum-500); }
-.pub-row[data-tone="3"] { --tile: var(--plum-800); --mark: var(--gold-500); }
-.pub-row[data-tone="4"] { --tile: var(--plum-500); --mark: var(--plum-100); }
-.pub-row[data-tone="5"] { --tile: var(--plum-100); --mark: var(--slate-700); }
+.pub-row[data-tone="1"], .pub-tile[data-tone="1"] { --tile: var(--gold-500); --mark: var(--plum-800); }
+.pub-row[data-tone="2"], .pub-tile[data-tone="2"] { --tile: var(--plum-100); --mark: var(--plum-500); }
+.pub-row[data-tone="3"], .pub-tile[data-tone="3"] { --tile: var(--plum-800); --mark: var(--gold-500); }
+.pub-row[data-tone="4"], .pub-tile[data-tone="4"] { --tile: var(--plum-500); --mark: var(--plum-100); }
+.pub-row[data-tone="5"], .pub-tile[data-tone="5"] { --tile: var(--plum-100); --mark: var(--slate-700); }
 .pub-row__tile {
   grid-area: tile;
   display: grid;

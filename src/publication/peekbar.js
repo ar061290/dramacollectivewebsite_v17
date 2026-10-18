@@ -9,8 +9,11 @@
 // holds the bar or sends it away. With a mouse or a pen, the top edge is a strip of the page's own
 // (publication.css, .peek-edge), so a frame under it cannot keep the pointer from calling the bar.
 // Anything hanging from the bar that the pointer may go to holds it down too ([data-holds-bar]: the
-// earring on the theme switch, src/ui/earrings.js), found by where it is rather than by what is
-// under the pointer, since during the theme's switch the page is only a picture.
+// earring on the theme switch, src/ui/earrings.js), while the pointer is on it: on its own outline
+// (the browser's hit test, which keeps to a clip-path), not anywhere in its box. During the theme's
+// switch the page is only a picture and the browser finds nothing under the pointer, so then it is
+// found by its box. When it goes away (it sends 'hanger:gone'), the bar looks again at where the
+// pointer last was, and goes up if that is not on the bar.
 const EDGE = 56; // px from the top of the screen that call the bar down
 const LINGER = 450; // ms the bar stays after the pointer has left it
 
@@ -44,16 +47,34 @@ export function setupPeekBar() {
   // page (the newsletter's form) lets the pointer through meanwhile (publication.css, .is-held), so
   // the page sees it leave
   const hold = (on) => { pointerIn = on; bar.classList.toggle('is-held', on); };
-  const onHanger = (e) => [...document.querySelectorAll('[data-holds-bar]:not([hidden])')].some((el) => {
-    const r = el.getBoundingClientRect();
-    return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
-  });
-  const onMove = (e) => {
-    if (e.pointerType === 'touch') return;
-    hold(e.clientY <= EDGE || !!e.target.closest?.('[data-topbar], [data-holds-bar]') || onHanger(e));
+  const onHanger = (x, y) => {
+    const hangers = [...document.querySelectorAll('[data-holds-bar]:not([hidden])')];
+    if (!hangers.length) return false;
+    if (!document.documentElement.classList.contains('is-theming')) {
+      const under = document.elementsFromPoint(x, y);
+      return hangers.some((el) => under.includes(el));
+    }
+    return hangers.some((el) => {
+      const r = el.getBoundingClientRect();
+      return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    });
+  };
+  let last = null; // where a mouse or a pen last was: { x, y }
+  const judge = (x, y, target) => {
+    hold(y <= EDGE || !!target?.closest?.('[data-topbar], [data-holds-bar]') || onHanger(x, y));
     if (pointerIn) show();
     // once, as the pointer leaves it: moving on over the page does not keep it down
     else if (bar.classList.contains('is-peek') && !timer) hideSoon();
+  };
+  const onMove = (e) => {
+    if (e.pointerType === 'touch') return;
+    last = { x: e.clientX, y: e.clientY };
+    judge(e.clientX, e.clientY, e.target);
+  };
+  // something hanging from the bar has gone: the pointer, where it was, may no longer hold the bar
+  const onHangerGone = () => {
+    if (!last || !bar.classList.contains('is-peek')) return;
+    judge(last.x, last.y, document.elementFromPoint(last.x, last.y));
   };
   const onLeaveWindow = (e) => {
     if (e.pointerType === 'touch') return; // a finger leaves after every tap
@@ -83,6 +104,7 @@ export function setupPeekBar() {
   };
 
   window.addEventListener('pointermove', onMove, { passive: true });
+  document.addEventListener('hanger:gone', onHangerGone);
   document.documentElement.addEventListener('pointerleave', onLeaveWindow);
   window.addEventListener('scroll', onScroll, { passive: true });
   bar.addEventListener('focusin', onFocusIn);
@@ -90,6 +112,7 @@ export function setupPeekBar() {
   return () => {
     clearTimeout(timer);
     window.removeEventListener('pointermove', onMove);
+    document.removeEventListener('hanger:gone', onHangerGone);
     document.documentElement.removeEventListener('pointerleave', onLeaveWindow);
     window.removeEventListener('scroll', onScroll);
     bar.removeEventListener('focusin', onFocusIn);

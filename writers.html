@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Our writers · The Drama Collective</title>
-  <meta name="description" content="The students who write for The Drama Collective’s publication. Coming soon.">
+  <title>Meet our writers · The Drama Collective</title>
+  <meta name="description" content="The students who write for The Drama Collective’s theatre publication, issue by issue: their introductions and their pieces.">
   <meta name="theme-color" content="#2a0d1c">
   <!-- site:head -->
   <link rel="icon" href="./assets/brand/mark-gold.png">
@@ -32,7 +32,7 @@
   </script>
   <!-- /site:head -->
 </head>
-<body class="page page--soon page--writers">
+<body class="page page--writers">
   <!-- site:header -->
   <a class="skip-link" href="#main">Skip to content</a>
 
@@ -112,27 +112,261 @@
   </div>
   <!-- /site:stage -->
 
-  <main id="main" class="page__main page__main--soon">
-    <section class="soon" aria-labelledby="soon-title">
-      <div class="soon__stage" data-curtain="workshops"></div>
-      <p class="soon__sign"><span class="soon__words"><span>Coming</span> <span>soon</span></span></p>
-      <div class="soon__copy">
-        <p class="eyebrow">The Drama Collective presents</p>
-        <h1 class="soon__title" id="soon-title">Our writers</h1>
-        <span class="rule" aria-hidden="true"></span>
+  <main id="main" class="page__main page__main--writers">
+    <!-- The opening: the marble statue on the stage among the stars, beside the heading and its line;
+         scrolling brings the view to the book in its hand, the October cover takes the book's place,
+         comes forward and opens on its spine, and its first page is the writers below
+         (src/writers/opening.js, src/styles/writers-open.css) -->
+    <section class="writers-open" data-writers-open aria-labelledby="writers-title">
+      <div class="writers-open__stage">
+        <figure class="statue-slot writers-open__statue" role="img" aria-label="A statue in white marble clouded and flecked with pink: a robed figure with the comedy and tragedy masks for a face, raising a fountain pen like a torch and holding our publication against its side">
+          <span class="statue-slot__still" aria-hidden="true"></span>
+        </figure>
       </div>
-      <p class="eyebrow soon__hint" data-curtain-hint aria-hidden="true">Drag across the curtain</p>
+      <header class="writers-open__words act-head ground" data-mask>
+        <p class="eyebrow">The publication</p>
+        <h1 class="act-head__title" id="writers-title" data-reveal>Meet our writers</h1>
+        <span class="rule" aria-hidden="true"></span>
+        <p class="lead">Every piece in our publication is written by a student. Here they are, issue by issue: choose anyone to read their introduction and find their pieces.</p>
+      </header>
+      <!-- the book: the publication's cover, laid over the statue's book and then opened; its first
+           page holds a picture of the writers below (made by the script) -->
+      <div class="wbook" aria-hidden="true" inert>
+        <div class="wbook__page">
+          <span class="wbook__paper"></span>
+          <div class="wbook__leaf"></div>
+          <span class="wbook__gutter"></span>
+          <div class="wbook__title">
+            <p class="eyebrow">The Drama Collective</p>
+            <p class="wbook__title-name">Our writers</p>
+            <span class="rule"></span>
+            <p class="wbook__title-line">Issue by issue</p>
+          </div>
+        </div>
+        <div class="wbook__cover">
+          <span class="wbook__shadow"></span>
+          <img class="wbook__front" src="./assets/publication/cover-october-2026.webp" alt="" width="1054" height="1492" decoding="async">
+          <span class="wbook__inside"></span>
+        </div>
+      </div>
     </section>
 
-    <section class="soon-about" aria-labelledby="about-title">
-      <div class="ground" data-mask>
-        <h2 class="act__title" id="about-title" data-reveal>The people behind the pieces</h2>
-        <span class="rule" aria-hidden="true"></span>
-        <p>Every piece in our publication is written by a student. This page will introduce our writers, with a short profile of each and the pieces they have published with us. Every writer we publish receives a certificate and a mention here.</p>
-        <p>Want to be one of them? <a href="./write.html">Apply to be a writer</a>.</p>
+    <!-- the writers, issue by issue: written by tools/pages/build.mjs (npm run pages) from
+         content/writers.json, content/team.json and src/publication/pieces-data.js; edit those -->
+    <section class="writers" aria-label="Our writers, by issue">
+      <!-- site:writers -->
+      <div class="team-filter writers-filter" role="group" aria-label="Show an issue">
+        <button class="team-filter__btn" type="button" aria-pressed="true" data-filter="all">Every issue</button>
+        <button class="team-filter__btn" type="button" aria-pressed="false" data-filter="2026-10">October 2026</button>
+        <button class="team-filter__btn" type="button" aria-pressed="false" data-filter="2026-11">November 2026</button>
+        <button class="team-filter__btn" type="button" aria-pressed="false" data-filter="2026-12">December 2026</button>
+        <button class="team-filter__btn" type="button" aria-pressed="false" data-filter="tba">Date to be announced</button>
       </div>
-      <p class="soon-about__coda ground" data-mask>Coming soon.</p>
+      <div class="writers-months" data-spot data-writers>
+        <section class="writers-month" data-month="2026-10" data-flip-id="2026-10" aria-labelledby="month-2026-10">
+          <header class="writers-month__head" data-mask>
+            <h2 class="writers-month__title" id="month-2026-10"><time datetime="2026-10">October 2026</time></h2>
+            <p class="eyebrow writers-month__note">Out now</p>
+          </header>
+          <ul class="team-grid writers-grid">
+            <li class="member">
+              <a class="member__card" href="./writer-aripra-sharma.html" data-writer="aripra">
+                <span class="member__photo"><img src="./assets/team/aripra.webp" alt="" width="520" height="650" loading="lazy" decoding="async"></span>
+                <span class="member__name">Aripra Sharma</span>
+                <span class="member__works"><span class="member__work">Drama: The Art of Feeling</span></span>
+              </a>
+            </li>
+            <li class="member">
+              <a class="member__card" href="./writer-aadi-ramnani.html" data-writer="aadi">
+                <span class="member__photo"><img src="./assets/team/aadi.webp" alt="" width="520" height="650" loading="lazy" decoding="async"></span>
+                <span class="member__name">Aadi Ramnani</span>
+                <span class="member__works"><span class="member__work">The Story I Probably Told Myself About You</span></span>
+              </a>
+            </li>
+            <li class="member">
+              <a class="member__card" href="./writer-anika-megha-kruthiventi.html" data-writer="anika">
+                <span class="member__photo member__photo--mark pub-tile" data-tone="2"><span class="pub-mark"></span></span>
+                <span class="member__name">Anika Megha Kruthiventi</span>
+                <span class="member__works"><span class="member__work">Everything Changes</span></span>
+              </a>
+            </li>
+            <li class="member">
+              <a class="member__card" href="./writer-kathya-yaratapalli.html" data-writer="kathya">
+                <span class="member__photo member__photo--mark pub-tile" data-tone="5"><span class="pub-mark"></span></span>
+                <span class="member__name">Kathya Yaratapalli</span>
+                <span class="member__works"><span class="member__work">Stars.</span><span class="member__work">I Was There First</span></span>
+              </a>
+            </li>
+            <li class="member">
+              <a class="member__card" href="./writer-mehek-jain.html" data-writer="mehek">
+                <span class="member__photo member__photo--mark pub-tile" data-tone="4"><span class="pub-mark"></span></span>
+                <span class="member__name">Mehek Jain</span>
+                <span class="member__works"><span class="member__work">Beauty in Imperfection</span></span>
+              </a>
+            </li>
+            <li class="member">
+              <a class="member__card" href="./writer-nisha-sriram.html" data-writer="nisha">
+                <span class="member__photo member__photo--mark pub-tile" data-tone="3"><span class="pub-mark"></span></span>
+                <span class="member__name">Nisha Sriram</span>
+                <span class="member__works"><span class="member__work">I Love Nostalgia</span></span>
+              </a>
+            </li>
+          </ul>
+        </section>
+        <section class="writers-month" data-month="2026-11" data-flip-id="2026-11" aria-labelledby="month-2026-11">
+          <header class="writers-month__head" data-mask>
+            <h2 class="writers-month__title" id="month-2026-11"><time datetime="2026-11">November 2026</time></h2>
+            <p class="eyebrow writers-month__note">Coming</p>
+          </header>
+          <ul class="team-grid writers-grid">
+            <li class="member">
+              <a class="member__card" href="./writer-kodela-gautam.html" data-writer="gautam">
+                <span class="member__photo"><img src="./assets/team/gautam.webp" alt="" width="454" height="568" loading="lazy" decoding="async"></span>
+                <span class="member__name">Kodela Gautam</span>
+                <span class="member__works"><span class="member__work">The Modern Drama and the Unities</span></span>
+              </a>
+            </li>
+            <li class="member">
+              <a class="member__card" href="./writer-aadi-ramnani.html" data-writer="aadi">
+                <span class="member__photo"><img src="./assets/team/aadi.webp" alt="" width="520" height="650" loading="lazy" decoding="async"></span>
+                <span class="member__name">Aadi Ramnani</span>
+                <span class="member__works"><span class="member__work">I Can’t Stop Thinking About You. Yes, You</span></span>
+              </a>
+            </li>
+          </ul>
+        </section>
+        <section class="writers-month" data-month="2026-12" data-flip-id="2026-12" aria-labelledby="month-2026-12">
+          <header class="writers-month__head" data-mask>
+            <h2 class="writers-month__title" id="month-2026-12"><time datetime="2026-12">December 2026</time></h2>
+            <p class="eyebrow writers-month__note">Coming</p>
+          </header>
+          <ul class="team-grid writers-grid">
+            <li class="member">
+              <a class="member__card" href="./writer-aadi-ramnani.html" data-writer="aadi">
+                <span class="member__photo"><img src="./assets/team/aadi.webp" alt="" width="520" height="650" loading="lazy" decoding="async"></span>
+                <span class="member__name">Aadi Ramnani</span>
+                <span class="member__works"><span class="member__work">The ‘You’ Inside of You Doesn’t Exist</span></span>
+              </a>
+            </li>
+          </ul>
+        </section>
+        <section class="writers-month" data-month="tba" data-flip-id="tba" aria-labelledby="month-tba">
+          <header class="writers-month__head" data-mask>
+            <h2 class="writers-month__title" id="month-tba">Date to be announced</h2>
+            <p class="eyebrow writers-month__note">Coming</p>
+          </header>
+          <ul class="team-grid writers-grid">
+            <li class="member">
+              <a class="member__card" href="./writer-venkatesh-kalasamudram.html" data-writer="venkatesh">
+                <span class="member__photo member__photo--mark pub-tile" data-tone="3"><span class="pub-mark"></span></span>
+                <span class="member__name">Venkatesh Kalasamudram</span>
+                <span class="member__works"><span class="member__work" lang="te">ప్రకటించాలి</span></span>
+              </a>
+            </li>
+            <li class="member">
+              <a class="member__card" href="./writer-anika-megha-kruthiventi.html" data-writer="anika">
+                <span class="member__photo member__photo--mark pub-tile" data-tone="2"><span class="pub-mark"></span></span>
+                <span class="member__name">Anika Megha Kruthiventi</span>
+                <span class="member__works"><span class="member__work">change</span></span>
+              </a>
+            </li>
+          </ul>
+        </section>
+      </div>
+      <template data-writer-panel="aripra" data-role="Writer · Executive President">
+        <p>whirlwind (n): a rush of chaos and momentum</p>
+        <p>Take your pick on whether that's my connotation of the word or a personal biography. Hi! I'm Aripra:) Apart from being an avid monologuer and a novel addict, I'm also the Executive President of the Drama Collective and an IBDP1 student at Chirec. If I had to sum myself up, I'd say I'm a mix of B99 reruns, blasts of Green Day and Drake and the desire to live by the words “I go to seek a great perhaps.” On a very serious note, I joined this collective not purely because of my love for theatre, but because I wanted to take all that chaos and actually put it towards something meaningful.</p>
+        <h3 class="eyebrow writer-panel__label">Their piece</h3>
+        <ul class="writer-works">
+          <li class="writer-works__item"><a class="writer-works__title" href="./piece-drama-the-art-of-feeling.html">Drama: The Art of Feeling</a><span class="writer-works__meta">Essay · October 2026</span></li>
+        </ul>
+        <a class="btn btn--inverse writer-panel__more" href="./writer-aripra-sharma.html">Read more from Aripra<svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </template>
+      <template data-writer-panel="aadi" data-role="Writer · President">
+        <p>Hi, I’m Aadi and I’ve been training in theatre since kindergarten, beginning with Helen O’Grady International, the world’s largest developmental drama programme, and later continuing my training with the International Drama Academy.</p>
+        <p>Theatre has been a huge part of my life, partly because it lets me explore different versions of my own self, those that I never would have dared touch in reality, and I want to use what I’ve learned to help make drama more accessible, collaborative, and exciting for the entirety of the student body at CHIREC, not solely the performers.</p>
+        <p>Through the Drama Collective, I hope to create more spaces for students to perform, experiment, collaborate, and discover what they’re capable of, whether they’ve been performing for years or are stepping onto a stage for the first time, while creating opportunities for students to experience theatre from the other side of the stage; to encounter stories, performances, and ideas that they might not otherwise have the chance to see, and to make theatre something the wider community can engage with.</p>
+        <h3 class="eyebrow writer-panel__label">Their pieces</h3>
+        <ul class="writer-works">
+          <li class="writer-works__item"><a class="writer-works__title" href="./piece-the-story-i-probably-told-myself-about-you.html">The Story I Probably Told Myself About You</a><span class="writer-works__meta">Reflection · October 2026</span></li>
+          <li class="writer-works__item"><span class="writer-works__title">I Can’t Stop Thinking About You. Yes, You</span><span class="writer-works__meta">Reflection · Coming in November 2026</span></li>
+          <li class="writer-works__item"><span class="writer-works__title">The ‘You’ Inside of You Doesn’t Exist</span><span class="writer-works__meta">Reflection · Coming in December 2026</span></li>
+        </ul>
+        <a class="btn btn--inverse writer-panel__more" href="./writer-aadi-ramnani.html">Read more from Aadi<svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </template>
+      <template data-writer-panel="anika" data-role="Writer">
+        <p class="writer-soon">Their introduction is on its way.</p>
+        <h3 class="eyebrow writer-panel__label">Their pieces</h3>
+        <ul class="writer-works">
+          <li class="writer-works__item"><a class="writer-works__title" href="./piece-everything-changes.html">Everything Changes</a><span class="writer-works__meta">One-act play · October 2026</span></li>
+          <li class="writer-works__item"><span class="writer-works__title">change</span><span class="writer-works__meta">Shakespearean verse · Coming, date to be announced</span></li>
+        </ul>
+        <a class="btn btn--inverse writer-panel__more" href="./writer-anika-megha-kruthiventi.html">Read more from Anika<svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </template>
+      <template data-writer-panel="kathya" data-role="Writer">
+        <p class="writer-soon">Their introduction is on its way.</p>
+        <h3 class="eyebrow writer-panel__label">Their pieces</h3>
+        <ul class="writer-works">
+          <li class="writer-works__item"><a class="writer-works__title" href="./piece-stars.html">Stars.</a><span class="writer-works__meta">Contemporary monologue · October 2026</span></li>
+          <li class="writer-works__item"><a class="writer-works__title" href="./piece-i-was-there-first.html">I Was There First</a><span class="writer-works__meta">Contemporary monologue · October 2026</span></li>
+        </ul>
+        <a class="btn btn--inverse writer-panel__more" href="./writer-kathya-yaratapalli.html">Read more from Kathya<svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </template>
+      <template data-writer-panel="mehek" data-role="Writer">
+        <p class="writer-soon">Their introduction is on its way.</p>
+        <h3 class="eyebrow writer-panel__label">Their piece</h3>
+        <ul class="writer-works">
+          <li class="writer-works__item"><a class="writer-works__title" href="./piece-beauty-in-imperfection.html">Beauty in Imperfection</a><span class="writer-works__meta">Contemporary monologue · October 2026</span></li>
+        </ul>
+        <a class="btn btn--inverse writer-panel__more" href="./writer-mehek-jain.html">Read more from Mehek<svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </template>
+      <template data-writer-panel="nisha" data-role="Writer">
+        <p class="writer-soon">Their introduction is on its way.</p>
+        <h3 class="eyebrow writer-panel__label">Their piece</h3>
+        <ul class="writer-works">
+          <li class="writer-works__item"><a class="writer-works__title" href="./piece-i-love-nostalgia.html">I Love Nostalgia</a><span class="writer-works__meta">Soliloquy · October 2026</span></li>
+        </ul>
+        <a class="btn btn--inverse writer-panel__more" href="./writer-nisha-sriram.html">Read more from Nisha<svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </template>
+      <template data-writer-panel="venkatesh" data-role="Writer">
+        <p class="writer-soon">Their introduction is on its way.</p>
+        <h3 class="eyebrow writer-panel__label">Their piece</h3>
+        <ul class="writer-works">
+          <li class="writer-works__item"><span class="writer-works__title" lang="te">ప్రకటించాలి</span><span class="writer-works__meta">Special · Coming, date to be announced</span></li>
+        </ul>
+        <a class="btn btn--inverse writer-panel__more" href="./writer-venkatesh-kalasamudram.html">Read more from Venkatesh<svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </template>
+      <template data-writer-panel="gautam" data-role="Writer · Head of Publication">
+        <p>“To be or not to be, that is the question”</p>
+        <p>Hey there! I’m Gautam, a DP 1 student and this year’s Head of Publication for the Drama Collective. As a student, I am a person who enjoys putting thoughts into words that can be remembered for a lifetime. I’ve always wanted to capture an unseen lens of theatre apart from its production, sharpen my creativity through a new form of expression: Drama, and meet new people who strengthen my creative persona. Hence, here I am!</p>
+        <p>Outside the stage, I am a Mathematics and Economics enthusiast making me to also view real-life problems with a practical approach.</p>
+        <p>My hobbies? Well, I am an obsessive cinephile and an imaginative storywriter who loves to explore a myriad of genres.</p>
+        <p>That is it. I am ready to give you a whole ton of issues to be read without you getting bored at all! I am ready, so are you?</p>
+        <p>Let’s talk about some Drama this year!</p>
+        <h3 class="eyebrow writer-panel__label">Their piece</h3>
+        <ul class="writer-works">
+          <li class="writer-works__item"><span class="writer-works__title">The Modern Drama and the Unities</span><span class="writer-works__meta">Essay · Coming in November 2026</span></li>
+        </ul>
+        <a class="btn btn--inverse writer-panel__more" href="./writer-kodela-gautam.html">Read more from Gautam<svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      </template>
+      <!-- /site:writers -->
+      <p class="writers-coda ground" data-mask>Want to see your name here? <a href="./write.html">Apply to be a writer</a>.</p>
     </section>
+
+    <dialog class="spotlight spotlight--writer" id="spotlight" aria-labelledby="spotlight-name">
+      <div class="spotlight__inner">
+        <div class="spotlight__photo" data-spotlight-photo></div>
+        <div class="spotlight__body">
+          <p class="eyebrow" data-spotlight-role></p>
+          <h2 class="spotlight__name" id="spotlight-name" data-spotlight-name></h2>
+          <span class="rule" aria-hidden="true"></span>
+          <div class="spotlight__intro" data-spotlight-intro></div>
+        </div>
+        <button class="icon-btn spotlight__close" type="button" aria-label="Close" data-spotlight-close>
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </dialog>
   </main>
 
   <!-- site:footer -->
@@ -185,6 +419,6 @@
   </footer>
   <!-- /site:footer -->
 
-  <script type="module" src="./src/pages/soon.js"></script>
+  <script type="module" src="./src/pages/writers.js"></script>
 </body>
 </html>

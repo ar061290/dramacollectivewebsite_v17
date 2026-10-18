@@ -1,12 +1,12 @@
 {
- "about": "The moon earring's part map for build-earrings.mjs, in the source's units (x right, y up, front +z). Polygons marked first claim before the contested places; then a contested place is split between its two parts by the cheapest seam; then the other polygons claim in the order of the parts. Each jump ring goes with the part below it, so the cut falls where the part above passes through it. The strands hang from loops that wrap the moon's lower edge.",
+ "about": "The moon earring's part map for build-earrings.mjs, in the source's units (x right, y up, front +z). Polygons marked first claim before the contested places; then a contested place is split between its two parts by the cheapest seam; then the other polygons claim in the order of the parts. Each jump ring goes with the part below it, so the cut falls where the part above passes through it. The strands hang from loops that wrap the moon's lower edge. The ear wire, its coil, its bronze bead and the two links under them (the hook) are cut away and left out of the model (remove): the earring hangs from the star's top loop, the small loop at the star's top point (at right angles to the star) that the lower link passed through, which stays with the star.",
  "crease": 40,
  "island": 60,
  "parts": [
   {
    "name": "hook",
+   "remove": true,
    "parent": null,
-   "swing": { "inPlane": 35, "outOfPlane": 20 },
    "polys": [
     [[-0.25, 0.98], [0.25, 0.98], [0.25, 0.612], [-0.25, 0.612]],
     {
@@ -21,7 +21,7 @@
   },
   {
    "name": "star",
-   "parent": "hook",
+   "parent": null,
    "swing": { "inPlane": 60, "outOfPlane": 25 },
    "polys": [
     [[-0.17, 0.574], [0.17, 0.574], [0.17, 0.37], [-0.17, 0.37]],

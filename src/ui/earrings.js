@@ -1,28 +1,60 @@
 // The earrings that hang from the theme switch (docs/earrings/SPEC.md): the switch is clicked, and
 // the earring for the theme just chosen (the sun for the light, the moon for the dark) comes down
-// out of the button and dangles from it (the scene and its physics are src/scene/earrings.js). A
-// visitor can take hold of it and pull it about; let go, it swings back. It goes back up into the
-// button after 6 seconds untouched, when the theme is switched again (the other comes down as it
-// goes), and at once when the button leaves the screen (the bar sliding away, or the publication's
-// bar going back up).
+// out of the button, hanging from it by the top loop of its star, lands with a small jump and
+// dangles (the scene and its physics are src/scene/earrings.js). It is large: from the star's top
+// loop to its lowest charm, 60% of a laptop's window's height (SIZE), beside the page's heading.
+// A visitor can take hold of it and pull it about; let go, it swings back. It does not stay: about
+// 3 s after it has settled (about 5 s after the click) it goes back up into the button on its own,
+// unless the pointer is on it or holds it, and then a moment after the pointer has left it or let
+// it go. It goes up at once when the theme is switched again (the other comes down as it goes), and
+// when the button leaves the screen (the bar sliding away, or the publication's bar going back up).
 //
-// The model is fetched once the page is idle after its curtain has opened, and only where WebGL
-// runs well (src/util/env.js); a switch clicked before then changes the theme at once, and the
-// earring comes down when it is ready if that is soon (1.5 s), or not at all. One small canvas
-// under the button, drawn only while an earring is out; over the earring, a transparent zone takes
-// the pointer (and keeps a finger on the earring from scrolling the page) and lets nothing through
-// to the page. With reduced motion there is no drop and no swing: the earring fades in hanging
-// still, stays a moment and fades out, and cannot be taken hold of. Without WebGL there is none.
+// There are none on a phone's narrow screen (under 768 px wide): no model, no canvas, no WebGL; the
+// switch works as ever. Nor are there any where WebGL does not run well (no WebGL, a software
+// renderer, a weak device: src/util/env.js), and there nothing of theirs is fetched either. On the
+// other screens, once the page is idle after its curtain has opened, the model's bytes are fetched
+// ahead (and the scene's code), but the scene itself (its WebGL context, the earrings on the GPU,
+// their shaders) is made only when it is likely to be wanted: when the pointer comes near the
+// switch, the focus reaches it, or it is pressed. A switch made before the scene is ready changes
+// the theme at once, and the earring comes down when it is ready if that is soon (1.5 s), or not at
+// all. Where the switch is above the page's heading (on a tablet held upright), the earring is
+// drawn smaller, so that it hangs beside the heading and its lede rather than over them (FIT).
+//
+// One canvas under the button, drawn only while an earring moves. While an earring comes down or goes
+// back up, the canvas shows nothing above the bar's lower edge but a narrow slot under the button, as
+// wide as the top of the star that hangs in the bar at rest, so the pendant and its strands come out
+// from behind the bar's edge and go back behind it, rather than being drawn over the bar and cut off
+// across its middle. Over the earring, a transparent
+// zone shaped to it (a clip-path of the parts' outlines) takes the pointer, and keeps a finger on
+// the earring from scrolling the page, while the page around it keeps the pointer. With reduced
+// motion there is no drop and no swing: the earring fades in hanging still, stays a moment and
+// fades out, and cannot be taken hold of. Without WebGL there is none.
 import { probeWebGL, prefersStatic } from '../util/env.js';
 
 const MODEL = new URL('../../assets/models/earrings.glb', import.meta.url).href;
-const IDLE = 6000; // ms untouched before it goes back up
-const LATE = 1500; // ms: a switch clicked before the model is ready drops it if ready by then
+const SETTLE = 3000; // ms it stays down once it has settled (about 5 s after the click in all)
+const LATEST = 3000; // ms after the drop by which it counts as settled, whatever its strands are doing
+const LINGER = 1500; // ms it stays after the pointer has let go of it or left it
+const LATE = 1500; // ms: a switch clicked before the scene is ready drops it if ready by then
 const STILL = { fadeIn: 400, hold: 2500, fadeOut: 500 }; // ms: reduced motion's still earring
-const REST = 4; // px below the button's foot where the ear wire's bend hangs at rest
-const CLIP = 6; // px above the button's foot where the earring comes out (the canvas's top)
-const INSET = 4; // px the grab zone keeps inside the earring's extent
-const HEIGHT = { laptop: 240, phone: 180 }; // px: how tall an earring is drawn
+const TUCK = 1; // px under the button's glyph (the sun or the moon) where the top of the star's loop hangs
+const CLIP = 4; // px above the glyph's foot where the earring comes out from behind it (the canvas's top)
+const GROW = 4; // px the zone that takes the pointer reaches past the earring's outline
+const NEAR = 200; // px from the button within which a pointer is taken to be heading for it
+const SLOT = 3; // px the slot under the button that an earring comes down through is wider, each side, than the star's loop and tip in it
+const LIFTS = []; // scratch: how far above its rest each earring coming down or going up is
+// px: how tall an earring is drawn, from its star's top loop to its lowest charm: 60% of the
+// window's height (540 px on a 1440 x 900 laptop), but no more than half its width (so that on a
+// tablet held upright it does not cover the page's heading), and within min and max
+const SIZE = { height: 0.6, width: 0.5, min: 380, max: 640 };
+// px: hanging at rest, the earring keeps this far from the text of the heading and its lede; to
+// keep it, it is drawn smaller, in steps of `step`, but never smaller than `floor` (where even
+// that does not fit beside them, it hangs over them at that size)
+const FIT = { gap: 16, step: 4, floor: 300 };
+const WIDE = '(min-width: 768px)'; // narrower (a phone): no earrings
+// the canvas, in earring heights: how far it reaches to each side of the button, and down from it
+// (the earring and its jump below its rest, 15% of its height)
+const REACH = { side: 1.05, down: 1.3 };
 
 const noop = { drop() {}, cleanup() {} };
 
@@ -34,23 +66,35 @@ export function setupEarrings({ reduced, opened }) {
   const button = document.querySelector('[data-theme-toggle]');
   if (!button) return noop;
   const root = document.documentElement;
-  const phone = matchMedia('(max-width: 767px)');
+  const wide = matchMedia(WIDE);
   const debug = new URLSearchParams(location.search).has('debug');
 
   let scene = null; // the scene, once made
   let loading = null; // the promise of it
+  let bytes = null; // the promise of the model's bytes, fetched ahead
+  let code = null; // and of the scene's code
   let off = false; // no WebGL, a weak GPU, or the model failed: no earrings
+  let gpu = null; // what probeWebGL found, once asked
   let gone = false; // cleaned up
+  let curtain = false; // the page's curtain has opened
   let idleId = 0;
   let frame = 0;
   let last = 0;
   let current = null; // the earring out (or coming down) that can be taken hold of
-  let touched = 0; // when it was last held, pointed at or brought down
+  let downAt = 0; // when it was brought down
+  let settledAt = 0; // when it settled after that (0: not yet)
+  let touched = 0; // when the pointer last held it or was on it
   let held = null; // the pointer holding it
-  let hover = null; // the pointer over the zone, to test against the earring once a frame
+  let hoverAt = null; // the pointer over the zone (CSS px), to test against the earring
+  let hoverMoved = false; // and whether it has moved since it was last tested
+  let pointing = false; // whether the pointer is on the earring itself
+  let zoneAt = ''; // where the zone was last put (its clip-path follows the earring)
   let still = null; // reduced motion: the fade under way
-  let asked = null; // a drop asked for before the model was ready: { name, theme, at }
+  let asked = null; // a drop asked for before the scene was ready: { name, theme, at }
   let size = 0; // ?debug: a height (px) to draw it at instead of the usual
+  let fit = null; // the height it is drawn at, fitted beside the heading, and the window it was fitted in: { px, w, h }
+  let bar = null; // the top bar the button is in
+  let slotAt = ''; // the canvas's clip-path as last set
   let why = null; // ?debug: why it last went up
 
   // the zone over the earring that takes the pointer (data-holds-bar: on the publication pages,
@@ -61,13 +105,31 @@ export function setupEarrings({ reduced, opened }) {
   zone.setAttribute('aria-hidden', 'true');
   zone.dataset.holdsBar = '';
 
+  /** Whether WebGL runs well enough here for the earrings: asked once (the probe's context is let go at once). */
+  const capable = () => {
+    gpu ??= probeWebGL();
+    return gpu.ok && !prefersStatic(gpu.renderer);
+  };
+
+  /** The model's bytes and the scene's code, fetched ahead: nothing is drawn, nothing is on the GPU. */
+  const prefetch = () => {
+    if (bytes || loading || off || gone || !wide.matches || navigator.connection?.saveData) return;
+    if (!capable()) { off = true; return; }
+    bytes = fetch(MODEL).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
+    code = import('../scene/earrings.js').catch(() => null);
+  };
+
+  /** Make the scene (its WebGL context, both earrings, their shaders): once, on a wide screen. */
   const load = () => {
-    if (loading || off || gone) return loading;
-    const gl = probeWebGL();
-    if (!gl.ok || prefersStatic(gl.renderer)) { off = true; return null; }
-    loading = import('../scene/earrings.js')
-      .then((mod) => mod.Earrings.create(MODEL, { reduced }))
-      .then(async (made) => {
+    if (loading || off || gone || !wide.matches) return loading;
+    unwatch();
+    if (!capable()) { off = true; return null; }
+    // the code and the bytes fetched ahead, if they came (or fetched now, if not)
+    loading = Promise.all([code, bytes])
+      .then(async ([mod, data]) => {
+        bytes = null; // the scene has them now
+        const { Earrings } = mod ?? (await import('../scene/earrings.js'));
+        const made = await Earrings.create(data ?? MODEL, { reduced });
         if (gone) { made.dispose(); return null; }
         scene = made;
         if (debug) expose();
@@ -79,26 +141,116 @@ export function setupEarrings({ reduced, opened }) {
     return loading;
   };
 
-  // after the curtain has opened, in a quiet moment
+  // after the curtain has opened, in a quiet moment, the model is fetched ahead
   Promise.resolve(opened).then(() => {
     if (gone) return;
-    const go = () => { idleId = 0; load(); };
+    curtain = true;
+    const go = () => { idleId = 0; prefetch(); };
     idleId = window.requestIdleCallback ? requestIdleCallback(go, { timeout: 4000 }) : setTimeout(go, 1200);
   });
 
-  /** Where the canvas, the ear wire's rest and the earring's size are, from the button. Returns whether the button is on the screen and in use. */
+  // a pointer heading for the switch, the focus on it, or a press: the scene is made ahead of the click
+  const onNear = (e) => {
+    if (!curtain || !wide.matches || e.pointerType === 'touch') return;
+    const r = button.getBoundingClientRect();
+    const dx = Math.max(r.left - e.clientX, 0, e.clientX - r.right);
+    const dy = Math.max(r.top - e.clientY, 0, e.clientY - r.bottom);
+    if (dx * dx + dy * dy < NEAR * NEAR) load();
+  };
+  const onReach = () => { if (wide.matches) load(); };
+  window.addEventListener('pointermove', onNear, { passive: true });
+  button.addEventListener('focus', onReach);
+  button.addEventListener('pointerdown', onReach);
+  let watching = true;
+  function unwatch() {
+    if (!watching) return;
+    watching = false;
+    window.removeEventListener('pointermove', onNear);
+    button.removeEventListener('focus', onReach);
+    button.removeEventListener('pointerdown', onReach);
+  }
+
+  /** The foot of the glyph drawn in the button (the sun or the moon, whichever is shown), or of its box. */
+  const foot = (r) => {
+    for (const svg of button.querySelectorAll('svg')) {
+      const g = svg.getBoundingClientRect();
+      if (g.height) return g.bottom;
+    }
+    return r.bottom;
+  };
+
+  /**
+   * The lines of text of the page's heading and of the paragraphs beside it (its lede), on the
+   * screen, those that can be seen: not those of a heading whose words are still to come in, nor
+   * those only read out (.sr-only, whose box is a pixel).
+   */
+  const headingLines = () => {
+    const h1 = [...document.querySelectorAll('h1')].find((el) => el.getBoundingClientRect().width > 2);
+    if (!h1) return [];
+    const lines = [];
+    const range = document.createRange();
+    const seen = (el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width <= 2 || r.height <= 2) return false;
+      return !el.checkVisibility || el.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+    };
+    for (const block of [h1, ...h1.parentElement.querySelectorAll(':scope > p')]) {
+      const walk = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+      for (let t = walk.nextNode(); t; t = walk.nextNode()) {
+        if (!t.textContent.trim() || !seen(t.parentElement)) continue;
+        range.selectNodeContents(t);
+        for (const q of range.getClientRects()) if (q.width > 0 && q.height > 0) lines.push(q);
+      }
+    }
+    return lines;
+  };
+
+  /** How tall the earring is drawn (px): its usual size, or smaller where that would hang it over the heading. */
+  const fitted = (cx, top) => {
+    if (fit && fit.w === innerWidth && fit.h === innerHeight) return fit.px;
+    const usual = Math.round(Math.min(SIZE.max, Math.max(SIZE.min, Math.min(innerHeight * SIZE.height, innerWidth * SIZE.width))));
+    const lines = headingLines();
+    let px = usual;
+    while (px > FIT.floor && !scene.clears(px, cx, top, lines, FIT.gap)) px -= FIT.step;
+    fit = { px: Math.max(px, Math.min(FIT.floor, usual)), w: innerWidth, h: innerHeight };
+    return fit.px;
+  };
+
+  /** How large the earring is drawn and where the canvas and the loops' tops are, from the button. Returns whether the button is on the screen and in use. */
   const layout = () => {
     const r = button.getBoundingClientRect();
-    const px = size || (phone.matches ? HEIGHT.phone : HEIGHT.laptop);
-    scene.setScale(px);
+    const y = foot(r);
     const cx = r.left + r.width / 2;
-    // a box under the button big enough for the earring and its swing (wider than the 2.6
-    // earring widths of the brief, so a strand pulled aside is not cut off by its edge)
-    const w = Math.round(Math.min(innerWidth, Math.max((scene.width * px / scene.height) * 2.6, px * 1.25)));
-    const h = Math.round(px * 1.4);
-    const left = Math.round(Math.min(Math.max(cx - w / 2, 0), Math.max(0, innerWidth - w)));
-    scene.setBox(left, Math.round(r.bottom - CLIP), w, h);
-    scene.setAnchor(cx, r.bottom + REST);
+    const px = size || fitted(cx, y + TUCK);
+    scene.setScale(px);
+    // a box under the button big enough for the earring, its jump and its swing, and for a strand
+    // pulled hard aside, which the earring follows almost its whole length out from the button
+    const reach = px * REACH.side;
+    const left = Math.round(Math.max(0, cx - reach));
+    const w = Math.round(Math.min(innerWidth, cx + reach)) - left;
+    const h = Math.round(Math.min(px * REACH.down, innerHeight));
+    // it hangs from the button's glyph, and comes out from behind it
+    const top = Math.round(y - CLIP);
+    scene.setBox(left, top, w, h);
+    scene.setAnchor(cx, y + TUCK);
+    // Coming down or going up, it is behind the bar (the canvas shows nothing above the bar's lower
+    // edge) but for what of its star hangs in the bar at rest: a slot under the button, as wide as
+    // the star's loop and tip, that moves with the star, so only they are drawn in the bar.
+    bar ??= button.closest('[data-topbar]');
+    const band = bar ? Math.round(bar.getBoundingClientRect().bottom) - top : 0;
+    const lifts = band > 0 ? scene.lifts(LIFTS) : [];
+    let clip = '';
+    if (lifts.length) {
+      const rest = y + TUCK - top; // the top of the star's loop at rest, down the canvas
+      const half = Math.ceil(scene.neck((band - rest) / px) * px) + SLOT, mid = Math.round(cx) - left;
+      let d = `M0 ${band}H${w}V${h}H0Z`;
+      for (const lift of lifts) {
+        const from = Math.max(0, Math.round(rest - lift) - SLOT), to = Math.min(band, Math.round(band - lift));
+        if (to > from) d += `M${mid - half} ${from}H${mid + half}V${to}H${mid - half}Z`;
+      }
+      clip = `path('${d}')`;
+    }
+    if (clip !== slotAt) { scene.canvas.style.clipPath = clip; slotAt = clip; }
     // the button can no longer be pressed while the bar is going away (nav.js, peekbar.js)
     return r.width > 0 && r.bottom > 0 && r.top < innerHeight && getComputedStyle(button).pointerEvents !== 'none';
   };
@@ -118,6 +270,9 @@ export function setupEarrings({ reduced, opened }) {
     root.classList.remove('is-grabbing');
     zone.classList.remove('is-held');
     touched = performance.now();
+    // once it has been held it goes up a moment after it is let go (LINGER), whether or not it had
+    // come to rest before it was taken hold of: it has been down long enough
+    if (!settledAt) settledAt = touched - SETTLE;
   };
 
   /** The earring out goes back up (`reason`: for ?debug). */
@@ -127,14 +282,19 @@ export function setupEarrings({ reduced, opened }) {
     letGo();
     scene.retract(current);
     current = null;
+    hoverAt = null;
+    pointing = false;
     zone.hidden = true;
     zone.classList.remove('is-over');
+    // whatever it held down (the publication's bar, src/publication/peekbar.js) looks again at where the pointer is
+    zone.dispatchEvent(new Event('hanger:gone', { bubbles: true }));
   };
 
   /** Bring the named earring down (and send the other up). */
   const show = (name, theme) => {
     try {
       scene.setTheme(theme);
+      fit = null; // the page may have been scrolled since: the heading is measured again
       attach();
       layout();
       if (reduced) { showStill(name); return; }
@@ -143,7 +303,9 @@ export function setupEarrings({ reduced, opened }) {
       for (const other of ['moon', 'sun']) if (other !== name) scene.retract(other);
       scene.drop(name);
       current = name;
-      touched = performance.now();
+      downAt = performance.now();
+      settledAt = 0;
+      touched = 0;
       wake();
     } catch (err) {
       console.warn('earrings:', err);
@@ -179,28 +341,38 @@ export function setupEarrings({ reduced, opened }) {
       if (current) retract('button away');
       if (still) endStill();
     }
-    if (current && held === null && now - touched > IDLE) retract('idle');
-    // the pointer over the zone: over the earring, the cursor takes its grab form
-    if (hover && current && held === null) {
-      const hit = scene.pick(hover.x, hover.y, current);
-      zone.classList.toggle('is-over', !!hit);
-      if (hit) touched = now;
-      hover = null;
-    }
     const active = scene.step(dt);
+    if (current && held === null) {
+      // the pointer on the earring keeps it down (tested again as the earring moves under it); over
+      // it, the cursor takes its grab form
+      if (hoverAt && (hoverMoved || scene.steps)) {
+        pointing = !!scene.pick(hoverAt.x, hoverAt.y, current);
+        zone.classList.toggle('is-over', pointing);
+        hoverMoved = false;
+      }
+      if (pointing) touched = now;
+      // it goes back up a while after it has settled, and a moment after the pointer has left it
+      if (!settledAt && (scene.settled(current) || now - downAt > LATEST)) settledAt = now;
+      if (settledAt && now - settledAt > SETTLE && now - touched > LINGER) retract('idle');
+    }
     scene.render();
-    // the zone follows the earring that can be held
+    // the zone follows the earring that can be held, shaped to it
     const r = current ? scene.rect(current) : null;
     if (r) {
       const btn = button.getBoundingClientRect();
-      const top = Math.max(r.top + INSET, btn.bottom + 1);
-      const left = Math.max(r.left + INSET, 0), right = Math.min(r.right - INSET, innerWidth);
-      const bottom = Math.min(r.bottom - INSET, innerHeight);
+      const top = Math.round(Math.max(r.top - GROW, btn.bottom + 1));
+      const left = Math.round(Math.max(r.left - GROW, 0)), right = Math.round(Math.min(r.right + GROW, innerWidth));
+      const bottom = Math.round(Math.min(r.bottom + GROW, innerHeight));
       if (right > left && bottom > top) {
         zone.hidden = false;
-        zone.style.transform = `translate(${left}px, ${top}px)`;
-        zone.style.width = `${right - left}px`;
-        zone.style.height = `${bottom - top}px`;
+        const at = `${left} ${top} ${right} ${bottom}`;
+        if (at !== zoneAt) {
+          zone.style.transform = `translate(${left}px, ${top}px)`;
+          zone.style.width = `${right - left}px`;
+          zone.style.height = `${bottom - top}px`;
+        }
+        if (at !== zoneAt || scene.steps) zone.style.clipPath = `path('${scene.hitPath(current, left, top, GROW)}')`;
+        zoneAt = at;
       } else zone.hidden = true;
     } else zone.hidden = true;
     if (active) { frame = requestAnimationFrame(tick); return; }
@@ -208,6 +380,7 @@ export function setupEarrings({ reduced, opened }) {
     scene.clear();
     scene.canvas.style.visibility = 'hidden';
     zone.hidden = true;
+    zoneAt = '';
     last = 0;
   };
 
@@ -215,7 +388,7 @@ export function setupEarrings({ reduced, opened }) {
   const onDown = (e) => {
     if (!current || held !== null || !scene) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    e.preventDefault(); // a miss is not passed on to the page, and nothing is selected
+    e.preventDefault(); // nothing is selected, and the page does not take it
     const hit = scene.pick(e.clientX, e.clientY, current);
     if (!hit) return;
     held = e.pointerId;
@@ -233,10 +406,16 @@ export function setupEarrings({ reduced, opened }) {
       touched = performance.now();
       return;
     }
-    if (e.pointerType !== 'touch') hover = { x: e.clientX, y: e.clientY };
+    if (e.pointerType !== 'touch') { hoverAt = { x: e.clientX, y: e.clientY }; hoverMoved = true; }
   };
   const onUp = (e) => { if (held === e.pointerId) letGo(); };
-  const onZoneLeave = () => { if (held === null) zone.classList.remove('is-over'); };
+  const onZoneLeave = () => {
+    hoverAt = null;
+    if (held !== null) return;
+    if (pointing) touched = performance.now();
+    pointing = false;
+    zone.classList.remove('is-over');
+  };
   // the cursor's gold lamp follows the pointer anywhere (a finger's only while it is down)
   const onMove = (e) => {
     if (!scene || !scene.active) return;
@@ -245,6 +424,17 @@ export function setupEarrings({ reduced, opened }) {
   };
   const onLeave = () => scene?.setPointer(0, 0, false);
   const onTouchEnd = (e) => { if (e.pointerType === 'touch') scene?.setPointer(0, 0, false); };
+  // narrowed to a phone's width: whatever is out goes away at once, and nothing more comes down
+  const onWide = () => {
+    if (wide.matches || !scene) return;
+    asked = null;
+    if (still) endStill();
+    if (current) { const name = current; retract('narrow'); scene.hide(name); }
+    for (const k of ['moon', 'sun']) scene.hide(k);
+    scene.clear();
+    scene.canvas.style.visibility = 'hidden';
+    zone.hidden = true;
+  };
 
   zone.addEventListener('pointerdown', onDown);
   zone.addEventListener('pointermove', onZoneMove);
@@ -255,18 +445,19 @@ export function setupEarrings({ reduced, opened }) {
   window.addEventListener('pointermove', onMove, { passive: true });
   window.addEventListener('pointerup', onTouchEnd, { passive: true });
   root.addEventListener('pointerleave', onLeave);
+  wide.addEventListener('change', onWide);
 
   /** The theme has just been switched by the visitor (src/ui/theme.js): bring its earring down. */
   const drop = (theme) => {
-    if (off || gone) return;
+    if (off || gone || !wide.matches) return;
     const name = theme === 'light' ? 'sun' : 'moon';
     if (scene) { show(name, theme); return; }
     const at = performance.now();
     asked = { name, theme, at };
     const p = load();
     p?.then((made) => {
-      // only the latest switch, and only if it is still soon after it
-      if (!made || asked?.at !== at || performance.now() - at > LATE) return;
+      // only the latest switch, only if it is still soon after it, and only on a wide screen
+      if (!made || asked?.at !== at || performance.now() - at > LATE || !wide.matches) return;
       asked = null;
       show(name, theme);
     });
@@ -277,11 +468,17 @@ export function setupEarrings({ reduced, opened }) {
     window.__earrings = {
       get scene() { return scene; },
       get state() {
+        const now = performance.now();
         return {
-          current, held: held !== null, idleFor: Math.round(performance.now() - touched),
+          current, held: held !== null, pointing,
+          downFor: current ? Math.round(now - downAt) : null,
+          physicsFor: current ? Math.round(scene.earrings[current].clock * 1000) : null,
+          settledFor: current && settledAt ? Math.round(now - settledAt) : null,
+          idleFor: touched ? Math.round(now - touched) : null,
           moon: scene.state('moon'), sun: scene.state('sun'),
           canvas: scene.canvas.isConnected && scene.canvas.style.visibility !== 'hidden',
           looping: !!frame, physicsMs: +scene.cost.toFixed(3), steps: scene.steps, lastUp: why,
+          px: Math.round(scene.ppu * scene.height), box: { ...scene.box }, pixelRatio: scene.renderer.getPixelRatio(), clip: slotAt,
         };
       },
       bodies: (name = current ?? 'moon') => {
@@ -310,6 +507,7 @@ export function setupEarrings({ reduced, opened }) {
     cancelAnimationFrame(frame);
     still?.cancel();
     letGo();
+    unwatch();
     zone.removeEventListener('pointerdown', onDown);
     zone.removeEventListener('pointermove', onZoneMove);
     zone.removeEventListener('pointerup', onUp);
@@ -319,6 +517,7 @@ export function setupEarrings({ reduced, opened }) {
     window.removeEventListener('pointermove', onMove);
     window.removeEventListener('pointerup', onTouchEnd);
     root.removeEventListener('pointerleave', onLeave);
+    wide.removeEventListener('change', onWide);
     zone.remove();
     scene?.dispose();
     scene = null;

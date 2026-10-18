@@ -17,6 +17,12 @@
 // latest pieces as cards too, so visitors without scripts still see them (this replaces it with the
 // same thing, drawn from the data).
 //
+// A writer's own page (writer-<slug>.html, src/pages/writer.js) shows the same section for that
+// writer's pieces only, through the options of setupPieces: every one of their pieces in the grid
+// (no cap, no "All the pieces"), the list running its whole length (no fade), their photo beside it
+// in the statue's place (in the page's markup: nothing is mounted), and the mode they have pieces in
+// first. The publication calls it with none of them, and is as it was.
+//
 // With reduced motion the heading and the layout change at once.
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
@@ -36,16 +42,42 @@ const HEAD_INDEX = Object.keys(HEADS.words);
 
 // the latest pieces, newest issue first, each issue in its own order (PUBLISHED runs oldest first)
 const issueRank = (issue) => PUBLISHED.findIndex((p) => p.issue === issue);
-const LATEST = [...PUBLISHED].sort((a, b) => issueRank(b.issue) - issueRank(a.issue) || a.order - b.order);
-const UPCOMING = PIECES.filter((p) => p.status === 'upcoming');
-const ALL = { latest: LATEST, upcoming: UPCOMING };
+const byNewest = (a, b) => issueRank(b.issue) - issueRank(a.issue) || a.order - b.order;
 
-const empty = (mode, form) => `<li class="pub-pieces__empty">No ${MODES[mode].word} pieces in “${esc(form)}” yet. <button type="button" class="pub-pieces__reset" data-pieces-reset>Show all forms</button></li>`;
+// nothing to show: of a form (with the way back to all of them), or at all (a writer's page)
+const empty = (mode, form) => (form
+  ? `<li class="pub-pieces__empty">No ${MODES[mode].word} pieces in “${esc(form)}” yet. <button type="button" class="pub-pieces__reset" data-pieces-reset>Show all forms</button></li>`
+  : `<li class="pub-pieces__empty">No ${MODES[mode].word} pieces yet.</li>`);
 
-/** @param {{ reduced: boolean, sky: any, onTheme: Function, opened: Promise }} ctx  bootPage's context */
-export function setupPieces({ reduced, onTheme, opened }) {
-  const root = document.querySelector('[data-pub-pieces]');
+/**
+ * @param {{ reduced: boolean, sky: any, onTheme: Function, opened: Promise }} ctx  bootPage's context
+ * @param {object} [o]
+ * @param {HTMLElement} [o.root]      the section ([data-pub-pieces] by default)
+ * @param {object[]} [o.pieces]       the pieces it shows (every one in pieces-data.js by default);
+ *                                    each mode takes its own from them, and the filter lists their forms
+ * @param {{ wide: number, phone: number }|null} [o.cap]  how many of the latest the grid shows (the
+ *                                    rest are on pieces.html); null: every one
+ * @param {'still'|'full'} [o.list]   'still': the list stands at the statue's height and fades at its
+ *                                    foot (the publication); 'full': it runs its whole length
+ * @param {'statue'|null} [o.beside]  what stands beside the list: the live statue, made the first
+ *                                    time the list shows; null: whatever the markup holds there
+ * @param {'latest'|'upcoming'} [o.start]  the mode it opens on
+ * @param {string} [o.remind]         where "Remind me" goes (#news, the newsletter on this page)
+ */
+export function setupPieces({ reduced, onTheme, opened }, {
+  root = document.querySelector('[data-pub-pieces]'),
+  pieces = PIECES,
+  cap = { wide: LATEST_SHOWN, phone: PHONE_SHOWN },
+  list: listKind = 'still',
+  beside = 'statue',
+  start = 'latest',
+  remind = '#news',
+} = {}) {
   if (!root) return undefined;
+  const ALL = {
+    latest: pieces.filter((p) => p.status === 'latest').sort(byNewest),
+    upcoming: pieces.filter((p) => p.status === 'upcoming'),
+  };
   const title = root.querySelector('.pub-pieces__title');
   const titleText = root.querySelector('[data-pieces-title]');
   const word = root.querySelector('.pub-pieces__word');
@@ -59,7 +91,7 @@ export function setupPieces({ reduced, onTheme, opened }) {
   const stage = root.querySelector('[data-pieces-stage]');
   const views = { latest: root.querySelector('[data-pieces-view="latest"]'), upcoming: root.querySelector('[data-pieces-view="upcoming"]') };
   const lists = { latest: root.querySelector('[data-pieces-grid]'), upcoming: root.querySelector('[data-pieces-list]') };
-  const slot = root.querySelector('.pub-pieces__statue');
+  const slot = beside === 'statue' ? root.querySelector('.pub-pieces__statue') : null;
   const cleanups = [];
   const on = (el, type, fn, opts) => { el.addEventListener(type, fn, opts); cleanups.push(() => el.removeEventListener(type, fn, opts)); };
 
@@ -69,12 +101,14 @@ export function setupPieces({ reduced, onTheme, opened }) {
   let swap = null; // the running layout change
   let refreshCall = null;
 
-  // ---- the filter's chips: All forms, then every form in the data ----
-  const forms = [...new Set(PIECES.map((p) => p.form).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'en-IN'));
+  // ---- the filter's chips: All forms, then every form in the data (none to choose: no filter) ----
+  const forms = [...new Set(pieces.map((p) => p.form).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'en-IN'));
+  filter.hidden = !forms.length;
   panel.innerHTML = [null, ...forms].map((f) => `<button type="button" class="pub-pieces__chip" data-form="${f === null ? '' : esc(f)}" aria-pressed="${f === null}">${f === null ? 'All forms' : esc(f)}</button>`).join('');
   const chips = [...panel.querySelectorAll('.pub-pieces__chip')];
 
-  // ---- the list's foot: faded when there is more than it holds; the rows past it out of reach ----
+  // ---- the list's foot: faded when there is more than it holds; the rows past it out of reach
+  // (a list that runs its whole length has no foot to fade) ----
   const list = lists.upcoming;
   let fadeFrame = 0;
   const fade = () => {
@@ -83,7 +117,7 @@ export function setupPieces({ reduced, onTheme, opened }) {
     const foot = list.getBoundingClientRect().bottom;
     for (const row of list.children) row.inert = row.getBoundingClientRect().top >= foot - 8;
   };
-  const fadeSoon = () => { fadeFrame ||= requestAnimationFrame(fade); };
+  const fadeSoon = listKind === 'still' ? () => { fadeFrame ||= requestAnimationFrame(fade); } : () => {};
   on(window, 'resize', fadeSoon, { passive: true });
   cleanups.push(() => cancelAnimationFrame(fadeFrame));
 
@@ -93,8 +127,8 @@ export function setupPieces({ reduced, onTheme, opened }) {
     const items = shownIn(m);
     lists[m].innerHTML = items.length
       ? (m === 'latest'
-        ? items.slice(0, LATEST_SHOWN).map((p) => pieceCard(p)).join('')
-        : items.map((p) => pieceRow(p, { next: p === items.find((q) => q.issue !== 'TBA') })).join(''))
+        ? (cap ? items.slice(0, cap.wide) : items).map((p) => pieceCard(p)).join('')
+        : items.map((p) => pieceRow(p, { next: p === items.find((q) => q.issue !== 'TBA'), remind })).join(''))
       : empty(m, form);
     if (m === 'upcoming') fadeSoon();
     return items.length;
@@ -102,7 +136,7 @@ export function setupPieces({ reduced, onTheme, opened }) {
   const say = () => {
     const n = shownIn(mode).length;
     // (on a phone the grid shows three: publication-pieces.css)
-    const most = matchMedia('(max-width: 767px)').matches ? PHONE_SHOWN : LATEST_SHOWN;
+    const most = !cap ? n : matchMedia('(max-width: 767px)').matches ? cap.phone : cap.wide;
     const shown = mode === 'latest' ? Math.min(n, most) : n;
     status.textContent = `Showing ${shown < n ? `${shown} of ${n}` : n} ${MODES[mode].word} ${n === 1 ? 'piece' : 'pieces'}${form ? `: ${form}` : ''}.`;
   };
@@ -110,7 +144,7 @@ export function setupPieces({ reduced, onTheme, opened }) {
   draw('upcoming');
 
   // ---- the heading: the font's outlines, morphing; the real text stays for screen readers ----
-  const heading = morphHeading(word, { type: HEADS, reduced, opened, start: HEAD_INDEX.indexOf(MODES.latest.head) });
+  const heading = morphHeading(word, { type: HEADS, reduced, opened, start: HEAD_INDEX.indexOf(MODES[start].head) });
   title.classList.add('is-drawn');
   cleanups.push(() => heading.dispose());
 
@@ -169,6 +203,11 @@ export function setupPieces({ reduced, onTheme, opened }) {
     });
   };
 
+  // the statue is made the first time the list shows, and kept after that
+  const standStatue = () => {
+    if (!statue && slot) statue = mountStatue(slot, { reduced, opened, onTheme, lazy: true });
+  };
+
   // ---- the toggle: Dropped (on) is the latest pieces as a grid; Upcoming (off), the list ----
   const setMode = (next, { instant = false } = {}) => {
     const was = mode;
@@ -176,17 +215,22 @@ export function setupPieces({ reduced, onTheme, opened }) {
     toggle.checked = next === 'latest';
     sides.forEach((s) => s.classList.toggle('is-on', s.dataset.side === (next === 'latest' ? 'dropped' : 'upcoming')));
     titleText.textContent = MODES[next].head;
-    if (instant) { views.latest.hidden = next !== 'latest'; views.upcoming.hidden = next !== 'upcoming'; return; }
+    if (instant) {
+      views.latest.hidden = next !== 'latest';
+      views.upcoming.hidden = next !== 'upcoming';
+      if (next === 'upcoming') standStatue();
+      return;
+    }
     if (next === was) return;
     closeForms(false);
     heading.show(HEAD_INDEX.indexOf(MODES[next].head));
-    // the statue is made the first time the list shows, and kept after that
-    if (next === 'upcoming' && !statue && slot) statue = mountStatue(slot, { reduced, opened, onTheme, lazy: true });
+    if (next === 'upcoming') standStatue();
     change(views[was], views[next]);
     say();
   };
-  // the page always opens on the latest pieces, whatever the browser restored into the checkbox
-  setMode('latest', { instant: true });
+  // the page always opens on its first mode (the latest pieces), whatever the browser restored
+  // into the checkbox
+  setMode(start, { instant: true });
   on(toggle, 'change', () => setMode(toggle.checked ? 'latest' : 'upcoming'));
   sides.forEach((s) => on(s, 'click', () => setMode(s.dataset.side === 'dropped' ? 'latest' : 'upcoming')));
 
@@ -242,7 +286,8 @@ export function setupPieces({ reduced, onTheme, opened }) {
   // goes; then the focus to the sign-up's heading, so the keyboard carries on from there). The glide
   // aims at where the panel is at each frame, not where it was when it set off: the form above may
   // still be loading and growing (Fillout sizes it once in), and the browser then shifts the page
-  // under the glide. The visitor's own wheel, touch or keys stop it.
+  // under the glide. The visitor's own wheel, touch or keys stop it. (A page without the newsletter
+  // sends "Remind me" to the publication's instead: a plain link, which this leaves alone.)
   let glide = null;
   const stopGlide = () => { glide?.kill(); glide = null; };
   const STOPS = ['wheel', 'touchstart', 'keydown'];

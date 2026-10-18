@@ -9,20 +9,46 @@
 //   <!-- site:team -->    team.html only: the core team's cards, from content/team.json
 //   <!-- site:contacts --> contact.html and sponsor.html (beside the tiers): who to write to (CONTACTS)
 //   <!-- site:pubbanner --> the publication and its reading pages: the banner along the bottom
+//   <!-- site:writers --> writers.html only: the writers' cards, issue by issue (writersMonths)
 // It also writes the publication's reading pages whole (READING, below): each piece that is out
 // (piece-<slug>.html, from src/publication/pieces-data.js and the piece's text in
 // content/pieces/<slug>.html), the editor's note (editors-note.html, from content/editors-note.html)
-// and all the pieces (pieces.html).
-// Run after editing this file, content/team.json, content/pieces/, content/editors-note.html or the
-// pieces' data:  npm run pages
+// and all the pieces (pieces.html); and each writer's own page (writer-<slug>.html, from
+// content/writers.json, content/team.json and the pieces' data).
+// Run after editing this file, content/team.json, content/writers.json, content/pieces/,
+// content/editors-note.html or the pieces' data:  npm run pages
 // Each file keeps its own line endings.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
-import { PUBLISHED, pieceHref, FIRST_OF_ISSUE } from '../../src/publication/pieces-data.js';
+import { PIECES, PUBLISHED, pieceHref, FIRST_OF_ISSUE } from '../../src/publication/pieces-data.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const readJSON = (path) => JSON.parse(readFileSync(join(ROOT, path), 'utf8'));
+
+// The publication's writers (content/writers.json), each with what their pages need: their photo
+// and introduction (their own, or else the core team's, content/team.json, where they are on it),
+// the name to call them by, their role on the team, their page and their pieces (found by the name
+// printed on them), and the colour of their first piece, for the placeholder tile of a writer whose
+// photo has not come in yet (the mark on a tile, as the upcoming list's: src/publication/cards.js).
+const TEAM_PEOPLE = readJSON('content/team.json').people;
+export const WRITERS = readJSON('content/writers.json').writers.map((w) => {
+  const t = w.team ? TEAM_PEOPLE.find((p) => p.id === w.team) : null;
+  if (w.team && !t) throw new Error(`content/writers.json: ${w.name}: no "${w.team}" in content/team.json`);
+  const pieces = PIECES.filter((p) => p.author === w.name);
+  return {
+    ...w,
+    first: w.first ?? w.name.split(/\s+/)[0],
+    role: t?.role ?? null,
+    photo: w.photo ?? (t?.photo ? `assets/team/${t.photo}.webp` : null),
+    intro: w.intro ?? t?.intro ?? null,
+    href: `./writer-${w.slug}.html`,
+    pieces,
+    tone: pieces[0]?.tone ?? 1,
+  };
+});
+const writerNamed = (name) => WRITERS.find((w) => w.name === name);
 
 // The pages. In the top bar: About us, Core team, Our outputs (a menu that drops on hover, focus or
 // click) and Contact us. Apply now and Become a sponsor are the buttons; they stay on screen when the
@@ -68,10 +94,12 @@ export const PAGES = [
   { file: 'sponsor.html', key: 'sponsor' },
   { file: APPLY.href.slice(2), key: APPLY.key },
   // the publication's own pages, reached from it and not from the menu: its reading pages (each
-  // piece, the editor's note, all the pieces; written whole by this file, READING below), and,
-  // coming soon for now, our writers, the writer application and the newsletter
+  // piece, the editor's note, all the pieces; written whole by this file, READING below), Meet our
+  // writers and each writer's own page (written whole, writerPage below), and, coming soon for now,
+  // the writer application and the newsletter
   ...READING.map(({ file, key }) => ({ file, key, reading: true })),
   { file: 'writers.html', key: 'writers' },
+  ...WRITERS.map((w) => ({ file: w.href.slice(2), key: `writer-${w.slug}`, writer: w })),
   { file: 'write.html', key: 'write' },
   { file: 'newsletter.html', key: 'newsletter' },
   // the stage planner, opened from The production: a full-screen app with its own top bar (no
@@ -360,14 +388,18 @@ const readEnd = (prev, next) => `<footer class="read__end">
       </footer>`;
 
 // The top of a reading page: the way back, the issue and form, the title (risen into place by the
-// site's [data-reveal]), the piece's dek if it has one (a line under the title), who wrote it and
-// the gold rule.
-const readHead = ({ issue, kind, title, dek, author }) => `<header class="read__head">
+// site's [data-reveal]), the piece's dek if it has one (a line under the title), who wrote it (a
+// link to the writer's own page, where they have one) and the gold rule.
+const authorLink = (name) => {
+  const w = writerNamed(name);
+  return w ? `<a class="read__author" href="${w.href}">${esc(name)}</a>` : `<span class="read__author">${esc(name)}</span>`;
+};
+const readHead = ({ issue, kind, title, dek, author: by }) => `<header class="read__head">
         ${BACK}
         <p class="pub-label read__kicker"><time datetime="${issueDate(issue)}">${esc(issue)}</time><span class="read__dot" aria-hidden="true"></span><span>${esc(kind)}</span></p>
         <h1 class="read__title" id="read-title" data-reveal>${esc(title)}</h1>${dek ? `
         <p class="read__dek">${esc(dek)}</p>` : ''}
-        <p class="read__by">By <span class="read__author">${esc(author)}</span></p>
+        <p class="read__by">By ${authorLink(by)}</p>
         <span class="rule read__rule" aria-hidden="true"></span>
       </header>`;
 
@@ -438,8 +470,201 @@ ${cards.join('\n')}
   };
 }
 
-/** A reading page, whole, with its shared parts' markers empty (build() fills them like any page's). */
-const readingPage = (key, { title, description, source, main }) => `<!doctype html>
+// ---- The publication's writers: Meet our writers (writers.html) and each writer's own page ----
+// Five writers have neither photo nor introduction yet (content/writers.json: "awaiting"): Anika
+// Megha Kruthiventi, Kathya Yaratapalli, Mehek Jain, Nisha Sriram and Venkatesh Kalasamudram. Until
+// theirs come in, the mark on a tile in their colour stands in for the photo, and SOON for the words.
+const SOON = 'Their introduction is on its way.';
+const CHEVRON = '<svg class="pub-pieces__chev" viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const CARET = '<svg class="pub-pieces__caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+/** Lines of markup set in at the given indent. */
+const indented = (html, pad) => html.split('\n').map((l) => (l ? pad + l : l)).join('\n');
+
+/** A writer's photo in a frame of class `cls`; without one, the mark on a tile in their colour. */
+const portrait = (w, cls, { lazy = true } = {}) => {
+  if (!w.photo) return `<span class="${cls} ${cls}--mark pub-tile" data-tone="${w.tone}"><span class="pub-mark"></span></span>`;
+  const { w: width, h } = webpSize(w.photo);
+  return `<span class="${cls}"><img src="./${esc(w.photo)}" alt="" width="${width}" height="${h}"${lazy ? ' loading="lazy"' : ''} decoding="async"></span>`;
+};
+/** A writer's introduction as paragraphs (or the line that says it is on its way), at an indent. */
+const introParas = (w, pad) => (w.intro
+  ? w.intro.map((t) => `${pad}<p>${esc(t)}</p>`).join('\n')
+  : `${pad}<p class="writer-soon">${SOON}</p>`);
+
+/** The issues the writers are grouped by: the dated ones, oldest first, then those still to be dated. */
+const writerIssues = () => [...new Set(PIECES.filter((p) => writerNamed(p.author)).map((p) => p.issue))]
+  .sort((a, b) => (a === 'TBA') - (b === 'TBA') || issueDate(a).localeCompare(issueDate(b)))
+  .map((issue) => ({ issue, key: issue === 'TBA' ? 'tba' : issueDate(issue), label: issue === 'TBA' ? 'Date to be announced' : issueName(issue) }));
+
+/** One of a writer's pieces in their panel: its title (a link to it once it is out), its form and when. */
+const work = (p) => {
+  const lang = p.lang ? ` lang="${esc(p.lang)}"` : '';
+  const when = p.status === 'latest' ? issueName(p.issue) : p.issue === 'TBA' ? 'Coming, date to be announced' : `Coming in ${issueName(p.issue)}`;
+  const meta = [p.special ? 'Special' : p.form, when].filter(Boolean).join(' · ');
+  const title = p.status === 'latest'
+    ? `<a class="writer-works__title" href="${pieceHref(p)}"${lang}>${esc(p.title)}</a>`
+    : `<span class="writer-works__title"${lang}>${esc(p.title)}</span>`;
+  return `<li class="writer-works__item">${title}<span class="writer-works__meta">${esc(meta)}</span></li>`;
+};
+
+/**
+ * Meet our writers: the filter by issue, then a section per issue (October 2026, November 2026, ...,
+ * then those still to be dated) of the writers with a piece in it, published or to come, as Core
+ * team's cards (src/styles/pages.css .member): the photo, the name, and under it the titles of their
+ * pieces in that issue. A writer with pieces in two issues is in both. Each card is a link to the
+ * writer's own page; with scripts it opens their spotlight panel instead (src/pages/writers.js),
+ * filled from their <template>: the introduction, all their pieces and the way to their page.
+ */
+function writersMonths() {
+  const issues = writerIssues();
+  const filters = `<div class="team-filter writers-filter" role="group" aria-label="Show an issue">
+        <button class="team-filter__btn" type="button" aria-pressed="true" data-filter="all">Every issue</button>
+${issues.map((m) => `        <button class="team-filter__btn" type="button" aria-pressed="false" data-filter="${m.key}">${esc(m.label)}</button>`).join('\n')}
+      </div>`;
+  const months = issues.map(({ issue, key, label }) => {
+    const pieces = PIECES.filter((p) => p.issue === issue && writerNamed(p.author)).sort((a, b) => a.order - b.order);
+    const note = pieces.every((p) => p.status === 'latest') ? 'Out now' : pieces.every((p) => p.status === 'upcoming') ? 'Coming' : '';
+    const cards = [...new Set(pieces.map((p) => p.author))].map(writerNamed).map((w) => `            <li class="member">
+              <a class="member__card" href="${w.href}" data-writer="${w.id}">
+                ${portrait(w, 'member__photo')}
+                <span class="member__name">${esc(w.name)}</span>
+                <span class="member__works">${pieces.filter((p) => p.author === w.name).map((p) => `<span class="member__work"${p.lang ? ` lang="${esc(p.lang)}"` : ''}>${esc(p.title)}</span>`).join('')}</span>
+              </a>
+            </li>`).join('\n');
+    return `        <section class="writers-month" data-month="${key}" data-flip-id="${key}" aria-labelledby="month-${key}">
+          <header class="writers-month__head" data-mask>
+            <h2 class="writers-month__title" id="month-${key}">${issue === 'TBA' ? esc(label) : `<time datetime="${key}">${esc(label)}</time>`}</h2>${note ? `
+            <p class="eyebrow writers-month__note">${note}</p>` : ''}
+          </header>
+          <ul class="team-grid writers-grid">
+${cards}
+          </ul>
+        </section>`;
+  }).join('\n');
+  const panels = WRITERS.filter((w) => w.pieces.length).map((w) => `      <template data-writer-panel="${w.id}" data-role="${esc(['Writer', w.role].filter(Boolean).join(' · '))}">
+${introParas(w, '        ')}
+        <h3 class="eyebrow writer-panel__label">${w.pieces.length === 1 ? 'Their piece' : 'Their pieces'}</h3>
+        <ul class="writer-works">
+${w.pieces.map((p) => `          ${work(p)}`).join('\n')}
+        </ul>
+        <a class="btn btn--inverse writer-panel__more" href="${w.href}">Read more from ${esc(w.first)}${ARROW_R}</a>
+      </template>`).join('\n');
+  return `${filters}
+      <div class="writers-months" data-spot data-writers>
+${months}
+      </div>
+${panels}`;
+}
+
+// the latest pieces, newest issue first, each issue in its own order (as src/publication/pieces.js)
+const byNewest = (a, b) => issueDate(b.issue).localeCompare(issueDate(a.issue)) || a.order - b.order;
+
+/**
+ * A writer's own page: the head (their photo, name and introduction, and the way back to Meet our
+ * writers), then the publication's pieces section for their pieces only (the same markup as
+ * publication.html's @pieces; src/pages/writer.js gives it the publication's behaviour through
+ * src/publication/pieces.js): every one of their published pieces in the grid, and every one to
+ * come in the list, which runs its whole length beside their photo standing in the statue's light
+ * (their introduction over it on hover or focus). It opens on the published pieces if they have any.
+ * "Remind me" goes to the newsletter on the publication. Both views are drawn here too: without
+ * scripts the page shows both, one under the other (src/styles/writers.css).
+ */
+function writerPage(w, { pieceCard, pieceRow }) {
+  const out = w.pieces.filter((p) => p.status === 'latest').sort(byNewest);
+  const coming = w.pieces.filter((p) => p.status === 'upcoming');
+  const start = out.length ? 'latest' : 'upcoming';
+  const hasForms = w.pieces.some((p) => p.form);
+  const next = coming.find((p) => p.issue !== 'TBA');
+  const empty = (word) => `<li class="pub-pieces__empty">No ${word} pieces yet.</li>`;
+  const cards = out.length ? out.map((p) => pieceCard(p)).join('\n') : empty('latest');
+  const rows = coming.length ? coming.map((p) => pieceRow(p, { next: p === next, remind: './publication.html#news' })).join('\n') : empty('upcoming');
+  const on = (yes) => (yes ? ' is-on' : '');
+  return {
+    title: w.name,
+    description: `${w.name} writes for The Drama Collective’s theatre publication: ${w.intro ? 'an introduction in their own words, and ' : ''}${out.length && coming.length ? 'their pieces, out now and to come' : out.length ? 'their published pieces' : 'their pieces to come'}.`,
+    source: 'content/writers.json, content/team.json and src/publication/pieces-data.js',
+    kind: 'writer',
+    script: 'writer',
+    main: `    <article class="writer" aria-labelledby="read-title">
+      <header class="writer-head">
+        <div class="pub-wrap">
+          <a class="read__back" href="./writers.html">${ARROW_L}<span>Meet our writers</span></a>
+          <div class="writer-head__grid">
+            ${portrait(w, 'writer-head__photo', { lazy: false })}
+            <div class="writer-head__text">
+              <p class="pub-label read__kicker"><span>Writer</span>${w.role ? `<span class="read__dot" aria-hidden="true"></span><span>${esc(w.role)}</span>` : ''}</p>
+              <h1 class="read__title writer-head__name" id="read-title" data-reveal>${esc(w.name)}</h1>
+              <span class="rule read__rule" aria-hidden="true"></span>
+              <div class="writer-head__intro">
+${introParas(w, '                ')}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="pub-pieces pub-pieces--writer" data-pub-pieces data-author="${esc(w.name)}" aria-labelledby="pieces-title">
+        <div class="pub-wrap">
+          <header class="pub-pieces__head">
+            <h2 class="pub-pieces__title" id="pieces-title">
+              <span class="pub-pieces__title-text" data-pieces-title>${start === 'latest' ? 'Latest pieces' : 'Upcoming pieces'}</span>
+              <svg class="pub-pieces__word" aria-hidden="true" focusable="false"></svg>
+            </h2>
+            <div class="pub-pieces__controls">
+              <div class="pub-pieces__switch">
+                <span class="pub-label pub-pieces__side${on(start === 'upcoming')}" data-side="upcoming" aria-hidden="true">Upcoming</span>
+                <input class="pub-pieces__toggle" type="checkbox" role="switch"${start === 'latest' ? ' checked' : ''} autocomplete="off" aria-label="Dropped pieces" aria-describedby="pieces-switch-hint" data-pieces-toggle>
+                <span class="pub-label pub-pieces__side${on(start === 'latest')}" data-side="dropped" aria-hidden="true">Dropped</span>
+                <span class="sr-only" id="pieces-switch-hint">On: the latest pieces, as a grid. Off: the upcoming pieces, as a list.</span>
+              </div>
+              <div class="pub-pieces__filter" data-pieces-filter${hasForms ? '' : ' hidden'}>
+                <button class="pub-pieces__filter-btn" type="button" aria-expanded="false" aria-controls="pieces-forms">
+                  <span class="pub-label pub-pieces__filter-key">Filter</span>
+                  <span class="pub-label pub-pieces__filter-value" data-pieces-filter-value>Form</span>
+                  ${CARET}
+                </button>
+                <div class="pub-pieces__forms" id="pieces-forms" role="group" aria-label="Filter the pieces by form" hidden></div>
+              </div>
+            </div>
+          </header>
+          <p class="sr-only" aria-live="polite" data-pieces-status></p>
+
+          <div class="pub-pieces__stage" data-pieces-stage>
+            <div class="pub-pieces__view pub-pieces__view--grid" data-pieces-view="latest"${start === 'latest' ? '' : ' hidden'}>
+              <ul class="pub-pieces__grid" data-pieces-grid>
+${indented(cards, '                ')}
+              </ul>
+              <div class="pub-pieces__more">
+                <a class="pub-btn pub-btn--lg pub-pieces__all" href="./pieces.html">All the pieces${CHEVRON}</a>
+              </div>
+            </div>
+
+            <div class="pub-pieces__view pub-pieces__view--list" data-pieces-view="upcoming"${start === 'upcoming' ? '' : ' hidden'}>
+              <div class="pub-pieces__panel">
+                <div class="pub-pieces__stand writer-stand">
+                  <figure class="writer-stand__frame" tabindex="0">
+                    ${portrait(w, 'writer-stand__photo')}
+                    <figcaption class="writer-stand__intro">
+                      <span class="pub-label writer-stand__name">${esc(w.name)}</span>
+${introParas(w, '                      ')}
+                    </figcaption>
+                  </figure>
+                </div>
+              </div>
+              <ul class="pub-pieces__list" data-pieces-list>
+${indented(rows, '                ')}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </article>`,
+  };
+}
+
+/** A reading page, whole, with its shared parts' markers empty (build() fills them like any page's).
+ * `kind` adds a class to the page (page--writer), and `script` names the page's own script. */
+const readingPage = (key, { title, description, source, main, kind = '', script = 'reading' }) => `<!doctype html>
 <html lang="en-IN" class="is-glow-everywhere">
 <head>
   <meta charset="utf-8">
@@ -450,7 +675,7 @@ const readingPage = (key, { title, description, source, main }) => `<!doctype ht
   <!-- site:head -->
   <!-- /site:head -->
 </head>
-<body class="page page--reading page--${key}">
+<body class="page page--reading${kind ? ` page--${kind}` : ''} page--${key}">
   <!-- Written by tools/pages/build.mjs (npm run pages) from ${source}: edit those, not this file. -->
   <!-- site:header -->
   <!-- /site:header -->
@@ -468,7 +693,7 @@ ${main}
   <!-- site:footer -->
   <!-- /site:footer -->
 
-  <script type="module" src="./src/pages/reading.js"></script>
+  <script type="module" src="./src/pages/${script}.js"></script>
 </body>
 </html>
 `;
@@ -483,28 +708,38 @@ function fill(src, name, html, indent = '  ') {
 export async function build(only = []) {
   // the grid's card is the publication's own (src/publication/cards.js: plain strings, no DOM),
   // loaded here rather than at the top so that importing the page list (vite.config.js) needs it not
-  const { pieceCard } = await import('../../src/publication/cards.js');
-  for (const { file, key, reading } of PAGES) {
+  const { pieceCard, pieceRow } = await import('../../src/publication/cards.js');
+  // (a piece's writer is found by the name printed on it: one missing from content/writers.json
+  // has no page, and no card on Meet our writers)
+  if (!only.length) {
+    for (const name of new Set(PIECES.map((p) => p.author).filter(Boolean))) {
+      if (!writerNamed(name)) console.warn(`${name} writes for the publication but is not in content/writers.json`);
+    }
+  }
+  for (const { file, key, reading, writer } of PAGES) {
     if (only.length && !only.includes(key) && !only.includes(file)) continue;
     const path = join(ROOT, file);
     let src;
     try { src = readFileSync(path, 'utf8'); } catch { src = null; }
-    // a reading page is written whole each time, from its text (the same text gives the same page)
+    // a reading page (or a writer's) is written whole each time, from its text (the same text gives
+    // the same page)
     let out;
     if (reading) {
       const r = READING.find((p) => p.key === key);
       out = readingPage(key, r.piece ? piecePage(r.piece) : key === 'pieces' ? piecesPage(pieceCard) : editorsNotePage());
-    } else if (src === null) { console.warn(`skip ${file}: not found`); continue; }
+    } else if (writer) out = readingPage(key, writerPage(writer, { pieceCard, pieceRow }));
+    else if (src === null) { console.warn(`skip ${file}: not found`); continue; }
     else out = src;
     const crlf = !!src?.includes('\r\n');
     out = out.replace(/\r\n/g, '\n');
     out = fill(out, 'head', head());
     out = fill(out, 'header', header(key));
-    if (key !== 'home') out = fill(out, 'stage', stage(!reading));
+    if (key !== 'home') out = fill(out, 'stage', stage(!reading && !writer));
     out = fill(out, 'pubbanner', pubBanner(), '    ');
     out = fill(out, 'footer', footer(key));
     if (key === 'home') out = fill(out, 'links', pageLinks('home', '        ', 'curtain__links--dock', true), '        ');
     if (key === 'team') out = fill(out, 'team', team(), '      ');
+    if (key === 'writers') out = fill(out, 'writers', writersMonths(), '      ');
     if (key === 'contact') out = fill(out, 'contacts', contacts('      '), '      ');
     if (key === 'sponsor') out = fill(out, 'contacts', contacts('        '), '        ');
     out = out.replace(/(<a [^>]*data-instagram[^>]*href=")[^"]*(")/g, `$1${INSTAGRAM.href}$2`);

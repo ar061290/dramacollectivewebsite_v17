@@ -25,20 +25,31 @@
 //      - any triangle still unclaimed goes to whichever part reaches it first across the surface
 //        (a walk in which a step into a concave crease costs `crease` times more),
 //      - islands of a few triangles left in the wrong part go to the part around them,
+//      - a part marked "remove" (the ear wire, its coil and bead, and the links under them) is cut
+//        like the others, so the cut falls where its loop met the next one, and is then left out;
+//        where it was fused onto a part that stays, the hole it leaves is closed if it is marked
+//        "cap" (each loop of the cut's edges filled with a fan about its middle),
+//      - a part may "mend" a loop the cut has spoilt (the sun's star, whose top loop the ear wire was
+//        wrapped over): the spoilt arc of the loop is taken out and made again as a smooth tube from
+//        the loop's sound metal on one side to the other (mendLoop), so the loop is whole again,
 //   3. measures each part: the pivot it hangs from (the middle of the seam where it was cut from its
-//      parent, unless the map gives one), the hook's anchor (inside the ear wire's bend), its volume
-//      and mass, centre of mass, bounds, a capsule and spheres for collisions, and its swing limits,
+//      parent, unless the map gives one), the anchor of the part that hangs from nothing (the star:
+//      the middle of the seam where the removed hook held its top loop, unless the map gives one),
+//      its volume and mass, centre of mass, bounds, a capsule and spheres for collisions, and its
+//      swing limits,
 //   4. welds and simplifies each part (meshoptimizer), gentler on the small ones so their loops stay
 //      round, with the cut edges locked so parent and child still meet; ≤ `tris` per earring,
-//   5. writes a group per earring ("moon", "sun") with a mesh per part ("moon.hook", "moon.star", ...),
+//   5. writes a group per earring ("moon", "sun") with a mesh per part ("moon.star", "moon.pendant", ...),
 //      each with its geometry's origin at its pivot, so a node's position is its pivot in earring
 //      space; the joint data is in each node's extras and in the manifest,
 //   6. keeps one material per earring: base colour, normal and metallic-roughness maps at `tex` px,
 //      WebP, and Draco-compresses the geometry (the site's decoder: public/draco/).
 //
-// Earring space is the sources' own: y up, the front facing +z, about 1.9 units tall, hook at the top.
-// three.js's GLTFLoader drops the dots from node names ("moon.hook" becomes "moonhook"), so the
-// runtime should find parts by userData.part, which keeps the full name.
+// Earring space is the sources' own: y up, the front facing +z, the source about 1.9 units tall with
+// its hook at the top; with the hook removed, an earring runs from its star's top loop (`top`) to its
+// lowest charm (`height`), about 1.6. three.js's GLTFLoader drops the dots from node names
+// ("moon.star" becomes "moonstar"), so the runtime should find parts by userData.part, which keeps
+// the full name.
 import { NodeIO, Document } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { dequantize, prune, dedup, draco, textureCompress } from '@gltf-transform/functions';
@@ -73,8 +84,9 @@ const scene = out.createScene('earrings');
 out.getRoot().setDefaultScene(scene);
 const manifest = {
   about: 'The sun and moon earrings (assets/models/earrings.glb), written by tools/earrings/build-earrings.mjs.',
-  space: "Earring space is the sources' own: y up, the front facing +z, in source units (about 1.9 tall: scale by the height). Each part node sits at its pivot, and its geometry is about that point. attach is the pivot in the parent's frame at rest (the pivot minus the parent's pivot), where the parent carries it. comLocal and bounds are about the part's own pivot. mass is the part's share of the earring's volume. swing is in degrees from the rest pose: inPlane about z, outOfPlane about x and y.",
-  names: 'GLTFLoader drops the dots from node names (moon.hook becomes moonhook); userData.part keeps the full name.',
+  space: "Earring space is the sources' own: y up, the front facing +z, in source units (scale by the height: from the star's top loop, top, to the lowest charm). Each part node sits at its pivot, and its geometry is about that point. attach is the pivot in the parent's frame at rest (the pivot minus the parent's pivot), where the parent carries it. comLocal and bounds are about the part's own pivot. mass is the part's share of the earring's volume. swing is in degrees from the rest pose: inPlane about z, outOfPlane about x and y.",
+  anchor: "The star hangs from nothing in the model: its anchor (its own and the earring's) is the point of its top loop that hangs from the theme button, where the removed ear wire's link held it. removed names the parts cut away and left out (the ear wire, its coil and bead, and the links under them).",
+  names: 'GLTFLoader drops the dots from node names (moon.star becomes moonstar); userData.part keeps the full name.',
   earrings: {},
 };
 const round = (v, d = 5) => (Array.isArray(v) ? v.map((x) => round(x, d)) : Number(v.toFixed(d)));
@@ -410,12 +422,22 @@ async function buildEarring(src, name) {
     if (Math.abs(vol) > 1e-9) { const cand = vc.map((x, k) => x / vol + ac[k]); if (cand.every((x, k) => x >= lo[k] && x <= hi[k])) com = cand; }
     return { ...p, i, tris, order, lo, hi, area, volume: Math.abs(vol), com };
   });
-  const totalVolume = info.reduce((a, p) => a + p.volume, 0);
-  for (const p of info) {
+  // the parts kept (a part marked remove was cut only so the cut falls in the right place)
+  const kept = info.filter((p) => !p.remove);
+  const removed = info.filter((p) => p.remove);
+  const roots = kept.filter((p) => !p.parent);
+  if (roots.length !== 1) throw new Error(`${name}: one kept part must hang from nothing (found ${roots.map((p) => p.name).join(', ') || 'none'})`);
+  for (const p of kept) if (p.parent && removed.some((r) => r.name === p.parent)) throw new Error(`${name}.${p.name} hangs from a removed part`);
+  const totalVolume = kept.reduce((a, p) => a + p.volume, 0);
+  for (const p of kept) {
     p.parentIndex = p.parent ? index.get(p.parent) : -1;
     if (p.parent && p.parentIndex === undefined) throw new Error(`${name}.${p.name}: unknown parent ${p.parent}`);
     if (!p.parent) {
-      // the hook: the anchor is the inside of the ear wire's bend, unless the map gives it
+      // the part that hangs from nothing: its anchor is where the removed parts held it (the middle
+      // of the seam where the ear wire's link met the star's top loop), unless the map gives it
+      const held = removed.map((r) => seamOf(p.i, r.i)).filter(Boolean).sort((a, b) => b.len - a.len)[0];
+      if (!p.anchor && held) p.anchor = held.mid;
+      // with nothing removed it is the ear wire itself: the inside of its bend
       if (!p.anchor) {
         let top = -1, ty = -Infinity; for (const v of p.order) if (W[3 * v + 1] > ty) { ty = W[3 * v + 1]; top = v; }
         const tx = W[3 * top]; let inner = Infinity, zs = 0, zn = 0;
@@ -450,39 +472,209 @@ async function buildEarring(src, name) {
     p.spheresOut = kspheres(pts, k);
   }
 
+  // The holes a removed part leaves where it was fused onto a part that stays, closed if the map
+  // asks (cap): the cut's edges (an edge of the kept part's triangle with only the removed part's
+  // triangles across it), chained into loops in the kept part's winding, each filled with a fan
+  // about its middle (simplifyPart).
+  let capped = 0, unclosed = 0;
+  for (const p of kept) p.caps = [];
+  for (const r of removed) {
+    if (!r.cap) continue;
+    for (const p of kept) {
+      const edges = [];
+      for (const t of p.tris) for (let e = 0; e < 3; e++) {
+        const va = I[3 * t + e], vb = I[3 * t + ((e + 1) % 3)], a = weldOf[va], b = weldOf[vb];
+        if (a === b) continue;
+        const key = a < b ? a * 4194304 + b : b * 4194304 + a;
+        let toR = false, toP = false;
+        for (let k = deg[t]; k < deg[t + 1]; k++) if (adjEdge[k] === key) { if (grown[adj[k]] === r.i) toR = true; else if (grown[adj[k]] === p.i) toP = true; }
+        if (toR && !toP) edges.push([a, b, va, vb]);
+      }
+      const from = new Map();
+      for (const ed of edges) { const l = from.get(ed[0]); if (l) l.push(ed); else from.set(ed[0], [ed]); }
+      const used = new Set();
+      for (const start of edges) {
+        if (used.has(start)) continue;
+        const loop = [];
+        for (let ed = start; ed && !used.has(ed); ed = (from.get(ed[1]) ?? []).find((x) => !used.has(x))) { used.add(ed); loop.push(ed); }
+        if (loop.length >= 3 && loop.at(-1)[1] === loop[0][0]) { p.caps.push(loop); capped++; } else unclosed++;
+      }
+    }
+  }
+  if (capped || unclosed) console.log(`  ${name}: ${capped} holes left by the removed parts closed${unclosed ? `, ${unclosed} cut edges in no closed loop` : ''}`);
+
   // report the cut
-  for (const p of info) {
+  for (const p of removed) console.log(`  ${(name + '.' + p.name).padEnd(14)} ${String(p.tris.length).padStart(6)} tris, removed`);
+  for (const p of kept) {
     const s = p.seam;
     console.log(`  ${(name + '.' + p.name).padEnd(14)} ${String(p.tris.length).padStart(6)} tris, pieces [${pieces[p.i].sort((a, b) => b - a).slice(0, 6).join(', ')}${pieces[p.i].length > 6 ? ', ...' : ''}]` +
-      ` pivot ${round(p.pivot, 4)}${s ? ` (seam ${s.length.toFixed(3)} long, spread ${s.spread.toFixed(3)})` : ''} mass ${p.mass.toFixed(3)}`);
+      ` pivot ${round(p.pivot, 4)}${s ? ` (seam ${s.length.toFixed(3)} long, spread ${s.spread.toFixed(3)})` : ''}${p.parent ? '' : ` anchor ${round(p.anchor, 4)}`} mass ${p.mass.toFixed(3)}`);
   }
   for (const s of seams.values()) {
     const A = parts[s.a], B = parts[s.b];
-    if (A.parent !== B.name && B.parent !== A.name) console.log(`  also cut between ${A.name} and ${B.name}: ${s.len.toFixed(3)} long at ${round(s.mid, 3)} (spread ${s.spread.toFixed(3)})`);
+    if (A.parent !== B.name && B.parent !== A.name) console.log(`  also cut between ${A.name} and ${B.name}${A.remove || B.remove ? ' (removed)' : ''}: ${s.len.toFixed(3)} long at ${round(s.mid, 3)} (spread ${s.spread.toFixed(3)})`);
+  }
+
+  // A loop the cut has spoilt, mended (the map's "mend" on a part). The loop runs round its middle
+  // (`centre`), about as wide and as high as `radii`; each of the part's triangles near it (between
+  // `rho` times that, inside and out) has an angle round it (0 to the right, 90 at the top). The
+  // triangles of the spoilt arc (`span`, degrees) are taken out, and the arc is made again as a
+  // tube: its middle line a smooth curve from the loop's sound end on one side to the other,
+  // leaving and meeting each as the loop runs there, its section an ellipse (across the loop and in
+  // depth) that goes from the one end's to the other's. Each end runs on a few degrees (`overlap`)
+  // inside the loop's own metal, a little thinner, so the two meet without a crack. It takes its
+  // colour and finish from one point of the loop's sound metal (the uv of the vertex nearest the
+  // front of the one end).
+  function mendLoop(p) {
+    const m = p.mend, [cx, cy] = m.centre, [a, b] = m.radii, [r0, r1] = m.rho ?? [0.3, 2.2], over = m.overlap ?? 4;
+    const D = Math.PI / 180;
+    const angle = (x, y) => Math.atan2((y - cy) / b, (x - cx) / a) / D;
+    const near = (x, y) => { const r = Math.hypot((x - cx) / a, (y - cy) / b); return r >= r0 && r <= r1; };
+    const inSpan = (th, s0, s1) => { const t = ((th - s0) % 360 + 360) % 360; return t <= ((s1 - s0) % 360 + 360) % 360; };
+    const drop = new Set();
+    for (const t of p.tris) if (near(C[3 * t], C[3 * t + 1]) && inSpan(angle(C[3 * t], C[3 * t + 1]), m.span[0], m.span[1])) drop.add(t);
+    // the loop's section where it is sound, at an angle: the middle of its vertices within a
+    // degree or two of that angle, how far they reach across the loop and in depth, and the vertex
+    // nearest its front
+    const verts = p.order.filter((v) => near(W[3 * v], W[3 * v + 1]));
+    const section = (th) => {
+      const vs = verts.filter((v) => Math.abs(((angle(W[3 * v], W[3 * v + 1]) - th) % 360 + 540) % 360 - 180) < 1.5);
+      if (vs.length < 8) throw new Error(`${name}.${p.name}: too little of the loop at ${th} degrees to mend it from`);
+      const n = [Math.cos(th * D) / a, Math.sin(th * D) / b], nl = Math.hypot(n[0], n[1]); n[0] /= nl; n[1] /= nl;
+      let lo = Infinity, hi = -Infinity, zlo = Infinity, zhi = -Infinity, sx = 0, sy = 0, front = vs[0];
+      for (const v of vs) {
+        const d = (W[3 * v] - cx) * n[0] + (W[3 * v + 1] - cy) * n[1];
+        lo = Math.min(lo, d); hi = Math.max(hi, d); zlo = Math.min(zlo, W[3 * v + 2]); zhi = Math.max(zhi, W[3 * v + 2]);
+        sx += W[3 * v]; sy += W[3 * v + 1];
+        if (W[3 * v + 2] > W[3 * front + 2]) front = v;
+      }
+      // the middle of the section: on the line out from the loop's middle, halfway across it
+      const mid = (lo + hi) / 2, ax = sx / vs.length - cx, ay = sy / vs.length - cy, al = Math.hypot(ax, ay);
+      const dir = [ax / al, ay / al], k = mid / (dir[0] * n[0] + dir[1] * n[1]);
+      return { at: [cx + dir[0] * k, cy + dir[1] * k, (zlo + zhi) / 2], r: (hi - lo) / 2, rz: (zhi - zlo) / 2, front };
+    };
+    const [e0, e1] = [m.span[0], m.span[1]];
+    const s0 = section(e0), s1 = section(e1);
+    // which way the loop runs at each end: from the section a few degrees back toward the sound side
+    const t0 = section(e0 - 6).at, t1 = section(e1 + 6).at;
+    const dir = (from, to) => { const d = [to[0] - from[0], to[1] - from[1], to[2] - from[2]]; const l = Math.hypot(...d); return d.map((x) => x / l); };
+    const T0 = dir(t0, s0.at), T1 = dir(s1.at, t1); // both in the way the angle grows
+    const chord = Math.hypot(s1.at[0] - s0.at[0], s1.at[1] - s0.at[1]);
+    // Hermite from end to end; each tangent as long as the chord, so the curve swells as a loop does
+    const curve = (u) => {
+      const h00 = 2 * u ** 3 - 3 * u ** 2 + 1, h10 = u ** 3 - 2 * u ** 2 + u, h01 = -2 * u ** 3 + 3 * u ** 2, h11 = u ** 3 - u ** 2;
+      return [0, 1, 2].map((k) => h00 * s0.at[k] + h10 * chord * T0[k] + h01 * s1.at[k] + h11 * chord * T1[k]);
+    };
+    // the arc length the overlap covers at each end, run straight on along the loop's own way
+    const runOn = (over * D) * Math.hypot(a, b) / Math.SQRT2;
+    const ALONG = 48, ROUND = 20, uvAt = [UV[2 * s0.front], UV[2 * s0.front + 1]];
+    const pos = [], nrm = [], uv = [], idx = [];
+    const rows = [];
+    for (let i = -4; i <= ALONG + 4; i++) {
+      let c, tan, w;
+      if (i < 0) { const s = (i / 4) * runOn; c = s0.at.map((x, k) => x + s * T0[k]); tan = T0; w = 0; }
+      else if (i > ALONG) { const s = ((i - ALONG) / 4) * runOn; c = s1.at.map((x, k) => x + s * T1[k]); tan = T1; w = 1; }
+      else { const u = i / ALONG; c = curve(u); const c2 = curve(Math.min(1, u + 1e-3)), c1 = curve(Math.max(0, u - 1e-3)); tan = dir(c1, c2); w = u; }
+      // a hair thicker than the loop's sound ends, so it covers the ragged edge the cut leaves at
+      // each, and where it runs on inside the loop's own metal, growing thinner, hidden beyond it
+      const thin = 1.03 - 0.015 * Math.max(-i, i - ALONG, 0);
+      const r = (s0.r + (s1.r - s0.r) * w) * thin, rz = (s0.rz + (s1.rz - s0.rz) * w) * thin;
+      // across the loop: in the front plane, square to the way it runs, pointing out
+      let nx = tan[1], ny = -tan[0]; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+      if ((c[0] - cx) * nx + (c[1] - cy) * ny < 0) { nx = -nx; ny = -ny; }
+      const row = [];
+      for (let j = 0; j < ROUND; j++) {
+        const ph = (j / ROUND) * 2 * Math.PI, co = Math.cos(ph), si = Math.sin(ph);
+        pos.push(c[0] + r * co * nx, c[1] + r * co * ny, c[2] + rz * si);
+        const gx = (co / r) * nx, gy = (co / r) * ny, gz = si / rz, gl = Math.hypot(gx, gy, gz);
+        nrm.push(gx / gl, gy / gl, gz / gl);
+        uv.push(uvAt[0], uvAt[1]);
+        row.push(pos.length / 3 - 1);
+      }
+      rows.push(row);
+    }
+    // the tube's faces, turned to face out (the way its normals point)
+    for (let i = 0; i + 1 < rows.length; i++) for (let j = 0; j < ROUND; j++) {
+      const A = rows[i][j], B = rows[i][(j + 1) % ROUND], Cc = rows[i + 1][j], Dd = rows[i + 1][(j + 1) % ROUND];
+      const e1v = [pos[3 * Cc] - pos[3 * A], pos[3 * Cc + 1] - pos[3 * A + 1], pos[3 * Cc + 2] - pos[3 * A + 2]];
+      const e2v = [pos[3 * B] - pos[3 * A], pos[3 * B + 1] - pos[3 * A + 1], pos[3 * B + 2] - pos[3 * A + 2]];
+      const fn = [e1v[1] * e2v[2] - e1v[2] * e2v[1], e1v[2] * e2v[0] - e1v[0] * e2v[2], e1v[0] * e2v[1] - e1v[1] * e2v[0]];
+      const out = fn[0] * nrm[3 * A] + fn[1] * nrm[3 * A + 1] + fn[2] * nrm[3 * A + 2] > 0;
+      if (out) idx.push(A, Cc, B, B, Cc, Dd); else idx.push(A, B, Cc, B, Dd, Cc);
+    }
+    // a cap left by the cut is not wanted where the arc is made again
+    const covers = (loop) => {
+      let x = 0, y = 0;
+      for (const ed of loop) { x += W[3 * ed[2]] / loop.length; y += W[3 * ed[2] + 1] / loop.length; }
+      return near(x, y) && inSpan(angle(x, y), e0 - over, e1 + over);
+    };
+    return { drop, n: pos.length / 3, pos, nrm, uv, idx, covers };
   }
 
   // 6. simplify each part: a share of the budget by its size, gentler on the small ones
   const budget = TRIS * 0.97;
-  const weights = info.map((p) => Math.pow(p.tris.length, 0.6));
+  const weights = kept.map((p) => Math.pow(p.tris.length, 0.6));
   let scale = budget / weights.reduce((a, b) => a + b, 0);
   let meshes;
   for (let attempt = 0; attempt < 4; attempt++) {
-    meshes = info.map((p, i) => simplifyPart(p, SIMPLIFY ? Math.min(p.tris.length, Math.max(300, weights[i] * scale)) : p.tris.length));
+    meshes = kept.map((p, i) => simplifyPart(p, SIMPLIFY ? Math.min(p.tris.length, Math.max(300, weights[i] * scale)) : p.tris.length));
     const total = meshes.reduce((a, m) => a + m.idx.length / 3, 0);
     if (total <= TRIS) break;
     scale *= (budget / total) * 0.97;
   }
   function simplifyPart(p, target) {
-    const nvp = p.order.length;
+    const mend = p.mend ? (p.mended ??= mendLoop(p)) : null;
+    const caps = (p.caps ?? []).filter((loop) => !mend?.covers(loop));
+    const tris = mend ? p.tris.filter((t) => !mend.drop.has(t)) : p.tris;
+    const nvp = p.order.length + caps.length + (mend ? mend.n : 0);
     const pos = new Float32Array(nvp * 3), attr = new Float32Array(nvp * 5), nrm = new Float32Array(nvp * 3), uv = new Float32Array(nvp * 2);
     p.order.forEach((v, j) => {
       for (let k = 0; k < 3; k++) { pos[3 * j + k] = W[3 * v + k] - p.pivot[k]; nrm[3 * j + k] = WN[3 * v + k]; attr[5 * j + k] = WN[3 * v + k]; }
       uv[2 * j] = UV[2 * v]; uv[2 * j + 1] = UV[2 * v + 1]; attr[5 * j + 3] = UV[2 * v]; attr[5 * j + 4] = UV[2 * v + 1];
     });
     const local = new Map(p.order.map((v, j) => [v, j]));
-    let idx = new Uint32Array(p.tris.length * 3);
-    p.tris.forEach((t, j) => { for (let k = 0; k < 3; k++) idx[3 * j + k] = local.get(I[3 * t + k]); });
-    if (target < p.tris.length) {
+    // each cap: a vertex in the middle of its loop, and a triangle from each edge of the loop to it
+    // (the edge turned round, so the cap faces the way the part's own triangles do), lit as the
+    // fan faces and coloured as the loop's edge is (the uv nearest the middle, as the loop may cross
+    // a seam in the textures)
+    const capTris = [];
+    caps.forEach((loop, c) => {
+      const j = p.order.length + c, mid = [0, 0, 0];
+      for (const ed of loop) for (let k = 0; k < 3; k++) mid[k] += W[3 * ed[2] + k] / loop.length;
+      const n = [0, 0, 0];
+      let near = loop[0][2], nd = Infinity;
+      for (const [, , va, vb] of loop) {
+        const a = vp(va), b = vp(vb), u = sub(a, b), w = sub(mid, b);
+        n[0] += u[1] * w[2] - u[2] * w[1]; n[1] += u[2] * w[0] - u[0] * w[2]; n[2] += u[0] * w[1] - u[1] * w[0];
+        const d = len(sub(a, mid)); if (d < nd) { nd = d; near = va; }
+        capTris.push(local.get(vb), local.get(va), j);
+      }
+      const nl = len(n) || 1;
+      for (let k = 0; k < 3; k++) { pos[3 * j + k] = mid[k] - p.pivot[k]; nrm[3 * j + k] = n[k] / nl; attr[5 * j + k] = n[k] / nl; }
+      uv[2 * j] = UV[2 * near]; uv[2 * j + 1] = UV[2 * near + 1]; attr[5 * j + 3] = UV[2 * near]; attr[5 * j + 4] = UV[2 * near + 1];
+    });
+    // the mended arc: its vertices after the caps' middles, and its triangles
+    const mendTris = [];
+    if (mend) {
+      const base = p.order.length + caps.length;
+      for (let j = 0; j < mend.n; j++) {
+        for (let k = 0; k < 3; k++) { pos[3 * (base + j) + k] = mend.pos[3 * j + k] - p.pivot[k]; nrm[3 * (base + j) + k] = mend.nrm[3 * j + k]; attr[5 * (base + j) + k] = mend.nrm[3 * j + k]; }
+        uv[2 * (base + j)] = mend.uv[2 * j]; uv[2 * (base + j) + 1] = mend.uv[2 * j + 1];
+        attr[5 * (base + j) + 3] = mend.uv[2 * j]; attr[5 * (base + j) + 4] = mend.uv[2 * j + 1];
+      }
+      for (const v of mend.idx) mendTris.push(base + v);
+    }
+    let idx = new Uint32Array(tris.length * 3 + capTris.length + mendTris.length);
+    tris.forEach((t, j) => { for (let k = 0; k < 3; k++) idx[3 * j + k] = local.get(I[3 * t + k]); });
+    idx.set(capTris, tris.length * 3);
+    idx.set(mendTris, tris.length * 3 + capTris.length);
+    if (mend) {
+      // its extent as mended (the top of the star's loop is the earring's top)
+      p.lo = [Infinity, Infinity, Infinity]; p.hi = [-Infinity, -Infinity, -Infinity];
+      for (const v of idx) for (let k = 0; k < 3; k++) { const x = pos[3 * v + k] + p.pivot[k]; p.lo[k] = Math.min(p.lo[k], x); p.hi[k] = Math.max(p.hi[k], x); }
+      console.log(`  ${name}.${p.name}: mended its loop, ${mend.drop.size} spoilt triangles out, ${mend.idx.length / 3} in`);
+    }
+    if (target < tris.length) {
       [idx] = MeshoptSimplifier.simplifyWithAttributes(idx, pos, 3, attr, 5, [0.25, 0.25, 0.25, 0.5, 0.5], null, Math.floor(target) * 3, 0.05, ['LockBorder']);
     }
     // keep only the vertices still used
@@ -504,16 +696,16 @@ async function buildEarring(src, name) {
   const group = out.createNode(name);
   scene.addChild(group);
   const allLo = [Infinity, Infinity, Infinity], allHi = [-Infinity, -Infinity, -Infinity];
-  for (const p of info) for (let k = 0; k < 3; k++) { allLo[k] = Math.min(allLo[k], p.lo[k]); allHi[k] = Math.max(allHi[k], p.hi[k]); }
-  const hook = info.find((p) => !p.parent);
+  for (const p of kept) for (let k = 0; k < 3; k++) { allLo[k] = Math.min(allLo[k], p.lo[k]); allHi[k] = Math.max(allHi[k], p.hi[k]); }
+  const rootPart = roots[0];
   const rec = [];
-  // parents before their children, in the map's order otherwise
+  // parents before their children (the star first), in the map's order otherwise
   const order = [];
   const visit = (p) => { if (order.includes(p)) return; if (p.parentIndex >= 0) visit(info[p.parentIndex]); order.push(p); };
-  info.forEach(visit);
+  visit(rootPart);
+  kept.forEach(visit);
   order.forEach((p) => {
-    const i = p.i;
-    const m = meshes[i];
+    const m = meshes[kept.indexOf(p)];
     const full = `${name}.${p.name}`;
     const prim = out.createPrimitive()
       .setAttribute('POSITION', out.createAccessor().setType('VEC3').setArray(m.pos).setBuffer(buffer))
@@ -547,11 +739,14 @@ async function buildEarring(src, name) {
   });
   const triangles = rec.reduce((a, r) => a + r.triangles, 0);
   const summary = {
+    // from the star's top loop (top) to the lowest charm
     height: round(allHi[1] - allLo[1]),
+    top: round(allHi[1]),
     bounds: { min: round(allLo), max: round(allHi) },
-    anchor: round(hook.anchor),
+    anchor: round(rootPart.anchor),
     triangles,
     parts: rec.map((r) => r.part),
+    removed: removed.map((p) => `${name}.${p.name}`),
   };
   group.setExtras({ earring: name, ...summary });
   manifest.earrings[name] = { node: name, ...summary, parts: rec };

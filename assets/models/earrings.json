@@ -1,62 +1,27 @@
 {
  "about": "The sun and moon earrings (assets/models/earrings.glb), written by tools/earrings/build-earrings.mjs.",
- "space": "Earring space is the sources' own: y up, the front facing +z, in source units (about 1.9 tall: scale by the height). Each part node sits at its pivot, and its geometry is about that point. attach is the pivot in the parent's frame at rest (the pivot minus the parent's pivot), where the parent carries it. comLocal and bounds are about the part's own pivot. mass is the part's share of the earring's volume. swing is in degrees from the rest pose: inPlane about z, outOfPlane about x and y.",
- "names": "GLTFLoader drops the dots from node names (moon.hook becomes moonhook); userData.part keeps the full name.",
+ "space": "Earring space is the sources' own: y up, the front facing +z, in source units (scale by the height: from the star's top loop, top, to the lowest charm). Each part node sits at its pivot, and its geometry is about that point. attach is the pivot in the parent's frame at rest (the pivot minus the parent's pivot), where the parent carries it. comLocal and bounds are about the part's own pivot. mass is the part's share of the earring's volume. swing is in degrees from the rest pose: inPlane about z, outOfPlane about x and y.",
+ "anchor": "The star hangs from nothing in the model: its anchor (its own and the earring's) is the point of its top loop that hangs from the theme button, where the removed ear wire's link held it. removed names the parts cut away and left out (the ear wire, its coil and bead, and the links under them).",
+ "names": "GLTFLoader drops the dots from node names (moon.star becomes moonstar); userData.part keeps the full name.",
  "earrings": {
   "moon": {
    "node": "moon",
-   "height": 1.90405,
+   "height": 1.56236,
+   "top": 0.60934,
    "bounds": {
     "min": [-0.29696, -0.95302, -0.0868],
-    "max": [0.28937, 0.95103, 0.088]
+    "max": [0.28937, 0.60934, 0.088]
    },
-   "anchor": [0.00974, 0.93255, 0.02814],
-   "triangles": 43640,
+   "anchor": [0.01589, 0.58625, -0.00392],
+   "triangles": 43644,
    "parts": [
     {
-     "part": "moon.hook",
-     "parent": null,
-     "pivot": [0.00974, 0.93255, 0.02814],
-     "attach": null,
-     "anchor": [0.00974, 0.93255, 0.02814],
-     "mass": 0.0263,
-     "volume": 0.0004494,
-     "com": [0.02498, 0.73712, 0.0066],
-     "comLocal": [0.01523, -0.19543, -0.02154],
-     "bounds": {
-      "min": [-0.05706, -0.35691, -0.07879],
-      "max": [0.17259, 0.01848, 0.04324]
-     },
-     "collider": {
-      "capsule": {
-       "a": [0.02968, 0.64963, -0.01023],
-       "b": [0.02679, 0.87888, 0.02368],
-       "r": 0.0722
-      },
-      "sphere": {
-       "c": [0.02498, 0.73712, 0.0066],
-       "r": 0.21557
-      },
-      "spheres": [
-       [-0.02823, 0.87549, 0.05431, 0.06338],
-       [0.02093, 0.64269, -0.01262, 0.05887],
-       [0.13119, 0.77089, -0.00865, 0.06577],
-       [0.01834, 0.76197, 0.01034, 0.0528],
-       [0.04542, 0.90989, 0.00783, 0.06751]
-      ]
-     },
-     "swing": {
-      "inPlane": 35,
-      "outOfPlane": 20
-     },
-     "triangles": 4494
-    },
-    {
      "part": "moon.star",
-     "parent": "moon.hook",
+     "parent": null,
      "pivot": [0.01589, 0.58625, -0.00392],
-     "attach": [0.00615, -0.3463, -0.03206],
-     "mass": 0.058,
+     "attach": null,
+     "anchor": [0.01589, 0.58625, -0.00392],
+     "mass": 0.0596,
      "volume": 0.0009913,
      "com": [0.01411, 0.47527, 0.01803],
      "comLocal": [-0.00178, -0.11098, 0.02195],
@@ -85,14 +50,14 @@
       "inPlane": 60,
       "outOfPlane": 25
      },
-     "triangles": 4164
+     "triangles": 4642
     },
     {
      "part": "moon.pendant",
      "parent": "moon.star",
      "pivot": [0.00859, 0.34525, 0.01087],
      "attach": [-0.00731, -0.24099, 0.0148],
-     "mass": 0.6854,
+     "mass": 0.7039,
      "volume": 0.01171,
      "com": [-0.11177, -0.01062, 0.01452],
      "comLocal": [-0.12036, -0.35587, 0.00365],
@@ -127,14 +92,14 @@
       "inPlane": 50,
       "outOfPlane": 20
      },
-     "triangles": 8884
+     "triangles": 9904
     },
     {
      "part": "moon.drop",
      "parent": "moon.pendant",
      "pivot": [0.20848, 0.04085, 0.01281],
      "attach": [0.19989, -0.3044, 0.00194],
-     "mass": 0.0222,
+     "mass": 0.0228,
      "volume": 0.0003793,
      "com": [0.23575, -0.02653, 0.00598],
      "comLocal": [0.02727, -0.06738, -0.00683],
@@ -161,14 +126,14 @@
       "inPlane": 60,
       "outOfPlane": 30
      },
-     "triangles": 2693
+     "triangles": 3001
     },
     {
      "part": "moon.a1",
      "parent": "moon.pendant",
      "pivot": [-0.19946, -0.25549, 0.00998],
      "attach": [-0.20804, -0.60074, -0.00089],
-     "mass": 0.0278,
+     "mass": 0.0286,
      "volume": 0.000475,
      "com": [-0.17822, -0.34093, 0.00986],
      "comLocal": [0.02124, -0.08544, -0.00012],
@@ -196,14 +161,14 @@
       "inPlane": 60,
       "outOfPlane": 25
      },
-     "triangles": 3906
+     "triangles": 4356
     },
     {
      "part": "moon.b1",
      "parent": "moon.pendant",
      "pivot": [-0.07785, -0.32505, 0.01374],
      "attach": [-0.08644, -0.67031, 0.00287],
-     "mass": 0.0225,
+     "mass": 0.0231,
      "volume": 0.0003842,
      "com": [-0.06663, -0.43952, 0.00904],
      "comLocal": [0.01122, -0.11447, -0.0047],
@@ -232,14 +197,14 @@
       "inPlane": 60,
       "outOfPlane": 25
      },
-     "triangles": 3784
+     "triangles": 4220
     },
     {
      "part": "moon.b2",
      "parent": "moon.b1",
      "pivot": [-0.06682, -0.55503, 0.01007],
      "attach": [0.01103, -0.22998, -0.00367],
-     "mass": 0.0386,
+     "mass": 0.0396,
      "volume": 0.0006594,
      "com": [-0.10765, -0.65109, 0.01358],
      "comLocal": [-0.04083, -0.09606, 0.00351],
@@ -268,14 +233,14 @@
       "inPlane": 75,
       "outOfPlane": 30
      },
-     "triangles": 3896
+     "triangles": 4344
     },
     {
      "part": "moon.b3",
      "parent": "moon.b2",
      "pivot": [-0.15471, -0.74201, 0.01613],
      "attach": [-0.08789, -0.18698, 0.00605],
-     "mass": 0.019,
+     "mass": 0.0195,
      "volume": 0.0003251,
      "com": [-0.08867, -0.80157, 0.00902],
      "comLocal": [0.06604, -0.05956, -0.0071],
@@ -302,14 +267,14 @@
       "inPlane": 75,
       "outOfPlane": 30
      },
-     "triangles": 2395
+     "triangles": 2671
     },
     {
      "part": "moon.c1",
      "parent": "moon.pendant",
      "pivot": [0.06155, -0.33138, 0.01623],
      "attach": [0.05297, -0.67663, 0.00536],
-     "mass": 0.0397,
+     "mass": 0.0408,
      "volume": 0.0006782,
      "com": [0.10796, -0.49905, 0.01414],
      "comLocal": [0.0464, -0.16767, -0.00209],
@@ -338,14 +303,14 @@
       "inPlane": 60,
       "outOfPlane": 25
      },
-     "triangles": 4400
+     "triangles": 4906
     },
     {
      "part": "moon.c2",
      "parent": "moon.c1",
      "pivot": [0.12554, -0.60209, 0.00324],
      "attach": [0.06399, -0.27071, -0.01299],
-     "mass": 0.0187,
+     "mass": 0.0192,
      "volume": 0.0003199,
      "com": [0.1622, -0.70731, -0.00273],
      "comLocal": [0.03666, -0.10522, -0.00597],
@@ -373,14 +338,14 @@
       "inPlane": 75,
       "outOfPlane": 30
      },
-     "triangles": 2681
+     "triangles": 2989
     },
     {
      "part": "moon.c3",
      "parent": "moon.c2",
      "pivot": [0.19443, -0.79204, -0.00081],
      "attach": [0.06889, -0.18994, -0.00405],
-     "mass": 0.0417,
+     "mass": 0.0428,
      "volume": 0.0007118,
      "com": [0.20779, -0.88035, -0.03858],
      "comLocal": [0.01336, -0.08832, -0.03777],
@@ -408,101 +373,68 @@
       "inPlane": 75,
       "outOfPlane": 30
      },
-     "triangles": 2343
+     "triangles": 2611
     }
    ],
-   "bytes": 825810
+   "removed": [
+    "moon.hook"
+   ],
+   "bytes": 822430
   },
   "sun": {
    "node": "sun",
-   "height": 1.90291,
+   "height": 1.64234,
+   "top": 0.69047,
    "bounds": {
-    "min": [-0.31401, -0.95188, -0.06837],
-    "max": [0.28522, 0.95104, 0.05893]
+    "min": [-0.31401, -0.95188, -0.05339],
+    "max": [0.28522, 0.69047, 0.03186]
    },
-   "anchor": [0.00494, 0.93501, 0.03599],
-   "triangles": 43640,
+   "anchor": [-0.06237, 0.68145, -0.0387],
+   "triangles": 43642,
    "parts": [
     {
-     "part": "sun.hook",
-     "parent": null,
-     "pivot": [0.00494, 0.93501, 0.03599],
-     "attach": null,
-     "anchor": [0.00494, 0.93501, 0.03599],
-     "mass": 0.0273,
-     "volume": 0.0003294,
-     "com": [-0.03956, 0.76672, -0.01127],
-     "comLocal": [-0.0445, -0.16829, -0.04725],
-     "bounds": {
-      "min": [-0.20919, -0.31326, -0.10436],
-      "max": [0.07422, 0.01603, 0.02294]
-     },
-     "collider": {
-      "capsule": {
-       "a": [-0.07151, 0.71922, -0.03141],
-       "b": [-0.00355, 0.87404, 0.02253],
-       "r": 0.0844
-      },
-      "sphere": {
-       "c": [-0.03956, 0.76672, -0.01127],
-       "r": 0.20209
-      },
-      "spheres": [
-       [-0.15002, 0.79474, -0.0383, 0.06185],
-       [0.04604, 0.90037, 0.04352, 0.06813],
-       [-0.05312, 0.69008, -0.03263, 0.05738],
-       [-0.00692, 0.79353, 0.00484, 0.0581],
-       [-0.05993, 0.89031, 0.00824, 0.06351]
-      ]
-     },
-     "swing": {
-      "inPlane": 35,
-      "outOfPlane": 20
-     },
-     "triangles": 4525
-    },
-    {
      "part": "sun.star",
-     "parent": "sun.hook",
-     "pivot": [-0.06297, 0.64087, -0.03811],
-     "attach": [-0.06791, -0.29414, -0.07409],
-     "mass": 0.0914,
-     "volume": 0.001104,
-     "com": [-0.0535, 0.51549, -0.03017],
-     "comLocal": [0.00947, -0.12538, 0.00794],
+     "parent": null,
+     "pivot": [-0.06237, 0.68145, -0.0387],
+     "attach": null,
+     "anchor": [-0.06237, 0.68145, -0.0387],
+     "mass": 0.0963,
+     "volume": 0.001134,
+     "com": [-0.05392, 0.51928, -0.03045],
+     "comLocal": [0.00845, -0.16217, 0.00825],
      "bounds": {
-      "min": [-0.12327, -0.25758, -0.01377],
-      "max": [0.1426, 0.02037, 0.04117]
+      "min": [-0.12388, -0.29816, -0.01378],
+      "max": [0.142, 0.00902, 0.04176]
      },
      "collider": {
       "capsule": {
-       "a": [-0.04616, 0.49262, -0.02223],
-       "b": [-0.06516, 0.56129, -0.02556],
-       "r": 0.09975
+       "a": [-0.05045, 0.47762, -0.02091],
+       "b": [-0.05958, 0.60105, -0.0305],
+       "r": 0.09061
       },
       "sphere": {
-       "c": [-0.0535, 0.51549, -0.03017],
-       "r": 0.14819
+       "c": [-0.05392, 0.51928, -0.03045],
+       "r": 0.1729
       },
       "spheres": [
-       [-0.11995, 0.49747, -0.02292, 0.06547],
-       [0.01147, 0.54248, -0.02279, 0.06578],
-       [-0.07615, 0.59897, -0.02808, 0.0638],
-       [-0.02509, 0.45716, -0.02109, 0.06343]
+       [-0.11243, 0.54346, -0.02215, 0.06497],
+       [0.00797, 0.52753, -0.02251, 0.07125],
+       [-0.0591, 0.64894, -0.03868, 0.04307],
+       [-0.06606, 0.45367, -0.02154, 0.0769]
       ]
      },
      "swing": {
       "inPlane": 60,
       "outOfPlane": 25
      },
-     "triangles": 4691
+     "triangles": 5600
     },
     {
      "part": "sun.pendant",
      "parent": "sun.star",
      "pivot": [-0.05701, 0.39394, -0.03482],
-     "attach": [0.00596, -0.24693, 0.00329],
-     "mass": 0.6629,
+     "attach": [0.00536, -0.28751, 0.00389],
+     "mass": 0.6798,
      "volume": 0.008005,
      "com": [-0.019, -0.00179, -0.02621],
      "comLocal": [0.03801, -0.39573, 0.00861],
@@ -537,14 +469,14 @@
       "inPlane": 50,
       "outOfPlane": 20
      },
-     "triangles": 10227
+     "triangles": 11303
     },
     {
      "part": "sun.a1",
      "parent": "sun.pendant",
      "pivot": [-0.10274, -0.26987, -0.04248],
      "attach": [-0.04573, -0.66381, -0.00766],
-     "mass": 0.031,
+     "mass": 0.0317,
      "volume": 0.0003738,
      "com": [-0.10119, -0.42397, -0.01666],
      "comLocal": [0.00155, -0.15411, 0.02582],
@@ -573,14 +505,14 @@
       "inPlane": 60,
       "outOfPlane": 25
      },
-     "triangles": 4069
+     "triangles": 4497
     },
     {
      "part": "sun.a2",
      "parent": "sun.a1",
      "pivot": [-0.09456, -0.54056, -0.04028],
      "attach": [0.00817, -0.27069, 0.0022],
-     "mass": 0.0404,
+     "mass": 0.0415,
      "volume": 0.0004883,
      "com": [-0.09595, -0.6615, -0.03324],
      "comLocal": [-0.00139, -0.12094, 0.00704],
@@ -608,14 +540,14 @@
       "inPlane": 75,
       "outOfPlane": 30
      },
-     "triangles": 3204
+     "triangles": 3540
     },
     {
      "part": "sun.a3",
      "parent": "sun.a2",
      "pivot": [-0.08916, -0.76075, -0.03893],
      "attach": [0.0054, -0.22019, 0.00135],
-     "mass": 0.0269,
+     "mass": 0.0276,
      "volume": 0.0003246,
      "com": [-0.09055, -0.89327, -0.01711],
      "comLocal": [-0.00139, -0.13252, 0.02183],
@@ -643,14 +575,14 @@
       "inPlane": 75,
       "outOfPlane": 30
      },
-     "triangles": 2725
+     "triangles": 3011
     },
     {
      "part": "sun.b1",
      "parent": "sun.pendant",
      "pivot": [0.00492, -0.28352, -0.04419],
      "attach": [0.06193, -0.67745, -0.00938],
-     "mass": 0.0371,
+     "mass": 0.0381,
      "volume": 0.0004482,
      "com": [0.00037, -0.45082, -0.03338],
      "comLocal": [-0.00455, -0.16731, 0.01081],
@@ -679,14 +611,14 @@
       "inPlane": 60,
       "outOfPlane": 25
      },
-     "triangles": 4159
+     "triangles": 4597
     },
     {
      "part": "sun.b2",
      "parent": "sun.b1",
      "pivot": [0.00242, -0.54202, -0.03919],
      "attach": [-0.0025, -0.2585, 0.00501],
-     "mass": 0.0188,
+     "mass": 0.0193,
      "volume": 0.0002274,
      "com": [0.00863, -0.66603, -0.03297],
      "comLocal": [0.00622, -0.12401, 0.00621],
@@ -714,14 +646,14 @@
       "inPlane": 75,
       "outOfPlane": 30
      },
-     "triangles": 2955
+     "triangles": 3265
     },
     {
      "part": "sun.b3",
      "parent": "sun.b2",
      "pivot": [0.00382, -0.76873, -0.03322],
      "attach": [0.0014, -0.22671, 0.00597],
-     "mass": 0.0332,
+     "mass": 0.034,
      "volume": 0.0004004,
      "com": [-0.00716, -0.86461, -0.03365],
      "comLocal": [-0.01098, -0.09588, -0.00044],
@@ -749,14 +681,14 @@
       "inPlane": 75,
       "outOfPlane": 30
      },
-     "triangles": 3397
+     "triangles": 3755
     },
     {
      "part": "sun.c1",
      "parent": "sun.pendant",
      "pivot": [0.11867, -0.2513, -0.042],
      "attach": [0.17568, -0.64524, -0.00719],
-     "mass": 0.031,
+     "mass": 0.0318,
      "volume": 0.000374,
      "com": [0.12945, -0.38858, -0.01886],
      "comLocal": [0.01078, -0.13728, 0.02315],
@@ -784,10 +716,13 @@
       "inPlane": 60,
       "outOfPlane": 25
      },
-     "triangles": 3688
+     "triangles": 4074
     }
    ],
-   "bytes": 662487
+   "removed": [
+    "sun.hook"
+   ],
+   "bytes": 660433
   }
  },
  "file": "assets/models/earrings.glb"

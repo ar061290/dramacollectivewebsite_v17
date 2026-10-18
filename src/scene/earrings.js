@@ -1,8 +1,9 @@
 // The sun and moon earrings that hang from the theme switch (docs/earrings/SPEC.md): the light
 // theme's sun, the dark theme's moon. The model (assets/models/earrings.glb, made by
-// tools/earrings/build-earrings.mjs) holds both, each cut into its rigid parts (the ear wire, the
-// star, the pendant, the links, beads and charms of its strands), each part's geometry about the
-// point it hangs from, with its joint, mass, colliders and swing limits in the node's extras.
+// tools/earrings/build-earrings.mjs) holds both, each cut into its rigid parts (the star, the
+// pendant, the links, beads and charms of its strands), each part's geometry about the point it
+// hangs from, with its joint, mass, colliders and swing limits in the node's extras. The ear wire
+// is not in the model: each earring hangs from the button by the top loop of its star.
 //
 // The parts are rigid bodies joined at those points, solved by XPBD (Müller et al., "Detailed
 // Rigid Body Simulation with Extended Position Based Dynamics", 2020): positions, quaternions,
@@ -11,16 +12,16 @@
 // from its parent: further in the earring's plane than out of it, as a loop through a loop jams,
 // and least about the loop itself (its twist), which also turns slowly back to face the page.
 // The model's pose is the pose it hangs in, not wherever its weight would tip it: from the pendant
-// down, gravity pulls each part at a point chosen for that, and the ear wire hangs from the point
-// of it that balances what hangs below. The air slows it a little and the loops slow its turning.
-// Parts that do not hang from each other cannot pass through each other (soft spheres), nor back
-// through the page. The ear wire hangs from the theme button, wherever the bar has put it. A part
+// down, gravity pulls each part at a point chosen for that, and the star hangs from the point of
+// its loop that balances what hangs below. The air slows it a little and the loops slow its
+// turning. Parts that do not hang from each other cannot pass through each other (soft spheres),
+// nor back through the page. The star hangs from the theme button, wherever the bar has put it. A part
 // taken hold of is pulled toward the pointer, by a pull stiff enough to follow and too weak to tear
 // a loop open; let go, it swings back with the speed it had. All of this is stepped at a fixed 600
 // steps a second, with no allocation per step. The solver leaves each joint a small fraction of a
 // pixel apart; what is drawn closes it exactly (Rig.project).
 //
-// The drop is a spring (src/ui/spring.js, react-spring's model): the ear wire comes down out of
+// The drop is a spring (src/ui/spring.js, react-spring's model): the star's loop comes down out of
 // the button with one small jump (the only overshoot on the site, asked for by the owner) and goes
 // back up without one. The chain feels only a share of that spring's speed (`carry`): the rest of
 // it the whole earring is carried, so it unfolds and swings as it lands instead of being flung.
@@ -28,8 +29,9 @@
 // It is lit as the site's other pieces are: the theme's stage light (the warm spot from above in
 // the dark, the house lights up in the light), a faint slate rim, a soft room for the metal and the
 // stones to reflect, and the cursor's gold glow as a small lamp held in front of the part under the
-// pointer (as on the masks, src/scene/masks.js, and the statue, src/scene/thinker.js). One small
-// canvas under the button, drawn only while an earring is out (src/ui/earrings.js places it).
+// pointer (as on the masks, src/scene/masks.js, and the statue, src/scene/thinker.js). One canvas
+// under the button, drawn only while an earring is moving (src/ui/earrings.js places it), with no
+// more pixels behind it than a laptop's screen needs (MAX_PIXELS).
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
@@ -43,10 +45,12 @@ const DRACO_PATH = import.meta.env ? new URL('draco/', document.baseURI).href : 
 const DEG = Math.PI / 180;
 export const STEP = 1 / 600; // s: the physics' fixed time step (10 steps a frame at 60 frames a second)
 const MAX_STEPS = 40; // a frame never runs more than this many (after a stall, time is let go)
+const ROW = 0.01; // model units: the height of each band of an earring's outline (about 3 px at 540 px tall)
 
-// The physics, in the model's own units (an earring is about 1.9 high) and seconds.
+// The physics, in the model's own units (an earring is about 1.6 high, from its star's top loop to
+// its lowest charm) and seconds.
 export const PHYSICS = {
-  gravity: 30, // about 3,800 px/s² at 240 px high: the whole earring swings about once a second
+  gravity: 30, // about 10,000 px/s² at 540 px high: the whole earring swings about once a second
   linearDrag: 1.6, // the air, on each part's speed and turn (per second): settled in about 2 s
   angularDrag: 2,
   jointDamping: 4, // the loops' friction on a part's turn against its parent's (per second)
@@ -57,7 +61,7 @@ export const PHYSICS = {
   contactCompliance: 2e-6, // parts against parts: firm, not rigid
   backCompliance: 2e-5, // and against the page behind
   dragCompliance: 2e-5, // the pull of the pointer: stiff but not rigid
-  maxPull: 0.008, // and how far it may pull a part in one step (4.8 units/s, 600 px/s, at most)
+  maxPull: 0.008, // and how far it may pull a part in one step (4.8 units/s, 1,600 px/s, at most)
   passes: 4, // joint passes a step (down the chain and back up)
   back: 0.1, // how far behind the earring (at rest) the page lies
   carry: 0.08, // the share of the drop spring's speed the chain feels as its own
@@ -92,7 +96,7 @@ function rotInv(q, o, vx, vy, vz, out) {
 }
 
 /**
- * One earring's physics: its parts as rigid bodies, parents before children, the ear wire first.
+ * One earring's physics: its parts as rigid bodies, parents before children, the star first.
  * Bodies sit at their centres of mass. `spec` is the earring's extras (its anchor and height) with
  * its parts' own extras (assets/models/earrings.json has the same).
  */
@@ -105,7 +109,7 @@ export class Rig {
     const index = new Map(this.names.map((k, i) => [k, i]));
     this.parent = Int16Array.from(parts, (p) => (p.parent ? index.get(p.parent) : -1));
     for (let i = 0; i < n; i++) if (this.parent[i] >= i) throw new Error('earrings: a part comes before its parent');
-    this.anchor = spec.anchor.slice(); // the ear wire's bend, in earring space
+    this.anchor = spec.anchor.slice(); // the point of the star's top loop it hangs from, in earring space
     this.height = spec.height;
 
     this.x = new Float64Array(3 * n); this.q = new Float64Array(4 * n);
@@ -120,10 +124,10 @@ export class Rig {
     this.limIn = new Float64Array(n); this.limOut = new Float64Array(n); this.limTwist = new Float64Array(n);
     this.Iw = new Float64Array(9 * n); // the world inverse inertia, each step (inertia())
     for (let i = 0; i < n; i++) this.m[i] = Math.max(parts[i].mass, P.massFloor);
-    // The ear wire hangs from the point of it at the height of its bend that its own weight and the
-    // weight hanging from its loop balance on (`pin`, a little beside the bend itself), so that it
-    // hangs upright, as made, rather than tipped by what hangs below it. That point is pinned where
-    // the bend's rest place is plus the same offset: at rest the bend is exactly under the button.
+    // The star hangs from the point at the height of its loop's anchor that its own weight and the
+    // weight hanging from it balance on (`pin`, a hair beside the anchor itself), so that it hangs
+    // upright, as made, rather than tipped by what hangs below it. That point is pinned where the
+    // anchor's rest place is plus the same offset: at rest the anchor is exactly under the button.
     let mx = this.m[0] * parts[0].com[0], mz = this.m[0] * parts[0].com[2], mt = this.m[0];
     for (let i = 1; i < n; i++) {
       if (this.parent[i] !== 0) continue;
@@ -161,9 +165,9 @@ export class Rig {
     // From the pendant down, gravity pulls each part at a point of its own chosen for that: working
     // up from the strands' ends, each part's and its children's weight falls straight below the
     // part's pivot (in x and z; the height is the part's own centre of mass). It is still gravity
-    // on a point of the part, so nothing is gained or lost as it swings. The ear wire and the star
-    // are too light to hold the pendant's weight off centre that way: the ear wire hangs from its
-    // balance point instead (pin, above), and the star as its weight takes it, a few degrees off.
+    // on a point of the part, so nothing is gained or lost as it swings. The star is too light to
+    // hold the pendant's weight off centre that way: it hangs from its balance point instead (pin,
+    // above).
     const depth = new Int8Array(n);
     for (let i = 0; i < n; i++) depth[i] = this.parent[i] < 0 ? 0 : depth[this.parent[i]] + 1;
     const below = new Float64Array(n); // the weight hanging from each pivot, the part's own included
@@ -172,7 +176,7 @@ export class Rig {
       if (this.parent[i] >= 0) below[this.parent[i]] += below[i];
     }
     for (let i = 0; i < n; i++) {
-      if (depth[i] < 2) continue;
+      if (depth[i] < 1) continue;
       const piv = parts[i].pivot, c = parts[i].com;
       let sx = 0, sz = 0;
       for (let j = i + 1; j < n; j++) {
@@ -224,7 +228,7 @@ export class Rig {
     this.boundW = new Float64Array(4 * n); // bounding spheres in the world, each step
     this.sWorld = new Float64Array(3 * spheres.length); // small spheres' offsets in the world, each step
     this.shown = new Float64Array(3 * n); // where each part is drawn (project)
-    // the page lies a little behind the deepest of the spheres at rest (measured from the ear wire)
+    // the page lies a little behind the deepest of the spheres at rest (measured from the anchor)
     this.zBack = Math.min(...spheres.map((sp) => sp[3] + parts[sp[0]].com[2] - sp[4])) - this.anchor[2];
     // How hard it is to twist each part and everything hanging from it about its pivot's upright,
     // at rest: a loop's twist (which a joint at a point does not pass on) turns all of that back.
@@ -242,13 +246,13 @@ export class Rig {
 
     // the pointer's hold, if any: the part, the point held (body frame), the target (world)
     this.hold = { part: -1, r: new Float64Array(3), t: new Float64Array(3) };
-    this.target = new Float64Array(3); // where the ear wire's pin is held
+    this.target = new Float64Array(3); // where the star's pin is held
     this.residual = 0; // the largest joint gap the solver left in the last frame (before projection)
     this.pose(0, 0, 0);
   }
 
   /**
-   * Hang it at rest with the ear wire's bend at (ax, ay, az), each part turned from its parent by
+   * Hang it at rest with the star's anchor at (ax, ay, az), each part turned from its parent by
    * `fold[i]` (a quaternion [x, y, z, w]; none: the rest pose). Still.
    */
   pose(ax, ay, az, fold = null) {
@@ -405,7 +409,7 @@ export class Rig {
   release() { this.hold.part = -1; }
 
   /**
-   * One step of h seconds, the ear wire pinned so that its bend would be at (ax, ay, az) at rest. `carry` moves the whole
+   * One step of h seconds, the star pinned so that its anchor would be at (ax, ay, az) at rest. `carry` moves the whole
    * earring by that much in y first, without giving it any speed (the share of the drop spring's
    * motion it is carried by rather than pulled).
    */
@@ -566,7 +570,7 @@ export class Rig {
     }
   }
 
-  /** The spherical joints and the ear wire's pin, in the order given (from, to, by). */
+  /** The spherical joints and the star's pin, in the order given (from, to, by). */
   solveJoints(from, to, by) {
     const { x, q, rp, ra, target } = this;
     for (let i = from; i !== to; i += by) {
@@ -705,19 +709,28 @@ const FINISH = { roughness: 0.9, metalGloss: 0.72, clearcoat: 0.4, clearcoatRoug
 // units), and how quickly it eases after the pointer.
 const GLOW = { ahead: 0.2, reach: 0.75, ease: 12 };
 const FOV = 20;
+// The most pixels the canvas is drawn with (its CSS size times the pixel ratio squared): enough for
+// the canvas of an earring 540 px high on a laptop's 2x screen. A taller earring on a sharper
+// screen is drawn a little softer rather than with more pixels (and GPU memory) than that.
+const MAX_PIXELS = 2.4e6;
+// How still an earring must be to count as settled, for the page's timer (settled()): its kinetic
+// energy in the model's units, below which the big swing is over and only the strands still sway a
+// few degrees. A drop gets there in about 2 s.
+const SETTLED = 1e-3;
 
 const tokenColor = (name, fallback = '#ebd88c') => new THREE.Color(readToken(name) || fallback);
 
 export class Earrings {
   /**
-   * Fetch the model and make both earrings.
-   * @param {string} url   assets/models/earrings.glb
+   * Make both earrings from the model: its bytes, if the page has fetched them ahead, or its URL.
+   * @param {ArrayBuffer|string} source   assets/models/earrings.glb
    * @param {object} [o]   see the constructor
    */
-  static async create(url, o) {
+  static async create(source, o) {
     const draco = new DRACOLoader().setDecoderPath(DRACO_PATH).setDecoderConfig({ type: 'wasm' });
     try {
-      const gltf = await new GLTFLoader().setDRACOLoader(draco).loadAsync(url);
+      const loader = new GLTFLoader().setDRACOLoader(draco);
+      const gltf = typeof source === 'string' ? await loader.loadAsync(source) : await loader.parseAsync(source, '');
       return new Earrings(gltf, o);
     } finally {
       draco.dispose();
@@ -732,6 +745,7 @@ export class Earrings {
   constructor(gltf, { reduced = false } = {}) {
     this.reduced = reduced;
     const dpr = Math.min(devicePixelRatio || 1, 2);
+    this.dpr = dpr;
     const r = (this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' }));
     r.setPixelRatio(dpr);
     r.outputColorSpace = THREE.SRGBColorSpace;
@@ -799,21 +813,28 @@ export class Earrings {
       const b = spec.bounds;
       this.earrings[name] = {
         name, rig, holder, meshes, material,
-        // how far below the ear wire's bend it reaches, and how wide it is
-        drop: spec.anchor[1] - b.min[1], width: b.max[0] - b.min[0],
+        pivots: spec.parts.map((p) => p.pivot), // where each part's mesh hangs from, as made (its origin)
+        // how far below its top it reaches (from the star's top loop to the lowest charm), how
+        // far its anchor is below that top, and how wide it is
+        drop: spec.top - b.min[1], lift: spec.top - spec.anchor[1], width: b.max[0] - b.min[0],
         spring: new Spring({ config: RETURN }),
         state: 'in', // in, out (coming down or hanging), rising, still
+        landed: false, // out, and come down to its rest at least once since it was brought down
         offset: 0,
+        clock: 0, // s of physics since it was last brought down (for testing: ?debug)
       };
     }
     gltf.scene.traverse((o) => { if (o.isMesh && !this._owns(o.geometry)) o.geometry.dispose(); });
-    this.height = this.earrings.moon.rig.height;
-    this.width = Math.max(this.earrings.moon.width, this.earrings.sun.width);
+    // the two are drawn at one scale: the height between theirs (the sun's is 5% the taller)
+    this.height = (this.earrings.moon.drop + this.earrings.sun.drop) / 2;
+    // each earring's outline hanging at rest (for fitting it beside the page's heading, clears, and
+    // for the slot under the button it comes down through, neck)
+    for (const e of Object.values(this.earrings)) e.outline = this._outline(e);
 
-    this.ppu = 240 / this.height; // CSS px per model unit
+    this.ppu = 540 / this.height; // CSS px per model unit
     this.box = { left: 0, top: 0, w: 0, h: 0 };
     this.anchorPx = { x: 0, y: 0 };
-    this.anchor = new THREE.Vector3(); // the ear wire's rest point under the button, in the world
+    this.anchor = new THREE.Vector3(); // where the top of each star's loop hangs at rest under the button, in the world
     this.acc = 0;
     this.dirty = true;
     this.anchorMoved = false;
@@ -827,6 +848,28 @@ export class Earrings {
     this.cost = 0; // ms the last frame's physics took
     this.steps = 0; // and how many steps it ran
     this.setTheme('dark');
+  }
+
+  /**
+   * An earring's outline hanging at rest, as it was made: for each band ROW high, from the top of
+   * the star's loop down, the leftmost and rightmost of its vertices in that band, across from the
+   * loop's top (model units; an empty band is [Infinity, -Infinity]).
+   */
+  _outline(e) {
+    const rows = Math.ceil(e.drop / ROW) + 1;
+    const out = new Float64Array(2 * rows);
+    for (let k = 0; k < rows; k++) { out[2 * k] = Infinity; out[2 * k + 1] = -Infinity; }
+    const ax = e.rig.anchor[0], top = e.rig.anchor[1] + e.lift;
+    e.meshes.forEach((m, i) => {
+      const pos = m.geometry.getAttribute('position'), piv = e.pivots[i];
+      for (let v = 0; v < pos.count; v++) {
+        const x = piv[0] + pos.getX(v) - ax, k = Math.floor((top - piv[1] - pos.getY(v)) / ROW);
+        if (k < 0 || k >= rows) continue;
+        if (x < out[2 * k]) out[2 * k] = x;
+        if (x > out[2 * k + 1]) out[2 * k + 1] = x;
+      }
+    });
+    return out;
   }
 
   /** The room the metal reflects, pre-filtered (small: 0.04 blur). */
@@ -905,8 +948,8 @@ export class Earrings {
     // the world is the window in model units: at the new scale the same place on the screen is
     // somewhere else, so each earring is carried there
     for (const e of Object.values(this.earrings)) {
-      const t = e.rig.target;
-      e.rig.translate(t[0] * k - t[0], (t[1] - e.offset) * k - (t[1] - e.offset), 0);
+      const t = e.rig.target, top = t[1] - e.offset + e.lift;
+      e.rig.translate(t[0] * k - t[0], top * k - top, 0);
     }
     this.ppu = ppu;
     this.dirty = true;
@@ -916,6 +959,9 @@ export class Earrings {
   setBox(left, top, w, h) {
     const b = this.box;
     if (w !== b.w || h !== b.h) {
+      // the screen's pixel ratio (at most 2), unless that would put more than MAX_PIXELS behind it
+      const ratio = Math.min(this.dpr, Math.sqrt(MAX_PIXELS / Math.max(1, w * h)));
+      if (Math.abs(ratio - this.renderer.getPixelRatio()) > 1e-3) this.renderer.setPixelRatio(ratio);
       this.renderer.setSize(w, h);
       this.camera.aspect = w / h;
       this.camera.updateProjectionMatrix();
@@ -936,12 +982,17 @@ export class Earrings {
     this.camera.updateMatrixWorld();
   }
 
-  /** Where the ear wire hangs at rest (the button's foot, CSS px). */
+  /** Where the top of each star's loop hangs at rest (just under the button's glyph, CSS px). */
   setAnchor(x, y) {
     this.anchorPx.x = x; this.anchorPx.y = y;
     const ax = x / this.ppu, ay = -y / this.ppu;
     if (Math.abs(ax - this.anchor.x) > 1e-7 || Math.abs(ay - this.anchor.y) > 1e-7) this.anchorMoved = true;
     this.anchor.set(ax, ay, this.earrings.moon.rig.anchor[2]);
+  }
+
+  /** The world's y at which an earring's anchor hangs at rest: its loop's top at this.anchor, the anchor `lift` below. */
+  _ay(e) {
+    return this.anchor.y - e.lift;
   }
 
   /** The offset (model units, up: the world is y up) at which an earring is wholly above the box's top, out of sight. */
@@ -957,10 +1008,12 @@ export class Earrings {
       const hidden = this._hidden(e);
       e.offset = hidden;
       e.spring.jump(hidden);
-      e.rig.pose(this.anchor.x, this.anchor.y + hidden, this.anchor.z, this.reduced ? null : this._fold(e.rig));
+      e.rig.pose(this.anchor.x, this._ay(e) + hidden, this.anchor.z, this.reduced ? null : this._fold(e.rig));
     }
     e.spring.to(0, DROP);
+    e.clock = 0;
     e.state = 'out';
+    e.landed = false;
     e.calm = false;
     e.holder.visible = true;
     this.dirty = true;
@@ -982,7 +1035,7 @@ export class Earrings {
     const e = this.earrings[name];
     e.offset = 0;
     e.spring.jump(0);
-    e.rig.pose(this.anchor.x, this.anchor.y, this.anchor.z);
+    e.rig.pose(this.anchor.x, this._ay(e), this.anchor.z);
     this._sync(e);
     e.state = 'still';
     e.holder.visible = true;
@@ -1015,6 +1068,51 @@ export class Earrings {
     return out;
   }
 
+  /**
+   * Whether both earrings, hanging at rest `px` tall with the top of the star's loop at (cx, top)
+   * (CSS px), keep at least `gap` px from every one of `rects` (DOMRects on the screen).
+   */
+  clears(px, cx, top, rects, gap = 0) {
+    const k = px / this.height, h = ROW * k;
+    for (const e of Object.values(this.earrings)) {
+      const o = e.outline;
+      for (let b = 0; b < o.length; b += 2) {
+        if (o[b] > o[b + 1]) continue;
+        const y0 = top + (b / 2) * h - gap, y1 = y0 + h + 2 * gap, x0 = cx + o[b] * k - gap, x1 = cx + o[b + 1] * k + gap;
+        for (const q of rects) if (y1 > q.top && y0 < q.bottom && x1 > q.left && x0 < q.right) return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Whether an earring is coming down out of the button (and has not yet reached its rest) or going
+   * back up into it: the page then hides what of it is above the bar's edge, but for a slot.
+   */
+  get emerging() {
+    return Object.values(this.earrings).some((e) => e.state === 'rising' || (e.state === 'out' && !e.landed));
+  }
+
+  /** For each earring coming down or going up (see emerging), how far above its rest it is (CSS px), into `out`. */
+  lifts(out = []) {
+    out.length = 0;
+    for (const e of Object.values(this.earrings)) if (e.state === 'rising' || (e.state === 'out' && !e.landed)) out.push(e.offset * this.ppu);
+    return out;
+  }
+
+  /**
+   * How far either earring, hanging at rest, reaches to either side of the top of its star's loop
+   * in its top `depth` (both in drawn heights): the half-width of the slot it comes down through.
+   */
+  neck(depth) {
+    let half = 0;
+    for (const e of Object.values(this.earrings)) {
+      const o = e.outline, rows = Math.min(o.length / 2, Math.ceil((depth * this.height) / ROW));
+      for (let k = 0; k < rows; k++) if (o[2 * k] <= o[2 * k + 1]) half = Math.max(half, -o[2 * k], o[2 * k + 1]);
+    }
+    return half / this.height;
+  }
+
   /** Whether an earring is out (coming down, hanging, going up, or still). */
   get active() {
     return Object.values(this.earrings).some((e) => e.state !== 'in');
@@ -1034,7 +1132,7 @@ export class Earrings {
     // an earring hanging still (reduced motion) is carried with the button
     for (const e of Object.values(this.earrings)) {
       if (e.state !== 'still' || !moved) continue;
-      e.rig.pose(this.anchor.x, this.anchor.y, this.anchor.z);
+      e.rig.pose(this.anchor.x, this._ay(e), this.anchor.z);
       this._sync(e);
       this.dirty = true;
     }
@@ -1053,8 +1151,10 @@ export class Earrings {
           if (e.state === 'in') continue;
           const before = e.spring.value;
           e.spring.step(STEP);
+          e.clock += STEP;
           e.offset = e.spring.value;
-          e.rig.step(STEP, this.anchor.x, this.anchor.y + e.offset, this.anchor.z, (e.offset - before) * carry);
+          e.rig.step(STEP, this.anchor.x, this._ay(e) + e.offset, this.anchor.z, (e.offset - before) * carry);
+          if (e.state === 'out' && e.offset <= 0) e.landed = true;
           if (e.state === 'rising' && e.offset >= this._hidden(e)) this.hide(e.name);
         }
       }
@@ -1120,6 +1220,7 @@ export class Earrings {
   grab(hit) {
     this.held = { earring: hit.earring, part: hit.part, z: hit.point.z };
     hit.earring.calm = false;
+    hit.earring.landed = true; // taken hold of on its way down: from now on it is drawn whole
     hit.earring.rig.grab(hit.part, hit.point.x, hit.point.y, hit.point.z);
   }
 
@@ -1156,6 +1257,39 @@ export class Earrings {
       l = Math.min(l, sx - sr); r = Math.max(r, sx + sr); t = Math.min(t, sy - sr); bt = Math.max(bt, sy + sr);
     }
     return { left: l, top: t, right: r, bottom: bt };
+  }
+
+  /**
+   * The named earring's outline on the screen, as an SVG path of circles (its parts' colliders,
+   * each grown by `grow` px) about the point (ox, oy) (CSS px): the clip-path of the zone that
+   * takes the pointer, so that the pointer is taken over the earring and the page has it elsewhere.
+   */
+  hitPath(name, ox, oy, grow = 0) {
+    const e = this.earrings[name];
+    if (!e || e.state === 'in') return '';
+    const rig = e.rig, cam = this.camera, ppu = this.ppu, b = this.box;
+    const cx = b.left + b.w / 2, cy = b.top + b.h / 2;
+    let d = '';
+    for (let s = 0; s < rig.sOwner.length; s++) {
+      const i = rig.sOwner[s];
+      rot(rig.q, 4 * i, rig.sLocal[3 * s], rig.sLocal[3 * s + 1], rig.sLocal[3 * s + 2], T);
+      const wx = rig.x[3 * i] + T[0], wy = rig.x[3 * i + 1] + T[1], wz = rig.x[3 * i + 2] + T[2];
+      const k = cam.position.z / (cam.position.z - wz);
+      const sx = cx + (wx - cam.position.x) * ppu * k - ox, sy = cy - (wy - cam.position.y) * ppu * k - oy;
+      const r = rig.sR[s] * ppu * k + grow, rs = r.toFixed(1), dd = (2 * r).toFixed(1);
+      d += `M${(sx - r).toFixed(1)} ${sy.toFixed(1)}a${rs} ${rs} 0 1 0 ${dd} 0a${rs} ${rs} 0 1 0 -${dd} 0Z`;
+    }
+    return d;
+  }
+
+  /**
+   * Whether the named earring is out, down from its drop and come to rest (nobody holding it): the
+   * page's timer for sending it back up starts then.
+   */
+  settled(name) {
+    const e = this.earrings[name];
+    if (!e || e.state !== 'out' || !e.spring.resting || this.held?.earring === e) return false;
+    return e.calm || e.rig.energy() < SETTLED;
   }
 
   /** The pointer (CSS px), and whether it is there at all: the cursor's lamp follows it. */

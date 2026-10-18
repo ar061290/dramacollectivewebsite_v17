@@ -1,5 +1,7 @@
 # The sun and moon earrings: materials
 
+> Since the first build the ear wire (hook, coil, bronze bead and their link) is left out of the model: the earrings hang from the star connector's top loop (SPEC.md section 0). Its materials are kept below for reference.
+
 This note records what each part of the two earring models is made of, as the models themselves
 describe it, and then says how to make them look like fine jewellery. It ends with ready-to-paste
 retexturing prompts and the PBR values to use in three.js. It goes with `SPEC.md` (§2 lists the parts,

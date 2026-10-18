@@ -7,8 +7,10 @@
 //   pieceCard(p, { level })  an <li class="pub-piece"> for a <ul class="pub-pieces__grid">;
 //                            `level` is its title's heading level (3 by default: under the
 //                            section's h2; 2 on a page whose h1 is the grid's own heading)
-//   pieceRow(p, { next })    an <li class="pub-row"> for a <ul class="pub-pieces__list">; `next`
-//                            marks the first one (its dot lit)
+//   pieceRow(p, { next, remind })  an <li class="pub-row"> for a <ul class="pub-pieces__list">;
+//                            `next` marks the first one (its dot lit); `remind` is where
+//                            "Remind me" goes (the newsletter on the same page, #news, by default;
+//                            a writer's page sends it to the publication's)
 //
 // Their looks are in src/styles/publication-pieces.css.
 import { pieceHref } from './pieces-data.js';
@@ -54,9 +56,10 @@ export function pieceCard(p, { level = 3 } = {}) {
 /**
  * A piece still to come, as a row (houseofheat's Upcoming Releases row, with Latest News's
  * picture): the issue, the mark on a tile in the piece's colour, the form above the title, the
- * writer, and "Remind me", which goes down to the newsletter on the same page.
+ * writer, and "Remind me", which goes down to the newsletter on the same page (or, from a page
+ * without it, to the publication's).
  */
-export function pieceRow(p, { next = false } = {}) {
+export function pieceRow(p, { next = false, remind = '#news' } = {}) {
   // a special piece: twice the height, larger, and stars that come out round it when pointed at
   const sparks = p.special ? `<span class="pub-row__sparks" aria-hidden="true">${'<i></i>'.repeat(7)}</span>` : '';
   const lang = p.lang ? ` lang="${esc(p.lang)}"` : '';
@@ -69,6 +72,6 @@ export function pieceRow(p, { next = false } = {}) {
     <h3 class="pub-row__title"${lang}>${esc(p.title)}</h3>
     <p class="pub-row__by${p.author ? '' : ' is-tba'}">${esc(byline(p))}</p>
   </div>
-  <a class="pub-btn pub-row__remind" href="#news" data-to-news>Remind me<span class="sr-only">: ${esc(p.title)}</span></a>${sparks}
+  <a class="pub-btn pub-row__remind" href="${esc(remind)}"${remind === '#news' ? ' data-to-news' : ''}>Remind me<span class="sr-only">: ${esc(p.title)}</span></a>${sparks}
 </li>`;
 }
