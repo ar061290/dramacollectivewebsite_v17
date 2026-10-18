@@ -11,10 +11,11 @@ import { bootPage } from '../site/boot.js';
 import { setupTicker } from '../publication/ticker.js';
 import { setupPeekBar } from '../publication/peekbar.js';
 import { setupMasks } from '../publication/masks.js';
+import { setupIndexFilters } from '../publication/index-filters.js';
 
 bootPage((ctx) => {
   document.documentElement.classList.add('is-glow-everywhere');
-  const cleanups = [setupTicker(ctx), setupPeekBar(), setupMasks(ctx), footnotes(ctx)];
+  const cleanups = [setupTicker(ctx), setupPeekBar(), setupMasks(ctx), footnotes(ctx), setupIndexFilters(ctx)];
   return () => cleanups.forEach((c) => c());
 });
 

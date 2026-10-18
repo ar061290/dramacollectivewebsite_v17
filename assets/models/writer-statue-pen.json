@@ -1,0 +1,202 @@
+{
+  "about": "The writer statue with the tall pen (assets/models/writer-statue-pen.glb), measured by tools/writers/build-statue.mjs on the full source mesh.",
+  "space": "Statue space, the model's own: y up, its base on y = 0, 2 high, centred on its plinth in x and z, the front facing +z (seen by a camera on +z looking along -z). Lengths are in these units.",
+  "boxes": "A box is { min, max } in statue space. An oriented box (obb) is { centre, axes, half }: three unit axes, and its half size along each; a point p is inside when |dot(p - centre, axes[i])| <= half[i] for each i.",
+  "bounds": {
+    "min": [
+      -0.51938,
+      0,
+      -0.51932
+    ],
+    "max": [
+      0.51938,
+      2,
+      0.51932
+    ]
+  },
+  "plinth": {
+    "centre": [
+      0,
+      0,
+      0
+    ],
+    "radius": 0.51943
+  },
+  "book": {
+    "cover": {
+      "about": "The book's front cover, the face with the title and the logo. corners are top-left, top-right, bottom-right, bottom-left as seen from the front; the spine is its left edge (top, bottom), where it opens; normal points out of the cover, up from its foot to its head, right from the spine to the fore-edge; size is [width, height]; thickness is the book's, behind the cover. The modelled book is a little out of true: the corners are where its edges meet, each at the cover's depth there (not quite in one plane), and the bottom-left one lies behind a fold of the robe.",
+      "corners": [
+        [
+          0.27074,
+          1.23172,
+          -0.00888
+        ],
+        [
+          0.42327,
+          1.17854,
+          0.03807
+        ],
+        [
+          0.33558,
+          0.92793,
+          0.04068
+        ],
+        [
+          0.18794,
+          0.97598,
+          -0.00666
+        ]
+      ],
+      "spine": [
+        [
+          0.27074,
+          1.23172,
+          -0.00888
+        ],
+        [
+          0.18794,
+          0.97598,
+          -0.00666
+        ]
+      ],
+      "centre": [
+        0.30438,
+        1.07854,
+        0.0158
+      ],
+      "normal": [
+        -0.26418,
+        0.09782,
+        0.9595
+      ],
+      "up": [
+        0.31911,
+        0.94767,
+        -0.00904
+      ],
+      "right": [
+        0.91018,
+        -0.3038,
+        0.28157
+      ],
+      "size": [
+        0.16527,
+        0.26717
+      ],
+      "thickness": 0.0344
+    },
+    "box": {
+      "min": [
+        0.17889,
+        0.91698,
+        -0.04818
+      ],
+      "max": [
+        0.43926,
+        1.23715,
+        0.04626
+      ]
+    },
+    "obb": {
+      "centre": [
+        0.30907,
+        1.07706,
+        -0.00096
+      ],
+      "axes": [
+        [
+          0.91018,
+          -0.3038,
+          0.28157
+        ],
+        [
+          0.31911,
+          0.94767,
+          -0.00904
+        ],
+        [
+          -0.26418,
+          0.09782,
+          0.9595
+        ]
+      ],
+      "half": [
+        0.0881,
+        0.13841,
+        0.02206
+      ]
+    }
+  },
+  "nib": {
+    "about": "The pen's silver nib: axes[1] runs along the pen to its tip.",
+    "tip": [
+      -0.20991,
+      2,
+      0.04981
+    ],
+    "box": {
+      "min": [
+        -0.25752,
+        1.80375,
+        -0.00179
+      ],
+      "max": [
+        -0.16168,
+        2.00332,
+        0.10035
+      ]
+    },
+    "obb": {
+      "centre": [
+        -0.2096,
+        1.90354,
+        0.04928
+      ],
+      "axes": [
+        [
+          1,
+          0.00175,
+          0
+        ],
+        [
+          -0.00175,
+          0.99999,
+          0.00465
+        ],
+        [
+          0.00001,
+          -0.00465,
+          0.99999
+        ]
+      ],
+      "half": [
+        0.04774,
+        0.09947,
+        0.05061
+      ]
+    }
+  },
+  "masks": {
+    "about": "The middle of the masks as seen from the front (their front-most surface), and the box of that surface.",
+    "centre": [
+      0.02515,
+      1.45269,
+      -0.00021
+    ],
+    "box": {
+      "min": [
+        -0.12995,
+        1.36007,
+        -0.11256
+      ],
+      "max": [
+        0.16963,
+        1.57212,
+        0.04187
+      ]
+    }
+  },
+  "triangles": 250000,
+  "vertices": 149538,
+  "bytes": 2504364
+}

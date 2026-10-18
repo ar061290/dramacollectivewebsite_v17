@@ -19,10 +19,14 @@ CHIREC Drama Collective site (`dramacollectivewebsite_v14`: Vite, vanilla JS, th
    with it.
 3. **No earrings on phones.** Below 768 px wide there are none: no model loaded, no canvas, no
    WebGL context. The switch works as before. Tablets and laptops keep them.
-4. **It does not stay.** It comes down, lands with its small jump, dangles, and **goes back up on
-   its own**: about 3 s after it has settled, so about 5 s after the click, unless the pointer is
-   on it or it is held. Pointing at it or holding it keeps it down until a moment after it is let
-   go. A second switch, or the bar sliding away, still sends it up at once.
+4. **It does not stay, and it does not wait.** (Second revision; this replaces the first, which
+   had it settle and wait about 3 s.) It comes down, lands, and on its rebound, the "jump" up after
+   landing, **it carries straight on up and away** into the switch. There is no settling and no
+   dwell: down, the bounce up, gone, in about 1.5–2 s. The parts still swing as it falls, lands
+   and is pulled away, so it reads as dangling, not as a stiff sprite. If the visitor manages to
+   take hold of it before it has gone, it stays while held and goes up at once when let go.
+   Hovering does not keep it down. A second switch, or the bar sliding away, still sends it up at
+   once.
 
 ## 1. What the visitor sees
 

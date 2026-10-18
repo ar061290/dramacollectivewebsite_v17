@@ -14,6 +14,74 @@ page, with the latest and upcoming releases; the grid not capped at 6, and the l
 it runs its whole length. in the list view, on the left, instead of the model, their pic; on hover,
 their intro."
 
+## 0. Revision, after the owner saw it (v15; this overrides anything below)
+
+The owner's words: "the model doesn't match the website, modify the colors. the sudden change from
+the model to the actual cover page is really horrible: just overlay the publication cover onto the
+model from the start itself. in meet the writers, their pics and names are right; remove the titles
+of their works and replace them with 'read all works'. hover on the pic should show the intro; if
+the intro's too long, make it brief/concise. clicking on the person leads to the same as 'read all
+works': it should not zoom into their photo and show their intro; it should directly open their
+page. at the person's page, no intro: only their photo, like a profile picture, round, with the
+name; clicking their name or photo opens the popup that the table had before. below the name and
+photo, a list on the left of their upcoming pieces, and their released pieces on the right in a
+grid. for the apply to be a writer page, the same model but the new one in which the pen is
+different; add the publication cover somewhere on the page; and here is the form."
+
+1. **The statue's colours match the site.** The strawberry pink reads as off-brand. Keep the
+   polished marble, the model's own detail and the reflections, but recolour it into the site's
+   palette: a warm blush-white stone (`#f6eef0`–`#faf3f4`, plum-50/100), with clouds and veins in
+   the brand's plum-magenta (`--plum-200` `#ddb8cf`, `--plum-300` `#c185ac`, with a few deeper
+   flecks of `--plum-400` `#a15187` / `--plum-500` `#863469`). It must not be lavender, not
+   bubblegum, and not red. A thin gold (`--gold-500`/`--gold-600`) may catch in the deepest veins
+   if it helps it belong to the stage. Check it against the page's plum ground in the dark theme and
+   the blush ground in the light theme, side by side with the publication's statue and the reading
+   pages' masks, so it reads as one family.
+2. **The cover is on the book from the start.** The statue's book shows the real October cover
+   (`assets/publication/cover-october-2026.webp`) from the first frame: mapped onto the book's front
+   face in the shader, from the measured corners in `writer-statue.json`, as a decal under the
+   fingers so the fingers stay in front. The scroll still comes to the book and opens it, but the
+   cover never changes. Whatever takes over for the opening (the DOM cover) shows exactly the same
+   picture at the same place, so the hand-over is invisible: no pop, no change of colour, sharpness
+   or size. Cross-fade over several frames if needed, and hide the fingers smoothly (or keep them as
+   an overlay), never abruptly.
+3. **The writers' grid** (the cards inside the book and on the page, `<!-- site:writers -->`): each
+   card is the photo and the name, as now, then a **"Read all works"** link in place of the piece
+   titles. **Hovering (or focusing) the photo shows the writer's introduction over it**, short. Add
+   a `short` introduction to each writer in `content/writers.json`: two or three sentences in their
+   own words, cut down from their full introduction, never invented. Placeholder writers say their
+   introduction is on its way. **Clicking anywhere on the card goes straight to the writer's page**
+   (`writer-<slug>.html`), the same as Read all works. No panel opens on this page any more (remove
+   it from `writers.html` and `writers.js`, or move it to the writer pages, below). Keep the issue
+   filter, the spot and the lean.
+4. **A writer's page** (`writer-<slug>.html`):
+   - **Head**: no introduction. Their photo as a **round profile picture**, with their name beside
+     it or under it, and the way back to Meet our writers.
+   - **Clicking the photo or the name opens the popup** the writers' table used to have: the
+     spotlight panel with the photo travelling into it, their full introduction, their pieces, and
+     a close button. This is the Core team panel, `src/site/people.js`. It works with the keyboard
+     (Enter/Space, Escape, focus returned).
+   - **Below**, side by side on wide screens: on the **left, their upcoming pieces as the list**
+     (the publication's rows, `pieceRow`, with Remind me), and on the **right, their released pieces
+     as the grid** (`pieceCard`), all of them, uncapped. There is no toggle and no morphing heading;
+     each column has a plain heading ("Upcoming" and "Out now", in the site's label style). If a
+     writer has none in one column, it says so in a line ("Nothing announced yet" / "Nothing out
+     yet"). On phones the two stack, released first (or upcoming first if they have nothing out),
+     with no photo beside the list. The photo-beside-the-list arrangement is gone.
+   - The reading pages' bylines still link here.
+5. **Apply to be a writer** (`write.html`, now "coming soon"): the same statue, made from the new
+   model in which the pen is different (`tools/writers/source/writer-statue-pen.glb`, built by the
+   same pipeline to `assets/models/writer-statue-pen.glb` with its own json), in the same marble and
+   colours, leaning after the pointer and lit by the cursor's glow. The October cover appears on the
+   page too (on the statue's book as above, and/or as a picture beside the form). The page carries
+   the writer application form, Fillout's `9KawquNF3Mus`, embedded the site's way (`src/site/
+   fillout.js`, `embedFillout`, the form-box conventions in `apply.css`; there is no `<script>` tag
+   in the page). Read `apply.html` and `sponsor.html` for how the site lays out a form page. It keeps
+   the publication's top bar behaviour and banner if it is a publication page, and the site's
+   header if not: follow how `write.html` is registered in `build.mjs`. Give it a short heading and
+   one line ("Apply to be a writer": write for the publication; every published writer gets a
+   certificate and a mention on the site, as the publication's Write for us box says).
+
 ## 1. The statue
 
 - **Source** (gitignored): `tools/writers/source/writer-statue.glb`. A Meshy model, gltfpack

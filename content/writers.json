@@ -1,17 +1,98 @@
 {
   "_about": [
     "The publication's writers: Meet our writers (writers.html) and each writer's own page (writer-<slug>.html), both written by tools/pages/build.mjs (npm run pages) from this file, content/team.json and src/publication/pieces-data.js.",
-    "Each writer: id; name, exactly as printed on their pieces (their pieces are found by it); slug, their page's address; team, their id in content/team.json where they are on the core team (their photo and intro come from there unless their own are given here); photo, a WebP from the site's root (assets/writers/ or assets/team/), or null; intro, their introduction as paragraphs, or null; first (optional), the name to call them by where it is not the first word of their name.",
-    "awaiting: what has not come in yet. Until it does, a placeholder stands in: the publication's mark on a tile in the colour of their first piece, and 'Their introduction is on its way'. Send the photo (4:5, as the team's) to assets/writers/<slug>.webp and put it and the intro here, then take 'awaiting' away."
+    "Each writer: id; name, exactly as printed on their pieces (their pieces are found by it); slug, their page's address; team, their id in content/team.json where they are on the core team (their photo and intro come from there unless their own are given here); photo, a WebP from the site's root (assets/writers/ or assets/team/), or null; intro, their introduction as paragraphs, or null; short, two or three sentences cut from their own introduction (never new words), shown over their photo on Meet our writers when it is pointed at, or null; first (optional), the name to call them by where it is not the first word of their name.",
+    "awaiting: what has not come in yet. Until it does, a placeholder stands in: the publication's mark on a tile in the colour of their first piece, and 'Their introduction is on its way'. Send the photo (4:5, as the team's) to assets/writers/<slug>.webp and put it, the intro and its short version here, then take 'awaiting' away."
   ],
   "writers": [
-    { "id": "aripra", "name": "Aripra Sharma", "slug": "aripra-sharma", "team": "aripra", "photo": null, "intro": null },
-    { "id": "aadi", "name": "Aadi Ramnani", "slug": "aadi-ramnani", "team": "aadi", "photo": null, "intro": null },
-    { "id": "anika", "name": "Anika Megha Kruthiventi", "slug": "anika-megha-kruthiventi", "photo": null, "intro": null, "awaiting": ["photo", "intro"] },
-    { "id": "kathya", "name": "Kathya Yaratapalli", "slug": "kathya-yaratapalli", "photo": null, "intro": null, "awaiting": ["photo", "intro"] },
-    { "id": "mehek", "name": "Mehek Jain", "slug": "mehek-jain", "photo": null, "intro": null, "awaiting": ["photo", "intro"] },
-    { "id": "nisha", "name": "Nisha Sriram", "slug": "nisha-sriram", "photo": null, "intro": null, "awaiting": ["photo", "intro"] },
-    { "id": "venkatesh", "name": "Venkatesh Kalasamudram", "slug": "venkatesh-kalasamudram", "photo": null, "intro": null, "awaiting": ["photo", "intro"] },
-    { "id": "gautam", "name": "Kodela Gautam", "slug": "kodela-gautam", "team": "gautam", "first": "Gautam", "photo": null, "intro": null }
+    {
+      "id": "aripra",
+      "name": "Aripra Sharma",
+      "slug": "aripra-sharma",
+      "team": "aripra",
+      "photo": null,
+      "intro": null,
+      "short": "whirlwind (n): a rush of chaos and momentum. Hi! I'm Aripra:) I joined this collective not purely because of my love for theatre, but because I wanted to take all that chaos and actually put it towards something meaningful."
+    },
+    {
+      "id": "aadi",
+      "name": "Aadi Ramnani",
+      "slug": "aadi-ramnani",
+      "team": "aadi",
+      "photo": null,
+      "intro": null,
+      "short": "Hi, I’m Aadi and I’ve been training in theatre since kindergarten. Theatre has been a huge part of my life, partly because it lets me explore different versions of my own self, those that I never would have dared touch in reality."
+    },
+    {
+      "id": "anika",
+      "name": "Anika Megha Kruthiventi",
+      "slug": "anika-megha-kruthiventi",
+      "photo": null,
+      "intro": [
+        "Hi, I’m Anika. I’m curious about almost everything, which is probably why I’m always doing three things at once. I love science, especially the little “why” behind things, but I also love writing, creating and turning random ideas into actual projects. I’m naturally quite curious and probably ask too many questions, but I think that’s how I learn best. I’m still figuring out where all these interests will take me, but I’m having fun finding out."
+      ],
+      "short": "Hi, I’m Anika. I’m curious about almost everything, which is probably why I’m always doing three things at once. I love science, especially the little “why” behind things, but I also love writing, creating and turning random ideas into actual projects.",
+      "awaiting": [
+        "photo"
+      ]
+    },
+    {
+      "id": "kathya",
+      "name": "Kathya Yaratapalli",
+      "slug": "kathya-yaratapalli",
+      "photo": null,
+      "intro": null,
+      "short": null,
+      "awaiting": [
+        "photo",
+        "intro"
+      ]
+    },
+    {
+      "id": "mehek",
+      "name": "Mehek Jain",
+      "slug": "mehek-jain",
+      "photo": null,
+      "intro": null,
+      "short": null,
+      "awaiting": [
+        "photo",
+        "intro"
+      ]
+    },
+    {
+      "id": "nisha",
+      "name": "Nisha Sriram",
+      "slug": "nisha-sriram",
+      "photo": null,
+      "intro": null,
+      "short": null,
+      "awaiting": [
+        "photo",
+        "intro"
+      ]
+    },
+    {
+      "id": "venkatesh",
+      "name": "Venkatesh Kalasamudram",
+      "slug": "venkatesh-kalasamudram",
+      "photo": null,
+      "intro": null,
+      "short": null,
+      "awaiting": [
+        "photo",
+        "intro"
+      ]
+    },
+    {
+      "id": "gautam",
+      "name": "Kodela Gautam",
+      "slug": "kodela-gautam",
+      "team": "gautam",
+      "first": "Gautam",
+      "photo": null,
+      "intro": null,
+      "short": "Hey there! I’m Gautam, a DP 1 student and this year’s Head of Publication for the Drama Collective. As a student, I am a person who enjoys putting thoughts into words that can be remembered for a lifetime."
+    }
   ]
 }

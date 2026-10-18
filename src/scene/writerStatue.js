@@ -4,12 +4,16 @@
 // tools/writers/build-statue.mjs; its measures, the book's cover and the boxes round the book and
 // the nib, are in writer-statue.json). The page opens on it (src/writers/opening.js): it stands in
 // its box among the stars, and as the page scrolls the camera comes to the book in its hand.
-// It is cast in bronze in the file; here it is polished white marble flecked and clouded with pink,
-// like a strawberry cheesecake, and the model's own pattern carries through: its normal map, and
-// the light and shade of its bronze (the hammered, cast detail, the folds' darkening), taken as the
-// stone's own. The pink is a pattern in the statue's space (soft clouds, warped, and sharper flecks
-// and veins), so it runs on unbroken across the seams of the model's texture. The book stays the
-// publication, deep plum with its lettering and its logo in gold; the nib stays silver metal.
+// Another page may stand another model made the same way in the same stone (the `model` option:
+// its glb and its json), as Apply to be a writer does with the statue whose pen is different.
+// It is cast in bronze in the file; here it is polished marble in the site's colours, a blush white
+// veined and clouded with the brand's plum, and the model's own pattern carries through: its normal
+// map, and the light and shade of its bronze (the hammered, cast detail, the folds' darkening), taken
+// as the stone's own. The plum is a pattern in the statue's space (soft clouds, warped, veins along
+// them with a hair of gold in the deepest, and a few dark flecks), so it runs on unbroken across the
+// seams of the model's texture. The book stays the publication, deep plum with its edges in gold,
+// and on its front the real October cover (the picture the page then lifts off it), laid on in the
+// shader from the cover's measured corners, under the fingers that hold it; the nib stays silver.
 // It is lit as the publication's statue is (src/scene/thinker.js, whose lights and stages this
 // borrows): one warm spotlight from above, a soft rim behind, the house lights in the light theme,
 // and the cursor's glow as a small gold lamp held just in front of the stone under the pointer, which
@@ -29,6 +33,14 @@ import { rig } from '../writers/rig.js';
 
 // the Draco decoder served with the site (as for the other statues)
 const DRACO_PATH = import.meta.env ? new URL('draco/', document.baseURI).href : new URL('../../public/draco/', import.meta.url).href;
+
+/** The writer statue's model and its measures (the `model` option's default). */
+export const WRITER_MODEL = {
+  glb: new URL('../../assets/models/writer-statue.glb', import.meta.url).href,
+  json: new URL('../../assets/models/writer-statue.json', import.meta.url).href,
+};
+// the cover on its book (the `cover` option's default): the October issue's, as the page's own
+const COVER = new URL('../../assets/publication/cover-october-2026.webp', import.meta.url).href;
 
 const DEG = Math.PI / 180;
 const HEIGHT = 2; // the model's height, its base on y = 0 (as made)
@@ -50,23 +62,29 @@ const STAGE = {
   light: { key: 0.5, rim: 0.42, hemi: 0.9, env: 0.6, exposure: 0.92, pool: 0, shadow: 0.28, self: 0.02 },
 };
 
-// The stone. Colours are hex or design tokens. cream0..cream1 the white; blush, rose and pink the
-// clouds, from their edges to their hearts; fleck0..fleck1 the flecks and veins, light to deep; plum
-// deepens the darkest of them. The book: its cover plum (bookDeep..bookCover) and its lettering gold;
-// the nib silver.
+// The stone. Colours are hex or design tokens. cream0..cream1 the white, a blush white; blush, rose
+// and mauve the clouds, from their edges to their hearts; vein0..vein1 the veins, light to deep;
+// fleck the few darkest flecks; veinGold the hair of gold in the deepest veins. The book: its cover
+// plum (bookDeep..bookCover) and its lettering gold; the nib silver.
 const MARBLE = {
-  cream0: '#fdf9f8', cream1: '#f8f1ee',
-  blush: '#f3e7e9', rose: '#efc6d0', pink: '#e8a7b8',
-  fleck0: '#d97a98', fleck1: '#c96687', plum: '--plum-300',
+  cream0: '--plum-50', cream1: '#f6eef0',
+  blush: '--plum-100', rose: '--plum-200', mauve: '--plum-300',
+  vein0: '--plum-400', vein1: '--plum-500', fleck: '--plum-500', veinGold: '--gold-600',
   bookDeep: '--plum-800', bookCover: '--plum-700', gold: '--gold-500', silver: '#d9d9de',
   // how far in front of its cover the book's box reaches (the raised lettering inside it, the
   // fingers on it outside)
   bookFront: 0.011,
   // the pattern: its size (per unit of height; the figure is 2 high), how far the clouds are warped,
-  // where they begin and where they are whole (on the noise's 0..1), how much of them deepens to pink
-  scale: 1.2, warp: 1.9, cloudLo: 0.4, cloudHi: 0.74, deepLo: 0.6, deepHi: 0.86, cloudAmt: 1,
-  // veins: their size, how thin, and how strong; flecks: their size, how few (0..1), how strong
-  veinScale: 1.7, veinSharp: 26, veinAmt: 0.7, fleckScale: 70, fleckLo: 0.84, fleckAmt: 0.8,
+  // where they begin and where they are whole (on the noise's 0..1), how much of them deepens to mauve
+  scale: 1.2, warp: 1.9, cloudLo: 0.38, cloudHi: 0.75, deepLo: 0.55, deepHi: 0.9, cloudAmt: 0.6,
+  // veins: their size, how thin their core is and how wide their halo, and how strong each; the finer
+  // veins between them (size, thinness, strength); how much gold catches in the deepest
+  veinScale: 1.2, veinSharp: 14, haloSharp: 2.5, veinAmt: 1, haloAmt: 0.7,
+  fineScale: 3.6, fineSharp: 70, fineAmt: 0.7, goldAmt: 0.55,
+  // the slant the veins run along (in the statue's space), and how far drawn out along it (1 not at all)
+  veinDir: [0.45, 0.82, 0.35], veinStretch: 0.3,
+  // flecks: their size, how few (0..1), how strong
+  fleckScale: 70, fleckLo: 0.9, fleckAmt: 0.75,
   // the model's own light and shade, as the stone's: its bronze's luminance against lumRef (the
   // bronze's middle), how strongly it shows (by its logarithm), and its floor and ceiling
   lumRef: 0.06, detail: 0.17, shadeLo: 0.42, shadeHi: 1.04, shadeMid: 0.94,
@@ -75,8 +93,13 @@ const MARBLE = {
   // the book: where its lettering turns gold (by luminance) and its finish; the nib's
   goldLo: 0.1, goldHi: 0.22, bookRough: 0.55, goldRough: 0.32, goldMetal: 0.6,
   nibSatLo: 0.45, nibSatHi: 0.7, nibLum: 0.05, nibMetal: 0.9, nibRough: 0.25,
+  // the cover on the book: how far behind and in front of the plane through its corners the surface
+  // may be and still take it (its face stands about 0.007 in front of that plane, the fingers on it
+  // 0.01 and more, the fold of the robe over its foot further still), and its finish while it is lit
+  // (a satin print)
+  decalBack: 0.008, decalFront: 0.0095, decalRough: 0.5,
 };
-const COLORS = ['cream0', 'cream1', 'blush', 'rose', 'pink', 'fleck0', 'fleck1', 'plum', 'bookDeep', 'bookCover', 'gold', 'silver'];
+const COLORS = ['cream0', 'cream1', 'blush', 'rose', 'mauve', 'vein0', 'vein1', 'fleck', 'veinGold', 'bookDeep', 'bookCover', 'gold', 'silver'];
 const uniformName = (k) => `uWs${k[0].toUpperCase()}${k.slice(1)}`;
 
 // The cursor's lamp: the glow's gold, held a little in front of the stone under the pointer (in the
@@ -162,24 +185,39 @@ const COLOUR_GLSL = /* glsl */ `#include <map_fragment>
   float shade = clamp(uWsShadeMid + uWsDetail * log2(max(lum, 1e-4) / uWsLumRef), uWsShadeLo, uWsShadeHi);
   // the pattern, in the statue's own space: clouds warped by a broader noise (both soft, found for
   // each vertex: WARP_GLSL), then the veins along the same warp (thin lines where a noise crosses its
-  // middle) and small sharp flecks, found here for each pixel
+  // middle) and a few small dark flecks, found here for each pixel
   vec3 w = vWsWarp;
   vec3 pw = vWsPos * uWsScale + uWsWarp * w;
   float c = vWsCloud.x;
   float cloud = smoothstep(uWsCloudLo, uWsCloudHi, c) * uWsCloudAmt;
   float deep = smoothstep(uWsDeepLo, uWsDeepHi, c + vWsCloud.y);
-  // (the veins run with the clouds' flow, thin, and mostly in and near them)
-  float vein = pow(1.0 - abs(wsNoise(pw * uWsVeinScale)), uWsVeinSharp) * smoothstep(uWsCloudLo - 0.1, uWsCloudHi, c) * uWsVeinAmt;
-  float fl = wsNoise(vWsPos * uWsFleckScale + 3.0 * w) * 0.5 + 0.5;
-  float fleck = smoothstep(uWsFleckLo, uWsFleckLo + 0.05, fl) * smoothstep(uWsCloudLo, uWsCloudHi, c + 0.1) * uWsFleckAmt;
-  float mark = max(vein, fleck);
+  // (the veins run with the clouds' flow, drawn out along one slant, as marble's veins run in long
+  // sweeps across the block and not in cells; wider and deeper in the clouds, fainter and thinner out
+  // in the white, each in a soft halo of the clouds' colour; the finer veins mostly in the clouds)
+  vec3 pv = pw + (uWsVeinStretch - 1.0) * uWsVeinDir * dot(pw, uWsVeinDir);
+  float near = smoothstep(uWsCloudLo - 0.15, uWsCloudHi, c);
+  float ridge = 1.0 - abs(wsNoise(pv * uWsVeinScale));
+  float core = pow(ridge, uWsVeinSharp * mix(1.8, 0.75, near)) * uWsVeinAmt * mix(0.3, 1.0, near);
+  float halo = pow(ridge, uWsHaloSharp) * uWsHaloAmt * near;
+  // (the fine veins and the flecks only where they can show: each is a noise for each pixel, and the
+  // white between the clouds, a good part of the figure, is spared them)
+  float fine = 0.0, fleck = 0.0;
+  if (c > 0.3) fine = pow(1.0 - abs(wsNoise(pv * uWsFineScale + 7.3)), uWsFineSharp) * uWsFineAmt * smoothstep(0.3, 0.75, c);
+  if (deep > 0.0) fleck = smoothstep(uWsFleckLo, uWsFleckLo + 0.04, wsNoise(vWsPos * uWsFleckScale + 3.0 * w) * 0.5 + 0.5) * deep * uWsFleckAmt;
   vec3 stone = mix(uWsCream1, uWsCream0, smoothstep(-0.4, 0.6, w.x));
-  stone = mix(stone, uWsBlush, smoothstep(0.0, 0.4, cloud));
-  stone = mix(stone, uWsRose, smoothstep(0.2, 1.0, cloud));
-  stone = mix(stone, uWsPink, deep * cloud);
-  vec3 fleckCol = mix(uWsFleck0, uWsFleck1, smoothstep(0.4, 1.0, mark));
-  fleckCol = mix(fleckCol, uWsPlum, 0.3 * smoothstep(0.75, 1.0, mark) * deep);
-  stone = mix(stone, fleckCol, mark);
+  stone = mix(stone, uWsBlush, smoothstep(0.0, 0.45, max(cloud, halo)));
+  stone = mix(stone, uWsRose, max(smoothstep(0.25, 1.0, cloud), halo * 0.6));
+  stone = mix(stone, uWsMauve, deep * cloud * 0.55);
+  float vein = max(core, fine);
+  stone = mix(stone, mix(uWsVein0, uWsVein1, smoothstep(0.35, 0.95, core) * (0.4 + 0.6 * deep)), vein);
+  // (a hair of gold along the hearts of the deepest veins, a pixel or two wide however near: its band
+  // is as much of the ridge as falls away within about a pixel of a vein's heart (rw, the ridge's
+  // change across one pixel), so it is measured on the screen and not on the stone, and it is kept
+  // inside a vein that shows; and the darkest flecks)
+  float rw = max(fwidth(ridge), 1e-5);
+  float hair = smoothstep(1.0 - 1.0 * rw, 1.0 - 0.3 * rw, ridge) * smoothstep(0.45, 0.9, deep) * near * smoothstep(0.5, 0.9, core);
+  stone = mix(stone, uWsVeinGold, uWsGoldAmt * hair);
+  stone = mix(stone, uWsFleck, fleck);
   stone *= shade;
   // the book: the model's colours carried to the publication's, plum, and its lettering gold
   wsBook = wsBox(vWsPos, uWsBookC, uWsBookAx, uWsBookHalf, uWsCoverZ + uWsBookFront, 0.005);
@@ -190,26 +228,58 @@ const COLOUR_GLSL = /* glsl */ `#include <map_fragment>
     * (1.0 - smoothstep(uWsNibSatLo, uWsNibSatHi, sat)) * smoothstep(uWsNibLum * 0.5, uWsNibLum, lum);
   vec3 silver = uWsSilver * clamp(lum / 0.3, 0.6, 1.1);
   diffuseColor.rgb = mix(mix(stone, book, wsBook), silver, wsNib);
+  // the cover on the book's front: each point is carried along the line from the eye of the book's
+  // view (straight in front of the cover, where the page's camera ends) onto the cover's plane, and
+  // there mapped onto the picture by the plane's projective map from the cover's four corners, so in
+  // that view it lies exactly where the page then lays the picture itself. Only the front face takes
+  // it (near the plane and facing out): the fingers on it and the book's edges keep their own.
+  vec3 xc = vWsPos - uWsCoverC;
+  float xn = dot(xc, uWsCoverN);
+  float k = uWsEyeD / (uWsEyeD - xn);
+  vec3 hq = uWsDecalH * vec3(dot(xc, uWsCoverR) * k, dot(xc, uWsCoverU) * k, 1.0);
+  vec2 duv = hq.xy / hq.z;
+  vec2 duvDx = dFdx(duv), duvDy = dFdy(duv);
+  vec2 aa = (abs(duvDx) + abs(duvDy)) * 0.7 + 1e-5;
+  float inside = smoothstep(-aa.x, aa.x, duv.x) * smoothstep(-aa.x, aa.x, 1.0 - duv.x) * smoothstep(-aa.y, aa.y, duv.y) * smoothstep(-aa.y, aa.y, 1.0 - duv.y);
+  wsDecal = inside * smoothstep(-uWsDecalBack - 0.003, -uWsDecalBack, xn) * (1.0 - smoothstep(uWsDecalFront, uWsDecalFront + 0.002, xn))
+    * smoothstep(0.05, 0.4, dot(normalize(vWsNrm), uWsCoverN)) * uWsDecalOn;
+  // (the picture is filtered as it is stored, in sRGB, as the browser filters it when it draws it
+  // smaller, and only then decoded to light; it is read only where it shows)
+  if (wsDecal > 0.0) {
+    wsDecalCol = sRGBTransferEOTF(textureGrad(uWsDecalMap, clamp(duv, 0.0, 1.0), duvDx, duvDy)).rgb;
+    diffuseColor.rgb = mix(diffuseColor.rgb, wsDecalCol, wsDecal);
+  }
 }`;
 
 // the soft part of the pattern, for each vertex (the model is dense enough for it to stay smooth):
 // the warp and the clouds
 const WARP_GLSL = /* glsl */ `#include <begin_vertex>
 vWsPos = position;
+vWsNrm = objectNormal;
 {
   vec3 p = position * uWsScale;
   vWsWarp = vec3(wsFbm(p + vec3(1.7, 9.2, 3.1)), wsFbm(p + vec3(8.3, 2.8, 5.5)), wsFbm(p + vec3(4.1, 6.3, 0.7)));
   vWsCloud = vec2(wsFbm(p + uWsWarp * vWsWarp) * 0.5 + 0.5, 0.1 * wsNoise(p * 3.1));
 }`;
 
-// the finish: polished stone from the model's roughness, the book satin, the nib metal
+// the finish: polished stone from the model's roughness, the book satin, the cover on it a satin
+// print, the nib metal
 const ROUGH_GLSL = /* glsl */ `float roughnessFactor = roughness;
 #ifdef USE_ROUGHNESSMAP
   roughnessFactor = mix(uWsRoughLo, uWsRoughHi, smoothstep(0.38, 0.6, texture2D(roughnessMap, vRoughnessMapUv).g));
 #endif
 roughnessFactor = mix(roughnessFactor, mix(uWsBookRough, uWsGoldRough, wsGold), wsBook);
+roughnessFactor = mix(roughnessFactor, uWsDecalRough, wsDecal);
 roughnessFactor = mix(roughnessFactor, uWsNibRough, wsNib);`;
-const METAL_GLSL = /* glsl */ `float metalnessFactor = mix(uWsGoldMetal * wsGold * wsBook, uWsNibMetal, wsNib);`;
+const METAL_GLSL = /* glsl */ `float metalnessFactor = mix(uWsGoldMetal * wsGold * wsBook * (1.0 - wsDecal), uWsNibMetal, wsNib);`;
+// (the cover is printed flat over the model's own lettering: its relief in the normal map goes)
+const NORMAL_GLSL = /* glsl */ `#include <normal_fragment_maps>
+normal = normalize(mix(normal, nonPerturbedNormal, wsDecal));`;
+// The cover as the page shows the picture: where the page is about to lay the picture over it, its
+// colours are put out as they are in the picture, past the light and the tone curve (the canvas then
+// encodes them to sRGB as the browser shows the picture), so the hand-over changes nothing.
+const FLAT_GLSL = /* glsl */ `#include <tonemapping_fragment>
+gl_FragColor.rgb = mix(gl_FragColor.rgb, wsDecalCol, wsDecal * uWsDecalFlat);`;
 // the clear coat: on the stone, less on the book, none on the nib
 const COAT_GLSL = /* glsl */ `#include <lights_physical_fragment>
 #ifdef USE_CLEARCOAT
@@ -278,30 +348,48 @@ function frontOf(pos) {
   return { x0, y0, cell: CELL, nx, ny, z };
 }
 
-/** A box's uniforms: its centre, its axes (as the rows of a matrix) and its half size. */
-function boxUniforms(obb) {
+/** A box's uniforms (into `u`): its centre, its axes (as the rows of a matrix) and its half size. */
+function setBox(u, obb) {
   const [a, b, c] = obb.axes;
-  return {
-    c: new THREE.Vector3(...obb.centre),
-    ax: new THREE.Matrix3().set(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]),
-    half: new THREE.Vector3(...obb.half),
-  };
+  u.c.value.set(...obb.centre);
+  u.ax.value.set(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+  u.half.value.set(...obb.half);
+}
+
+/**
+ * The plane's projective map taking the unit square (x right, y down: its top-left, top-right,
+ * bottom-right and bottom-left corners) onto the quadrilateral q (the same corners), as a matrix on
+ * [x, y, 1] (after Heckbert, as opening.js's quadMatrix).
+ */
+function squareToQuad(q) {
+  const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = q;
+  const dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3;
+  const dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3;
+  const det = dx1 * dy2 - dx2 * dy1;
+  const g = (dx3 * dy2 - dx2 * dy3) / det, h = (dx1 * dy3 - dx3 * dy1) / det;
+  return new THREE.Matrix3().set(x1 - x0 + g * x1, x3 - x0 + h * x3, x0, y1 - y0 + g * y1, y3 - y0 + h * y3, y0, g, h, 1);
 }
 
 export class WriterStatue {
   /**
    * @param {HTMLElement} container  the opening's stage; the canvas fills it
    * @param {object} o
-   * @param {object} o.measures      writer-statue.json
+   * @param {{glb: string, json: string}} [o.model]  the model and its measures (WRITER_MODEL; another
+   *   statue made by tools/writers/build-statue.mjs, such as the one with the other pen, takes the
+   *   same stone)
+   * @param {object} [o.measures]    the model's json, if the page has it already (else it is fetched)
+   * @param {string|null} [o.cover]  the picture on the book's front (the October cover); null for none
    * @param {boolean} o.reduced      reduced motion: it stands still
    * @param {'dark'|'light'} o.theme
    * @param {(corners: number[][]) => void} [o.onDraw]  told, as each frame is drawn, where the book's
    *   cover's corners are in it (CSS px from the canvas's top left: top-left, top-right,
-   *   bottom-right, bottom-left)
+   *   bottom-right, bottom-left), exactly where the picture on it is drawn
    */
-  constructor(container, { measures, reduced = false, theme = 'dark', onDraw = () => {} } = {}) {
+  constructor(container, { model = WRITER_MODEL, measures = null, cover = COVER, reduced = false, theme = 'dark', onDraw = () => {} } = {}) {
     this.container = container;
+    this.model = model;
     this.measures = measures;
+    this.coverUrl = cover;
     this.reduced = reduced;
     this.theme = theme in STAGE ? theme : 'dark';
     this.onDraw = onDraw;
@@ -316,7 +404,7 @@ export class WriterStatue {
     const dpr = Math.min(devicePixelRatio, 1.5);
     const r = (this.renderer = new THREE.WebGLRenderer({ antialias: dpr < 1.25, alpha: true, powerPreference: 'high-performance' }));
     r.setPixelRatio(dpr);
-    this.res = { base: dpr, low: false, slow: 0, moved: 0 };
+    this.res = { base: dpr, low: false, sharp: false, slow: 0, moved: 0 };
     r.outputColorSpace = THREE.SRGBColorSpace;
     // (the neutral tone curve keeps the pinks pink: ACES would turn them toward salmon)
     r.toneMapping = THREE.NeutralToneMapping;
@@ -363,22 +451,24 @@ export class WriterStatue {
     this.turn = new THREE.Group(); // the lean, about the upright through the plinth
     this.scene.add(this.turn);
 
-    // the stone's uniforms (colours from the tokens), and the two boxes
+    // the stone's uniforms (colours from the tokens); the two boxes and the cover's place are the
+    // model's measures' (_useMeasures), the cover's picture is loaded with the model
     this.uniforms = {};
-    for (const [k, v] of Object.entries(MARBLE)) this.uniforms[uniformName(k)] = { value: COLORS.includes(k) ? tokenColor(v) : v };
-    const book = boxUniforms(measures.book.obb);
-    const nib = boxUniforms(measures.nib.obb);
-    const cover = measures.book.cover;
-    // (the cover's depth in the box: its front face is brought in to just before it, so the fingers
-    // on the cover stay stone)
-    const coverZ = new THREE.Vector3(...cover.centre).sub(book.c).dot(new THREE.Vector3(...measures.book.obb.axes[2]));
+    for (const [k, v] of Object.entries(MARBLE)) this.uniforms[uniformName(k)] = { value: COLORS.includes(k) ? tokenColor(v) : Array.isArray(v) ? new THREE.Vector3(...v).normalize() : v };
+    const v3 = () => ({ value: new THREE.Vector3() });
+    const blank = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
+    blank.needsUpdate = true;
     Object.assign(this.uniforms, {
-      uWsBookC: { value: book.c }, uWsBookAx: { value: book.ax }, uWsBookHalf: { value: book.half }, uWsCoverZ: { value: coverZ },
-      uWsNibC: { value: nib.c }, uWsNibAx: { value: nib.ax }, uWsNibHalf: { value: nib.half },
+      uWsBookC: v3(), uWsBookAx: { value: new THREE.Matrix3() }, uWsBookHalf: v3(), uWsCoverZ: { value: 0 },
+      uWsNibC: v3(), uWsNibAx: { value: new THREE.Matrix3() }, uWsNibHalf: v3(),
+      uWsCoverC: v3(), uWsCoverN: v3(), uWsCoverR: v3(), uWsCoverU: v3(), uWsEyeD: { value: 1 },
+      uWsDecalH: { value: new THREE.Matrix3() }, uWsDecalMap: { value: blank }, uWsDecalOn: { value: 0 }, uWsDecalFlat: { value: 0 },
       uWsSelf: { value: 0 },
     });
+    this.blank = blank;
+    this.decal = { on: 1, flat: 0 };
     this.finish = { ...MARBLE };
-    this.corners = cover.corners.map((c) => new THREE.Vector3(...c));
+    if (measures) this._useMeasures(measures);
     this.canvasSize = { value: new THREE.Vector2(1, 1) };
 
     this.day = { value: this.theme === 'light' ? 1 : 0 };
@@ -396,6 +486,67 @@ export class WriterStatue {
     canvas.addEventListener('webglcontextrestored', this._onRestored);
     this.ro = new ResizeObserver(() => this._resize());
     this.io = new IntersectionObserver(([e]) => { this.visible = e.isIntersecting; this._sync(); });
+  }
+
+  /** The model's measures: the book's and the nib's boxes, and the cover's place and frame. */
+  _useMeasures(measures) {
+    this.measures = measures;
+    const U = this.uniforms;
+    setBox({ c: U.uWsBookC, ax: U.uWsBookAx, half: U.uWsBookHalf }, measures.book.obb);
+    setBox({ c: U.uWsNibC, ax: U.uWsNibAx, half: U.uWsNibHalf }, measures.nib.obb);
+    const cover = measures.book.cover;
+    // (the cover's depth in the box: its front face is brought in to just before it, so the fingers
+    // on the cover stay stone)
+    U.uWsCoverZ.value = new THREE.Vector3(...cover.centre).sub(U.uWsBookC.value).dot(new THREE.Vector3(...measures.book.obb.axes[2]));
+    // the cover's plane: through its centre, square to its normal; its right and up axes made exactly
+    // square to that (right x up = normal)
+    const N = U.uWsCoverN.value.set(...cover.normal).normalize();
+    const R = U.uWsCoverR.value.set(...cover.right);
+    R.addScaledVector(N, -R.dot(N)).normalize();
+    U.uWsCoverU.value.crossVectors(N, R);
+    U.uWsCoverC.value.set(...cover.centre);
+    this._decalFrame();
+  }
+
+  /**
+   * The picture's place on the cover for this canvas: the eye of the book's view (rig's view 1:
+   * straight out from the cover's centre, as far as this canvas's shape puts it), the cover's four
+   * corners carried along the lines from that eye onto the cover's plane (in that view each is drawn
+   * exactly where the modelled corner is), and the plane's projective map from those corners onto the
+   * picture. The page lays its picture on the same corners (coverCorners), so the two agree.
+   */
+  _decalFrame() {
+    if (!this.measures) return;
+    const U = this.uniforms;
+    const cover = this.measures.book.cover;
+    const { w, h } = this.size ?? { w: 1, h: 1 };
+    const slot = this.slot ?? { x: w * 0.5, y: 0, w: w * 0.5, h };
+    const c1 = rig({ view: 1, w, h, slot, book: cover });
+    const d = Math.hypot(c1.pos[0] - c1.target[0], c1.pos[1] - c1.target[1], c1.pos[2] - c1.target[2]);
+    U.uWsEyeD.value = d;
+    const C = U.uWsCoverC.value, N = U.uWsCoverN.value, R = U.uWsCoverR.value, Up = U.uWsCoverU.value;
+    const p = new THREE.Vector3();
+    const q = cover.corners.map((corner) => {
+      p.set(...corner).sub(C);
+      const k = d / (d - p.dot(N));
+      return [p.dot(R) * k, p.dot(Up) * k];
+    });
+    this.corners = q.map(([s, t]) => C.clone().addScaledVector(R, s).addScaledVector(Up, t));
+    U.uWsDecalH.value.copy(squareToQuad(q)).invert();
+  }
+
+  /**
+   * The picture on the book (the page's hold on it): `on` how much of it shows (0 the model's own
+   * plum book, under the page's own picture once that is laid over it), `flat` how far it is shown
+   * as the page shows the picture (1: exactly its colours, unlit) rather than lit as the stone is.
+   */
+  setCover({ on = this.decal.on, flat = this.decal.flat } = {}) {
+    if (on === this.decal.on && flat === this.decal.flat) return;
+    this.decal.on = on;
+    this.decal.flat = flat;
+    this.uniforms.uWsDecalOn.value = this.coverTex ? on : 0;
+    this.uniforms.uWsDecalFlat.value = flat;
+    this._wake(true);
   }
 
   /** The room the polish reflects (three's RoomEnvironment), pre-filtered. */
@@ -454,16 +605,40 @@ export class WriterStatue {
     this.turn.add(shadow, pool);
   }
 
-  async load(url) {
+  /** Fetch the model (its measures too, unless given) and the cover's picture, and stand it. */
+  async load(url = this.model.glb) {
     const draco = new DRACOLoader().setDecoderPath(DRACO_PATH).setDecoderConfig({ type: 'wasm' });
     draco.preload();
     const loading = new GLTFLoader().setDRACOLoader(draco).loadAsync(url).finally(() => draco.dispose());
     loading.catch(() => {}); // reported below
+    const measuring = this.measures ? Promise.resolve(this.measures)
+      : fetch(this.model.json).then((r) => { if (!r.ok) throw new Error(`The model's measures did not load (${r.status}).`); return r.json(); });
+    measuring.catch(() => {});
+    const covering = this.coverUrl ? new THREE.TextureLoader().loadAsync(this.coverUrl) : Promise.resolve(null);
+    covering.catch(() => {});
     await frames(2);
     if (this.disposed) return;
     this._makeEnv();
+    if (this.measures !== (await measuring)) this._useMeasures(await measuring);
     const gltf = await loading;
     if (this.disposed) { gltf.scene.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose?.(); } }); return; }
+    // the cover's picture: mipmapped and sharp at a slant, its sRGB kept as it is (the shader decodes
+    // it after filtering); if it fails, the book is the model's own
+    try {
+      const tex = await covering;
+      if (tex) {
+        tex.colorSpace = THREE.NoColorSpace;
+        tex.flipY = false; // (its rows from the top, as the map in the shader reads them)
+        tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+        tex.needsUpdate = true;
+        this.coverTex = tex;
+        this.uniforms.uWsDecalMap.value = tex;
+        this.uniforms.uWsDecalOn.value = this.decal.on;
+      }
+    } catch (err) {
+      console.warn('The cover on the statue\'s book is unavailable.', err);
+    }
+    if (this.disposed) return;
     gltf.scene.updateMatrixWorld(true);
     let src = null;
     gltf.scene.traverse((o) => { if (o.isMesh && !src) src = o; });
@@ -490,20 +665,22 @@ export class WriterStatue {
       Object.assign(shader.uniforms, this.uniforms);
       const decl = Object.entries(this.uniforms).map(([k, u]) => {
         const v = u.value;
-        const type = v.isColor || v.isVector3 ? 'vec3' : v.isMatrix3 ? 'mat3' : 'float';
+        const type = v.isColor || v.isVector3 ? 'vec3' : v.isMatrix3 ? 'mat3' : v.isTexture ? 'sampler2D' : 'float';
         return `uniform ${type} ${k};`;
       }).join('\n');
-      const vary = 'varying vec3 vWsPos;\nvarying vec3 vWsWarp;\nvarying vec2 vWsCloud;';
+      const vary = 'varying vec3 vWsPos;\nvarying vec3 vWsNrm;\nvarying vec3 vWsWarp;\nvarying vec2 vWsCloud;';
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', `#include <common>\n${vary}\nuniform float uWsScale;\nuniform float uWsWarp;\n${NOISE}`)
         .replace('#include <begin_vertex>', WARP_GLSL);
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', `#include <common>\n${vary}\n${decl}\n${NOISE}\nfloat wsBook = 0.0, wsGold = 0.0, wsNib = 0.0;`)
+        .replace('#include <common>', `#include <common>\n${vary}\n${decl}\n${NOISE}\nfloat wsBook = 0.0, wsGold = 0.0, wsNib = 0.0, wsDecal = 0.0;\nvec3 wsDecalCol = vec3(0.0);`)
         .replace('#include <map_fragment>', COLOUR_GLSL)
         .replace('#include <roughnessmap_fragment>', ROUGH_GLSL)
         .replace('#include <metalnessmap_fragment>', METAL_GLSL)
+        .replace('#include <normal_fragment_maps>', NORMAL_GLSL)
         .replace('#include <lights_physical_fragment>', COAT_GLSL)
-        .replace('#include <emissivemap_fragment>', SELF_GLSL);
+        .replace('#include <emissivemap_fragment>', SELF_GLSL)
+        .replace('#include <tonemapping_fragment>', FLAT_GLSL);
     };
 
     this.mesh = new THREE.Mesh(geometry, m);
@@ -587,7 +764,7 @@ export class WriterStatue {
       const u = this.uniforms[uniformName(k)];
       if (!u) continue;
       this.finish[k] = v;
-      if (COLORS.includes(k)) u.value.copy(tokenColor(v)); else u.value = v;
+      if (COLORS.includes(k)) u.value.copy(tokenColor(v)); else if (u.value.isVector3) u.value.set(...v).normalize(); else u.value = v;
     }
     if (this.material && 'coat' in o) this.material.clearcoat = o.coat;
     if (this.material && 'coatRough' in o) this.material.clearcoatRoughness = o.coatRough;
@@ -710,6 +887,7 @@ export class WriterStatue {
     this.renderer.setSize(w, h, false);
     this.renderer.getDrawingBufferSize(this.canvasSize.value);
     this.rect = null;
+    this._decalFrame(); // (the book's view, and so the picture's eye, depends on the canvas's shape)
     this._wake(true);
   }
 
@@ -755,7 +933,8 @@ export class WriterStatue {
     }
   }
 
-  /** Where the book's cover's corners are on the canvas now (CSS px), as last drawn. */
+  /** Where the corners of the picture on the book's cover are on the canvas now (CSS px), as last
+   * drawn (_decalFrame: in the book's view, exactly the modelled corners). */
   coverCorners() {
     const { w, h } = this.size ?? { w: 1, h: 1 };
     const v = (this._v ??= new THREE.Vector3());
@@ -815,21 +994,38 @@ export class WriterStatue {
   /** The resolution for how the GPU is keeping up (SLOW, LOW). */
   _adapt(now) {
     const res = this.res;
+    // (at the book the view holds still while the page lays the picture over it: it is drawn sharp
+    // there at once, at the screen's own density (up to 3 device pixels to the CSS pixel, past the
+    // usual cap of 1.5), as sharp as the picture; only a few frames are drawn there, the view being
+    // still, and the cap comes back as the view leaves it. "At the book" is within a ten-thousandth
+    // of it, where the camera's eased arrival no longer moves it by a pixel, so the change is made
+    // before the picture begins to fade in, not during it)
+    if (this.view > 0.9999) {
+      res.slow = 0;
+      if (res.low || !res.sharp) this._setRes({ low: false, sharp: true });
+      return;
+    }
+    if (res.sharp) this._setRes({ sharp: false });
     if (this.moving) {
       const gap = now - this.lastFrame;
       res.slow = gap > SLOW && gap < 250 ? res.slow + 1 : Math.max(0, res.slow - 1);
       res.moved = now;
-      if (!res.low && res.slow >= 4) this._setLow(true);
+      if (!res.low && res.slow >= 4) this._setRes({ low: true });
     } else if (res.low && now - res.moved > 350) {
-      this._setLow(false);
+      this._setRes({ low: false });
     }
   }
 
-  _setLow(low) {
-    this.res.low = low;
-    this.res.slow = 0;
-    this.renderer.setPixelRatio(low ? this.res.base * LOW : this.res.base);
-    this._resize();
+  _setRes({ low = this.res.low, sharp = this.res.sharp }) {
+    const res = this.res;
+    res.low = low;
+    res.sharp = sharp;
+    res.slow = 0;
+    const ratio = sharp ? Math.max(res.base, Math.min(devicePixelRatio, 3)) : low ? res.base * LOW : res.base;
+    if (ratio !== this.renderer.getPixelRatio()) {
+      this.renderer.setPixelRatio(ratio);
+      this._resize();
+    }
   }
 
   /** ?debug and the stills: the canvas as an image now (drawn first, so it is current). */
@@ -858,6 +1054,8 @@ export class WriterStatue {
     this.textures?.forEach((t) => t.dispose());
     if (this.floor) for (const o of Object.values(this.floor)) { o.geometry.dispose(); o.material.dispose(); }
     this.poolTex?.dispose();
+    this.coverTex?.dispose();
+    this.blank.dispose();
     this.envTarget?.dispose();
     this.renderer.dispose();
     this.renderer.forceContextLoss();

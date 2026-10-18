@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Write for us · The Drama Collective</title>
-  <meta name="description" content="Apply to write for The Drama Collective’s publication, India’s first independent, student-run theatre publication. Coming soon.">
+  <title>Apply to be a writer · The Drama Collective</title>
+  <meta name="description" content="Apply to write for The Drama Collective’s publication, India’s first independent, student-run theatre publication: every writer we publish receives a certificate and a mention on our website.">
   <meta name="theme-color" content="#2a0d1c">
   <!-- site:head -->
   <link rel="icon" href="./assets/brand/mark-gold.png">
@@ -32,7 +32,7 @@
   </script>
   <!-- /site:head -->
 </head>
-<body class="page page--soon page--write">
+<body class="page page--write">
   <!-- site:header -->
   <a class="skip-link" href="#main">Skip to content</a>
 
@@ -47,7 +47,6 @@
       <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
       <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
     </a>
-    <a class="btn btn--inverse btn--sm topbar__apply" href="./apply.html" data-topbar-keep>Apply now</a>
     <nav class="topbar__nav" aria-label="Main">
       <ul class="topbar__links">
         <li><a href="./about.html">About us</a></li>
@@ -112,28 +111,64 @@
   </div>
   <!-- /site:stage -->
 
-  <main id="main" class="page__main page__main--soon">
-    <section class="soon" aria-labelledby="soon-title">
-      <div class="soon__stage" data-curtain="flash-plays"></div>
-      <p class="soon__sign"><span class="soon__words"><span>Coming</span> <span>soon</span></span></p>
-      <div class="soon__copy">
-        <p class="eyebrow">The Drama Collective presents</p>
-        <h1 class="soon__title" id="soon-title">Write for us</h1>
-        <span class="rule" aria-hidden="true"></span>
+  <main id="main" class="page__main">
+    <!-- one panel: the heading and its line on the left, with the marble writer statue standing under
+         them (the two stay in sight as the form scrolls by), and the writer application on the right,
+         the October cover tucked behind its top corner. On tablets the statue stands beside the words
+         and the form follows them; on phones there is no statue: the words, then the form
+         (src/pages/write.js, src/styles/write.css) -->
+    <div class="write-open">
+      <div class="write-open__side" data-stick>
+        <header class="act-head ground write-open__words" data-mask>
+          <a class="pub-btn back-btn" href="./publication.html"><svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M13 5H1.5M5 1 1 5l4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Back to the publication</span></a>
+          <p class="eyebrow">The publication</p>
+          <h1 class="act-head__title" data-reveal>Apply to be a writer</h1>
+          <span class="rule" aria-hidden="true"></span>
+          <p class="lead">Write for India’s first independent, student-run theatre publication: every writer we publish receives a certificate and a mention on our website.</p>
+        </header>
+        <!-- the statue, live where WebGL runs well (made as it nears the screen), on a stage a little
+             larger than its box, so the light and the shadow on the floor round it fade out before
+             their edge; until then, and otherwise, its still picture. [data-quiet]: the stars show
+             behind it, but no constellation is drawn there -->
+        <figure class="statue-slot write-statue" role="img" aria-label="A statue in white marble veined and clouded with plum: a robed figure with the comedy and tragedy masks for a face, holding our publication against its side, its raised hand on a fountain pen as tall as itself" data-write-statue data-quiet>
+          <div class="write-statue__stage" aria-hidden="true"></div>
+          <span class="statue-slot__still" aria-hidden="true"></span>
+        </figure>
       </div>
-      <p class="eyebrow soon__hint" data-curtain-hint aria-hidden="true">Drag across the curtain</p>
-    </section>
 
-    <section class="soon-about" aria-labelledby="about-title">
-      <div class="ground" data-mask>
-        <h2 class="act__title" id="about-title" data-reveal>Apply to be a writer</h2>
-        <span class="rule" aria-hidden="true"></span>
-        <p>As a writer for India’s first independent, student-run theatre publication, you receive a certificate and a mention on our website. The application form will open on this page.</p>
-        <p>Until then, <a href="./contact.html">write to the Collective’s President or Executive President</a> with what you would like to write.</p>
-      </div>
-      <p class="soon-about__coda ground" data-mask>Coming soon.</p>
-    </section>
+      <!-- the form: Fillout's, in its paper box (src/site/fillout.js loads it once the curtain has
+           parted). Nothing that holds the form is a [data-mask] box: the pointer's events go to the
+           form's own page inside it, so a star the page drew would be left standing at its edge. The
+           box is [data-quiet] instead: no constellation is drawn under it. The cover lies behind the
+           box, so it never covers a field. -->
+      <section class="write-form" id="apply-form" aria-labelledby="form-title">
+        <h2 class="sr-only" id="form-title">The writer application form</h2>
+        <span class="write-form__cover" aria-hidden="true"><img src="./assets/publication/cover-october-2026.webp" alt="" width="1054" height="1492" decoding="async"></span>
+        <div class="form-box" data-form data-quiet>
+          <div style="width:100%;height:500px;" data-fillout-id="9KawquNF3Mus" data-fillout-embed-type="standard" data-fillout-inherit-parameters data-fillout-dynamic-resize></div>
+          <p class="form-box__status" role="status">Loading the form…</p>
+          <p class="form-box__alt">Form not showing? <a href="https://forms.fillout.com/t/9KawquNF3Mus" target="_blank" rel="noopener">Open it on Fillout</a>.</p>
+          <noscript><p class="form-box__noscript">The form opens on Fillout: <a href="https://forms.fillout.com/t/9KawquNF3Mus" target="_blank" rel="noopener">apply to be a writer</a>.</p></noscript>
+        </div>
+      </section>
+    </div>
   </main>
+
+  <!-- the publication's banner along the bottom, outside the page's column so it runs the full width -->
+  <!-- site:pubbanner -->
+    <aside class="pub-ticker" data-pub-ticker aria-label="The publication">
+      <div class="pub-ticker__bar" data-mask>
+        <span class="pub-mark pub-ticker__mark" aria-hidden="true"></span>
+        <div class="pub-ticker__strip">
+          <p class="pub-ticker__track"><span class="pub-ticker__item">India’s first independent, student-run theatre publication</span></p>
+        </div>
+        <div class="pub-ticker__actions">
+          <a class="pub-btn pub-ticker__cta" href="#apply-form">Become a writer</a>
+          <a class="btn btn--inverse btn--sm pub-ticker__sponsor" href="./sponsor.html">Become a sponsor</a>
+        </div>
+      </div>
+    </aside>
+    <!-- /site:pubbanner -->
 
   <!-- site:footer -->
   <footer class="curtain" id="contact" aria-label="Pages and contacts">
@@ -185,6 +220,6 @@
   </footer>
   <!-- /site:footer -->
 
-  <script type="module" src="./src/pages/soon.js"></script>
+  <script type="module" src="./src/pages/write.js"></script>
 </body>
 </html>

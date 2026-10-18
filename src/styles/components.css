@@ -213,6 +213,9 @@
    has no transitions of its own; it travels over the bar and under the curtain between pages. */
 .has-js [data-fly] { opacity: 0; }
 .topbar > .btn.is-away { visibility: hidden; pointer-events: none; transition: none; }
+/* the publication's banner along the bottom has its own Become a sponsor: while it is on the screen
+   the bar's fades where it stands, keeping its place (src/publication/ticker.js) */
+html.has-banner-sponsor .topbar > .topbar__cta.btn.btn--inverse:not(.is-away) { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--dur-base) var(--ease-curtain), visibility 0s var(--dur-base); }
 .fly-clone {
   position: fixed;
   left: 0;
@@ -227,9 +230,9 @@
   transition: none !important;
 }
 /* Apply now stands beside the brand; the free space falls after it (below 761 px it is in the Menu,
-   and the brand takes the space again) */
+   and the brand takes the space again, as it does on the writers' pages, which have no Apply now) */
 @media (min-width: 761px) {
-  .topbar > .topbar__brand { margin-right: 0; }
+  .topbar:has(> .topbar__apply) > .topbar__brand { margin-right: 0; }
   .topbar > .topbar__apply { margin-right: auto; }
 }
 .topbar__brand {

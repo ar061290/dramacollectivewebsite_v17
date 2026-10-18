@@ -200,9 +200,10 @@ main { position: relative; z-index: var(--z-content); }
 .premiere__foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-5); }
 .premiere__foot .fine { margin: 0; }
 
-/* Act three: this month's publication. A lead piece over four more, after a magazine's front page;
-   the art is a placeholder plate (the pieces' own pictures come with their copy). Every piece opens
-   The publication until each has its own page. */
+/* Act three: this month's publication. The newest issue's pieces after a magazine's front page,
+   written into index.html from the pieces' data (homeIssue in tools/pages/build.mjs): the lead on
+   the issue's stage photo, four more each beside the logo mark on a tile, the rest named beside the
+   issue's cover, then the link to the publication. Every piece opens its own page. */
 .issue { display: grid; gap: var(--space-5); }
 .issue a { color: inherit; text-decoration: none; }
 .issue__art {
@@ -210,23 +211,40 @@ main { position: relative; z-index: var(--z-content); }
   display: block;
   overflow: hidden;
   aspect-ratio: 16 / 9;
-  /* a plate, not a page colour: the same deep plum in both themes, as a photograph would be */
-  background:
-    radial-gradient(120% 90% at 78% 12%, rgb(243 231 184 / .2), rgb(243 231 184 / 0) 60%),
-    linear-gradient(160deg, var(--plum-700), var(--plum-900) 70%);
-  box-shadow: inset 0 0 0 1px rgb(235 216 140 / .22);
+  /* a plate, not a page colour: the same deep plum in both themes, as a photograph would be (it
+     shows while the photo loads) */
+  background: linear-gradient(160deg, var(--plum-700), var(--plum-900) 70%);
 }
-.issue__art > span {
-  position: absolute;
-  right: 6%; bottom: -.12em;
-  font-family: var(--font-display);
-  font-size: clamp(64px, 9vw, 132px);
-  line-height: 1;
-  color: var(--gold-500);
-  opacity: .32;
-  transition: transform var(--dur-slow) var(--ease-out), opacity var(--dur-slow) var(--ease-out);
+/* a hairline round each picture, over it, so a tile close to the page's colour keeps its edge */
+.issue__art::after, .issue__cover::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px var(--line); pointer-events: none; }
+/* the stage photo: 16:9 of the lead's width, but at least 260px tall, so on a narrow column the words
+   over its foot leave the faces clear (a height from the lead's width, cqw, not aspect-ratio with a
+   min-height, which would carry the minimum over to the width and push the column wider); it comes
+   a little closer on hover */
+.issue__art--photo { aspect-ratio: auto; height: max(260px, 56.25cqw); }
+.issue__art--photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 30%;
+  transition: transform var(--dur-slow) var(--ease-out);
 }
-.issue__lead { position: relative; display: block; color: var(--plum-100); }
+.issue__lead:hover .issue__art--photo img, .issue__lead:focus-visible .issue__art--photo img { transform: scale(1.03); }
+/* a piece's tile: the logo mark in its card's colours on the publication (pieces-data.js `tone`, as
+   .pub-piece[data-tone] in publication-pieces.css); the mark rises a little on hover */
+.issue__tile[data-tone="1"] { --tile: var(--plum-800); --mark: var(--plum-100); }
+.issue__tile[data-tone="2"] { --tile: var(--plum-500); --mark: var(--plum-100); }
+.issue__tile[data-tone="3"] { --tile: var(--gold-500); --mark: var(--plum-900); }
+.issue__tile[data-tone="4"] { --tile: var(--plum-100); --mark: var(--plum-800); }
+.issue__tile[data-tone="5"] { --tile: var(--slate-700); --mark: var(--plum-100); }
+.issue__tile { display: grid; place-items: center; background: var(--tile); }
+.issue__tile .pub-mark { width: 60%; color: var(--mark); transition: transform var(--dur-slow) var(--ease-out); }
+.issue__item:hover .issue__tile .pub-mark, .issue__item:focus-visible .issue__tile .pub-mark { transform: translateY(-6%); }
+/* the lead's tile, for an issue without a photo: the mark at the top left, as on a card */
+.issue__art--lead { place-items: start; padding: var(--space-5); }
+.issue__art--lead .pub-mark { width: 48px; }
+.issue__lead { position: relative; display: block; container-type: inline-size; color: var(--plum-100); }
 .issue__lead .issue__text {
   position: absolute;
   inset: auto 0 0 0;
@@ -238,16 +256,27 @@ main { position: relative; z-index: var(--z-content); }
 .issue__lead .issue__title { font-size: clamp(24px, 2.2vw, 32px); color: var(--plum-50); }
 .issue__lead .issue__kicker { color: var(--gold-500); }
 .issue__lead .issue__by { color: var(--plum-200); }
-.issue__lead:hover .issue__art > span, .issue__item:hover .issue__art > span { transform: translateY(-6%); opacity: .5; }
 .issue__list { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4) var(--space-5); }
 .issue__item { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: var(--space-3); align-items: start; }
 .issue__art--sm { aspect-ratio: 1; }
-.issue__art--sm > span { font-size: 40px; right: 10%; }
 .issue__text { display: grid; gap: 4px; min-width: 0; }
 .issue__kicker { font-family: var(--font-ui); font-size: var(--size-micro); font-weight: var(--weight-bold); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; color: var(--accent); }
 .issue__title { font-family: var(--font-display); font-size: 19px; line-height: var(--lh-tight); color: var(--fg-strong); transition: color var(--dur-base) var(--ease-curtain); }
 .issue__item:hover .issue__title, .issue__item:focus-visible .issue__title { color: var(--accent); }
 .issue__by { font-size: var(--size-caption); color: var(--fg-muted); }
+/* the rest of the issue, named beside its cover (in the tiles' column), over the link to the
+   publication */
+.issue__foot { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: var(--space-3); align-items: start; }
+.issue__cover { position: relative; display: block; }
+.issue__cover img { display: block; width: 100%; height: auto; }
+.issue__also { display: grid; gap: var(--space-2); justify-items: start; min-width: 0; }
+.issue__also .issue__kicker { margin: 0; }
+.issue__also-list { list-style: none; display: grid; gap: var(--space-1); margin-bottom: var(--space-2); }
+/* the title, then the writer on the same line, or under it, unindented, where the line is short */
+.issue__also-list a { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--space-2); }
+.issue__also-list .issue__title { font-size: 17px; }
+.issue__also-list .issue__by { white-space: nowrap; }
+.issue__also-list a:hover .issue__title, .issue__also-list a:focus-visible .issue__title { color: var(--accent); }
 .issue__more {
   justify-self: start;
   font-family: var(--font-ui);

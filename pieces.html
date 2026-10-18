@@ -116,9 +116,30 @@
           <a class="read__back" href="./publication.html"><svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M13 5H1.5M5 1 1 5l4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>The publication</span></a>
           <h1 class="read__title" id="read-title" data-reveal>All the pieces</h1>
           <span class="rule read__rule" aria-hidden="true"></span>
+          <!-- two filters, by form and by month (src/publication/index-filters.js fills their chips
+               from the cards below); hidden without scripts, which show every piece -->
+          <div class="read__filters" data-index-filters hidden>
+            <div class="pub-pieces__filter" data-index-filter="form">
+              <button class="pub-pieces__filter-btn" type="button" aria-expanded="false" aria-controls="index-forms">
+                <span class="pub-label pub-pieces__filter-key">Form</span>
+                <span class="pub-label pub-pieces__filter-value" data-index-value>All</span>
+                <svg class="pub-pieces__caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="pub-pieces__forms" id="index-forms" role="group" aria-label="Filter the pieces by form" hidden></div>
+            </div>
+            <div class="pub-pieces__filter" data-index-filter="month">
+              <button class="pub-pieces__filter-btn" type="button" aria-expanded="false" aria-controls="index-months">
+                <span class="pub-label pub-pieces__filter-key">Month</span>
+                <span class="pub-label pub-pieces__filter-value" data-index-value>All</span>
+                <svg class="pub-pieces__caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="pub-pieces__forms" id="index-months" role="group" aria-label="Filter the pieces by month" hidden></div>
+            </div>
+          </div>
         </header>
-        <ul class="pub-pieces__grid read__grid">
-          <li class="pub-piece" data-tone="1">
+        <p class="sr-only" aria-live="polite" data-index-status></p>
+        <ul class="pub-pieces__grid read__grid" data-index-grid>
+          <li class="pub-piece" data-form="Essay" data-month="2026-10" data-month-name="October 2026" data-tone="1">
             <a class="pub-piece__link" href="./piece-drama-the-art-of-feeling.html">
               <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><h2 class="pub-piece__title" data-len="m">Drama: The Art of Feeling</h2></div>
               <div class="pub-piece__body">
@@ -133,7 +154,7 @@
               </div>
             </a>
           </li>
-          <li class="pub-piece" data-tone="3">
+          <li class="pub-piece" data-form="Reflection" data-month="2026-10" data-month-name="October 2026" data-tone="3">
             <a class="pub-piece__link" href="./piece-the-story-i-probably-told-myself-about-you.html">
               <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><h2 class="pub-piece__title" data-len="l">The Story I Probably Told Myself About You</h2></div>
               <div class="pub-piece__body">
@@ -148,7 +169,7 @@
               </div>
             </a>
           </li>
-          <li class="pub-piece" data-tone="2">
+          <li class="pub-piece" data-form="One-act play" data-month="2026-10" data-month-name="October 2026" data-tone="2">
             <a class="pub-piece__link" href="./piece-everything-changes.html">
               <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><h2 class="pub-piece__title" data-len="s">Everything Changes</h2></div>
               <div class="pub-piece__body">
@@ -163,7 +184,7 @@
               </div>
             </a>
           </li>
-          <li class="pub-piece" data-tone="5">
+          <li class="pub-piece" data-form="Contemporary monologue" data-month="2026-10" data-month-name="October 2026" data-tone="5">
             <a class="pub-piece__link" href="./piece-stars.html">
               <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><h2 class="pub-piece__title" data-len="s">Stars.</h2></div>
               <div class="pub-piece__body">
@@ -178,7 +199,7 @@
               </div>
             </a>
           </li>
-          <li class="pub-piece" data-tone="4">
+          <li class="pub-piece" data-form="Contemporary monologue" data-month="2026-10" data-month-name="October 2026" data-tone="4">
             <a class="pub-piece__link" href="./piece-beauty-in-imperfection.html">
               <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><h2 class="pub-piece__title" data-len="m">Beauty in Imperfection</h2></div>
               <div class="pub-piece__body">
@@ -193,7 +214,7 @@
               </div>
             </a>
           </li>
-          <li class="pub-piece" data-tone="1">
+          <li class="pub-piece" data-form="Contemporary monologue" data-month="2026-10" data-month-name="October 2026" data-tone="1">
             <a class="pub-piece__link" href="./piece-i-was-there-first.html">
               <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><h2 class="pub-piece__title" data-len="s">I Was There First</h2></div>
               <div class="pub-piece__body">
@@ -208,7 +229,7 @@
               </div>
             </a>
           </li>
-          <li class="pub-piece" data-tone="3">
+          <li class="pub-piece" data-form="Soliloquy" data-month="2026-10" data-month-name="October 2026" data-tone="3">
             <a class="pub-piece__link" href="./piece-i-love-nostalgia.html">
               <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><h2 class="pub-piece__title" data-len="s">I Love Nostalgia</h2></div>
               <div class="pub-piece__body">

@@ -10,6 +10,7 @@
 //   <!-- site:contacts --> contact.html and sponsor.html (beside the tiers): who to write to (CONTACTS)
 //   <!-- site:pubbanner --> the publication and its reading pages: the banner along the bottom
 //   <!-- site:writers --> writers.html only: the writers' cards, issue by issue (writersMonths)
+//   <!-- site:issue -->   index.html only: act three's pieces, the newest issue's (homeIssue)
 // It also writes the publication's reading pages whole (READING, below): each piece that is out
 // (piece-<slug>.html, from src/publication/pieces-data.js and the piece's text in
 // content/pieces/<slug>.html), the editor's note (editors-note.html, from content/editors-note.html)
@@ -95,8 +96,9 @@ export const PAGES = [
   { file: APPLY.href.slice(2), key: APPLY.key },
   // the publication's own pages, reached from it and not from the menu: its reading pages (each
   // piece, the editor's note, all the pieces; written whole by this file, READING below), Meet our
-  // writers and each writer's own page (written whole, writerPage below), and, coming soon for now,
-  // the writer application and the newsletter
+  // writers and each writer's own page (written whole, writerPage below), Apply to be a writer (with
+  // the site's top bar and stars, as a page of the site's own), and, coming soon for now, the
+  // newsletter
   ...READING.map(({ file, key }) => ({ file, key, reading: true })),
   { file: 'writers.html', key: 'writers' },
   ...WRITERS.map((w) => ({ file: w.href.slice(2), key: `writer-${w.slug}`, writer: w })),
@@ -136,6 +138,10 @@ const head = () => `<link rel="icon" href="./assets/brand/mark-gold.png">
     document.documentElement.classList.add('has-js');
   </script>`;
 
+// the writers' own pages (Meet our writers, a writer's page, Apply to be a writer) have no Apply now in
+// the bar: the way in there is Become a writer, in the publication's banner along the bottom
+const WRITER_PAGES = (page) => page === 'writers' || page === 'write' || page.startsWith('writer-');
+
 const header = (page) => {
   const inOutputs = OUTPUTS.some((o) => o.key === page);
   return `<a class="skip-link" href="#main">Skip to content</a>
@@ -151,8 +157,8 @@ const header = (page) => {
       <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
       <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
     </a>
-    <a class="btn btn--inverse btn--sm topbar__apply" href="${APPLY.href}"${current(APPLY.key, page)} data-topbar-keep>${APPLY.label}</a>
-    <nav class="topbar__nav" aria-label="Main">
+${WRITER_PAGES(page) ? '' : `    <a class="btn btn--inverse btn--sm topbar__apply" href="${APPLY.href}"${current(APPLY.key, page)} data-topbar-keep>${APPLY.label}</a>
+`}    <nav class="topbar__nav" aria-label="Main">
       <ul class="topbar__links">
         <li>${link(ABOUT, page)}</li>
         <li>${link(TEAM, page)}</li>
@@ -340,14 +346,15 @@ ${pad}</ul>`;
 // [data-fly] (src/site/flyin.js: a button kept in the bottom of the screen never arrives).
 const PUB_LINE = 'India’s first independent, student-run theatre publication';
 const WRITE = { href: './write.html', label: 'Become a writer' };
-const pubBanner = () => `<aside class="pub-ticker" data-pub-ticker aria-label="The publication">
+// (on Apply to be a writer itself, Become a writer goes to the form on the page)
+const pubBanner = (page) => `<aside class="pub-ticker" data-pub-ticker aria-label="The publication">
       <div class="pub-ticker__bar" data-mask>
         <span class="pub-mark pub-ticker__mark" aria-hidden="true"></span>
         <div class="pub-ticker__strip">
           <p class="pub-ticker__track"><span class="pub-ticker__item">${PUB_LINE}</span></p>
         </div>
         <div class="pub-ticker__actions">
-          <a class="pub-btn pub-ticker__cta" href="${WRITE.href}">${WRITE.label}</a>
+          <a class="pub-btn pub-ticker__cta" href="${page === 'write' ? '#apply-form' : WRITE.href}">${WRITE.label}</a>
           <a class="btn btn--inverse btn--sm pub-ticker__sponsor" href="${CTA.href}">${CTA.label}</a>
         </div>
       </div>
@@ -365,6 +372,64 @@ const issueDate = (issue) => {
 /** A text of content/, set in at the given indent (blank lines stay blank). */
 const content = (path, pad) => readFileSync(join(ROOT, 'content', path), 'utf8').replace(/\r\n/g, '\n').trimEnd()
   .split('\n').map((l) => (l ? pad + l : l)).join('\n');
+
+// ---- The home page's act three, this month's publication (<!-- site:issue --> in index.html) ----
+// The newest issue's pieces in their order, each a link to its own page, laid out after a magazine's
+// front page: the first is the lead, on the issue's stage photo; the next four are a list, each on
+// the logo mark in its card's colours on the publication (.issue__tile in src/styles/layout.css);
+// any more are named under them, beside the issue's cover, over the link to the publication. An
+// issue's pictures go in ISSUE_ART; an issue without them has the mark on a tile for its lead, and
+// no cover.
+const ISSUE_ART = {
+  'Oct 2026': { photo: 'assets/publication/stage-photo-october-2026.webp', cover: 'assets/publication/cover-october-2026.webp' },
+};
+const ISSUE_LISTED = 4; // the pieces in the list under the lead
+
+/** @param {{ toneOf: Function, byline: Function }} cards  the card helpers (src/publication/cards.js) */
+function homeIssue({ toneOf, byline }, pad = '          ') {
+  const issue = PUBLISHED.at(-1).issue;
+  const art = ISSUE_ART[issue] ?? {};
+  // the lead is the piece the issue's photo belongs to (its `photo` in pieces-data.js), so the
+  // picture is never under someone else's piece; without one, the issue's first piece
+  const pieces = PUBLISHED.filter((p) => p.issue === issue);
+  const own = art.photo && pieces.find((p) => (p.photo?.src ?? p.photo) === art.photo);
+  const lead = own || pieces[0];
+  const rest = pieces.filter((p) => p !== lead);
+  const listed = rest.slice(0, ISSUE_LISTED);
+  const more = rest.slice(ISSUE_LISTED);
+  const indent = (ls) => ls.map((l) => `  ${l}`);
+  const lang = (p) => (p.lang ? ` lang="${esc(p.lang)}"` : '');
+  const img = (src) => { const { w, h } = webpSize(src); return `<img src="./${esc(src)}" alt="" width="${w}" height="${h}" loading="lazy" decoding="async">`; };
+  const tile = (p, cls) => `<span class="issue__art ${cls} issue__tile" data-tone="${toneOf(p)}" aria-hidden="true"><span class="pub-mark"></span></span>`;
+  const text = (p) => ['<span class="issue__text">', ...indent([
+    ...(p.form ? [`<span class="issue__kicker">${esc(p.form)}</span>`] : []),
+    `<span class="issue__title"${lang(p)}>${esc(p.title)}</span>`,
+    `<span class="issue__by">${esc(byline(p))}</span>`,
+  ]), '</span>'];
+  const lines = [
+    `<a class="issue__lead" href="${pieceHref(lead)}">`,
+    ...indent([art.photo ? `<span class="issue__art issue__art--photo" aria-hidden="true">${img(art.photo)}</span>` : tile(lead, 'issue__art--lead'), ...text(lead)]),
+    '</a>',
+    '<ol class="issue__list" data-stagger>',
+    ...listed.flatMap((p) => indent(['<li>', ...indent([`<a class="issue__item" href="${pieceHref(p)}">`, ...indent([tile(p, 'issue__art--sm'), ...text(p)]), '</a>']), '</li>'])),
+    '</ol>',
+    // (the cover repeats the link under it, so it is left out of the tab order and the reading)
+    '<div class="issue__foot" data-stagger>',
+    ...indent([
+      ...(art.cover ? [`<a class="issue__cover" href="./publication.html" tabindex="-1" aria-hidden="true">${img(art.cover)}</a>`] : []),
+      '<div class="issue__also">',
+      ...indent([
+        ...(more.length ? [`<p class="issue__kicker">Also in the ${issueName(issue)} issue</p>`, '<ul class="issue__also-list">',
+          ...indent(more.map((p) => `<li><a href="${pieceHref(p)}"><span class="issue__title"${lang(p)}>${esc(p.title)}</span> <span class="issue__by">${esc(byline(p))}</span></a></li>`)),
+          '</ul>'] : []),
+        '<a class="issue__more" href="./publication.html">The publication</a>',
+      ]),
+      '</div>',
+    ]),
+    '</div>',
+  ];
+  return lines.map((l, i) => (i ? pad + l : l)).join('\n');
+}
 
 const ARROW_L = '<svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M13 5H1.5M5 1 1 5l4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ARROW_R = '<svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -449,8 +514,11 @@ function editorsNotePage() {
 /** All the pieces: a heading and the grid of every piece that is out, the newest issue first. */
 function piecesPage(pieceCard) {
   const issues = [...new Set(PUBLISHED.map((p) => p.issue))].reverse();
+  // each card carries its form and its month (the issue, as "2026-10"), for the filters
   const cards = issues.flatMap((issue) => PUBLISHED.filter((p) => p.issue === issue))
-    .map((p) => pieceCard(p, { level: 2 }).split('\n').map((l) => `          ${l}`).join('\n'));
+    .map((p) => pieceCard(p, { level: 2 })
+      .replace('<li class="pub-piece"', `<li class="pub-piece" data-form="${esc(p.form ?? '')}" data-month="${issueDate(p.issue)}" data-month-name="${esc(issueName(p.issue))}"`)
+      .split('\n').map((l) => `          ${l}`).join('\n'));
   return {
     title: 'All the pieces',
     description: 'Every piece published by The Drama Collective’s theatre publication, the newest issue first.',
@@ -461,8 +529,29 @@ function piecesPage(pieceCard) {
           ${BACK}
           <h1 class="read__title" id="read-title" data-reveal>All the pieces</h1>
           <span class="rule read__rule" aria-hidden="true"></span>
+          <!-- two filters, by form and by month (src/publication/index-filters.js fills their chips
+               from the cards below); hidden without scripts, which show every piece -->
+          <div class="read__filters" data-index-filters hidden>
+            <div class="pub-pieces__filter" data-index-filter="form">
+              <button class="pub-pieces__filter-btn" type="button" aria-expanded="false" aria-controls="index-forms">
+                <span class="pub-label pub-pieces__filter-key">Form</span>
+                <span class="pub-label pub-pieces__filter-value" data-index-value>All</span>
+                <svg class="pub-pieces__caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="pub-pieces__forms" id="index-forms" role="group" aria-label="Filter the pieces by form" hidden></div>
+            </div>
+            <div class="pub-pieces__filter" data-index-filter="month">
+              <button class="pub-pieces__filter-btn" type="button" aria-expanded="false" aria-controls="index-months">
+                <span class="pub-label pub-pieces__filter-key">Month</span>
+                <span class="pub-label pub-pieces__filter-value" data-index-value>All</span>
+                <svg class="pub-pieces__caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="pub-pieces__forms" id="index-months" role="group" aria-label="Filter the pieces by month" hidden></div>
+            </div>
+          </div>
         </header>
-        <ul class="pub-pieces__grid read__grid">
+        <p class="sr-only" aria-live="polite" data-index-status></p>
+        <ul class="pub-pieces__grid read__grid" data-index-grid>
 ${cards.join('\n')}
         </ul>
       </div>
@@ -475,16 +564,17 @@ ${cards.join('\n')}
 // Megha Kruthiventi, Kathya Yaratapalli, Mehek Jain, Nisha Sriram and Venkatesh Kalasamudram. Until
 // theirs come in, the mark on a tile in their colour stands in for the photo, and SOON for the words.
 const SOON = 'Their introduction is on its way.';
-const CHEVRON = '<svg class="pub-pieces__chev" viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const CARET = '<svg class="pub-pieces__caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 /** Lines of markup set in at the given indent. */
 const indented = (html, pad) => html.split('\n').map((l) => (l ? pad + l : l)).join('\n');
 
-/** A writer's photo in a frame of class `cls`; without one, the mark on a tile in their colour. */
-const portrait = (w, cls, { lazy = true } = {}) => {
-  if (!w.photo) return `<span class="${cls} ${cls}--mark pub-tile" data-tone="${w.tone}"><span class="pub-mark"></span></span>`;
+/**
+ * A writer's photo in a frame of class `cls`; without one, the mark on a tile in their colour.
+ * `attrs` go on the frame, and `inner` is markup laid inside it, over the picture.
+ */
+const portrait = (w, cls, { lazy = true, attrs = '', inner = '' } = {}) => {
+  if (!w.photo) return `<span class="${cls} ${cls}--mark pub-tile" data-tone="${w.tone}"${attrs}><span class="pub-mark"></span>${inner}</span>`;
   const { w: width, h } = webpSize(w.photo);
-  return `<span class="${cls}"><img src="./${esc(w.photo)}" alt="" width="${width}" height="${h}"${lazy ? ' loading="lazy"' : ''} decoding="async"></span>`;
+  return `<span class="${cls}"${attrs}><img src="./${esc(w.photo)}" alt="" width="${width}" height="${h}"${lazy ? ' loading="lazy"' : ''} decoding="async">${inner}</span>`;
 };
 /** A writer's introduction as paragraphs (or the line that says it is on its way), at an indent. */
 const introParas = (w, pad) => (w.intro
@@ -496,24 +586,15 @@ const writerIssues = () => [...new Set(PIECES.filter((p) => writerNamed(p.author
   .sort((a, b) => (a === 'TBA') - (b === 'TBA') || issueDate(a).localeCompare(issueDate(b)))
   .map((issue) => ({ issue, key: issue === 'TBA' ? 'tba' : issueDate(issue), label: issue === 'TBA' ? 'Date to be announced' : issueName(issue) }));
 
-/** One of a writer's pieces in their panel: its title (a link to it once it is out), its form and when. */
-const work = (p) => {
-  const lang = p.lang ? ` lang="${esc(p.lang)}"` : '';
-  const when = p.status === 'latest' ? issueName(p.issue) : p.issue === 'TBA' ? 'Coming, date to be announced' : `Coming in ${issueName(p.issue)}`;
-  const meta = [p.special ? 'Special' : p.form, when].filter(Boolean).join(' · ');
-  const title = p.status === 'latest'
-    ? `<a class="writer-works__title" href="${pieceHref(p)}"${lang}>${esc(p.title)}</a>`
-    : `<span class="writer-works__title"${lang}>${esc(p.title)}</span>`;
-  return `<li class="writer-works__item">${title}<span class="writer-works__meta">${esc(meta)}</span></li>`;
-};
 
 /**
  * Meet our writers: the filter by issue, then a section per issue (October 2026, November 2026, ...,
  * then those still to be dated) of the writers with a piece in it, published or to come, as Core
- * team's cards (src/styles/pages.css .member): the photo, the name, and under it the titles of their
- * pieces in that issue. A writer with pieces in two issues is in both. Each card is a link to the
- * writer's own page; with scripts it opens their spotlight panel instead (src/pages/writers.js),
- * filled from their <template>: the introduction, all their pieces and the way to their page.
+ * team's cards (src/styles/pages.css .member): the photo, the name, and under it "Read all works". A
+ * writer with pieces in two issues is in both. Each card is one link, to the writer's own page. Over
+ * the photo lies the short version of their introduction (content/writers.json `short`), shown when
+ * the photo is pointed at or the card has the keyboard's focus (src/styles/writers.css); to a screen
+ * reader it is the link's description, so the link's name stays their name and "Read all works".
  */
 function writersMonths() {
   const issues = writerIssues();
@@ -524,13 +605,17 @@ ${issues.map((m) => `        <button class="team-filter__btn" type="button" aria
   const months = issues.map(({ issue, key, label }) => {
     const pieces = PIECES.filter((p) => p.issue === issue && writerNamed(p.author)).sort((a, b) => a.order - b.order);
     const note = pieces.every((p) => p.status === 'latest') ? 'Out now' : pieces.every((p) => p.status === 'upcoming') ? 'Coming' : '';
-    const cards = [...new Set(pieces.map((p) => p.author))].map(writerNamed).map((w) => `            <li class="member">
-              <a class="member__card" href="${w.href}" data-writer="${w.id}">
-                ${portrait(w, 'member__photo')}
+    const cards = [...new Set(pieces.map((p) => p.author))].map(writerNamed).map((w) => {
+      const about = `about-${key}-${w.id}`;
+      const words = w.short ? `<span class="member__about-text">${esc(w.short)}</span>` : `<span class="member__about-text writer-soon">${SOON}</span>`;
+      return `            <li class="member">
+              <a class="member__card" href="${w.href}" data-writer="${w.id}" aria-describedby="${about}">
+                ${portrait(w, 'member__photo', { inner: `<span class="member__about" id="${about}" aria-hidden="true">${words}</span>` })}
                 <span class="member__name">${esc(w.name)}</span>
-                <span class="member__works">${pieces.filter((p) => p.author === w.name).map((p) => `<span class="member__work"${p.lang ? ` lang="${esc(p.lang)}"` : ''}>${esc(p.title)}</span>`).join('')}</span>
+                <span class="member__more">Read all works${ARROW_R}</span>
               </a>
-            </li>`).join('\n');
+            </li>`;
+    }).join('\n');
     return `        <section class="writers-month" data-month="${key}" data-flip-id="${key}" aria-labelledby="month-${key}">
           <header class="writers-month__head" data-mask>
             <h2 class="writers-month__title" id="month-${key}">${issue === 'TBA' ? esc(label) : `<time datetime="${key}">${esc(label)}</time>`}</h2>${note ? `
@@ -541,44 +626,42 @@ ${cards}
           </ul>
         </section>`;
   }).join('\n');
-  const panels = WRITERS.filter((w) => w.pieces.length).map((w) => `      <template data-writer-panel="${w.id}" data-role="${esc(['Writer', w.role].filter(Boolean).join(' · '))}">
-${introParas(w, '        ')}
-        <h3 class="eyebrow writer-panel__label">${w.pieces.length === 1 ? 'Their piece' : 'Their pieces'}</h3>
-        <ul class="writer-works">
-${w.pieces.map((p) => `          ${work(p)}`).join('\n')}
-        </ul>
-        <a class="btn btn--inverse writer-panel__more" href="${w.href}">Read more from ${esc(w.first)}${ARROW_R}</a>
-      </template>`).join('\n');
   return `${filters}
       <div class="writers-months" data-spot data-writers>
 ${months}
-      </div>
-${panels}`;
+      </div>`;
 }
 
 // the latest pieces, newest issue first, each issue in its own order (as src/publication/pieces.js)
 const byNewest = (a, b) => issueDate(b.issue).localeCompare(issueDate(a.issue)) || a.order - b.order;
 
 /**
- * A writer's own page: the head (their photo, name and introduction, and the way back to Meet our
- * writers), then the publication's pieces section for their pieces only (the same markup as
- * publication.html's @pieces; src/pages/writer.js gives it the publication's behaviour through
- * src/publication/pieces.js): every one of their published pieces in the grid, and every one to
- * come in the list, which runs its whole length beside their photo standing in the statue's light
- * (their introduction over it on hover or focus). It opens on the published pieces if they have any.
- * "Remind me" goes to the newsletter on the publication. Both views are drawn here too: without
- * scripts the page shows both, one under the other (src/styles/writers.css).
+ * A writer's own page. The head: a button back to Meet our writers, their photo as a round profile
+ * picture, and their name; no introduction on the page itself. The photo and the name open the
+ * spotlight panel (Core team's, src/site/people.js, through src/pages/writer.js), filled from the
+ * page's .writer-about: their whole introduction, nothing else (their pieces are on the page
+ * itself; for visitors without scripts, who have no panel, it is a section at the foot of the page). Below, their pieces in two
+ * columns, each under a plain label: on the left the ones to come, as the publication's list
+ * (cards.js pieceRow; "Remind me" goes to the newsletter on the publication), and on the right the
+ * ones that are out, as its grid of cards (pieceCard), every one of them. A column with nothing in
+ * it says so in a line. On a phone the columns stack: the pieces that are out first, or the ones to
+ * come when nothing is out yet; the page holds them in that order, and src/styles/writers.css sets
+ * them side by side on a wide screen (where src/pages/writer.js puts the ones to come first in the
+ * page, so the keyboard and a screen reader take the columns in the order they are seen).
  */
 function writerPage(w, { pieceCard, pieceRow }) {
   const out = w.pieces.filter((p) => p.status === 'latest').sort(byNewest);
   const coming = w.pieces.filter((p) => p.status === 'upcoming');
-  const start = out.length ? 'latest' : 'upcoming';
-  const hasForms = w.pieces.some((p) => p.form);
   const next = coming.find((p) => p.issue !== 'TBA');
-  const empty = (word) => `<li class="pub-pieces__empty">No ${word} pieces yet.</li>`;
-  const cards = out.length ? out.map((p) => pieceCard(p)).join('\n') : empty('latest');
-  const rows = coming.length ? coming.map((p) => pieceRow(p, { next: p === next, remind: './publication.html#news' })).join('\n') : empty('upcoming');
-  const on = (yes) => (yes ? ' is-on' : '');
+  const role = ['Writer', w.role].filter(Boolean).join(' · ');
+  const column = (kind, label, items, none) => `            <section class="writer-col writer-col--${kind}" aria-labelledby="${kind}-title">
+              <h2 class="pub-label writer-col__title" id="${kind}-title">${label}</h2>
+${items.length ? `              <ul class="writer-col__${kind === 'out' ? 'grid' : 'list'}">
+${indented(items.join('\n'), '                ')}
+              </ul>` : `              <p class="writer-col__none">${none}</p>`}
+            </section>`;
+  const outCol = column('out', 'Out now', out.map((p) => pieceCard(p)), 'Nothing out yet.');
+  const upCol = column('upcoming', 'Upcoming', coming.map((p) => pieceRow(p, { next: p === next, remind: './publication.html#news' })), 'Nothing announced yet.');
   return {
     title: w.name,
     description: `${w.name} writes for The Drama Collective’s theatre publication: ${w.intro ? 'an introduction in their own words, and ' : ''}${out.length && coming.length ? 'their pieces, out now and to come' : out.length ? 'their published pieces' : 'their pieces to come'}.`,
@@ -588,76 +671,50 @@ function writerPage(w, { pieceCard, pieceRow }) {
     main: `    <article class="writer" aria-labelledby="read-title">
       <header class="writer-head">
         <div class="pub-wrap">
-          <a class="read__back" href="./writers.html">${ARROW_L}<span>Meet our writers</span></a>
-          <div class="writer-head__grid">
-            ${portrait(w, 'writer-head__photo', { lazy: false })}
+          <a class="pub-btn back-btn" href="./writers.html">${ARROW_L}<span>Back to the writers</span></a>
+          <div class="writer-head__who" data-stagger>
+            ${portrait(w, 'writer-head__photo', { lazy: false, attrs: ' data-writer-photo' })}
             <div class="writer-head__text">
               <p class="pub-label read__kicker"><span>Writer</span>${w.role ? `<span class="read__dot" aria-hidden="true"></span><span>${esc(w.role)}</span>` : ''}</p>
-              <h1 class="read__title writer-head__name" id="read-title" data-reveal>${esc(w.name)}</h1>
-              <span class="rule read__rule" aria-hidden="true"></span>
-              <div class="writer-head__intro">
-${introParas(w, '                ')}
-              </div>
+              <h1 class="read__title writer-head__name" id="read-title"><button class="writer-head__open" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-writer-open>${esc(w.name)}</button></h1>
             </div>
           </div>
         </div>
       </header>
 
-      <section class="pub-pieces pub-pieces--writer" data-pub-pieces data-author="${esc(w.name)}" aria-labelledby="pieces-title">
+      <div class="writer-pieces">
         <div class="pub-wrap">
-          <header class="pub-pieces__head">
-            <h2 class="pub-pieces__title" id="pieces-title">
-              <span class="pub-pieces__title-text" data-pieces-title>${start === 'latest' ? 'Latest pieces' : 'Upcoming pieces'}</span>
-              <svg class="pub-pieces__word" aria-hidden="true" focusable="false"></svg>
-            </h2>
-            <div class="pub-pieces__controls">
-              <div class="pub-pieces__switch">
-                <span class="pub-label pub-pieces__side${on(start === 'upcoming')}" data-side="upcoming" aria-hidden="true">Upcoming</span>
-                <input class="pub-pieces__toggle" type="checkbox" role="switch"${start === 'latest' ? ' checked' : ''} autocomplete="off" aria-label="Dropped pieces" aria-describedby="pieces-switch-hint" data-pieces-toggle>
-                <span class="pub-label pub-pieces__side${on(start === 'latest')}" data-side="dropped" aria-hidden="true">Dropped</span>
-                <span class="sr-only" id="pieces-switch-hint">On: the latest pieces, as a grid. Off: the upcoming pieces, as a list.</span>
-              </div>
-              <div class="pub-pieces__filter" data-pieces-filter${hasForms ? '' : ' hidden'}>
-                <button class="pub-pieces__filter-btn" type="button" aria-expanded="false" aria-controls="pieces-forms">
-                  <span class="pub-label pub-pieces__filter-key">Filter</span>
-                  <span class="pub-label pub-pieces__filter-value" data-pieces-filter-value>Form</span>
-                  ${CARET}
-                </button>
-                <div class="pub-pieces__forms" id="pieces-forms" role="group" aria-label="Filter the pieces by form" hidden></div>
-              </div>
-            </div>
-          </header>
-          <p class="sr-only" aria-live="polite" data-pieces-status></p>
+          <div class="writer-cols${out.length ? '' : ' writer-cols--none-out'}">
+${out.length ? `${outCol}\n${upCol}` : `${upCol}\n${outCol}`}
+          </div>
+        </div>
+      </div>
 
-          <div class="pub-pieces__stage" data-pieces-stage>
-            <div class="pub-pieces__view pub-pieces__view--grid" data-pieces-view="latest"${start === 'latest' ? '' : ' hidden'}>
-              <ul class="pub-pieces__grid" data-pieces-grid>
-${indented(cards, '                ')}
-              </ul>
-              <div class="pub-pieces__more">
-                <a class="pub-btn pub-btn--lg pub-pieces__all" href="./pieces.html">All the pieces${CHEVRON}</a>
-              </div>
-            </div>
-
-            <div class="pub-pieces__view pub-pieces__view--list" data-pieces-view="upcoming"${start === 'upcoming' ? '' : ' hidden'}>
-              <div class="pub-pieces__panel">
-                <div class="pub-pieces__stand writer-stand">
-                  <figure class="writer-stand__frame" tabindex="0">
-                    ${portrait(w, 'writer-stand__photo')}
-                    <figcaption class="writer-stand__intro">
-                      <span class="pub-label writer-stand__name">${esc(w.name)}</span>
-${introParas(w, '                      ')}
-                    </figcaption>
-                  </figure>
-                </div>
-              </div>
-              <ul class="pub-pieces__list" data-pieces-list>
-${indented(rows, '                ')}
-              </ul>
-            </div>
+      <!-- what the spotlight panel holds: their introduction (src/pages/writer.js);
+           without scripts, where there is no panel, a part of the page -->
+      <section class="writer-about" aria-labelledby="about-title">
+        <div class="pub-wrap">
+          <h2 class="pub-label writer-col__title" id="about-title">About ${esc(w.name)}</h2>
+          <div class="writer-about__body" data-writer-panel data-role="${esc(role)}">
+${introParas(w, '            ')}
           </div>
         </div>
       </section>
+
+      <dialog class="spotlight spotlight--writer" id="spotlight" aria-labelledby="spotlight-name">
+        <div class="spotlight__inner">
+          <div class="spotlight__photo" data-spotlight-photo></div>
+          <div class="spotlight__body">
+            <p class="eyebrow" data-spotlight-role></p>
+            <h2 class="spotlight__name" id="spotlight-name" data-spotlight-name></h2>
+            <span class="rule" aria-hidden="true"></span>
+            <div class="spotlight__intro" data-spotlight-intro></div>
+          </div>
+          <button class="icon-btn spotlight__close" type="button" aria-label="Close" data-spotlight-close>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </dialog>
     </article>`,
   };
 }
@@ -735,9 +792,10 @@ export async function build(only = []) {
     out = fill(out, 'head', head());
     out = fill(out, 'header', header(key));
     if (key !== 'home') out = fill(out, 'stage', stage(!reading && !writer));
-    out = fill(out, 'pubbanner', pubBanner(), '    ');
+    out = fill(out, 'pubbanner', pubBanner(key), '    ');
     out = fill(out, 'footer', footer(key));
     if (key === 'home') out = fill(out, 'links', pageLinks('home', '        ', 'curtain__links--dock', true), '        ');
+    if (key === 'home') out = fill(out, 'issue', homeIssue(await import('../../src/publication/cards.js')), '          ');
     if (key === 'team') out = fill(out, 'team', team(), '      ');
     if (key === 'writers') out = fill(out, 'writers', writersMonths(), '      ');
     if (key === 'contact') out = fill(out, 'contacts', contacts('      '), '      ');

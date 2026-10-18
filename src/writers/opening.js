@@ -3,13 +3,18 @@
 // line. Scrolling holds the opening on the screen (one pinned ScrollTrigger, scrubbed over HOLD
 // screens) and plays it:
 // 1. the words go, and the camera comes to the book in the statue's hand (src/writers/rig.js): it
-//    moves and turns until the book stands upright in the middle of the screen;
-// 2. the publication's real cover (the October issue) takes the book's place: it is laid exactly
-//    over the book as drawn, its four corners on the cover's four corners (a CSS matrix3d that maps
-//    its rectangle onto the projected quadrilateral, set as each frame of the statue is drawn), and
-//    it fades in there, so the two cross over without a jump;
-// 3. it comes forward to the middle of the screen, the statue fading behind it, and opens on its
-//    spine (CSS 3D), the inside of the cover a plum paper;
+//    moves and turns until the book stands upright in the middle of the screen. The book carries the
+//    publication's real cover (the October issue) from the first frame, drawn on it by the statue;
+//    lit as the stone is at first, and in its own colours, exactly as the picture has them, by the
+//    time the view arrives;
+// 2. the same picture, as a page element, is laid exactly over the cover as drawn, its four corners
+//    on the cover's four corners (a CSS matrix3d that maps its rectangle onto the projected
+//    quadrilateral, set as each frame of the statue is drawn), and fades in there while the view
+//    holds still: the cover does not change (measured: the same pixels, give or take the filtering
+//    of its finest edges), only the fingers and the fold of the robe in front of it fade away under
+//    it. Once it is whole, the book under it is the model's own plum book;
+// 3. the picture comes forward to the middle of the screen, the statue (its book left in its hand)
+//    fading behind it, and opens on its spine (CSS 3D), the inside of the cover a plum paper;
 // 4. its first page is the writers, issue by issue (a picture of the section below, as it will
 //    stand: the real cards, inert, small on the page); the view goes into the page until the
 //    picture is the size of the section itself, exactly where the section will be, and there the
@@ -17,7 +22,12 @@
 // The scroll alone plays it, so it runs backwards as it runs forwards: scrolling back up closes the
 // book and takes the camera back to the statue. Where the statue is a still picture (no WebGL, a
 // weak device, or until the live one is drawn) the same story plays on the picture: it is enlarged
-// toward the book, and the cover starts from the book in it.
+// toward the book, and the cover starts from the book in it. There the picture is laid over the book
+// early (STILL_HAND), as the enlargement begins and before it can blur the book: the cover goes from
+// lit as the stone to its own colours there, as it does on the live statue as the camera comes in,
+// and then rides the enlargement sharp. A live statue drawn while the hold is under way waits, out of
+// sight, until the scroll is back at the top or past the end, and takes over there, so the picture
+// never jumps from enlarged back to its own size.
 // Reduced motion: no hold and no camera; the statue stands, the book is shown open as a still under
 // it, and the writers follow. Without scripts: the statue's picture and the words, then the writers.
 import gsap from 'gsap';
@@ -32,8 +42,10 @@ const debug = new URLSearchParams(location.search).has('debug');
 const HOLD = 3; // screens of scroll the opening is held for while it plays
 // the scene's parts, as stretches of that hold (0..1)
 const WORDS = [0, 0.1]; // the words go
-const VIEW = [0.03, 0.42]; // the camera comes to the book
-const HAND = [0.36, 0.44]; // the cover fades in over the book
+const VIEW = [0.03, 0.4]; // the camera comes to the book
+const FLAT = [0.18, 0.36]; // the cover on the book goes from lit to its own colours
+const HAND = [0.4, 0.45]; // the picture fades in over it, the view still
+const STILL_HAND = [0.02, 0.15]; // on the still picture: before it is enlarged more than about 1.13 times
 const LIFT = [0.46, 0.64]; // it comes forward to the middle (and the statue fades: FADE)
 const FADE = [0.47, 0.6];
 const OPEN = [0.66, 0.84]; // it opens on its spine
@@ -123,6 +135,7 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
   const stars = document.querySelector('.stage__stars');
   const cleanups = [];
   let statue = null; // the live statue, once drawn
+  let waiting = null; // the live statue, drawn while the hold was under way, not yet shown
   let gone = false;
   let measures = null;
 
@@ -138,6 +151,7 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
       if (gone) return null;
       measures = m;
       const s = new mod.WriterStatue(stage, {
+        model: { glb: MODEL, json: MEASURES },
         measures: m,
         reduced,
         theme: pageTheme(),
@@ -146,15 +160,22 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
       if (debug) window.__writerStatue = s;
       try {
         s.setSlot(slotRect());
-        await s.load(MODEL);
+        await s.load();
       } catch (err) {
         s.dispose();
         throw err;
       }
       if (gone) { s.dispose(); return null; }
       s.setTheme(pageTheme(), { instant: true });
-      statue = s;
-      slot.classList.add('is-live');
+      // (the still picture is part way through the story: the live statue waits out of sight, and
+      // takes over when the scroll next leaves the hold's middle: render, goLive)
+      if (!reduced && progress > STILL_HAND[0] && progress < 1) {
+        waiting = s;
+        s.setHidden(true);
+        stage.classList.add('is-waiting');
+        return s;
+      }
+      goLive(s);
       render(progress);
       return s;
     })
@@ -162,8 +183,21 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
       console.warn('The statue is unavailable; showing its still picture.', err);
       return null;
     });
-  cleanups.push(() => { gone = true; statue?.dispose(); statue = null; slot.classList.remove('is-live'); });
-  onTheme?.((theme, opts) => { if (!gone) statue?.setTheme(theme, opts); });
+  /** The live statue takes over from the still picture (fading in over it). */
+  function goLive(s) {
+    waiting = null;
+    statue = s;
+    stage.classList.remove('is-waiting');
+    slot.classList.add('is-live');
+  }
+  cleanups.push(() => {
+    gone = true;
+    (statue ?? waiting)?.dispose();
+    statue = waiting = null;
+    slot.classList.remove('is-live');
+    stage.classList.remove('is-waiting');
+  });
+  onTheme?.((theme, opts) => { if (!gone) (statue ?? waiting)?.setTheme(theme, opts); });
 
   /** The statue's box in the stage (its own place, without the still's enlargement). */
   function slotRect() {
@@ -205,13 +239,15 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
     const w = stage.clientWidth, h = stage.clientHeight;
     const stacked = matchMedia(STACKED).matches;
     // the cover forward, in the middle: as tall as there is room for (and narrower on a phone)
-    const H = Math.min(h * (stacked ? 0.62 : 0.74), (w * (stacked ? 0.78 : 0.42)) / COVER_ASPECT);
-    const W = H * COVER_ASPECT;
+    // (its size and place in whole pixels: the browser puts the book's layer on the pixel grid, and a
+    // fraction there would move the picture a little off the cover drawn under it)
+    const H = Math.round(Math.min(h * (stacked ? 0.62 : 0.74), (w * (stacked ? 0.78 : 0.42)) / COVER_ASPECT));
+    const W = Math.round(H * COVER_ASPECT);
     const gutter = parseFloat(getComputedStyle(open).getPropertyValue('--open-gutter')) || 16;
     Object.assign(L, {
       w, h, W, H,
-      bx: (w - W) / 2,
-      by: (h - H) / 2,
+      bx: Math.round((w - W) / 2),
+      by: Math.round((h - H) / 2),
       // opened, the spread is centred where it fits; else the page stays in sight
       shift: Math.min(W / 2, Math.max(0, (w - W) / 2 - gutter)),
       s0: W / w,
@@ -290,6 +326,7 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
     progress = p;
     // past the end of the hold, the end, whatever the scrub's catching up says
     if (pin && pin.progress >= 1) p = 1;
+    if (waiting && (p <= STILL_HAND[0] || p >= 1)) goLive(waiting);
     setPaged(p >= 1);
     // 1. the words go
     const wv = span(p, WORDS);
@@ -317,6 +354,12 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
         put(slot, 'transform', `translate3d(${((sim.to[0] - sim.from[0]) * vs).toFixed(2)}px, ${((sim.to[1] - sim.from[1]) * vs).toFixed(2)}px, 0) rotate(${(sim.turn * vs).toFixed(5)}rad) scale(${k.toFixed(5)})`);
       } else put(slot, 'transform', '');
     }
+    // the cover on the statue's book: lit as the stone is in the statue's view, then, as the view
+    // comes to the book, its own colours exactly as the picture has them, so that the picture laid
+    // over it changes nothing; once the picture covers it, the book under it is the model's own (and
+    // that is what is left in the hand as the picture comes away)
+    const hand = span(p, statue ? HAND : STILL_HAND);
+    statue?.setCover({ on: hand < 1 ? 1 : 0, flat: ease.sine(span(p, FLAT)) });
     // where the book's cover is now: as drawn by the live statue, else in the enlarged still
     let quad = null;
     if (statue && drawn) quad = drawn;
@@ -332,7 +375,6 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
     }
     // 2-3. the cover: over the book, then forward to the middle (its corners eased from the
     // book's onto the rectangle there), then open on its spine
-    const hand = span(p, HAND);
     const lift = ease.inOut(span(p, LIFT));
     const op = ease.sine(span(p, OPEN));
     const dive = span(p, DIVE);

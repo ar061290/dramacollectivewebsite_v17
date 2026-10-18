@@ -48,7 +48,6 @@
       <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
       <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
     </a>
-    <a class="btn btn--inverse btn--sm topbar__apply" href="./apply.html" data-topbar-keep>Apply now</a>
     <nav class="topbar__nav" aria-label="Main">
       <ul class="topbar__links">
         <li><a href="./about.html">About us</a></li>
@@ -113,70 +112,23 @@
     <article class="writer" aria-labelledby="read-title">
       <header class="writer-head">
         <div class="pub-wrap">
-          <a class="read__back" href="./writers.html"><svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M13 5H1.5M5 1 1 5l4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Meet our writers</span></a>
-          <div class="writer-head__grid">
-            <span class="writer-head__photo writer-head__photo--mark pub-tile" data-tone="3"><span class="pub-mark"></span></span>
+          <a class="pub-btn back-btn" href="./writers.html"><svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M13 5H1.5M5 1 1 5l4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Back to the writers</span></a>
+          <div class="writer-head__who" data-stagger>
+            <span class="writer-head__photo writer-head__photo--mark pub-tile" data-tone="3" data-writer-photo><span class="pub-mark"></span></span>
             <div class="writer-head__text">
               <p class="pub-label read__kicker"><span>Writer</span></p>
-              <h1 class="read__title writer-head__name" id="read-title" data-reveal>Venkatesh Kalasamudram</h1>
-              <span class="rule read__rule" aria-hidden="true"></span>
-              <div class="writer-head__intro">
-                <p class="writer-soon">Their introduction is on its way.</p>
-              </div>
+              <h1 class="read__title writer-head__name" id="read-title"><button class="writer-head__open" type="button" aria-haspopup="dialog" aria-controls="spotlight" data-writer-open>Venkatesh Kalasamudram</button></h1>
             </div>
           </div>
         </div>
       </header>
 
-      <section class="pub-pieces pub-pieces--writer" data-pub-pieces data-author="Venkatesh Kalasamudram" aria-labelledby="pieces-title">
+      <div class="writer-pieces">
         <div class="pub-wrap">
-          <header class="pub-pieces__head">
-            <h2 class="pub-pieces__title" id="pieces-title">
-              <span class="pub-pieces__title-text" data-pieces-title>Upcoming pieces</span>
-              <svg class="pub-pieces__word" aria-hidden="true" focusable="false"></svg>
-            </h2>
-            <div class="pub-pieces__controls">
-              <div class="pub-pieces__switch">
-                <span class="pub-label pub-pieces__side is-on" data-side="upcoming" aria-hidden="true">Upcoming</span>
-                <input class="pub-pieces__toggle" type="checkbox" role="switch" autocomplete="off" aria-label="Dropped pieces" aria-describedby="pieces-switch-hint" data-pieces-toggle>
-                <span class="pub-label pub-pieces__side" data-side="dropped" aria-hidden="true">Dropped</span>
-                <span class="sr-only" id="pieces-switch-hint">On: the latest pieces, as a grid. Off: the upcoming pieces, as a list.</span>
-              </div>
-              <div class="pub-pieces__filter" data-pieces-filter hidden>
-                <button class="pub-pieces__filter-btn" type="button" aria-expanded="false" aria-controls="pieces-forms">
-                  <span class="pub-label pub-pieces__filter-key">Filter</span>
-                  <span class="pub-label pub-pieces__filter-value" data-pieces-filter-value>Form</span>
-                  <svg class="pub-pieces__caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </button>
-                <div class="pub-pieces__forms" id="pieces-forms" role="group" aria-label="Filter the pieces by form" hidden></div>
-              </div>
-            </div>
-          </header>
-          <p class="sr-only" aria-live="polite" data-pieces-status></p>
-
-          <div class="pub-pieces__stage" data-pieces-stage>
-            <div class="pub-pieces__view pub-pieces__view--grid" data-pieces-view="latest" hidden>
-              <ul class="pub-pieces__grid" data-pieces-grid>
-                <li class="pub-pieces__empty">No latest pieces yet.</li>
-              </ul>
-              <div class="pub-pieces__more">
-                <a class="pub-btn pub-btn--lg pub-pieces__all" href="./pieces.html">All the pieces<svg class="pub-pieces__chev" viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-              </div>
-            </div>
-
-            <div class="pub-pieces__view pub-pieces__view--list" data-pieces-view="upcoming">
-              <div class="pub-pieces__panel">
-                <div class="pub-pieces__stand writer-stand">
-                  <figure class="writer-stand__frame" tabindex="0">
-                    <span class="writer-stand__photo writer-stand__photo--mark pub-tile" data-tone="3"><span class="pub-mark"></span></span>
-                    <figcaption class="writer-stand__intro">
-                      <span class="pub-label writer-stand__name">Venkatesh Kalasamudram</span>
-                      <p class="writer-soon">Their introduction is on its way.</p>
-                    </figcaption>
-                  </figure>
-                </div>
-              </div>
-              <ul class="pub-pieces__list" data-pieces-list>
+          <div class="writer-cols writer-cols--none-out">
+            <section class="writer-col writer-col--upcoming" aria-labelledby="upcoming-title">
+              <h2 class="pub-label writer-col__title" id="upcoming-title">Upcoming</h2>
+              <ul class="writer-col__list">
                 <li class="pub-row is-special" data-tone="3">
                   <span class="pub-row__when"><span class="pub-row__dot" aria-hidden="true"></span><span class="pub-label">TBA</span></span>
                   <span class="pub-row__tile" aria-hidden="true"><span class="pub-mark"></span></span>
@@ -188,10 +140,40 @@
                   <a class="pub-btn pub-row__remind" href="./publication.html#news">Remind me<span class="sr-only">: ప్రకటించాలి</span></a><span class="pub-row__sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
                 </li>
               </ul>
-            </div>
+            </section>
+            <section class="writer-col writer-col--out" aria-labelledby="out-title">
+              <h2 class="pub-label writer-col__title" id="out-title">Out now</h2>
+              <p class="writer-col__none">Nothing out yet.</p>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <!-- what the spotlight panel holds: their introduction (src/pages/writer.js);
+           without scripts, where there is no panel, a part of the page -->
+      <section class="writer-about" aria-labelledby="about-title">
+        <div class="pub-wrap">
+          <h2 class="pub-label writer-col__title" id="about-title">About Venkatesh Kalasamudram</h2>
+          <div class="writer-about__body" data-writer-panel data-role="Writer">
+            <p class="writer-soon">Their introduction is on its way.</p>
           </div>
         </div>
       </section>
+
+      <dialog class="spotlight spotlight--writer" id="spotlight" aria-labelledby="spotlight-name">
+        <div class="spotlight__inner">
+          <div class="spotlight__photo" data-spotlight-photo></div>
+          <div class="spotlight__body">
+            <p class="eyebrow" data-spotlight-role></p>
+            <h2 class="spotlight__name" id="spotlight-name" data-spotlight-name></h2>
+            <span class="rule" aria-hidden="true"></span>
+            <div class="spotlight__intro" data-spotlight-intro></div>
+          </div>
+          <button class="icon-btn spotlight__close" type="button" aria-label="Close" data-spotlight-close>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </dialog>
     </article>
 
     <!-- site:pubbanner -->

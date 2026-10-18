@@ -387,6 +387,23 @@
 .read--index { padding-inline: 0; }
 .read--index .read__head { max-width: none; margin-bottom: clamp(36px, 4vw, 56px); }
 .read--index .read__title { max-width: none; }
+/* its two filters, Form and Month, under the gold rule: the publication's pills (publication-pieces.css),
+   each dropping its chips beneath it */
+.read__filters { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.read__filters[hidden] { display: none; }
+.read__filters .pub-pieces__forms { left: 0; right: auto; }
+.read__filters .pub-pieces__filter-value { max-width: 28ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.read__grid > .pub-piece[hidden] { display: none; }
+@media (max-width: 767px) {
+  /* side by side, each half the width, the chips across the whole width beneath them */
+  .read__filters { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 24px; }
+  .read__filters .pub-pieces__filter { position: static; }
+  .read__filters .pub-pieces__filter-btn { width: 100%; min-width: 0; gap: 8px; padding: 0 10px 0 12px; }
+  .read__filters .pub-pieces__filter-value { max-width: none; min-width: 0; }
+  .read__filters .pub-pieces__forms { right: 0; width: auto; max-width: none; }
+  /* (the publication shows three cards on a phone; here, every one) */
+  .read__grid > .pub-piece:nth-child(n + 4):not([hidden]) { display: block; }
+}
 
 /* ---- phones ---- */
 @media (max-width: 640px) {

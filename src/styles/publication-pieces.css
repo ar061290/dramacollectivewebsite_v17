@@ -301,16 +301,15 @@ html:not(.has-js) .pub-pieces__controls { display: none; }
   container-type: size;
 }
 /* the statue's box: his own proportions (.82), the column's whole height, or narrower where the
-   column is (the canvas stays only as large as he needs). On a writer's page their photo stands in
-   the same box and the same light (.pub-pieces__stand, src/styles/writers.css). */
-.pub-pieces__statue, .pub-pieces__stand { height: min(100cqh, 100cqw / .82); aspect-ratio: .82; }
-:is(.pub-pieces__statue, .pub-pieces__stand)::before, :is(.pub-pieces__statue, .pub-pieces__stand)::after {
+   column is (the canvas stays only as large as he needs) */
+.pub-pieces__statue { height: min(100cqh, 100cqw / .82); aspect-ratio: .82; }
+.pub-pieces__statue::before, .pub-pieces__statue::after {
   content: "";
   position: absolute;
   z-index: -1;
   pointer-events: none;
 }
-:is(.pub-pieces__statue, .pub-pieces__stand)::before {
+.pub-pieces__statue::before {
   inset: -4% -60% 11%;
   background: conic-gradient(from 162deg at 50% 0, transparent, var(--beam) 7deg, var(--beam) 29deg, transparent 36deg);
   -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, rgb(0 0 0 / .5));
@@ -318,7 +317,7 @@ html:not(.has-js) .pub-pieces__controls { display: none; }
 }
 /* (the floor's hairline runs the column's width exactly, fading out at both ends: 100cqw is the
    column's width, the statue standing in its middle) */
-:is(.pub-pieces__statue, .pub-pieces__stand)::after {
+.pub-pieces__statue::after {
   left: calc((100% - 100cqw) / 2);
   right: calc((100% - 100cqw) / 2);
   top: 89%;

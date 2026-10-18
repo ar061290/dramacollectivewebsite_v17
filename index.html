@@ -325,60 +325,72 @@
           <h2 id="impact-title" data-reveal>This month’s publication</h2>
           <span class="rule" aria-hidden="true"></span>
         </header>
-        <!-- five pieces: titles, authors and art to come (each will get its own page; until then they
-             open The publication) -->
+        <!-- the newest issue's pieces, each opening its own page: the lead, four more, the rest beside
+             the cover (written from src/publication/pieces-data.js by tools/pages/build.mjs) -->
         <div class="issue" data-mask>
-          <a class="issue__lead" href="./publication.html">
-            <span class="issue__art" aria-hidden="true"><span>01</span></span>
+          <!-- site:issue -->
+          <a class="issue__lead" href="./piece-the-story-i-probably-told-myself-about-you.html">
+            <span class="issue__art issue__art--photo" aria-hidden="true"><img src="./assets/publication/stage-photo-october-2026.webp" alt="" width="1024" height="683" loading="lazy" decoding="async"></span>
             <span class="issue__text">
-              <span class="issue__kicker">Category</span>
-              <span class="issue__title">Title of the first piece</span>
-              <span class="issue__by">Author name</span>
+              <span class="issue__kicker">Reflection</span>
+              <span class="issue__title">The Story I Probably Told Myself About You</span>
+              <span class="issue__by">By Aadi Ramnani</span>
             </span>
           </a>
           <ol class="issue__list" data-stagger>
             <li>
-              <a class="issue__item" href="./publication.html">
-                <span class="issue__art issue__art--sm" aria-hidden="true"><span>02</span></span>
+              <a class="issue__item" href="./piece-drama-the-art-of-feeling.html">
+                <span class="issue__art issue__art--sm issue__tile" data-tone="1" aria-hidden="true"><span class="pub-mark"></span></span>
                 <span class="issue__text">
-                  <span class="issue__kicker">Category</span>
-                  <span class="issue__title">Title of the second piece</span>
-                  <span class="issue__by">Author name</span>
+                  <span class="issue__kicker">Essay</span>
+                  <span class="issue__title">Drama: The Art of Feeling</span>
+                  <span class="issue__by">By Aripra Sharma</span>
                 </span>
               </a>
             </li>
             <li>
-              <a class="issue__item" href="./publication.html">
-                <span class="issue__art issue__art--sm" aria-hidden="true"><span>03</span></span>
+              <a class="issue__item" href="./piece-everything-changes.html">
+                <span class="issue__art issue__art--sm issue__tile" data-tone="2" aria-hidden="true"><span class="pub-mark"></span></span>
                 <span class="issue__text">
-                  <span class="issue__kicker">Category</span>
-                  <span class="issue__title">Title of the third piece</span>
-                  <span class="issue__by">Author name</span>
+                  <span class="issue__kicker">One-act play</span>
+                  <span class="issue__title">Everything Changes</span>
+                  <span class="issue__by">By Anika Megha Kruthiventi</span>
                 </span>
               </a>
             </li>
             <li>
-              <a class="issue__item" href="./publication.html">
-                <span class="issue__art issue__art--sm" aria-hidden="true"><span>04</span></span>
+              <a class="issue__item" href="./piece-stars.html">
+                <span class="issue__art issue__art--sm issue__tile" data-tone="5" aria-hidden="true"><span class="pub-mark"></span></span>
                 <span class="issue__text">
-                  <span class="issue__kicker">Category</span>
-                  <span class="issue__title">Title of the fourth piece</span>
-                  <span class="issue__by">Author name</span>
+                  <span class="issue__kicker">Contemporary monologue</span>
+                  <span class="issue__title">Stars.</span>
+                  <span class="issue__by">By Kathya Yaratapalli</span>
                 </span>
               </a>
             </li>
             <li>
-              <a class="issue__item" href="./publication.html">
-                <span class="issue__art issue__art--sm" aria-hidden="true"><span>05</span></span>
+              <a class="issue__item" href="./piece-beauty-in-imperfection.html">
+                <span class="issue__art issue__art--sm issue__tile" data-tone="4" aria-hidden="true"><span class="pub-mark"></span></span>
                 <span class="issue__text">
-                  <span class="issue__kicker">Category</span>
-                  <span class="issue__title">Title of the fifth piece</span>
-                  <span class="issue__by">Author name</span>
+                  <span class="issue__kicker">Contemporary monologue</span>
+                  <span class="issue__title">Beauty in Imperfection</span>
+                  <span class="issue__by">By Mehek Jain</span>
                 </span>
               </a>
             </li>
           </ol>
-          <a class="issue__more" href="./publication.html">See more</a>
+          <div class="issue__foot" data-stagger>
+            <a class="issue__cover" href="./publication.html" tabindex="-1" aria-hidden="true"><img src="./assets/publication/cover-october-2026.webp" alt="" width="1054" height="1492" loading="lazy" decoding="async"></a>
+            <div class="issue__also">
+              <p class="issue__kicker">Also in the October 2026 issue</p>
+              <ul class="issue__also-list">
+                <li><a href="./piece-i-was-there-first.html"><span class="issue__title">I Was There First</span> <span class="issue__by">By Kathya Yaratapalli</span></a></li>
+                <li><a href="./piece-i-love-nostalgia.html"><span class="issue__title">I Love Nostalgia</span> <span class="issue__by">By Nisha Sriram</span></a></li>
+              </ul>
+              <a class="issue__more" href="./publication.html">The publication</a>
+            </div>
+          </div>
+          <!-- /site:issue -->
         </div>
       </div>
     </section>

@@ -25,7 +25,8 @@ export function setupTicker({ reduced }) {
   const strip = bar?.querySelector('.pub-ticker__strip');
   const track = strip?.querySelector('.pub-ticker__track');
   const line = track?.querySelector('.pub-ticker__item');
-  if (!line || reduced) return () => {};
+  const unshown = watchSponsor(bar);
+  if (!line || reduced) return unshown;
 
   let loop = null;
   let copies = [];
@@ -112,5 +113,24 @@ export function setupTicker({ reduced }) {
     if (loop) { gsap.killTweensOf(loop); loop.kill(); }
     copies.forEach((c) => c.remove());
     gsap.set(track, { clearProps: 'transform' });
+    unshown();
   };
+}
+
+/**
+ * While the banner's own Become a sponsor is on the screen, the top bar's is put away (html
+ * .has-banner-sponsor, components.css), so the page never shows the same button twice. Seen, not
+ * merely there: on a narrow phone the banner's buttons may be hidden, and the bar's then stays.
+ * @param {HTMLElement|null} bar  the banner
+ * @returns {() => void} cleanup
+ */
+function watchSponsor(bar) {
+  const button = bar?.querySelector('.pub-ticker__sponsor');
+  const root = document.documentElement;
+  if (!button) return () => {};
+  const io = new IntersectionObserver(([e]) => {
+    root.classList.toggle('has-banner-sponsor', e.isIntersecting && button.offsetWidth > 0);
+  }, { threshold: 0.5 });
+  io.observe(button);
+  return () => { io.disconnect(); root.classList.remove('has-banner-sponsor'); };
 }

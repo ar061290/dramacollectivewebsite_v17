@@ -1,5 +1,8 @@
 // Text reveals: lines rise inside a mask and fade in, staggered, once per element.
 // Groups ([data-stagger]) bring their children up 12 px with a fade. Reduced motion: opacity only.
+// A group's children fade by opacity, never visibility, so the keyboard reaches them before their
+// group has come up the screen; a focus inside a group that has not come in yet brings it in at once,
+// so the focus is never on a link that cannot be seen.
 import gsap from 'gsap';
 import { SplitText } from 'gsap/SplitText.js';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
@@ -39,17 +42,23 @@ export function setupReveals({ reduced }) {
     }));
   }
 
+  const focusers = [];
   for (const group of gsap.utils.toArray('[data-stagger]')) {
     const items = group.children;
     const scrollTrigger = { trigger: group, start: 'top 85%', once: true };
-    triggers.push(reduced
-      ? gsap.fromTo(items, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, stagger: 0.05, scrollTrigger })
-      : gsap.from(items, { y: 12, autoAlpha: 0, duration: 0.6, ease: 'curtain', stagger: 0.08, scrollTrigger }));
+    const tween = reduced
+      ? gsap.fromTo(items, { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.05, scrollTrigger })
+      : gsap.from(items, { y: 12, opacity: 0, duration: 0.6, ease: 'curtain', stagger: 0.08, scrollTrigger });
+    triggers.push(tween);
+    const onFocus = () => { if (tween.progress() < 1) tween.progress(1); };
+    group.addEventListener('focusin', onFocus);
+    focusers.push(() => group.removeEventListener('focusin', onFocus));
   }
 
   return () => {
     clearTimeout(refreshTimer);
     splits.forEach((s) => s.revert());
     triggers.forEach((t) => { t.scrollTrigger?.kill(); t.kill(); });
+    focusers.forEach((f) => f());
   };
 }

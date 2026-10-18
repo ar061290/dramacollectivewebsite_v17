@@ -2,8 +2,9 @@
 // src/pages/writers.js). Each card is a headshot over a name (.member, .member__card,
 // .member__photo; src/styles/pages.css). The headshots are stone until the follow-spot finds them
 // (on touch, the row in the middle of the screen); they lean toward the pointer; a filter
-// rearranges what shows (Flip); choosing a card opens the spotlight panel (<dialog class=
-// "spotlight">), the photo travelling from the card into it.
+// rearranges what shows (Flip). On Core team, choosing a card opens the spotlight panel (<dialog
+// class="spotlight">), the photo travelling from the card into it; a writer's own page opens the
+// same panel from their round photo and their name (src/pages/writer.js).
 import gsap from 'gsap';
 import { Flip } from 'gsap/Flip.js';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
@@ -94,11 +95,13 @@ export function flipFilter({ container, items, buttons, shows, reduced, onChange
  * from the card into it. A card may be a button, or a link (to the person's own page, for visitors
  * without scripts, and for a click that asks for a new tab): an ordinary click opens the panel.
  * @param {HTMLDialogElement} dialog  the <dialog class="spotlight">, with [data-spotlight-photo] and [data-spotlight-close]
- * @param {{ cards: HTMLElement[], reduced: boolean, fill: (card: HTMLElement) => Element[] }} o
- *   fill: puts the card's words into the panel, and returns what rises into place after the photo
+ * @param {{ cards: HTMLElement[], reduced: boolean, fill: (card: HTMLElement) => Element[], photoOf?: (card: HTMLElement) => HTMLElement }} o
+ *   fill: puts the card's words into the panel, and returns what rises into place after the photo;
+ *   photoOf: the photo that travels into the panel (the card's own .member__photo by default). A
+ *   round one (a writer's profile picture) opens out into the panel's square frame on the way.
  * @returns {() => void} cleanup
  */
-export function spotlightPanel(dialog, { cards, reduced, fill }) {
+export function spotlightPanel(dialog, { cards, reduced, fill, photoOf = (card) => card.querySelector('.member__photo') }) {
   const photoSlot = dialog.querySelector('[data-spotlight-photo]');
   const body = dialog.querySelector('.spotlight__body');
   const closeBtn = dialog.querySelector('[data-spotlight-close]');
@@ -106,7 +109,7 @@ export function spotlightPanel(dialog, { cards, reduced, fill }) {
 
   const open = (card) => {
     opener = card;
-    const photo = card.querySelector('.member__photo');
+    const photo = photoOf(card);
     const rise = fill(card);
     const img = photo.querySelector('img');
     // (without a picture, the card's own stand-in: its initials, or the mark on its tile)
@@ -125,11 +128,33 @@ export function spotlightPanel(dialog, { cards, reduced, fill }) {
     Object.assign(flyer.style, { position: 'fixed', left: `${to.left}px`, top: `${to.top}px`, width: `${to.width}px`, height: `${to.height}px`, margin: 0, zIndex: 3, objectFit: 'cover' });
     dialog.append(flyer);
     gsap.set(target, { autoAlpha: 0 });
-    gsap.from(flyer, {
-      x: from.left - to.left, y: from.top - to.top, scaleX: from.width / to.width, scaleY: from.height / to.height,
-      transformOrigin: '0 0', duration: 0.6, ease: 'curtain',
-      onComplete: () => { gsap.set(target, { autoAlpha: 1 }); flyer.remove(); },
-    });
+    const landed = () => { gsap.set(target, { autoAlpha: 1 }); flyer.remove(); };
+    if (getComputedStyle(photo).borderTopLeftRadius !== '0px') {
+      // a round photo (a writer's profile picture) flies as a frame, not by scaling: the frame grows
+      // from the circle to the panel's, its corners opening out to square, and the picture is
+      // cropped to it all the way, from the photo's own crop to the panel's, so it sets off exactly
+      // as the round photo stands and is never squashed (the tile without a photo: its mark grows
+      // from its size there to its size in the panel)
+      const pic = photo.querySelector('img');
+      const mark = flyer.querySelector('.pub-mark');
+      gsap.fromTo(flyer, {
+        left: from.left, top: from.top, width: from.width, height: from.height, borderRadius: '50%',
+        ...(pic ? { objectPosition: getComputedStyle(pic).objectPosition } : {}),
+      }, {
+        left: to.left, top: to.top, width: to.width, height: to.height, borderRadius: '0%',
+        ...(pic ? { objectPosition: getComputedStyle(target).objectPosition } : {}),
+        duration: 0.6, ease: 'curtain', onComplete: landed,
+      });
+      const markFrom = photo.querySelector('.pub-mark'), markTo = target.querySelector('.pub-mark');
+      if (mark && markFrom && markTo) {
+        gsap.fromTo(mark, { width: markFrom.getBoundingClientRect().width }, { width: markTo.getBoundingClientRect().width, duration: 0.6, ease: 'curtain' });
+      }
+    } else {
+      gsap.from(flyer, {
+        x: from.left - to.left, y: from.top - to.top, scaleX: from.width / to.width, scaleY: from.height / to.height,
+        transformOrigin: '0 0', duration: 0.6, ease: 'curtain', onComplete: landed,
+      });
+    }
     gsap.from(dialog.querySelector('.spotlight__inner'), { autoAlpha: 0, duration: 0.25, ease: 'power1.out' });
     gsap.from(rise, { y: 14, autoAlpha: 0, duration: 0.5, ease: 'curtain', stagger: 0.05, delay: 0.2 });
   };

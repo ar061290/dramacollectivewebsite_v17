@@ -1,9 +1,10 @@
 /* Meet our writers' opening (writers.html's [data-writers-open], src/writers/opening.js): one
    screen, held in place while it plays. The marble statue stands in its box among the stars, the
    heading and its line beside it (under it on a phone); the camera comes to the book in its hand,
-   the October cover takes the book's place, comes forward, opens on its spine, and its first page is
-   the writers below (.writers.is-paged: pulled up under the opening, so that when the hold lets go
-   it stands exactly where the page's picture of it stood).
+   whose October cover (drawn on it by the statue) is taken over by the same picture here, which
+   comes forward, opens on its spine, and its first page is the writers below (.writers.is-paged:
+   pulled up under the opening, so that when the hold lets go it stands exactly where the page's
+   picture of it stood).
    The canvas fills the opening; the statue's box (.writers-open__statue) only says where the
    statue stands in it, and holds its still picture. Without scripts the opening is the picture and
    the words; with reduced motion the book stands open under them as a still (.is-still). */
@@ -51,6 +52,9 @@
 /* (the live statue's canvas is the stage's, not the box's: a lost context shows the picture again) */
 .writers-open__stage.is-lost .statue-slot__still { opacity: 1; transition: none; }
 .writers-open__stage.is-lost canvas { visibility: hidden; }
+/* (a live statue drawn while the hold is under way waits out of sight for the scroll to leave the
+   hold's middle, src/writers/opening.js; over the canvas's own fade-in, so that it fades in then) */
+.writers-open__stage.is-waiting canvas { opacity: 0 !important; }
 
 /* the words: beside the statue, in the middle of the screen's height under the top bar */
 .writers-open__words {

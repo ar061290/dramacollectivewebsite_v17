@@ -22,9 +22,14 @@
 // pixel apart; what is drawn closes it exactly (Rig.project).
 //
 // The drop is a spring (src/ui/spring.js, react-spring's model): the star's loop comes down out of
-// the button with one small jump (the only overshoot on the site, asked for by the owner) and goes
-// back up without one. The chain feels only a share of that spring's speed (`carry`): the rest of
-// it the whole earring is carried, so it unfolds and swings as it lands instead of being flung.
+// the button and lands with one small jump (the only overshoot on the site, asked for by the
+// owner). It does not stay: on that jump back up, once the rebound has stopped gathering speed, it
+// carries straight on up into the button at that speed (LIFT), with no settling and no wait, and is
+// gone about 1.3 s after it began to come down. Taken hold of on the way, it stops where it is
+// while held (and comes back out if pulled down); sent up (let go, a second switch, the bar going
+// away), it goes up at once, without a jump. The chain feels only a share of that spring's speed
+// (`carry`): the rest of it the whole earring is carried, so it unfolds and swings as it lands,
+// and is still swinging as it goes up, instead of being flung.
 //
 // It is lit as the site's other pieces are: the theme's stage light (the warm spot from above in
 // the dark, the house lights up in the light), a faint slate rim, a soft room for the metal and the
@@ -70,8 +75,20 @@ export const PHYSICS = {
 };
 
 // The drop, the jump and the return (docs/earrings/SPEC.md §4): ζ 0.52 coming down, 1.0 going up
+// when sent up (and when stopped by a hand on its way up)
 export const DROP = { mass: 1, tension: 180, friction: 14, precision: 0.0005 };
 export const RETURN = { mass: 1, tension: 210, friction: 29, precision: 0.0005 };
+// Going on up from the landing's jump (docs/earrings/SPEC.md §0, point 4): a soft pull, with no
+// friction, toward a point LIFT_TO above where it is out of sight. It takes over when the rebound
+// is at its fastest (about 580 px/s at 540 px high, about 0.4 s after it began to come down),
+// where the drop's spring no longer speeds it up, so there is no hitch; it is too weak to slow it,
+// so the earring keeps that speed and gathers a little (about 130 px/s² at the start, half that at
+// the end) until it is out of sight, about 0.9 s later.
+export const LIFT = { mass: 1, tension: 0.1, friction: 0, precision: 0.0005 };
+const LIFT_TO = 2; // model units
+// model units: held on its way up, how far below the point held the pointer may go before the
+// earring is drawn back out after it (about 10 px at 540 px high)
+const SLACK = 0.03;
 
 // ---- vector and quaternion helpers on flat arrays (no allocation in the loop) ----
 
@@ -409,6 +426,17 @@ export class Rig {
   release() { this.hold.part = -1; }
 
   /**
+   * How far the pointer holding a part is below the point it holds (model units; 0 if it is not
+   * below, or nothing is held).
+   */
+  below() {
+    const i = this.hold.part;
+    if (i < 0) return 0;
+    rot(this.q, 4 * i, this.hold.r[0], this.hold.r[1], this.hold.r[2], T);
+    return Math.max(0, this.x[3 * i + 1] + T[1] - this.hold.t[1]);
+  }
+
+  /**
    * One step of h seconds, the star pinned so that its anchor would be at (ax, ay, az) at rest. `carry` moves the whole
    * earring by that much in y first, without giving it any speed (the share of the drop spring's
    * motion it is carried by rather than pulled).
@@ -658,18 +686,6 @@ export class Rig {
     return { gap: drawn.gap, stretch: drawn.stretch, parts: drawn.parts, solver: { gap: solved.gap, stretch: solved.stretch, parts: solved.parts } };
   }
 
-  /** The kinetic energy (to tell when it has settled). */
-  energy() {
-    let e = 0;
-    for (let i = 0; i < this.n; i++) {
-      const k = 3 * i;
-      e += 0.5 * this.m[i] * (this.v[k] ** 2 + this.v[k + 1] ** 2 + this.v[k + 2] ** 2);
-      rotInv(this.q, 4 * i, this.w[k], this.w[k + 1], this.w[k + 2], T);
-      e += 0.5 * (T[0] ** 2 / this.iI[k] + T[1] ** 2 / this.iI[k + 1] + T[2] ** 2 / this.iI[k + 2]);
-    }
-    return e;
-  }
-
   /** How far each part has turned from its parent (degrees: in the plane, out of it, twist). */
   angles() {
     const out = [];
@@ -713,10 +729,6 @@ const FOV = 20;
 // the canvas of an earring 540 px high on a laptop's 2x screen. A taller earring on a sharper
 // screen is drawn a little softer rather than with more pixels (and GPU memory) than that.
 const MAX_PIXELS = 2.4e6;
-// How still an earring must be to count as settled, for the page's timer (settled()): its kinetic
-// energy in the model's units, below which the big swing is over and only the strands still sway a
-// few degrees. A drop gets there in about 2 s.
-const SETTLED = 1e-3;
 
 const tokenColor = (name, fallback = '#ebd88c') => new THREE.Color(readToken(name) || fallback);
 
@@ -818,8 +830,10 @@ export class Earrings {
         // far its anchor is below that top, and how wide it is
         drop: spec.top - b.min[1], lift: spec.top - spec.anchor[1], width: b.max[0] - b.min[0],
         spring: new Spring({ config: RETURN }),
-        state: 'in', // in, out (coming down or hanging), rising, still
-        landed: false, // out, and come down to its rest at least once since it was brought down
+        // in; out (coming down and landing, or held); lifting (going on up from its landing, on its
+        // own: it can still be taken hold of); rising (sent up); still (reduced motion)
+        state: 'in',
+        landed: false, // out, and come down through its rest at least once since it was brought down
         offset: 0,
         clock: 0, // s of physics since it was last brought down (for testing: ?debug)
       };
@@ -1014,9 +1028,25 @@ export class Earrings {
     e.clock = 0;
     e.state = 'out';
     e.landed = false;
-    e.calm = false;
     e.holder.visible = true;
     this.dirty = true;
+  }
+
+  /** An earring goes on up from its landing's jump, on its own (LIFT), at the speed it has. */
+  _lift(e) {
+    e.spring.to(this._hidden(e) + LIFT_TO, LIFT);
+    e.state = 'lifting';
+  }
+
+  /**
+   * Held on its way up, an earring stays where it was taken hold of; pulled down further than its
+   * strands reach, it comes back out after the pointer, as far as its rest under the button (and is
+   * then out, hanging there, until it is let go).
+   */
+  _pullOut(e) {
+    const s = e.spring, excess = e.rig.below() - SLACK;
+    if (excess > 0) s.to(Math.max(0, Math.min(s.target, e.offset - excess)), RETURN);
+    if (s.target === 0 && e.offset < 0.003) { e.state = 'out'; e.landed = true; }
   }
 
   /** Send an earring back up into the button, from where it is and with the speed it has. */
@@ -1086,17 +1116,15 @@ export class Earrings {
   }
 
   /**
-   * Whether an earring is coming down out of the button (and has not yet reached its rest) or going
-   * back up into it: the page then hides what of it is above the bar's edge, but for a slot.
+   * For each earring coming down out of the button (and not yet down through its rest) or going
+   * back up into it, how far above its rest it is (CSS px), into `out`: the page then hides what of
+   * it is above the bar's edge, but for a slot.
    */
-  get emerging() {
-    return Object.values(this.earrings).some((e) => e.state === 'rising' || (e.state === 'out' && !e.landed));
-  }
-
-  /** For each earring coming down or going up (see emerging), how far above its rest it is (CSS px), into `out`. */
   lifts(out = []) {
     out.length = 0;
-    for (const e of Object.values(this.earrings)) if (e.state === 'rising' || (e.state === 'out' && !e.landed)) out.push(e.offset * this.ppu);
+    for (const e of Object.values(this.earrings)) {
+      if (e.state === 'rising' || e.state === 'lifting' || (e.state === 'out' && !e.landed)) out.push(e.offset * this.ppu);
+    }
     return out;
   }
 
@@ -1122,7 +1150,9 @@ export class Earrings {
 
   /**
    * Advance the physics by dt seconds (in fixed steps), then place the parts. Returns whether any
-   * earring is still out. An earring on its way up is put away once it is out of sight.
+   * earring is still out. An earring is never at rest while it is out: it comes down, lands, and on
+   * its landing's jump goes on up (unless it is held, and then it is held); one on its way up is put
+   * away once it is out of sight.
    */
   step(dt) {
     const t0 = performance.now();
@@ -1136,11 +1166,8 @@ export class Earrings {
       this._sync(e);
       this.dirty = true;
     }
-    // one that has come to rest sleeps until something moves it (the button, the pointer, a drop)
     const moving = [];
-    for (const e of Object.values(this.earrings)) {
-      if (e.state === 'rising' || (e.state === 'out' && (moved || !e.calm || this.held?.earring === e))) moving.push(e);
-    }
+    for (const e of Object.values(this.earrings)) if (e.state === 'out' || e.state === 'lifting' || e.state === 'rising') moving.push(e);
     if (moving.length && !this.reduced) {
       this.acc = Math.min(this.acc + Math.min(dt, 0.1), MAX_STEPS * STEP);
       const carry = 1 - PHYSICS.carry;
@@ -1149,20 +1176,23 @@ export class Earrings {
         this.steps++;
         for (const e of moving) {
           if (e.state === 'in') continue;
-          const before = e.spring.value;
+          const before = e.spring.value, speed = e.spring.velocity;
           e.spring.step(STEP);
           e.clock += STEP;
           e.offset = e.spring.value;
           e.rig.step(STEP, this.anchor.x, this._ay(e) + e.offset, this.anchor.z, (e.offset - before) * carry);
-          if (e.state === 'out' && e.offset <= 0) e.landed = true;
-          if (e.state === 'rising' && e.offset >= this._hidden(e)) this.hide(e.name);
+          const held = this.held?.earring === e;
+          if (e.state === 'out' && !e.landed && e.offset <= 0 && e.spring.velocity < 0) e.landed = true;
+          // landed, it jumps back up, and once that jump has stopped gathering speed it goes on up
+          if (e.state === 'out' && e.landed && !held && e.spring.velocity > 0 && e.spring.velocity <= speed) this._lift(e);
+          else if (e.state === 'lifting' && held) this._pullOut(e);
+          if ((e.state === 'lifting' || e.state === 'rising') && e.offset >= this._hidden(e)) this.hide(e.name);
         }
       }
       for (const e of moving) {
         if (e.state === 'in') continue;
         e.rig.project();
         this._sync(e);
-        e.calm = e.state === 'out' && e.spring.resting && this.held?.earring !== e && e.rig.energy() < 1e-7;
       }
       this.dirty = true;
     } else {
@@ -1209,19 +1239,24 @@ export class Earrings {
   /** The part of the named earring under a point on the screen, if any: { earring, part, point }. */
   pick(cx, cy, name) {
     const e = this.earrings[name];
-    if (!e || e.state !== 'out') return null;
+    if (!e || (e.state !== 'out' && e.state !== 'lifting')) return null;
     this._rayAt(cx, cy);
     const hit = this.ray.intersectObjects(e.meshes, false)[0];
     if (!hit) return null;
     return { earring: e, part: e.meshes.indexOf(hit.object), point: hit.point.clone() };
   }
 
-  /** Take hold of a part where the pointer met it. */
+  /**
+   * Take hold of a part where the pointer met it. On its way up, the earring stops there (with the
+   * give of the return's spring, about 15 px); on its way down, it comes on down to its rest under
+   * the button, and from now on is drawn whole.
+   */
   grab(hit) {
-    this.held = { earring: hit.earring, part: hit.part, z: hit.point.z };
-    hit.earring.calm = false;
-    hit.earring.landed = true; // taken hold of on its way down: from now on it is drawn whole
-    hit.earring.rig.grab(hit.part, hit.point.x, hit.point.y, hit.point.z);
+    const e = hit.earring;
+    this.held = { earring: e, part: hit.part, z: hit.point.z };
+    if (e.state === 'lifting') e.spring.to(e.offset, RETURN);
+    else e.landed = true;
+    e.rig.grab(hit.part, hit.point.x, hit.point.y, hit.point.z);
   }
 
   /** The pointer has moved (CSS px): the held point is pulled toward it, on the plane through it parallel to the screen. */
@@ -1234,7 +1269,7 @@ export class Earrings {
   }
 
   release() {
-    if (this.held) { this.held.earring.rig.release(); this.held.earring.calm = false; }
+    this.held?.earring.rig.release();
     this.held = null;
   }
 
@@ -1280,16 +1315,6 @@ export class Earrings {
       d += `M${(sx - r).toFixed(1)} ${sy.toFixed(1)}a${rs} ${rs} 0 1 0 ${dd} 0a${rs} ${rs} 0 1 0 -${dd} 0Z`;
     }
     return d;
-  }
-
-  /**
-   * Whether the named earring is out, down from its drop and come to rest (nobody holding it): the
-   * page's timer for sending it back up starts then.
-   */
-  settled(name) {
-    const e = this.earrings[name];
-    if (!e || e.state !== 'out' || !e.spring.resting || this.held?.earring === e) return false;
-    return e.calm || e.rig.energy() < SETTLED;
   }
 
   /** The pointer (CSS px), and whether it is there at all: the cursor's lamp follows it. */
