@@ -8,6 +8,11 @@
 // the browser has view transitions, the page is pictured as it was and as it now is, and the new
 // picture is uncovered through the circle (CSS in components.css); elsewhere the colours cross-fade
 // as before while the ring passes over. With reduced motion the theme simply changes.
+//
+// A switch made by the visitor (a click on the button, or a key on it) also brings the new theme's
+// earring down out of the button (`onSwitch`: src/ui/earrings.js); the first sync of the page does
+// not. Inside a view transition it is called as the new page is pictured, so the earring's canvas
+// is part of the new picture.
 
 import { readToken } from '../util/env.js';
 import { themeRing } from './themeRing.js';
@@ -36,7 +41,7 @@ const ringColours = () => ({
   dark: currentTheme() === 'dark',
 });
 
-export function setupTheme({ reduced, onChange }) {
+export function setupTheme({ reduced, onChange, onSwitch }) {
   const root = document.documentElement;
   const button = document.querySelector('[data-theme-toggle]');
   const meta = document.querySelector('meta[name="theme-color"]');
@@ -67,10 +72,15 @@ export function setupTheme({ reduced, onChange }) {
     return { x, y, radius: Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) };
   };
 
+  // the visitor's switch, told on (never let it stop the switch itself)
+  const switched = (theme) => {
+    try { onSwitch?.(theme); } catch (err) { console.warn(err); }
+  };
+
   const set = (theme) => {
     ring?.stop();
     ring = null;
-    if (reduced) { apply(theme, true); return; }
+    if (reduced) { apply(theme, true); switched(theme); return; }
     const { x, y, radius } = circle();
     const from = ringColours();
 
@@ -81,6 +91,7 @@ export function setupTheme({ reduced, onChange }) {
       clearTimeout(fadeTimer);
       fadeTimer = setTimeout(() => root.classList.remove('theme-fade'), 700);
       apply(theme, false);
+      switched(theme);
       const made = themeRing({ x, y, radius, from, to: ringColours() });
       const clock = made.canvas.animate([{ opacity: 1 }, { opacity: 1 }], { duration: DURATION, easing: EASE });
       made.run(() => clock.effect?.getComputedTiming().progress ?? null);
@@ -95,6 +106,7 @@ export function setupTheme({ reduced, onChange }) {
       // canvases already in their new look (the snap is lifted once the picture is taken)
       root.classList.add('theme-snap');
       apply(theme, true);
+      switched(theme);
       made = themeRing({ x, y, radius, from, to: ringColours() });
       ring = made;
     });

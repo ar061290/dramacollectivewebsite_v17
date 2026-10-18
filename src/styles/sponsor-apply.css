@@ -1,58 +1,106 @@
-/* Apply to be a sponsor (sponsor-apply.html, src/pages/sponsor-apply.js): the way back to the tiers,
-   the sponsorship form in its paper box (apply.css) and, for questions, the leads' cards (pages.css,
-   as on Contact us). On wide screens the cards stand beside the form, so who to ask stays in sight
-   while it is filled in; narrower, they follow it. */
+/* Applying, on Become a sponsor (sponsor.html, src/pages/sponsor.js): the sponsorship form in its
+   paper box (apply.css), in the first panel, and, for questions, the leads' cards (pages.css, as on
+   Contact us), beside the tiers.
+   On wide screens the form stands on the right of the first panel, the page's heading and why sponsor
+   on the left, staying in sight while the long form scrolls by; narrower, the form follows the words.
+   The cards stand beside the tickets, on the left, and stay in view as the tickets go by; narrower,
+   they follow the tickets. Their "Copy address" buttons are struck in metal like the
+   tickets' stubs (pages.css) and follow the tickets: stone at rest, the metal of the ticket pointed
+   at or focused, else the metal of the one chosen (sponsor.js sets [data-metal] on the cards). */
 
-/* the way back to the tiers, above the heading: a plain link, its arrow pointing the way it goes */
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  margin: calc(-1 * var(--space-3)) 0 var(--space-4);
-  font-family: var(--font-ui);
-  font-weight: var(--weight-bold);
-  font-size: var(--size-body-s);
-  letter-spacing: .02em;
-}
-.back-link svg { width: 16px; height: 16px; flex: none; transition: transform var(--dur-base) var(--ease-out); }
-.back-link:hover svg { transform: translateX(-3px); }
+/* ---- The first panel: the words, and the form ---- */
 
+/* reached from the tiers' button, and from old links to sponsor-apply.html (#apply): the form's top
+   clear of the top bar */
+#apply { scroll-margin-top: calc(var(--topbar-h) + var(--space-5)); }
+/* (the glide there gives it the focus, so the keyboard carries on from it: no ring round the section) */
+#apply:focus { outline: none; }
 .sponsor-form { margin-top: var(--space-8); }
-/* in line with the heading above it, not centred under it (on phones it keeps the wider margins
-   every form box has there, apply.css) */
+/* in line with the words above it, not centred under them (on phones it keeps the wider margins every
+   form box has there, apply.css) */
 @media (min-width: 768px) {
   .sponsor-form .form-box { margin-inline: 0; }
 }
-.sponsor-contacts .contact-cards { margin-top: var(--space-6); }
-/* under the cards, the way back to the tiers (as the link above the heading) */
-.sponsor-contacts__back { margin-top: var(--space-6); }
-.sponsor-contacts__back svg { width: 16px; height: 16px; flex: none; transition: transform var(--dur-base) var(--ease-out); }
-.sponsor-contacts__back:hover svg { transform: translateX(-3px); }
-
-@media (min-width: 1200px) {
-  /* the page's column is split, the form on the left and the cards on the right; the padding keeps
-     the two inside the site's column, as its width does for every other page's blocks */
-  .page--sponsor-apply .page__main {
+@media (min-width: 1024px) {
+  /* the panel is split, the words on the left and the form on the right, their tops level (from the
+     width at which the tiers split too: the form's column is then about 500px, which Fillout lays out
+     one field to a line) */
+  .sponsor-open {
     display: grid;
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     column-gap: var(--space-7);
     align-items: start;
-    padding-inline: max(var(--stage-gutter), (100% - var(--container)) / 2);
   }
-  .page--sponsor-apply .act-head { grid-column: 1 / -1; }
+  .sponsor-open .sponsor-intro { grid-template-columns: minmax(0, 1fr); }
+  .sponsor-form { margin-top: 0; }
   .sponsor-form .form-box { max-width: none; }
-  /* level with the form's top */
-  .sponsor-contacts { margin-top: var(--space-8); }
-  .sponsor-contacts .contact-cards { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
 }
-/* the form is long: where the screen can hold the two cards and the button under them whole (about
-   610px under the bar), they stay beside it as it scrolls by (the section runs the form's length; its
-   heading goes on up with the page) */
-@media (min-width: 1200px) and (min-height: 720px) {
-  .sponsor-contacts { align-self: stretch; }
-  .sponsor-contacts__stick { position: sticky; top: calc(var(--topbar-h) + var(--space-5)); }
+@media (min-width: 1200px) {
+  .sponsor-open { column-gap: var(--space-8); }
 }
-@media (max-width: 767px) {
-  .sponsor-form { margin-top: var(--space-7); }
+/* The sticky columns (the words beside the form, the cards beside the tickets) stay whole in view: one
+   taller than the screen under the bar sticks by its foot instead, its top going on up (sponsor.js
+   measures its height into --stick-h; without it, it sticks under the bar). */
+@media (min-width: 1024px) {
+  .sponsor-open__text, .tiers-act > .sponsor-contacts {
+    position: sticky;
+    top: min(calc(var(--topbar-h) + var(--space-6)), calc(100vh - var(--stick-h, 0px) - var(--space-6)));
+  }
+}
+
+/* ---- The cards for questions, beside the tiers ---- */
+.sponsor-contacts__title { margin-bottom: var(--space-3); }
+.sponsor-contacts .contact-cards { margin-top: var(--space-6); gap: var(--space-5); }
+/* one above the other in the column beside the tickets (side by side where they stand under the
+   tickets with room for both, pages.css) */
+@media (min-width: 1024px) {
+  .tiers-act > .sponsor-contacts .contact-cards { grid-template-columns: minmax(0, 1fr); }
+}
+/* The keyboard reaches the cards after the tickets and their button, so on wide screens it comes back
+   up the page to them (they are drawn on the left, and their column, pinned at the foot of the tiers,
+   runs on above the screen); the browser then scrolls a link only just into view, under the top bar,
+   or under the bar's buttons that stay when it hides. Whatever the focus is on in the cards lands clear
+   of them, and so does the card it is in, which sponsor.js brings whole into view. (Not the page's
+   scroll-padding: that would add to #apply's margin when the browser itself follows a link to
+   #apply.) */
+.sponsor-contacts :is(.contact-card, a, button) { scroll-margin-top: calc(var(--topbar-h) + var(--space-5)); }
+
+/* ---- "Copy address", struck in metal ----
+   The metal is the tickets' (pages.css: the grain, the streak and the hot spot are the same rules),
+   at rest the statue's stone, flatter and duller (--gloss). The colours are registered, so the
+   gradient itself eases from one metal to the next. The ink is the darkest plum on every metal, at
+   4.5:1 or more against each stop of its gradient (bronze's darkest stop is lifted a little from the
+   stub's for it). */
+@property --metal-1 { syntax: "<color>"; inherits: true; initial-value: #d6d2c8; }
+@property --metal-2 { syntax: "<color>"; inherits: true; initial-value: #bfbaae; }
+@property --metal-3 { syntax: "<color>"; inherits: true; initial-value: #aaa599; }
+@property --metal-4 { syntax: "<color>"; inherits: true; initial-value: #c4bfb4; }
+@property --metal-5 { syntax: "<color>"; inherits: true; initial-value: #9e988b; }
+@property --gloss { syntax: "<number>"; inherits: true; initial-value: 1; }
+.sponsor-contacts .contact-card__copy {
+  --metal-1: #d6d2c8; --metal-2: #bfbaae; --metal-3: #aaa599; --metal-4: #c4bfb4; --metal-5: #9e988b;
+  --gloss: .45;
+  color: var(--plum-900);
+  border-color: var(--metal-5);
+  text-shadow: 0 1px 0 rgb(255 255 255 / .45);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), inset 0 -1px 0 rgb(0 0 0 / .2), var(--shadow-sm);
+  transition:
+    --metal-1 var(--dur-slow) var(--ease-curtain), --metal-2 var(--dur-slow) var(--ease-curtain),
+    --metal-3 var(--dur-slow) var(--ease-curtain), --metal-4 var(--dur-slow) var(--ease-curtain),
+    --metal-5 var(--dur-slow) var(--ease-curtain), --gloss var(--dur-slow) var(--ease-curtain),
+    box-shadow var(--dur-base) var(--ease-curtain);
+}
+.sponsor-contacts:is([data-metal="bronze"], [data-metal="silver"], [data-metal="gold"]) .contact-card__copy { --gloss: 1; }
+.sponsor-contacts[data-metal="bronze"] .contact-card__copy { --metal-1: #f1c9a2; --metal-2: #c58a5a; --metal-3: #b8845c; --metal-4: #d29a69; --metal-5: #b07a4e; }
+.sponsor-contacts[data-metal="silver"] .contact-card__copy { --metal-1: #ffffff; --metal-2: #d6dade; --metal-3: #8f969e; --metal-4: #eceef0; --metal-5: #a3a9b0; }
+.sponsor-contacts[data-metal="gold"] .contact-card__copy { --metal-1: #fff4cc; --metal-2: #f0cf7e; --metal-3: #a98236; --metal-4: #f6dc96; --metal-5: #b8923f; }
+/* pointed at, the metal keeps (the lamp's hot spot is already on it) and the accent rings it, as it
+   rings the outlined buttons; pressed, it sinks */
+.sponsor-contacts .contact-card__copy:hover {
+  color: var(--plum-900);
+  border-color: var(--metal-5);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), inset 0 -1px 0 rgb(0 0 0 / .2), 0 0 0 1px var(--accent);
+}
+.sponsor-contacts .contact-card__copy:active {
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / .28), 0 0 0 1px var(--accent);
 }

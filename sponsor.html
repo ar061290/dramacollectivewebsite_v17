@@ -113,24 +113,42 @@
   <!-- /site:stage -->
 
   <main id="main" class="page__main">
-    <header class="act-head ground" data-mask>
-      <p class="eyebrow">Become a sponsor</p>
-      <h1 class="act-head__title" data-reveal>Partner with the next generation of theatre</h1>
-      <span class="rule" aria-hidden="true"></span>
-      <p class="lead">Your brand. Our stage. A shared journey.</p>
-    </header>
+    <!-- the first panel: why sponsor on the left and, beside it on wide screens, the sponsorship form
+         (the words stay in sight as the long form scrolls by); narrower, the form follows the words -->
+    <div class="sponsor-open">
+      <div class="sponsor-open__text" data-stick>
+        <header class="act-head ground" data-mask>
+          <p class="eyebrow">Become a sponsor</p>
+          <h1 class="act-head__title" data-reveal>Partner with the next generation of theatre</h1>
+          <span class="rule" aria-hidden="true"></span>
+          <p class="lead">Your brand. Our stage. A shared journey.</p>
+        </header>
 
-    <section class="sponsor-intro" aria-label="Why sponsor">
-      <div class="ground" data-mask>
-        <p>Corporate sponsorship today is increasingly about more than visibility. It is about creating meaningful associations with causes that make a difference.</p>
-        <p>Your sponsorship will help create an environment where young people can build these skills, express themselves freely and develop their potential through theatre. By supporting this initiative, your organisation can become a meaningful enabler of youth development and the performing arts.</p>
+        <section class="sponsor-intro" aria-label="Why sponsor">
+          <div class="ground" data-mask>
+            <p>Corporate sponsorship today is increasingly about more than visibility. It is about creating meaningful associations with causes that make a difference.</p>
+            <p>Your sponsorship will help create an environment where young people can build these skills, express themselves freely and develop their potential through theatre. By supporting this initiative, your organisation can become a meaningful enabler of youth development and the performing arts.</p>
+          </div>
+        </section>
       </div>
-    </section>
+
+      <!-- applying: the sponsorship form, Fillout's, in its paper box (src/site/fillout.js loads it once
+           the curtain has parted). The tiers' button glides up to it, and old links to
+           sponsor-apply.html land on it (#apply). Nothing that holds the form is a [data-mask] box: the
+           pointer's events go to the form's own page inside it, so a star the page drew would be left
+           standing at its edge. The box is [data-quiet] instead: no constellation is drawn under it. -->
+      <section class="sponsor-form" id="apply" aria-labelledby="apply-title">
+        <h2 class="sr-only" id="apply-title">Apply to be a sponsor</h2>
+        <div class="form-box" data-form data-quiet>
+          <div style="width:100%;height:500px;" data-fillout-id="buj8cevj4mus" data-fillout-embed-type="standard" data-fillout-inherit-parameters data-fillout-dynamic-resize></div>
+          <p class="form-box__status" role="status">Loading the form…</p>
+          <p class="form-box__alt">Form not showing? <a href="https://forms.fillout.com/t/buj8cevj4mus" target="_blank" rel="noopener">Open it on Fillout</a>.</p>
+          <noscript><p class="form-box__noscript"><a href="https://forms.fillout.com/t/buj8cevj4mus" target="_blank" rel="noopener">Open the sponsorship form on Fillout</a>.</p></noscript>
+        </div>
+      </section>
+    </div>
 
     <section class="act tiers-act" aria-labelledby="tiers-title">
-      <div class="medallion" data-medallion>
-        <span class="medallion__still" aria-hidden="true"></span>
-      </div>
       <div id="tiers">
         <div class="tiers-head ground" data-mask>
           <p class="eyebrow">Sponsorship opportunities</p>
@@ -209,8 +227,38 @@
           </li>
         </ul>
         <p class="fine tiers-note">All tiers are negotiable.</p>
-        <!-- the way to the sponsorship form (sponsor-apply.html, which links back here to #tiers) -->
-        <a class="btn btn--inverse btn--lg tiers-apply" href="./sponsor-apply.html">Apply to be a sponsor</a>
+        <!-- the way up to the sponsorship form, beside the words at the top of this page (#apply) -->
+        <a class="btn btn--inverse btn--lg tiers-apply" href="#apply">Apply to be a sponsor</a>
+      </div>
+
+      <!-- for questions, beside the tickets (after them on narrower screens, once the tiers have been
+           read): the President's and Executive President's cards, the same as on Contact us (the list is written by tools/pages/build.mjs;
+           src/sections/contactCards.js lights them). Their "Copy address" buttons are struck in
+           metal and follow the tickets (sponsor.js sets data-metal): stone at rest, the metal of the
+           ticket pointed at or focused, else the metal of the one chosen. -->
+      <div class="contacts sponsor-contacts" data-contacts data-metal="stone" data-stick>
+        <div class="ground" data-mask>
+          <h3 class="act__title sponsor-contacts__title" data-reveal>Questions about sponsoring?</h3>
+          <p>Write to the Collective's President or Executive President.</p>
+        </div>
+        <!-- site:contacts -->
+        <ul class="contact-cards" data-spot>
+          <li class="contact-card">
+            <p class="eyebrow">President</p>
+            <p class="contact-card__name">Aadi Ramnani</p>
+            <a class="contact-card__email" href="mailto:aadir6405@students.chirec.ac.in">aadir6405@<wbr>students.chirec.ac.in</a>
+            <button class="btn btn--secondary btn--sm contact-card__copy" type="button" data-copy="aadir6405@students.chirec.ac.in">Copy address</button>
+            <span class="contact-card__spark" data-spark aria-hidden="true"></span>
+          </li>
+          <li class="contact-card">
+            <p class="eyebrow">Executive President</p>
+            <p class="contact-card__name">Aripra Sharma</p>
+            <a class="contact-card__email" href="mailto:aripras111460@students.chirec.ac.in">aripras111460@<wbr>students.chirec.ac.in</a>
+            <button class="btn btn--secondary btn--sm contact-card__copy" type="button" data-copy="aripras111460@students.chirec.ac.in">Copy address</button>
+            <span class="contact-card__spark" data-spark aria-hidden="true"></span>
+          </li>
+        </ul>
+        <!-- /site:contacts -->
       </div>
     </section>
 
@@ -242,7 +290,6 @@
 
     <section class="act coda ground" aria-label="Closing" data-mask>
       <p>Because every great performance begins with someone believing in the performer.</p>
-      <a class="btn btn--inverse btn--lg" href="./sponsor-apply.html">Apply to be a sponsor</a>
     </section>
   </main>
 

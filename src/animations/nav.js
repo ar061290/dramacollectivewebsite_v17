@@ -146,7 +146,8 @@ export function setupNav({ reduced }) {
     gsap.to(window, {
       duration: reduced ? 0 : 1.2,
       ease: 'power2.inOut',
-      scrollTo: { y: target, autoKill: true },
+      // (landing where the browser's own jump would: clear of the bar by the target's scroll-margin)
+      scrollTo: { y: target, offsetY: parseFloat(getComputedStyle(target).scrollMarginTop) || 0, autoKill: true },
       onComplete: () => {
         if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
         target.focus({ preventScroll: true });

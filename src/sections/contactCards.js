@@ -1,4 +1,4 @@
-// The leads' contact cards, on Contact us and on Apply to be a sponsor (the list is written into both
+// The leads' contact cards, on Contact us and on Become a sponsor (the list is written into both
 // pages by tools/pages/build.mjs, between <!-- site:contacts --> markers): the follow-spot lights
 // them, each leans toward the pointer, and "Copy address" puts the email on the clipboard and a
 // spark goes off on the card.

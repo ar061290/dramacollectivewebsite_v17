@@ -1,0 +1,33 @@
+/* ---- The earrings on the theme switch (src/ui/earrings.js, src/scene/earrings.js) ----
+   One small canvas under the button, over the top bar and under the curtain between pages; its top
+   edge is where the earring comes out of the button. The script places it (a transform) and sizes
+   it. It never takes the pointer: the zone over the earring does. During the theme's switch the
+   canvas is pictured on its own, live, above both pictures of the page (as the ring is,
+   components.css), so the earring is not clipped by the widening circle. */
+.earring-canvas {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: calc(var(--z-veil) - 2);
+  pointer-events: none;
+  view-transition-name: dc-earring;
+}
+::view-transition-group(dc-earring), ::view-transition-new(dc-earring) { animation: none; }
+::view-transition-old(dc-earring) { display: none; }
+
+/* the zone over the earring that takes the pointer: a finger on it does not scroll the page; over
+   the earring itself the cursor takes the star's grab form, and its grabbing form while held
+   (layout.css: .is-grabbing) */
+.earring-grab {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: calc(var(--z-veil) - 2);
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.earring-grab[hidden] { display: none; }
+.has-cursor .earring-grab.is-over { cursor: var(--cursor-star-grab); }

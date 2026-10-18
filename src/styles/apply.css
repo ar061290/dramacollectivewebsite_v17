@@ -1,5 +1,6 @@
-/* The two application pages (apply.html, sponsor-apply.html; src/pages/apply.js,
-   src/pages/sponsor-apply.js) and the Fillout forms they hold (src/site/fillout.js). */
+/* The application forms: Apply now (apply.html, src/pages/apply.js) and the sponsorship form in the
+   first panel of Become a sponsor (sponsor.html, src/pages/sponsor.js), Fillout's
+   (src/site/fillout.js). */
 
 /* ---- a Fillout form in its box (src/site/fillout.js) ----
    The form itself is Fillout's, on a light page of its own, in an iframe this page cannot style; it

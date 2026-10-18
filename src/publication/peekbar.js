@@ -8,6 +8,9 @@
 // stays. A click or a tap on one of its buttons leaves the focus there, but only the keyboard's focus
 // holds the bar or sends it away. With a mouse or a pen, the top edge is a strip of the page's own
 // (publication.css, .peek-edge), so a frame under it cannot keep the pointer from calling the bar.
+// Anything hanging from the bar that the pointer may go to holds it down too ([data-holds-bar]: the
+// earring on the theme switch, src/ui/earrings.js), found by where it is rather than by what is
+// under the pointer, since during the theme's switch the page is only a picture.
 const EDGE = 56; // px from the top of the screen that call the bar down
 const LINGER = 450; // ms the bar stays after the pointer has left it
 
@@ -41,9 +44,13 @@ export function setupPeekBar() {
   // page (the newsletter's form) lets the pointer through meanwhile (publication.css, .is-held), so
   // the page sees it leave
   const hold = (on) => { pointerIn = on; bar.classList.toggle('is-held', on); };
+  const onHanger = (e) => [...document.querySelectorAll('[data-holds-bar]:not([hidden])')].some((el) => {
+    const r = el.getBoundingClientRect();
+    return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+  });
   const onMove = (e) => {
     if (e.pointerType === 'touch') return;
-    hold(e.clientY <= EDGE || !!e.target.closest?.('[data-topbar]'));
+    hold(e.clientY <= EDGE || !!e.target.closest?.('[data-topbar], [data-holds-bar]') || onHanger(e));
     if (pointerIn) show();
     // once, as the pointer leaves it: moving on over the page does not keep it down
     else if (bar.classList.contains('is-peek') && !timer) hideSoon();

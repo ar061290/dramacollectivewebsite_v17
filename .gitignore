@@ -6,3 +6,7 @@ assets/models/*.source.glb
 Thumbs.db
 # the masks' source model (tools/masks/build-masks.mjs); the site uses assets/models/masks.glb
 tools/masks/source/
+# the earrings' source models (tools/earrings/build-earrings.mjs); the site uses assets/models/earrings.glb
+tools/earrings/source/
+# the writers statue's source model (tools/writers/build-statue.mjs); the site uses assets/models/writer-statue.glb
+tools/writers/source/

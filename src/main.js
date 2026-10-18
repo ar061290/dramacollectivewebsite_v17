@@ -1,5 +1,5 @@
-// Boot: loader, stage (lazy), constellation sky, scroll scenes, reveals, nav, cursor, theme,
-// music, intro.
+// Boot: loader, stage (lazy), constellation sky, scroll scenes, reveals, nav, cursor, theme (and
+// the earrings on its switch), music, intro.
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
 import { SplitText } from 'gsap/SplitText.js';
@@ -21,6 +21,7 @@ import { setupDock } from './sections/dock.js';
 import { setupPillars } from './sections/pillars.js';
 import { setupTheme, skyTheme, currentTheme } from './ui/theme.js';
 import { setupMusic } from './ui/music.js';
+import { setupEarrings } from './ui/earrings.js';
 import { tilt } from './site/tilt.js';
 import { setupFlyIn } from './site/flyin.js';
 
@@ -49,10 +50,16 @@ async function boot() {
   cleanups.push(transitions.dispose);
   transitions.open();
 
-  // the theme and music switches work from the first moment, before the stage has loaded
+  // the theme and music switches work from the first moment, before the stage has loaded; the
+  // earrings on the theme switch wait for the curtain (their model is fetched once the page is idle)
   cleanups.push(setupMusic({ reduced }));
+  let curtainUp;
+  const opened = new Promise((r) => { curtainUp = r; });
+  const earrings = setupEarrings({ reduced, opened });
+  cleanups.push(earrings.cleanup);
   cleanups.push(setupTheme({
     reduced,
+    onSwitch: earrings.drop,
     onChange: (theme, { instant = false } = {}) => {
       sky?.setTheme(skyTheme());
       if (!stage) return;
@@ -133,6 +140,7 @@ async function boot() {
   document.documentElement.classList.remove('is-loading');
   window.scrollTo(0, 0);
   mark('curtain up');
+  curtainUp();
   if (new URLSearchParams(location.search).has('debug')) console.info('start:', marks.map(([n, t]) => `${n} ${t} ms`).join(' · '));
 
   if (stage) {

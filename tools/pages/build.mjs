@@ -7,7 +7,7 @@
 //   <!-- site:links -->   index.html only: the footer's columns, as the last act (they dock into the
 //                         footer as it rises)
 //   <!-- site:team -->    team.html only: the core team's cards, from content/team.json
-//   <!-- site:contacts --> contact.html and sponsor-apply.html: who to write to (CONTACTS)
+//   <!-- site:contacts --> contact.html and sponsor.html (beside the tiers): who to write to (CONTACTS)
 //   <!-- site:pubbanner --> the publication and its reading pages: the banner along the bottom
 // It also writes the publication's reading pages whole (READING, below): each piece that is out
 // (piece-<slug>.html, from src/publication/pieces-data.js and the piece's text in
@@ -43,8 +43,6 @@ const HOME = { key: 'home', href: './index.html', label: 'Home' };
 const CTA = { key: 'sponsor', href: './sponsor.html', label: 'Become a sponsor' };
 // Apply now: the roles and the Collective's application form (a Fillout form)
 const APPLY = { key: 'apply', href: './apply.html', label: 'Apply now' };
-// Apply to be a sponsor: the sponsorship application form, reached from Become a sponsor
-export const SPONSOR_APPLY = { key: 'sponsor-apply', href: './sponsor-apply.html', label: 'Apply to be a sponsor' };
 export const NAV = [ABOUT, TEAM, ...OUTPUTS, CONTACT];
 
 // The Collective's Instagram. TODO: the handle (it was not given; this opens Instagram itself).
@@ -69,7 +67,6 @@ export const PAGES = [
   ...NAV.map((n) => ({ file: n.href.slice(2), key: n.key })),
   { file: 'sponsor.html', key: 'sponsor' },
   { file: APPLY.href.slice(2), key: APPLY.key },
-  { file: SPONSOR_APPLY.href.slice(2), key: SPONSOR_APPLY.key },
   // the publication's own pages, reached from it and not from the menu: its reading pages (each
   // piece, the editor's note, all the pieces; written whole by this file, READING below), and,
   // coming soon for now, our writers, the writer application and the newsletter
@@ -291,16 +288,17 @@ ${cards}
       </ul>`;
 }
 
-function contacts() {
+// (`pad` is the indent of the markers the list is written between: its lines are indented under it)
+function contacts(pad = '      ') {
   return `<ul class="contact-cards" data-spot>
-${CONTACTS.map((c) => `        <li class="contact-card">
-          <p class="eyebrow">${esc(c.role)}</p>
-          <p class="contact-card__name">${esc(c.name)}</p>
-          <a class="contact-card__email" href="mailto:${c.email}">${c.email.replace('@', '@<wbr>')}</a>
-          <button class="btn btn--secondary btn--sm contact-card__copy" type="button" data-copy="${c.email}">Copy address</button>
-          <span class="contact-card__spark" data-spark aria-hidden="true"></span>
-        </li>`).join('\n')}
-      </ul>`;
+${CONTACTS.map((c) => `${pad}  <li class="contact-card">
+${pad}    <p class="eyebrow">${esc(c.role)}</p>
+${pad}    <p class="contact-card__name">${esc(c.name)}</p>
+${pad}    <a class="contact-card__email" href="mailto:${c.email}">${c.email.replace('@', '@<wbr>')}</a>
+${pad}    <button class="btn btn--secondary btn--sm contact-card__copy" type="button" data-copy="${c.email}">Copy address</button>
+${pad}    <span class="contact-card__spark" data-spark aria-hidden="true"></span>
+${pad}  </li>`).join('\n')}
+${pad}</ul>`;
 }
 
 // ---- The publication: its banner and its reading pages ----
@@ -507,7 +505,8 @@ export async function build(only = []) {
     out = fill(out, 'footer', footer(key));
     if (key === 'home') out = fill(out, 'links', pageLinks('home', '        ', 'curtain__links--dock', true), '        ');
     if (key === 'team') out = fill(out, 'team', team(), '      ');
-    if (key === 'contact' || key === SPONSOR_APPLY.key) out = fill(out, 'contacts', contacts(), '      ');
+    if (key === 'contact') out = fill(out, 'contacts', contacts('      '), '      ');
+    if (key === 'sponsor') out = fill(out, 'contacts', contacts('        '), '        ');
     out = out.replace(/(<a [^>]*data-instagram[^>]*href=")[^"]*(")/g, `$1${INSTAGRAM.href}$2`);
     if (crlf) out = out.replace(/\n/g, '\r\n');
     if (out !== src) { writeFileSync(path, out); console.log(`wrote ${file}`); }

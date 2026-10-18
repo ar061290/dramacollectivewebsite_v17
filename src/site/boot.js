@@ -1,6 +1,6 @@
 // Boot for the inner pages (the home page has its own, src/main.js): the curtain between pages,
-// theme, music, the star sky, the top bar, the cursor, text reveals, the nav mark, the footer's mark
-// and the bar's two buttons flying to their spots on the page. A page passes `setup(ctx)` for its own
+// theme, music, the star sky, the top bar, the cursor, text reveals, the nav mark, the footer's mark,
+// the bar's two buttons flying to their spots on the page, and the earrings on the theme switch. A page passes `setup(ctx)` for its own
 // pieces; the curtain parts once they are in place.
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
@@ -16,6 +16,7 @@ import { setupBrandMark } from '../animations/brand.js';
 import { setupReveals } from '../sections/reveals.js';
 import { setupTheme, skyTheme } from '../ui/theme.js';
 import { setupMusic } from '../ui/music.js';
+import { setupEarrings } from '../ui/earrings.js';
 import { tilt } from './tilt.js';
 import { setupFlyIn } from './flyin.js';
 
@@ -34,8 +35,15 @@ export async function bootPage(setup) {
 
   let sky = null;
   cleanups.push(setupMusic({ reduced }));
+  // pages hold their heavy work (three.js) until the curtain has parted, so it parts smoothly
+  let parted;
+  const opened = new Promise((r) => { parted = r; });
+  // the earrings that come down from the theme switch (their model is fetched once the page is idle)
+  const earrings = setupEarrings({ reduced, opened });
+  cleanups.push(earrings.cleanup);
   cleanups.push(setupTheme({
     reduced,
+    onSwitch: earrings.drop,
     // `instant`: the new theme is being captured for the circle that reveals it (src/ui/theme.js),
     // so every canvas must take its final look at once, in this frame, rather than ease into it. The
     // sky's colours change at once already (its running loop paints them before the capture); the
@@ -58,9 +66,6 @@ export async function bootPage(setup) {
   // the type has to be in before lines are split (never wait on it for long: the curtain is closed)
   await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 450))]);
   cleanups.push(setupReveals({ reduced }));
-  // pages hold their heavy work (three.js) until the curtain has parted, so it parts smoothly
-  let parted;
-  const opened = new Promise((r) => { parted = r; });
   const ctx = { reduced, sky, onTheme: (fn) => themeListeners.push(fn), opened };
   try {
     const own = setup?.(ctx);

@@ -616,30 +616,18 @@
 .soon-about p { margin-bottom: var(--space-4); }
 .soon-about__coda { font-family: var(--font-display); font-size: var(--size-display-m); line-height: var(--lh-title); color: var(--fg-strong); margin: 0; }
 
-/* ---- Become a sponsor ---- */
+/* ---- Become a sponsor ----
+   (The first panel, with the form beside the words, and the cards for questions beside the tiers,
+   with their metal buttons, are in sponsor-apply.css.) */
 .sponsor-intro { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--space-7); align-items: end; margin-top: var(--space-8); }
 .sponsor-intro p:last-child { margin-bottom: 0; }
+/* the tickets on the right and, on the left, the cards for questions, which stay in view as the
+   tickets go by (sponsor-apply.css). Narrower, the cards follow the tickets. */
 .tiers-act { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--space-7); align-items: start; }
-/* reached from the sponsorship form's page (sponsor-apply.html links to #tiers): clear of the top bar */
+.tiers-act > #tiers { grid-column: 2; grid-row: 1; }
+.tiers-act > .sponsor-contacts { grid-column: 1; grid-row: 1; }
+/* (a link to #tiers lands clear of the top bar) */
 #tiers { scroll-margin-top: calc(var(--topbar-h) + var(--space-5)); }
-.medallion {
-  position: sticky;
-  top: calc(var(--topbar-h) + var(--space-6));
-  aspect-ratio: 1;
-  width: 100%;
-  touch-action: pan-y;
-  cursor: grab;
-}
-.medallion:active { cursor: grabbing; }
-.medallion canvas { display: block; width: 100%; height: 100%; }
-.medallion__still {
-  position: absolute;
-  inset: 12%;
-  background: linear-gradient(to bottom, var(--metal-hi, var(--gold-300)), var(--metal-lo, var(--gold-700)));
-  -webkit-mask: url("../../assets/brand/mark.svg") center / contain no-repeat;
-  mask: url("../../assets/brand/mark.svg") center / contain no-repeat;
-}
-.medallion.is-live .medallion__still { display: none; }
 .tiers-head { margin-bottom: var(--space-5); }
 .tickets { list-style: none; display: grid; gap: var(--space-5); }
 .ticket { position: relative; display: block; cursor: pointer; }
@@ -656,26 +644,33 @@
   mask: radial-gradient(circle 11px at 33.33% 0, transparent 98%, #000) top / 100% 51% no-repeat, radial-gradient(circle 11px at 33.33% 100%, transparent 98%, #000) bottom / 100% 51% no-repeat;
   transition: background-color var(--dur-base) var(--ease-curtain), border-color var(--dur-base) var(--ease-curtain), transform var(--dur-base) var(--ease-out);
 }
-/* the stub is struck in the tier's metal, always: brushed grain, a streak of reflected light across
-   it and a hot spot, both following the pointer (sponsor.js sets --mx, --my, --band, --spec); the
-   star, the tier's name and metal, and the price are engraved into it */
+/* the stub is struck in the tier's metal, always (below); the star, the tier's name and metal, and
+   the price are engraved into it */
 .ticket__stub {
-  --mx: 18%; --my: 12%; --band: 30%; --spec: .45;
-  position: relative;
   display: grid;
   align-content: space-between;
   gap: var(--space-4);
   padding: var(--space-5);
   border-right: 2px dashed rgb(42 13 28 / .35);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .55), inset 0 -1px 0 rgb(0 0 0 / .25), inset 1px 0 0 rgb(255 255 255 / .25);
+}
+/* struck metal, the tickets' stubs' and, beside the tiers, the cards' "Copy address" buttons' (their
+   own metals and look are in sponsor-apply.css): brushed grain over the metal's gradient
+   (--metal-1..5), a streak of reflected light across it and a hot spot, both following the pointer
+   (sponsor.js sets --mx, --my, --band, --spec; --streak, while a streak sweeps across a button;
+   --gloss dulls the shine, for the buttons' stone) */
+.ticket__stub, .sponsor-contacts .contact-card__copy {
+  --mx: 18%; --my: 12%; --band: 30%; --spec: .45;
+  position: relative;
   isolation: isolate;
   overflow: hidden;
   background:
     repeating-linear-gradient(0deg, rgb(255 255 255 / .07) 0 1px, rgb(0 0 0 / .045) 1px 2px, rgb(255 255 255 / 0) 2px 3px),
     linear-gradient(160deg, var(--metal-1), var(--metal-2) 28%, var(--metal-3) 52%, var(--metal-4) 74%, var(--metal-5));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .55), inset 0 -1px 0 rgb(0 0 0 / .25), inset 1px 0 0 rgb(255 255 255 / .25);
 }
 /* the reflection: a soft streak across the grain, and the lamp's hot spot */
-.ticket__stub::before, .ticket__stub::after {
+.ticket__stub::before, .ticket__stub::after,
+.sponsor-contacts .contact-card__copy::before, .sponsor-contacts .contact-card__copy::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -683,11 +678,11 @@
   pointer-events: none;
   mix-blend-mode: screen;
 }
-.ticket__stub::before {
-  background: linear-gradient(105deg, rgb(255 255 255 / 0) calc(var(--band) - 22%), rgb(255 255 255 / calc(var(--spec) * .55)) var(--band), rgb(255 255 255 / 0) calc(var(--band) + 22%));
+.ticket__stub::before, .sponsor-contacts .contact-card__copy::before {
+  background: linear-gradient(105deg, rgb(255 255 255 / 0) calc(var(--band) - 22%), rgb(255 255 255 / calc(var(--streak, var(--spec)) * .55 * var(--gloss, 1))) var(--band), rgb(255 255 255 / 0) calc(var(--band) + 22%));
 }
-.ticket__stub::after {
-  background: radial-gradient(circle at var(--mx) var(--my), rgb(255 255 255 / calc(var(--spec) * .85)) 0, rgb(255 250 235 / calc(var(--spec) * .3)) 18%, rgb(255 255 255 / 0) 46%);
+.ticket__stub::after, .sponsor-contacts .contact-card__copy::after {
+  background: radial-gradient(circle at var(--mx) var(--my), rgb(255 255 255 / calc(var(--spec) * .85 * var(--gloss, 1))) 0, rgb(255 250 235 / calc(var(--spec) * .3 * var(--gloss, 1))) 18%, rgb(255 255 255 / 0) 46%);
 }
 .ticket__metal { width: 14px; height: 14px; background: var(--metal-ink); clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); filter: drop-shadow(0 1px 0 rgb(255 255 255 / .5)); }
 /* the tier's name in the display face, and under it, smaller, its metal (the name alone would not
@@ -708,7 +703,7 @@
 .ticket input:checked + .ticket__body { background: var(--card-feature-bg); border-color: var(--border-gold); box-shadow: var(--shadow-md); }
 .ticket input:checked + .ticket__body .ticket__stub { border-right-color: var(--border-gold); }
 .ticket input:focus-visible + .ticket__body { outline: 2px solid var(--focus); outline-offset: 3px; }
-/* the three metals, matched to the medallion's finishes (src/scene/medallion.js) */
+/* the three metals (the cards' buttons take the same, sponsor-apply.css) */
 /* bronze is the darkest metal: its middle band, which the name and the tier line sit on, is kept light
    enough for the ink to be read on it (4.5:1), its depth left to the edges */
 .ticket--bronze { --metal-1: #f1c9a2; --metal-2: #c58a5a; --metal-3: #b8845c; --metal-4: #d29a69; --metal-5: #9a6238; --metal-ink: #3a1f0e; }
@@ -751,8 +746,8 @@
 /* ---- Tablet and phone ---- */
 @media (max-width: 1023px) {
   .courage, .sponsor-intro, .soon-about, .funds-act, .event, .pub, .planner-act { grid-template-columns: minmax(0, 1fr); }
-  .tiers-act { grid-template-columns: minmax(0, 1fr); }
-  .medallion { position: relative; top: 0; max-width: 420px; justify-self: center; }
+  .tiers-act { grid-template-columns: minmax(0, 1fr); row-gap: var(--space-9); }
+  .tiers-act > #tiers, .tiers-act > .sponsor-contacts { grid-column: auto; grid-row: auto; }
   .book { max-width: 400px; }
 }
 @media (max-width: 767px) {

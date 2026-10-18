@@ -150,6 +150,17 @@
       ]
     },
     {
+      "id": "prisha",
+      "name": "Prisha Agarwal",
+      "role": "Head of Marketing",
+      "dept": "marketing",
+      "photo": "prisha",
+      "intro": [
+        "Prisha (n): a walking plot twist with absolutely no intention of being predictable.",
+        "Hi, I’m Prisha! Marketing Head, professional yapper, and firm believer that life is far too short to be boring. Between my love for creative ideas, turning random thoughts into actual projects, and somehow always finding myself doing something new, I’d say boredom and I aren’t exactly on speaking terms. I’m here for the people, the creativity, the madness, and everything that happens when a bunch of passionate people get together and make something happen. Do I always know what I’m doing? Not necessarily. Am I going to do it anyway? Absolutely. After all, what’s life without a little chaos and a good story to tell afterwards?"
+      ]
+    },
+    {
       "id": "samaara",
       "name": "Samaara Gadra Rao",
       "role": "Head of Marketing",
