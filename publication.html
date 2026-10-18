@@ -31,6 +31,9 @@
     document.documentElement.classList.add('has-js');
   </script>
   <!-- /site:head -->
+  <!-- the statue's still picture, the opening's largest image: asked for before the stylesheets that
+       show it are in (the dark one: a first visit opens in the dark theme) -->
+  <link rel="preload" as="image" href="./assets/thinker/thinker-dark.webp" fetchpriority="high">
 </head>
 <body class="page page--publication">
   <!-- site:header -->
@@ -112,43 +115,319 @@
   </div>
   <!-- /site:stage -->
 
-  <main id="main" class="page__main">
-    <header class="act-head ground" data-mask>
-      <p class="eyebrow">The publication</p>
-      <h1 class="act-head__title" data-reveal>A drama publication of our own</h1>
-      <span class="rule" aria-hidden="true"></span>
-      <p class="lead">We have launched our own drama-specific publication.</p>
-    </header>
-
-    <section class="pub" aria-labelledby="contents-title">
-      <div class="book" data-book>
-        <div class="book__page">
-          <p class="eyebrow" id="contents-title">In its pages</p>
-          <ul class="contents" data-spot data-contents>
-            <li>Articles on theatre history</li>
-            <li>Reflections from members</li>
-            <li>Role descriptions</li>
-            <li>Interviews</li>
-            <li>Updates on the Collective</li>
-            <li>Original written and creative work by students</li>
-          </ul>
+  <main id="main" class="page__main page__main--pub">
+    <!-- 1. The opening: at first only the statue, on the right, among the stars; as the page scrolls
+         he moves to the left and the words come out of the mask (src/publication/hero.js) -->
+    <section class="pub-hero" data-pub-hero aria-labelledby="pub-hero-title">
+      <!-- @hero -->
+      <div class="pub-hero__stage">
+        <!-- the rail is the stage's width less the statue's, so moving it by its own width carries
+             him from the left edge to the right one exactly (he starts on the right) -->
+        <div class="pub-hero__rail">
+          <figure class="statue-slot pub-hero__statue" role="img" aria-label="A dark metal statue after Rodin's The Thinker: a seated man studying the tragedy mask he holds in his hand">
+            <span class="statue-slot__still" aria-hidden="true"></span>
+          </figure>
         </div>
-        <div class="book__cover" data-book-cover aria-hidden="true">
-          <div class="book__face">
-            <p class="eyebrow">The Drama Collective</p>
-            <span class="book__mark"></span>
-            <p class="book__title">The publication</p>
-          </div>
-          <div class="book__back"></div>
+        <div class="pub-hero__words">
+          <h1 class="pub-hero__title" id="pub-hero-title" data-hero-words>Meet India’s first independent, <span class="pub-hero__nobr">student-run</span> theatre publication</h1>
+          <span class="rule pub-hero__rule" aria-hidden="true"></span>
+          <p class="pub-hero__from" data-hero-words>…from the #1 International School in Hyderabad and Telangana</p>
         </div>
       </div>
-
-      <div class="pub__copy ground" data-mask>
-        <p>It carries articles on theatre history, reflections from members, role descriptions, interviews, updates on the Collective, and original written or creative work by students.</p>
-        <p>Led by Gautam, <a href="./team.html">Head of Publication</a>.</p>
-        <button class="btn btn--secondary book__toggle" type="button" aria-pressed="false" data-book-toggle>Open the cover</button>
-      </div>
+      <!-- /@hero -->
     </section>
+
+    <!-- 2. This month: the October issue, the editor's note, our writers (src/publication/collection.js) -->
+    <section class="pub-collection" data-pub-collection aria-labelledby="collection-title">
+      <!-- @collection -->
+      <div class="pub-wrap">
+        <header class="pub-collection__head">
+          <h2 class="pub-label pub-collection__title" id="collection-title">This month</h2>
+          <p class="pub-label pub-collection__issue">The October 2026 issue</p>
+        </header>
+        <div class="pub-collection__grid">
+          <!-- Each card is one link (its title's, stretched over the card). Each card's picture is the
+               one <img> in its .pub-card__media: to change it, change that image. -->
+          <article class="pub-card pub-card--feature">
+            <div class="pub-card__media">
+              <img src="./assets/publication/stage-photo-october-2026.webp" alt="Two students in suits and hats on stage, mid-scene, in front of a painted street backdrop." width="1024" height="683" loading="lazy" decoding="async">
+            </div>
+            <div class="pub-card__body">
+              <span class="pub-mark pub-card__mark" aria-hidden="true"></span>
+              <div class="pub-card__text">
+                <!-- the issue opens at its first piece (pieces-data.js FIRST_OF_ISSUE; collection.js
+                     keeps this link in step with the data) -->
+                <h3 class="pub-card__title"><a class="pub-card__link" href="./piece-drama-the-art-of-feeling.html" data-first-of-issue="Oct 2026">Read the October issue</a></h3>
+                <div class="pub-card__meta">
+                  <time class="pub-label" datetime="2026-10">Oct 2026</time>
+                  <ul class="pub-card__tags" aria-label="Tags">
+                    <li class="pub-chip">Issue</li>
+                    <li class="pub-chip">Pieces</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="pub-card pub-card--paper">
+            <!-- the October issue in print, on the gold field (a render: assets/publication/) -->
+            <div class="pub-card__media pub-card__media--note">
+              <img src="./assets/publication/editors-note-magazine.webp" alt="" width="1000" height="526" loading="lazy" decoding="async">
+            </div>
+            <div class="pub-card__body">
+              <h3 class="pub-card__title"><a class="pub-card__link" href="./editors-note.html">Editor’s note</a></h3>
+              <p class="pub-card__dek">A word from the editor, Kodela Gautam.</p>
+              <div class="pub-card__meta">
+                <time class="pub-label" datetime="2026-10">Oct 2026</time>
+                <ul class="pub-card__tags" aria-label="Tags">
+                  <li class="pub-chip">Editorial</li>
+                </ul>
+              </div>
+            </div>
+          </article>
+
+          <article class="pub-card pub-card--ink">
+            <!-- a typewriter under the stage's spotlight, on the ink field (a render: assets/publication/;
+                 the beam and its pool are drawn by publication-blocks.css) -->
+            <div class="pub-card__media pub-card__media--writers">
+              <img src="./assets/publication/typewriter.webp" alt="" width="1000" height="526" loading="lazy" decoding="async">
+            </div>
+            <div class="pub-card__body">
+              <h3 class="pub-card__title"><a class="pub-card__link" href="./writers.html">Meet our writers</a></h3>
+              <p class="pub-card__dek">The students behind this month’s pieces.</p>
+              <div class="pub-card__meta">
+                <time class="pub-label" datetime="2026-10">Oct 2026</time>
+                <ul class="pub-card__tags" aria-label="Tags">
+                  <li class="pub-chip">Writers</li>
+                </ul>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+      <!-- /@collection -->
+    </section>
+
+    <!-- 3. The monthly newsletter (src/publication/newsletter.js); "Remind me" on an upcoming piece
+         comes here (#news) -->
+    <section class="pub-news" id="news" data-pub-news aria-labelledby="news-title">
+      <!-- @news -->
+      <!-- the monthly newsletter: the sign-up form itself, a band the width of the page, and the
+           October cover tossed across its left end, sticking up over its top edge (the form brings
+           its own heading; this one is for screen readers, and is where "Remind me" sends the focus) -->
+      <h2 class="sr-only" id="news-title" tabindex="-1">Sign up to our monthly newsletter</h2>
+      <div class="pub-news__panel">
+        <div class="pub-news__table" aria-hidden="true">
+          <span class="pub-news__sheet"><img class="pub-news__cover" src="./assets/publication/cover-october-2026.webp" alt="" width="1054" height="1492" loading="lazy" decoding="async"></span>
+        </div>
+        <!-- the form: Fillout's, embedded straight on the page (src/site/fillout.js loads it once the
+             curtain has parted; its own page's colours and heading are set in Fillout). Nothing that
+             holds it is a [data-mask] box (the pointer's events go to the form's own page); the box
+             is [data-quiet] instead. -->
+        <div class="pub-news__form">
+          <div class="form-box pub-news__box" data-form data-quiet>
+            <div style="width:100%;height:514px;" data-fillout-id="7CTfhGrq6cus" data-fillout-embed-type="standard" data-fillout-inherit-parameters data-fillout-dynamic-resize></div>
+            <p class="form-box__status" role="status">Loading the form…</p>
+            <p class="form-box__alt">Form not showing? <a href="https://forms.fillout.com/t/7CTfhGrq6cus" target="_blank" rel="noopener">Open it on Fillout</a>.</p>
+            <noscript><p class="form-box__noscript">The sign-up form opens on Fillout: <a href="https://forms.fillout.com/t/7CTfhGrq6cus" target="_blank" rel="noopener">the publication’s monthly newsletter</a>.</p></noscript>
+          </div>
+        </div>
+      </div>
+      <!-- /@news -->
+    </section>
+
+    <!-- 4. The pieces: the latest (a grid) or the upcoming (a list beside the statue), switched by
+         one toggle (src/publication/pieces.js) -->
+    <section class="pub-pieces" data-pub-pieces aria-labelledby="pieces-title">
+      <!-- @pieces -->
+      <div class="pub-wrap">
+        <header class="pub-pieces__head">
+          <!-- the heading: its real words (read by screen readers, and shown without scripts), and the
+               same words as the font's outlines, which morph when the toggle flips (src/type/) -->
+          <h2 class="pub-pieces__title" id="pieces-title">
+            <span class="pub-pieces__title-text" data-pieces-title>Latest pieces</span>
+            <svg class="pub-pieces__word" aria-hidden="true" focusable="false"></svg>
+          </h2>
+          <div class="pub-pieces__controls">
+            <!-- one toggle for both what shows and how: Dropped (on) is the latest pieces as a grid,
+                 Upcoming (off) the pieces to come as a list -->
+            <div class="pub-pieces__switch">
+              <span class="pub-label pub-pieces__side" data-side="upcoming" aria-hidden="true">Upcoming</span>
+              <input class="pub-pieces__toggle" type="checkbox" role="switch" checked autocomplete="off" aria-label="Dropped pieces" aria-describedby="pieces-switch-hint" data-pieces-toggle>
+              <span class="pub-label pub-pieces__side is-on" data-side="dropped" aria-hidden="true">Dropped</span>
+              <span class="sr-only" id="pieces-switch-hint">On: the latest pieces, as a grid. Off: the upcoming pieces, as a list.</span>
+            </div>
+            <div class="pub-pieces__filter" data-pieces-filter>
+              <button class="pub-pieces__filter-btn" type="button" aria-expanded="false" aria-controls="pieces-forms">
+                <span class="pub-label pub-pieces__filter-key">Filter</span>
+                <span class="pub-label pub-pieces__filter-value" data-pieces-filter-value>Form</span>
+                <svg class="pub-pieces__caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="pub-pieces__forms" id="pieces-forms" role="group" aria-label="Filter the pieces by form" hidden></div>
+            </div>
+          </div>
+        </header>
+        <p class="sr-only" aria-live="polite" data-pieces-status></p>
+
+        <div class="pub-pieces__stage" data-pieces-stage>
+          <!-- the latest pieces: a grid of cards (at most six; the rest are on pieces.html), each one
+               link to its own page. The cards below mirror src/publication/pieces-data.js (drawn by
+               src/publication/cards.js) for visitors without scripts; src/publication/pieces.js
+               draws them again from the data (the data is what to edit) -->
+          <div class="pub-pieces__view pub-pieces__view--grid" data-pieces-view="latest">
+            <ul class="pub-pieces__grid" data-pieces-grid>
+              <li class="pub-piece" data-tone="1">
+                <a class="pub-piece__link" href="./piece-drama-the-art-of-feeling.html">
+                  <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><h3 class="pub-piece__title" data-len="m">Drama: The Art of Feeling</h3></div>
+                  <div class="pub-piece__body">
+                    <div class="pub-piece__head">
+                      <p class="pub-piece__by">By Aripra Sharma</p>
+                      <p class="pub-label pub-piece__form">Essay</p>
+                    </div>
+                    <div class="pub-piece__meta">
+                      <span class="pub-label pub-piece__issue">Oct 2026</span>
+                      <span class="pub-btn pub-piece__read"><span class="pub-piece__dot" aria-hidden="true"></span>Read now<svg class="pub-pieces__chev" viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    </div>
+                  </div>
+                </a>
+              </li>
+              <li class="pub-piece" data-tone="3">
+                <a class="pub-piece__link" href="./piece-the-story-i-probably-told-myself-about-you.html">
+                  <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><h3 class="pub-piece__title" data-len="l">The Story I Probably Told Myself About You</h3></div>
+                  <div class="pub-piece__body">
+                    <div class="pub-piece__head">
+                      <p class="pub-piece__by">By Aadi Ramnani</p>
+                      <p class="pub-label pub-piece__form">Reflection</p>
+                    </div>
+                    <div class="pub-piece__meta">
+                      <span class="pub-label pub-piece__issue">Oct 2026</span>
+                      <span class="pub-btn pub-piece__read"><span class="pub-piece__dot" aria-hidden="true"></span>Read now<svg class="pub-pieces__chev" viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    </div>
+                  </div>
+                </a>
+              </li>
+              <li class="pub-piece" data-tone="2">
+                <a class="pub-piece__link" href="./piece-everything-changes.html">
+                  <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><h3 class="pub-piece__title" data-len="s">Everything Changes</h3></div>
+                  <div class="pub-piece__body">
+                    <div class="pub-piece__head">
+                      <p class="pub-piece__by">By Anika Megha Kruthiventi</p>
+                      <p class="pub-label pub-piece__form">One-act play</p>
+                    </div>
+                    <div class="pub-piece__meta">
+                      <span class="pub-label pub-piece__issue">Oct 2026</span>
+                      <span class="pub-btn pub-piece__read"><span class="pub-piece__dot" aria-hidden="true"></span>Read now<svg class="pub-pieces__chev" viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    </div>
+                  </div>
+                </a>
+              </li>
+              <li class="pub-piece" data-tone="5">
+                <a class="pub-piece__link" href="./piece-stars.html">
+                  <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><h3 class="pub-piece__title" data-len="s">Stars.</h3></div>
+                  <div class="pub-piece__body">
+                    <div class="pub-piece__head">
+                      <p class="pub-piece__by">By Kathya Yaratapalli</p>
+                      <p class="pub-label pub-piece__form">Contemporary monologue</p>
+                    </div>
+                    <div class="pub-piece__meta">
+                      <span class="pub-label pub-piece__issue">Oct 2026</span>
+                      <span class="pub-btn pub-piece__read"><span class="pub-piece__dot" aria-hidden="true"></span>Read now<svg class="pub-pieces__chev" viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    </div>
+                  </div>
+                </a>
+              </li>
+              <li class="pub-piece" data-tone="4">
+                <a class="pub-piece__link" href="./piece-beauty-in-imperfection.html">
+                  <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><h3 class="pub-piece__title" data-len="m">Beauty in Imperfection</h3></div>
+                  <div class="pub-piece__body">
+                    <div class="pub-piece__head">
+                      <p class="pub-piece__by">By Mehek Jain</p>
+                      <p class="pub-label pub-piece__form">Contemporary monologue</p>
+                    </div>
+                    <div class="pub-piece__meta">
+                      <span class="pub-label pub-piece__issue">Oct 2026</span>
+                      <span class="pub-btn pub-piece__read"><span class="pub-piece__dot" aria-hidden="true"></span>Read now<svg class="pub-pieces__chev" viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    </div>
+                  </div>
+                </a>
+              </li>
+              <li class="pub-piece" data-tone="1">
+                <a class="pub-piece__link" href="./piece-i-was-there-first.html">
+                  <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><h3 class="pub-piece__title" data-len="s">I Was There First</h3></div>
+                  <div class="pub-piece__body">
+                    <div class="pub-piece__head">
+                      <p class="pub-piece__by">By Kathya Yaratapalli</p>
+                      <p class="pub-label pub-piece__form">Contemporary monologue</p>
+                    </div>
+                    <div class="pub-piece__meta">
+                      <span class="pub-label pub-piece__issue">Oct 2026</span>
+                      <span class="pub-btn pub-piece__read"><span class="pub-piece__dot" aria-hidden="true"></span>Read now<svg class="pub-pieces__chev" viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    </div>
+                  </div>
+                </a>
+              </li>
+            </ul>
+            <div class="pub-pieces__more">
+              <a class="pub-btn pub-btn--lg pub-pieces__all" href="./pieces.html">All the pieces<svg class="pub-pieces__chev" viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            </div>
+          </div>
+
+          <!-- the upcoming pieces: the statue standing on the page in a beam of the stage's light (made
+               the first time this shows, src/publication/statue.js; until then, and where WebGL runs
+               poorly, his still picture), and beside him the list, which runs on and fades away at its
+               foot; drawn from src/publication/pieces-data.js -->
+          <div class="pub-pieces__view pub-pieces__view--list" data-pieces-view="upcoming" hidden>
+            <div class="pub-pieces__panel">
+              <figure class="statue-slot pub-pieces__statue" role="img" aria-label="A dark metal statue after Rodin’s The Thinker, seated, studying a tragedy mask in his hand"><span class="statue-slot__still" aria-hidden="true"></span></figure>
+            </div>
+            <ul class="pub-pieces__list" data-pieces-list></ul>
+          </div>
+        </div>
+      </div>
+      <!-- /@pieces -->
+    </section>
+
+    <!-- 5. Write for us (src/publication/writers.js) -->
+    <section class="pub-writers" data-pub-writers aria-labelledby="writers-title">
+      <!-- @writers -->
+      <div class="pub-wrap">
+        <div class="pub-writers__box">
+          <div class="pub-writers__copy">
+            <p class="pub-label pub-writers__eyebrow">Write for us</p>
+            <h2 class="pub-writers__title" id="writers-title" data-reveal>Write for India’s first independent, student-run theatre publication</h2>
+            <p class="pub-writers__text">Every writer we publish receives a certificate and a mention on our website.</p>
+            <div class="pub-writers__actions">
+              <a class="pub-btn pub-btn--lg pub-writers__apply" href="./write.html">Apply to be a writer</a>
+              <a class="pub-btn pub-btn--lg pub-writers__more" href="./writers.html">Meet our writers<svg viewBox="0 0 8 12" aria-hidden="true" focusable="false"><path d="M2 1.5 6.5 6 2 10.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            </div>
+          </div>
+          <!-- the statue again, on the right, standing in the box's light (src/publication/writers.js
+               mounts him as he nears the screen; until then, and where WebGL runs poorly, his still
+               picture) -->
+          <figure class="statue-slot pub-writers__statue" role="img" aria-label="A dark metal statue after Rodin’s The Thinker, seated, studying a tragedy mask in his hand">
+            <span class="statue-slot__still" aria-hidden="true"></span>
+          </figure>
+        </div>
+      </div>
+      <!-- /@writers -->
+    </section>
+
+    <!-- the banner (a shared site part, written by tools/pages/build.mjs): it rides along the bottom
+         of the screen until the footer, then docks on top of it; it stays the last child of <main> -->
+    <!-- site:pubbanner -->
+    <aside class="pub-ticker" data-pub-ticker aria-label="The publication">
+      <div class="pub-ticker__bar" data-mask>
+        <span class="pub-mark pub-ticker__mark" aria-hidden="true"></span>
+        <div class="pub-ticker__strip">
+          <p class="pub-ticker__track"><span class="pub-ticker__item">India’s first independent, student-run theatre publication</span></p>
+        </div>
+        <div class="pub-ticker__actions">
+          <a class="pub-btn pub-ticker__cta" href="./write.html">Become a writer</a>
+          <a class="btn btn--inverse btn--sm pub-ticker__sponsor" href="./sponsor.html">Become a sponsor</a>
+        </div>
+      </div>
+    </aside>
+    <!-- /site:pubbanner -->
   </main>
 
   <!-- site:footer -->

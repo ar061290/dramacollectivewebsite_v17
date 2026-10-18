@@ -1,0 +1,87 @@
+/* The publication's banner (tools/pages/build.mjs writes it between <!-- site:pubbanner --> markers
+   into the publication and its reading pages; src/publication/ticker.js rolls it): houseofheat's
+   ticker, at the bottom of the screen, docking on the footer at the end. */
+
+/* ==== The banner: houseofheat's ticker, at the bottom ====
+   The last thing in <main>, sticky to the bottom of the screen: it rides there over the page, and at
+   the end, where <main> ends (the page has no padding under it), it is left in its own place, on
+   the footer's gold rule, and goes up with it. Being in the flow, it then covers nothing: the last
+   block ends above it. Above the content, below the top bar (<main> is a layer under the bar).
+   Left, the mark; in the middle the one line rolling right to left (ticker.js), faded at both ends;
+   right, the ways to write for us and to sponsor us. One brand colour with its blush text, the same
+   in both themes, so its buttons keep the dark stage's colours in both: "Become a sponsor" is the top
+   bar's own button (gold on plum: 5.4:1 against the bar, its plum text 12.6:1 on the gold), and the
+   focus ring is gold (the light theme's plum ring would vanish on the magenta). */
+.pub-ticker {
+  position: sticky;
+  bottom: 0;
+  z-index: 8;
+  height: 48px;
+}
+.pub-ticker__bar {
+  --focus: var(--gold-500);
+  --btn-bg: var(--gold-500); --btn-fg: var(--plum-900); --btn-bg-hover: var(--gold-300); --btn-bg-active: var(--gold-600);
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-inline: var(--pub-gutter);
+  background: var(--plum-500);
+  color: var(--plum-100);
+  box-shadow: 0 -10px 28px rgb(42 13 28 / .16);
+}
+.pub-ticker__mark { width: 26px; margin-right: 40px; color: var(--plum-100); }
+.pub-ticker__strip {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(270deg, transparent, #000 9%, #000 94%, transparent);
+  mask-image: linear-gradient(270deg, transparent, #000 9%, #000 94%, transparent);
+}
+.pub-ticker__track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  height: 100%;
+  margin: 0;
+  will-change: transform;
+}
+.pub-ticker__item {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 14px;
+  padding-right: 32px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.2;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+/* each repeat starts with a dot, so the seam where the line meets its copy has one too */
+.pub-ticker__item::before { content: "•"; content: "•" / ""; font-size: 13px; }
+
+/* the two buttons, side by side: the outlined way to write for us, then the top bar's gold one */
+.pub-ticker__actions { display: flex; flex: none; align-items: center; gap: 10px; margin-left: var(--space-5); }
+.pub-ticker__cta { --pub-btn-ink: var(--plum-100); --pub-btn-paper: var(--plum-500); min-height: 36px; padding-inline: 14px; font-size: 12px; }
+.pub-ticker__sponsor { white-space: nowrap; }
+.pub-ticker__bar :focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
+
+@media (max-width: 767px) {
+  .pub-ticker__mark { width: 22px; margin-right: var(--space-4); }
+  .pub-ticker__actions { gap: 8px; margin-left: var(--space-3); }
+}
+/* a phone: no room left for the line beside both buttons; the mark stays, and the two buttons share
+   the bar, a little tighter */
+@media (max-width: 600px) {
+  .pub-ticker__strip { display: none; }
+  .pub-ticker__actions { flex: 1 1 auto; justify-content: flex-end; }
+  .pub-ticker__cta, .pub-ticker__sponsor { min-height: 34px; padding-inline: 11px; font-size: 11px; }
+}
+@media (max-width: 359px) {
+  .pub-ticker__mark { display: none; }
+  .pub-ticker__actions { justify-content: center; margin-left: 0; }
+  .pub-ticker__cta, .pub-ticker__sponsor { padding-inline: 9px; letter-spacing: .04em; }
+}

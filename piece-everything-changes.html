@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en-IN" class="is-glow-everywhere">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Everything Changes · The Drama Collective</title>
+  <meta name="description" content="A one-act play by Anika Megha Kruthiventi, from the October 2026 issue of The Drama Collective’s publication.">
+  <meta name="theme-color" content="#2a0d1c">
+  <!-- site:head -->
+  <link rel="icon" href="./assets/brand/mark-gold.png">
+  <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./src/styles/main.css">
+  <!-- Bare-module map for running without a build step (any static server). Vite resolves the same
+       specifiers from node_modules and ignores this map. Keep the versions in step with package.json. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/index.js",
+      "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/",
+      "lottie-web/build/player/lottie_light.js": "https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.js/+esm"
+    }
+  }
+  </script>
+  <script>
+    // theme before first paint: the saved choice, else the dark theatre
+    try { var t = localStorage.getItem('dc-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+    // arriving through the curtain (src/site/transition.js): it starts closed and opens on this page
+    try { if (sessionStorage.getItem('dc-veil') === '1') { sessionStorage.removeItem('dc-veil'); document.documentElement.classList.add('is-veiled'); } } catch (e) {}
+    document.documentElement.classList.add('has-js');
+  </script>
+  <!-- /site:head -->
+</head>
+<body class="page page--reading page--piece-everything-changes">
+  <!-- Written by tools/pages/build.mjs (npm run pages) from src/publication/pieces-data.js and content/pieces/everything-changes.html: edit those, not this file. -->
+  <!-- site:header -->
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="veil" aria-hidden="true">
+    <div class="veil__half veil__half--l"></div>
+    <div class="veil__half veil__half--r"></div>
+  </div>
+
+  <header class="topbar" data-topbar>
+    <span class="topbar__ground" aria-hidden="true"></span>
+    <a class="topbar__brand" href="./index.html" aria-label="The Drama Collective, home">
+      <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
+      <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
+    </a>
+    <a class="btn btn--inverse btn--sm topbar__apply" href="./apply.html" data-topbar-keep>Apply now</a>
+    <nav class="topbar__nav" aria-label="Main">
+      <ul class="topbar__links">
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li class="topbar__group" data-dropdown>
+          <button class="topbar__group-toggle" type="button" aria-expanded="false" aria-controls="outputs-menu">Our outputs<svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <ul class="topbar__dropdown" id="outputs-menu" data-dropdown-menu>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+          </ul>
+        </li>
+        <li><a href="./contact.html">Contact us</a></li>
+      </ul>
+      <span class="topbar__glint" aria-hidden="true"></span>
+    </nav>
+    <div class="topbar__tools">
+      <a class="icon-btn" href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="The Drama Collective on Instagram" title="Instagram"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg></a>
+      <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Music" aria-keyshortcuts="K" title="Play music (K)" data-music-toggle>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><rect class="bar" x="2.5" y="8" width="2.2" height="9"/><rect class="bar" x="6.9" y="3" width="2.2" height="14"/><rect class="bar" x="11.3" y="6" width="2.2" height="11"/><rect class="bar" x="15.7" y="9" width="2.2" height="8"/></svg>
+      </button>
+      <button class="icon-btn theme-toggle" type="button" aria-pressed="false" aria-label="Light mode" title="House lights" data-theme-toggle>
+        <svg class="theme-toggle__sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 1.8v2.1M10 16.1v2.1M1.8 10h2.1M16.1 10h2.1M4.2 4.2l1.5 1.5M14.3 14.3l1.5 1.5M4.2 15.8l1.5-1.5M14.3 5.7l1.5-1.5"/></g></svg>
+        <svg class="theme-toggle__moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.9 12.6A6.6 6.6 0 0 1 7.4 4.1a6.6 6.6 0 1 0 8.5 8.5Z" fill="currentColor"/></svg>
+      </button>
+    </div>
+    <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu-sheet" data-menu-toggle>Menu</button>
+    <a class="btn btn--inverse btn--sm topbar__cta" href="./sponsor.html" data-topbar-keep>Become a sponsor</a>
+    <div class="topbar__sheet" id="menu-sheet" data-menu-sheet>
+      <ul>
+        <li><a href="./index.html">Home</a></li>
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li class="topbar__sheet-group"><span class="eyebrow">Our outputs</span>
+          <ul>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+          </ul>
+        </li>
+        <li><a href="./contact.html">Contact us</a></li>
+        <li><a href="./apply.html">Apply now</a></li>
+        <li><a href="./sponsor.html">Become a sponsor</a></li>
+        <li><a href="https://www.instagram.com/" target="_blank" rel="noopener"><span class="ig-word">Instagram</span></a></li>
+      </ul>
+    </div>
+  </header>
+  <!-- /site:header -->
+
+  <!-- site:stage -->
+  <div class="cursor" aria-hidden="true">
+    <span class="cursor__glow"></span>
+    <svg class="cursor__star" viewBox="-12 -17 24 34" focusable="false"><path class="cursor__star-plain" d="M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z"/><path class="cursor__star-text" d="M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z"/></svg>
+  </div>
+  <!-- /site:stage -->
+
+  <main id="main" class="page__main page__main--pub page__main--reading">
+    <article class="read" aria-labelledby="read-title">
+      <header class="read__head">
+        <a class="read__back" href="./publication.html"><svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M13 5H1.5M5 1 1 5l4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>The publication</span></a>
+        <p class="pub-label read__kicker"><time datetime="2026-10">Oct 2026</time><span class="read__dot" aria-hidden="true"></span><span>One-act play</span></p>
+        <h1 class="read__title" id="read-title" data-reveal>Everything Changes</h1>
+        <p class="read__by">By <span class="read__author">Anika Megha Kruthiventi</span></p>
+        <span class="rule read__rule" aria-hidden="true"></span>
+      </header>
+      <div class="read__body">
+        <!-- Everything Changes, a one-act play by Anika Megha Kruthiventi (October 2026), as written, laid
+             out as a script: the setting, then each speech under its speaker’s name, the stage directions
+             in brackets; then the epilogue and the closing lines. -->
+        <p class="script__setting">One of the town’s considerate parents are seated in the living room near the kitchen. The Rojas parents. Ellery is the HR director at a software company, and Luis works as a salesperson at the neighbourhood auto repair shop. Both are happy with their way of life, but Luis feels he is not at his best because he barely finished college because he had to support his family after his father passed away when he was a young boy. He had to give up his interests as a biology student to support himself. What happens? Let us see.</p>
+        <div class="script">
+          <div class="script__cue">
+            <p class="script__name">ANNA</p>
+            <p class="script__line"><i class="script__dir">[Skipping stair towards the countertop]</i> Morning dad, slept well?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS <span class="script__aside">(Anna’s Dad)</span></p>
+            <p class="script__line">Morning sweetie, I had barely forty winks due to my cephalgia.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ELLERY <span class="script__aside">(Anna’s Mom)</span></p>
+            <p class="script__line"><i class="script__dir">[Flipping Pancakes]</i> cephalgia? Wow <i class="script__dir">[Sarcastic]</i> Luis your vocabulary has been improving. Where did you learn that from?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ANNA</p>
+            <p class="script__line"><i class="script__dir">[laughing]</i> Dad you can just say headache you know? But for real, where did you learn that from?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line">Come here both of you. <i class="script__dir">[leans in]</i></p>
+          </div>
+          <p class="script__direction">[Anna and Ellery lean in]</p>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line">Secret</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ANNA</p>
+            <p class="script__line"><i class="script__dir">[unamused]</i> Dad you are not funny.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ELLERY</p>
+            <p class="script__line"><i class="script__dir">[chuckles]</i> You will always remain the same, won’t you?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line">Any complaints darling?</p>
+          </div>
+          <p class="script__direction">[Anna rolls her eyes]</p>
+          <div class="script__cue">
+            <p class="script__name">ANNA</p>
+            <p class="script__line">If you both are done, I have something important to tell you.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line"><i class="script__dir">[Sipping from his mug]</i> Go ahead dear.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ANNA</p>
+            <p class="script__line">So, we all know how hard dads trying to improve his knowledge and learn more everyday right? <i class="script__dir">[Mom hums in response]</i> Well, I see that dad has amazing potential if he gets the right kind of mentorship you know?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line">Anna, we have already been through this topic several times and, no I am not going anywhere to any college, institution or any crap alright?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ANNA</p>
+            <p class="script__line"><i class="script__dir">[Ignoring Luis]</i> I was speaking to my college coach about PhD’s and masters and those kinds. That kind of thing, when he told me about something that reminded me of dad.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ELLERY</p>
+            <p class="script__line"><i class="script__dir">[Look up from her phone looking slightly interested]</i> What did he tell you?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ANNA</p>
+            <p class="script__line">I first thought that I would simply tell you. But maybe it’s better to show you.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line"><i class="script__dir">[Looking Unpleased]</i> I do not like where this is heading Anna. Come to the point.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ANNA</p>
+            <p class="script__line">I will, of course, I will. But before that I want you to meet.</p>
+          </div>
+          <p class="script__direction">[Gets interrupted by a doorbell]</p>
+          <div class="script__cue">
+            <p class="script__name">ANNA</p>
+            <p class="script__line">I will get it, it must be him.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ELLERY</p>
+            <p class="script__line"><i class="script__dir">[blinking her eyes]</i> Who?</p>
+          </div>
+          <p class="script__direction">[Luis looks nervous]</p>
+          <div class="script__cue">
+            <p class="script__name">ANNA</p>
+            <p class="script__line"><i class="script__dir">[While opening the door]</i> So everyone meets Mr Macauley and his daughter Maeve.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">MR MACAULEY</p>
+            <p class="script__line">You can honestly call me Nathenial, Anna, I do not really mind it.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">MAEVE</p>
+            <p class="script__line">Howdy Mr and Mrs Rojas?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line">Morning Maeve and Mr Macauley, how are you?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">NATE</p>
+            <p class="script__line">Luis it is Nate for you, come here man.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line"><i class="script__dir">[hugging Nate]</i> Nate where have you been man, I missed you.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ELLERY</p>
+            <p class="script__line">Nate. <i class="script__dir">[Glares]</i></p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">NATE</p>
+            <p class="script__line">Sister comes here.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">MAEVE</p>
+            <p class="script__line">Wow, you were right they really used to be close <i class="script__dir">[soft voice]</i></p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ANNA</p>
+            <p class="script__line">I know right, probably should snap this for a story.</p>
+          </div>
+          <p class="script__direction">[Clicks a picture]</p>
+          <div class="script__cue">
+            <p class="script__name">MAEVE</p>
+            <p class="script__line">Well now dear oldies if your reunion is done can we do what we are actually here for <i class="script__dir">[Bobbing head towards Luis]</i></p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">NATE</p>
+            <p class="script__line"><i class="script__dir">[Clears his throat]</i> Yes, now Luis why do not we take a seat.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line">Do not mind if I do, and girls <i class="script__dir">[looks towards Maeve and anna]</i> make yourself at home, anna why do not you show them your room.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ELLERY</p>
+            <p class="script__line">I’ll brew up some coffee be right back. <i class="script__dir">[Exits towards kitchen]</i></p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line">Before anything, man I am so proud of you, I saw the news article about you. Going to college at 40 is not an easy decision.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">NATE</p>
+            <p class="script__line"><i class="script__dir">[Chuckles]</i> Still a saint huh? Either way thank you so much I appreciate. Knowing the fact that you have known about the article and everything you should know what I am going to talk about right?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line">Yes, but listen to me before that—</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">NATE</p>
+            <p class="script__line"><i class="script__dir">[Shaking head]</i> No no you listen to <i class="script__dir">[pointing fingers towards himself]</i> Me. We both know how excellent of a biology student you are and what you are doing right now is not what you deserve.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line">But Nate lets us see it from the logical point of view. How can I go to college at the age of 40, man?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">NATE</p>
+            <p class="script__line"><i class="script__dir">[Raising one eyebrow]</i> What am I doing?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line">Everyone one is different from each other Nate</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">NATE</p>
+            <p class="script__line">Come on, let us be honest if we both went to college out of high school, and we did not have any financial difficulties, you would probably get into an ivy league and be the top students of your batch. No doubt. Luis, let us face it. You are not scared about the subject or what people think about you. You are scared because of change. You do not want to know anything without trying it out.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line"><i class="script__dir">[sighs]</i> it is true, but think about it what will happen to anna? How will life go on?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ELLERY</p>
+            <p class="script__line">You really do not need to worry about anna anymore, nor do you need to worry about any of us. If you move ahead in life and do something good. We will be happy</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">MAEVE</p>
+            <p class="script__line"><i class="script__dir">[Striding down the stairs next to Anna]</i> Moreover if you get a better degree, you will get a better job, which means that you can provide for Anna’s college by the time she comes for college.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">NATE</p>
+            <p class="script__line">We will let the slide fact that you were eavesdropping because what you said was completely right. Luis come on think about it.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line">You know what let us give it a shot</p>
+          </div>
+          <p class="script__direction">[Cheers erupt in the room]</p>
+          <div class="script__cue">
+            <p class="script__name">NATE</p>
+            <p class="script__line">I will pick you up tomorrow morning and you can hit the admissions office.</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">LUIS</p>
+            <p class="script__line">I am still not sure. <i class="script__dir">[Looks towards anna]</i> are you okay with all of this?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ANNA</p>
+            <p class="script__line">We will never ever stop you from something that makes you happy. Will we mom?</p>
+          </div>
+          <div class="script__cue">
+            <p class="script__name">ELLERY</p>
+            <p class="script__line">Is that even a question to ask? I am so happy and proud of you Luis.</p>
+          </div>
+          <p class="script__direction">[Comes to hug him]</p>
+          <p class="script__direction">[Everyone does a group hug]</p>
+        </div>
+        <h2 class="read__subhead">Epilogue</h2>
+        <p>The following day, Luis visits the nearby community college; he is immediately admitted in less than an hour and is in class!</p>
+        <p>Luis gradually adapts to this new way of living; he learns new things every day and has no regrets about his choice. The second 40-year-old in their family who is enrolled in school makes Ellery and Anna happy. In the end, everyone is content.</p>
+        <p class="script__close"><span>After all,</span><br>
+        <span>Sometimes change is beautiful.</span></p>
+      </div>
+      <footer class="read__end">
+        <nav class="read__nav" aria-label="More from the publication">
+          <a class="read__step read__step--prev" href="./piece-the-story-i-probably-told-myself-about-you.html" rel="prev">
+            <span class="pub-btn read__btn"><svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M13 5H1.5M5 1 1 5l4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Previous piece</span></span>
+            <span class="read__step-sub">The Story I Probably Told Myself About You</span>
+          </a>
+          <a class="read__step read__step--next" href="./piece-stars.html" rel="next">
+            <span class="pub-btn read__btn"><span>Next piece</span><svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="read__step-sub">Stars.</span>
+          </a>
+        </nav>
+        <p class="read__all"><a href="./pieces.html">All the pieces</a></p>
+      </footer>
+    </article>
+
+    <!-- site:pubbanner -->
+    <aside class="pub-ticker" data-pub-ticker aria-label="The publication">
+      <div class="pub-ticker__bar" data-mask>
+        <span class="pub-mark pub-ticker__mark" aria-hidden="true"></span>
+        <div class="pub-ticker__strip">
+          <p class="pub-ticker__track"><span class="pub-ticker__item">India’s first independent, student-run theatre publication</span></p>
+        </div>
+        <div class="pub-ticker__actions">
+          <a class="pub-btn pub-ticker__cta" href="./write.html">Become a writer</a>
+          <a class="btn btn--inverse btn--sm pub-ticker__sponsor" href="./sponsor.html">Become a sponsor</a>
+        </div>
+      </div>
+    </aside>
+    <!-- /site:pubbanner -->
+  </main>
+
+  <!-- site:footer -->
+  <footer class="curtain" id="contact" aria-label="Pages and contacts">
+    <div class="curtain__grid">
+      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>
+      <nav class="curtain__links" aria-label="All pages">
+        <div class="curtain__col">
+          <p class="eyebrow">The Collective</p>
+          <ul>
+            <li><a href="./index.html">Home</a></li>
+            <li><a href="./about.html">About us</a></li>
+            <li><a href="./team.html">Core team</a></li>
+            <li><a href="./contact.html">Contact us</a></li>
+            <li><a href="./apply.html">Apply now</a></li>
+            <li><a href="./sponsor.html">Become a sponsor</a></li>
+          </ul>
+        </div>
+        <div class="curtain__col">
+          <p class="eyebrow">Our outputs</p>
+          <ul>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+            <li><a href="./stage-planner.html">Stage planner</a></li>
+          </ul>
+        </div>
+        <div class="curtain__col curtain__col--contact">
+          <p class="eyebrow">Write to us</p>
+          <ul>
+            <li><span class="curtain__who">Aadi Ramnani, President</span><a href="mailto:aadir6405@students.chirec.ac.in">aadir6405@students.chirec.ac.in</a></li>
+            <li><span class="curtain__who">Aripra Sharma, Executive President</span><a href="mailto:aripras111460@students.chirec.ac.in">aripras111460@students.chirec.ac.in</a></li>
+            <li><a class="curtain__social" href="https://www.instagram.com/" target="_blank" rel="noopener"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg><span class="ig-word">Instagram</span></a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+    <div class="curtain__base">
+      <div class="curtain__legal">
+        <p class="legal">© 2026 The Drama Collective · CHIREC International School</p>
+        <p class="credits">Music: “the smell of old books, reading, writing and studying (a dark academia playlist)”, <a href="https://www.youtube.com/@DarkEnigmatic68" rel="noopener">Dark Enigmatic</a>.</p>
+      </div>
+      <a class="endorsement" href="https://www.chirec.ac.in" rel="noopener">
+        <img class="endorsement__logo" src="./assets/brand/chirec.webp" alt="CHIREC International School" width="475" height="140">
+        <span>CHIREC International School: the No.&nbsp;1 school in Hyderabad and Telangana</span>
+      </a>
+    </div>
+  </footer>
+  <!-- /site:footer -->
+
+  <script type="module" src="./src/pages/reading.js"></script>
+</body>
+</html>

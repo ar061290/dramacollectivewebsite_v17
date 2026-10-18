@@ -113,6 +113,13 @@ html.has-js.is-loading, html.has-js.is-loading body { overflow: hidden; height: 
    its glow, clipped to the box by cursor.js */
 .cursor__star, .cursor__glow { position: absolute; display: none; pointer-events: none; }
 .has-cursor.is-on-box .cursor__star, .has-cursor.is-on-box .cursor__glow { display: block; }
+/* a page may ask for the drawn cursor everywhere (html.is-glow-everywhere, cursor.js); where
+   something keeps its own native form (a statue to turn, and the turning), the glow stays under
+   it and the drawn star steps aside */
+.has-cursor.is-glow-everywhere.is-grabbing .cursor__star,
+.has-cursor.is-glow-everywhere:has(.is-turnable:hover) .cursor__star { display: none; }
+/* and there no native cursor shows beside the drawn one, not even on controls with their own */
+.has-cursor.is-glow-everywhere.is-on-box:not(.is-grabbing) :not(.is-turnable, .is-turnable *) { cursor: none; }
 .cursor__glow { left: -32px; top: -32px; width: 64px; height: 64px; background: var(--cursor-glow); }
 .cursor__star { left: -12px; top: -17px; width: 24px; height: 34px; overflow: visible; }
 .cursor__star path { fill: var(--cursor-fill); stroke: var(--cursor-stroke); stroke-width: 1.4px; stroke-linejoin: round; }

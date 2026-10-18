@@ -1,0 +1,166 @@
+/* The publication (publication.html, src/pages/publication.js, src/publication/), laid out after
+   houseofheat.co's format: a wide twelve-column page with 24px gutters, hairline rules, small tracked
+   labels and square cards, re-skinned in the design system. This file holds the page frame and the
+   pieces every section shares; each section has its own file:
+   publication-hero.css (the opening), publication-pieces.css (the pieces),
+   publication-blocks.css (this month, the newsletter, write for us, the banner). */
+
+/* the publication and its reading pages (each piece, the editor's note, all the pieces:
+   body.page--reading) share these */
+.page--publication, .page--reading {
+  --pub-gutter: 24px;
+  --pub-max: 1440px;
+  --pub-hair: var(--line);                 /* the hairline rules: 14% blush on dark, 14% plum on light */
+  --pub-gap: 24px;
+  /* the brand's five colours (the identity sheet), for the logo marks that stand in for pictures */
+  --pub-tone-1: var(--plum-800);
+  --pub-tone-2: var(--plum-500);
+  --pub-tone-3: var(--gold-500);
+  --pub-tone-4: var(--plum-100);
+  --pub-tone-5: var(--slate-700);
+}
+@media (max-width: 767px) {
+  .page--publication, .page--reading { --pub-gutter: 16px; --pub-gap: 16px; }
+}
+
+/* the publication keeps its top bar out of sight (its own banner along the bottom carries the way
+   to write for us and to sponsor): the whole bar, buttons too, waits above the screen and comes
+   down only when it is wanted (src/publication/peekbar.js: the pointer at the top of the screen,
+   the focus in it, or on a touch screen the page scrolled back up) */
+/* It moves by its top, not by a transform: a transformed bar would become the box its fixed Menu
+   sheet is laid out in, so a sheet opened while the bar slides would open bar-high. Without scripts
+   it stays where it is on every other page; and the keyboard's focus in it always brings it down. */
+html.has-js :is(.page--publication, .page--reading) .topbar {
+  top: calc(-1 * (var(--topbar-h) + var(--space-3)));
+  transition: top .5s var(--ease-curtain);
+  pointer-events: none;
+}
+html.has-js :is(.page--publication, .page--reading) .topbar:is(.is-peek, :has(:focus-visible)) { top: 0; pointer-events: auto; }
+html.has-js :is(.page--publication, .page--reading) .topbar.is-peek .topbar__ground { background: var(--bar-bg); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+/* it comes and goes in one piece: the site's own scroll rule (nav.js: .is-hidden sends the parts up
+   on their own and leaves the two buttons, .is-curtain fades those) has no say here */
+html.has-js :is(.page--publication, .page--reading) .topbar.is-hidden > * { transform: none; }
+html.has-js :is(.page--publication, .page--reading) .topbar:is(.is-peek, :has(:focus-visible)) > :is(.topbar__brand, .topbar__nav, .topbar__tools, .topbar__menu, .btn) { pointer-events: auto; opacity: 1; }
+/* With a mouse or a pen: the top few pixels of the screen stay the page's own (a strip laid there
+   by peekbar.js, just under the bar), so the pointer reaching them calls the bar down even where a
+   frame that keeps the pointer to itself (the newsletter's Fillout form) lies under them, and stays
+   in the page as the bar comes down over it. While the pointer is on the bar (or that edge), such a
+   frame lets it through to the page, so the page sees it leave: the frame has it back at once, and
+   the bar goes a moment later. */
+.peek-edge { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .peek-edge { display: block; position: fixed; inset: 0 0 auto; height: 8px; z-index: calc(var(--z-topbar) - 1); }
+  html.has-js:has(.topbar.is-held) :is(.page--publication, .page--reading) main iframe { pointer-events: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.has-js :is(.page--publication, .page--reading) .topbar { transition: none; }
+}
+
+/* whatever the browser scrolls into view (a focused control, an anchor) clears the fixed top bar and
+   the 48px banner along the bottom */
+html:has(> body:is(.page--publication, .page--reading)) {
+  scroll-padding-top: 24px;
+  scroll-padding-bottom: 64px;
+}
+
+/* the frame: each section sets its own width and spacing (the opening fills the screen, the banner
+   is full-bleed and docks straight onto the footer, so the frame's padding goes) */
+.page__main--pub { padding: 0; }
+.page__main--pub > * { width: auto; max-width: none; margin-inline: 0; }
+
+/* the content column: the whole width up to --pub-max, inside the gutters */
+.pub-wrap {
+  width: 100%;
+  max-width: var(--pub-max);
+  margin-inline: auto;
+  padding-inline: var(--pub-gutter);
+}
+
+/* a small tracked label (houseofheat's mono labels; ours are Lato, as the design system's eyebrows) */
+.pub-label {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+/* the logo mark alone, without the wordmark, in the current colour (assets/brand/mark.svg as a mask) */
+.pub-mark {
+  display: inline-block;
+  aspect-ratio: 1;
+  width: 40px;
+  background: currentColor;
+  -webkit-mask: url("../../assets/brand/mark.svg") center / contain no-repeat;
+  mask: url("../../assets/brand/mark.svg") center / contain no-repeat;
+  flex-shrink: 0;
+}
+
+/* a small outlined button (houseofheat's "Buy now" / "Become a member"): square, a hairline border
+   in its ink colour; on hover it fills with the ink and the text takes the paper colour. A surface
+   sets --pub-btn-ink (default: the strong text colour) and --pub-btn-paper (default: the page) */
+.pub-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 7px 12px;
+  border: 1px solid var(--pub-btn-ink, var(--fg-strong));
+  background: transparent;
+  color: var(--pub-btn-ink, var(--fg-strong));
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease-curtain), color var(--dur-base) var(--ease-curtain);
+}
+.pub-btn:hover { background: var(--pub-btn-ink, var(--fg-strong)); color: var(--pub-btn-paper, var(--bg)); }
+.pub-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* a tag chip (pill: the design system keeps the pill radius for tags) */
+.pub-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ---- the statue in a box (src/publication/statue.js): its still picture until the live one has
+   drawn, where WebGL runs poorly, and while the browser has dropped the live one's context ---- */
+.statue-slot {
+  position: relative;
+  margin: 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.statue-slot canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.statue-slot__still {
+  position: absolute;
+  inset: 0;
+  background: url("../../assets/thinker/thinker-dark.webp") center / contain no-repeat;
+}
+:root[data-theme="light"] .statue-slot__still { background-image: url("../../assets/thinker/thinker-light.webp"); }
+/* the still stays whole under the live statue while that fades in over it, then goes (so the
+   figure never turns see-through during the swap), and comes back at once if the live one is lost */
+.statue-slot.is-live .statue-slot__still { opacity: 0; transition: opacity 0s .95s; }
+.statue-slot.is-live.is-lost .statue-slot__still { opacity: 1; transition: none; }
+.statue-slot.is-lost canvas { visibility: hidden; }
+/* once he can turn (not the still, not with reduced motion): the star cursor's grab form; sideways
+   swipes are his (up and down is still the page's scroll; the first value is for browsers without
+   pinch-zoom in touch-action) */
+.statue-slot.is-turnable { cursor: grab; touch-action: pan-y; touch-action: pan-y pinch-zoom; }
+.has-cursor .statue-slot.is-turnable { cursor: var(--cursor-star-grab); }

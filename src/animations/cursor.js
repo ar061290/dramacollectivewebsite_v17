@@ -10,6 +10,9 @@
 //                 darkens the image's see-through pixels.)
 // The drawn cursor is placed on the earliest pointer event there is (pointerrawupdate, where the
 // browser has it), straight away, with no easing and no frame batching.
+// A page with no sky over part of it may ask for the drawn cursor everywhere there: while <html>
+// has is-glow-everywhere (the publication sets it below its opening), the whole page counts as one
+// box, with nothing to clip the glow to.
 
 const BOXES = '[data-mask], .curtain, .topbar__sheet, .spotlight, .event, .ticket__body, .book, .contact-card, .topbar__dropdown';
 const LINKS = 'a, button, label, [role="button"]';
@@ -51,9 +54,11 @@ export function setupCursor() {
 
   let last = null, raf = 0;
   let box = null, boxRect = null; // the text box under the pointer, and where it is
+  let free = false; // the page has asked for the drawn cursor everywhere (no box to clip to)
 
   // clip the glow to the box: how far each of the box's edges cuts into the glow's square
   const clip = (x, y) => {
+    if (glow && free) { if (glow.style.clipPath) glow.style.clipPath = ''; return; }
     if (!glow || !boxRect) return;
     const b = boxRect;
     const t = Math.max(0, b.top - (y - R)), l = Math.max(0, b.left - (x - R));
@@ -79,9 +84,11 @@ export function setupCursor() {
     rehome(target?.closest?.('dialog[open]') ?? home);
     root.classList.toggle('is-over-text', overText(x, y, target));
     root.classList.toggle('is-over-link', !!target?.closest?.(LINKS));
-    box = target?.closest?.(BOXES) ?? null;
+    // (an embedded form keeps the native star: the drawn one cannot follow into its frame)
+    free = root.classList.contains('is-glow-everywhere') && !target?.closest?.('[data-quiet], iframe');
+    box = free ? null : target?.closest?.(BOXES) ?? null;
     boxRect = box?.getBoundingClientRect() ?? null;
-    root.classList.toggle('is-on-box', !!box);
+    root.classList.toggle('is-on-box', free || !!box);
     clip(x, y);
   };
   const look = () => { if (last && !raf) raf = requestAnimationFrame(update); };

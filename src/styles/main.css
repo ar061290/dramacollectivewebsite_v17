@@ -9,4 +9,10 @@
 @import "./production.css";
 @import "./soon.css";
 @import "./apply.css";
+@import "./publication.css";
+@import "./publication-hero.css";
+@import "./publication-pieces.css";
+@import "./publication-blocks.css";
+@import "./publication-banner.css";
+@import "./publication-reading.css";
 @import "./sponsor-apply.css";

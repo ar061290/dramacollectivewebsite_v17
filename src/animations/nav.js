@@ -137,7 +137,7 @@ export function setupNav({ reduced }) {
   // same-page anchors: smooth scroll and focus (the home page's acts)
   const onClick = (e) => {
     const a = e.target.closest('a[href^="#"]');
-    if (!a) return;
+    if (!a || e.defaultPrevented) return; // (a page's own handler has taken this one)
     const id = a.getAttribute('href');
     const target = id === '#' ? null : document.querySelector(id);
     if (!target) return;

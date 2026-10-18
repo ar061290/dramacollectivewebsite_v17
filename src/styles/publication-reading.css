@@ -1,0 +1,402 @@
+/* The publication's reading pages (tools/pages/build.mjs writes them; src/pages/reading.js boots
+   them): each piece, the editor's note, and all the pieces. Made to be read: one narrow column of
+   Open Sans on the theme's ground, the title in Raung, the house's hairlines and its gold rule, and
+   at the end the way on to the next piece. The top bar is hidden here as on the publication, and
+   the publication's banner rides along the bottom (publication-banner.css). No star sky. */
+
+.page--reading {
+  --read-w: 680px;     /* the text column: about 70 characters of 18px Open Sans */
+  --read-wide: 920px;  /* a picture may stand a little wider than the text */
+}
+
+/* ---- the column ---- */
+.read {
+  padding: clamp(40px, 6vw, 80px) var(--pub-gutter) clamp(72px, 9vw, 120px);
+}
+.read__head,
+.read__body,
+.read__end { max-width: var(--read-w); margin-inline: auto; }
+
+/* ---- the top: the way back, the issue and form, the title, who wrote it, the gold rule ---- */
+.read__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 clamp(36px, 5vw, 64px) -2px;
+  padding: 8px 2px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--fg-muted);
+}
+.read__back:hover { color: var(--fg-strong); text-decoration: none; }
+.read__arrow { width: 14px; height: 10px; flex: none; transition: transform var(--dur-base) var(--ease-curtain); }
+.read__back:hover .read__arrow { transform: translateX(-3px); }
+
+.read__kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 20px;
+  color: var(--accent);
+}
+.read__dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: .7; }
+
+.read__title {
+  max-width: 16ch;
+  font-size: clamp(40px, 5.4vw, 72px);
+  line-height: 1.04;
+  letter-spacing: var(--ls-display);
+  color: var(--fg-strong);
+}
+/* a piece's dek, when it has one: a line under the title saying what the piece is */
+.read__dek {
+  margin: 20px 0 0;
+  font-size: clamp(19px, 1.7vw, 22px);
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--fg);
+}
+.read__by {
+  margin: 24px 0 0;
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--fg-muted);
+}
+.read__dek + .read__by { margin-top: 14px; }
+.read__author { font-weight: 600; color: var(--fg-strong); }
+.read__rule { margin: 28px 0 0; }
+
+/* a piece's picture, under the byline, a little wider than the text */
+.read__figure {
+  max-width: var(--read-wide);
+  margin: clamp(40px, 5vw, 56px) auto 0;
+}
+.read__figure img {
+  width: 100%;
+  height: auto;
+  box-shadow: 0 0 0 1px var(--pub-hair), 0 22px 48px rgb(42 13 28 / .22);
+}
+
+/* ---- the text ---- */
+.read__body {
+  margin-top: clamp(40px, 5vw, 56px);
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--fg);
+  overflow-wrap: break-word;
+}
+/* (:where keeps this as light as a class, so the pieces' own rules below set their own spacing) */
+.read__body :where(p) { max-width: none; margin: 0 0 1.05em; }
+.read__body em { font-style: italic; }
+
+/* the editor's note opens with a stanza: five short lines, each its own (a line too long for a
+   phone hangs its runover in) */
+.read__stanza {
+  margin-bottom: 1.5em;
+  font-family: var(--font-display);
+  font-size: clamp(24px, 2.4vw, 29px);
+  line-height: 1.32;
+  color: var(--fg-strong);
+}
+.read__stanza > span { display: block; padding-left: 1em; text-indent: -1em; }
+.read__stanza br { display: none; }
+
+/* ---- piece 1: the two dictionary entries it opens with ---- */
+.dict {
+  margin: 0 0 2.4em;
+  border-block: 1px solid var(--pub-hair);
+}
+.dict__entry { padding: 22px 0 20px; }
+.dict__entry + .dict__entry { border-top: 1px solid var(--pub-hair); }
+.dict__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 14px;
+  line-height: 1.2;
+}
+.dict__word {
+  font-family: var(--font-display);
+  font-size: clamp(34px, 3.4vw, 42px);
+  line-height: 1;
+  color: var(--fg-strong);
+}
+/* (the site's Open Sans has the schwa but not the stress mark or the length mark: those two come from
+   the system's own sans, named here so it is a full one, not whatever the browser picks) */
+.dict__ipa {
+  font-family: "Open Sans", "Segoe UI", "Noto Sans", "Lucida Grande", "DejaVu Sans", "Helvetica Neue", Arial, sans-serif;
+  font-size: 18px;
+  color: var(--fg-muted);
+}
+.dict__pos { font-size: 17px; font-style: italic; color: var(--accent); }
+.dict__sense {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  margin: 12px 0 0;
+  color: var(--fg);
+}
+.dict__num {
+  padding-top: .3em;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--accent);
+}
+
+/* ---- piece 2: footnotes. The number in the text links down to its note (which lands in the upper
+   part of the screen and is marked while it is the page's target), and each note links back ---- */
+.read__ref {
+  margin-left: 1px;
+  font-size: .62em;
+  line-height: 0;
+  vertical-align: super;
+}
+.read__ref a {
+  display: inline-block;
+  padding: 2px 3px 2px 1px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  color: var(--accent);
+  scroll-margin-block: 30vh;
+}
+.read__ref a:hover { text-decoration: underline 1px; text-underline-offset: 3px; }
+.read__ref a:target { background: var(--accent); color: var(--bg); }
+.read__notes {
+  margin-top: clamp(48px, 6vw, 72px);
+  padding-top: 24px;
+  border-top: 1px solid var(--pub-hair);
+}
+.read__notes-title { margin: 0 0 14px; color: var(--fg-muted); }
+.read__notelist {
+  padding-left: 1.6em;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--fg);
+}
+.read__notelist li {
+  margin: 0 -10px 6px -10px;
+  padding: 6px 10px;
+  scroll-margin-block: 30vh;
+  transition: background-color var(--dur-slow) var(--ease-curtain);
+}
+.read__notelist li::marker {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--accent);
+}
+.read__notelist li:target { background: var(--card-bg); color: var(--fg-strong); box-shadow: inset 2px 0 0 var(--accent); }
+/* (a note takes the focus when the reader arrives at it, src/pages/reading.js: its mark is that) */
+.read__notelist li:focus { outline: none; }
+.read__noteback {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-left: 2px;
+  vertical-align: -6px;
+  color: var(--accent);
+}
+.read__noteback svg { width: 10px; height: 12px; }
+.read__noteback:hover { color: var(--accent-hover); }
+
+/* ---- piece 3 (Everything Changes): a one-act play, set as a script. The setting in italics; each speech under (on wide
+   screens, beside) its speaker's name in tracked small capitals; stage directions in italics, a
+   step quieter; the epilogue under its own heading; the closing lines set apart ---- */
+.script__setting {
+  margin-bottom: 2.2em;
+  padding-bottom: 1.8em;
+  border-bottom: 1px solid var(--pub-hair);
+  font-style: italic;
+}
+.script { --name-w: 136px; --name-gap: 24px; margin-bottom: 1em; }
+.script__cue {
+  display: grid;
+  grid-template-columns: var(--name-w) minmax(0, 1fr);
+  column-gap: var(--name-gap);
+  margin-bottom: 1.05em;
+}
+.script__name {
+  margin: 0;
+  padding-top: .42em;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: .16em;
+  color: var(--fg-strong);
+}
+.script__aside {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 13px;
+  letter-spacing: 0;
+  color: var(--fg-muted);
+}
+.script__line { margin: 0; }
+.script__dir { font-style: italic; color: var(--fg-muted); }
+.script__direction {
+  margin: 0 0 1.05em calc(var(--name-w) + var(--name-gap));
+  font-style: italic;
+  color: var(--fg-muted);
+}
+.read__subhead {
+  margin: 2.2em 0 .7em;
+  padding-top: 1.6em;
+  border-top: 1px solid var(--pub-hair);
+  font-size: clamp(30px, 3vw, 38px);
+  line-height: 1.1;
+}
+.script__close {
+  margin: 2.4em 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(26px, 2.8vw, 34px);
+  line-height: 1.25;
+  text-align: center;
+  color: var(--fg-strong);
+}
+.script__close::before {
+  content: "";
+  display: block;
+  width: 64px;
+  height: var(--rule-thick);
+  margin: 0 auto 1.1em;
+  background: var(--rule-color);
+}
+.script__close > span { display: block; }
+.script__close br { display: none; }
+
+/* ---- pieces 4 and 5 (Stars., Beauty in Imperfection): set as verse. Each line its own (a line too
+   long for the column hangs its runover in), as the source breaks them; a spoken monologue's lines
+   a breath apart ---- */
+.verse { margin-bottom: 1.05em; }
+.verse > span { display: block; padding-left: 1.5em; text-indent: -1.5em; }
+.verse br { display: none; }
+.verse--spoken > span:not(:first-child) { margin-top: .55em; }
+
+/* ---- piece 7 (I Love Nostalgia): a story in parts. Each break (a dash in the source) is the house's
+   star, small, between two hairlines, centred; a part's number under it in tracked capitals ---- */
+.read__break {
+  position: relative;
+  width: 112px;
+  height: 11px;
+  margin: 2.8em auto 2.4em;
+  border: 0;
+  color: var(--accent);
+  background:
+    linear-gradient(var(--pub-hair), var(--pub-hair)) left center / 40px 1px no-repeat,
+    linear-gradient(var(--pub-hair), var(--pub-hair)) right center / 40px 1px no-repeat;
+}
+.read__break::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: calc(50% - 5.5px);
+  width: 11px;
+  height: 11px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -10 20 20'%3E%3Cpath d='M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-10 -10 20 20'%3E%3Cpath d='M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+/* (the tracking trails the last letter, so the same again leads the first, to keep the word centred) */
+.read__part {
+  margin: -10px 0 26px;
+  text-align: center;
+  text-indent: var(--ls-eyebrow);
+  letter-spacing: var(--ls-eyebrow);
+  color: var(--accent);
+}
+
+/* ---- the end: a hairline, then the way on (two large buttons, where each goes under it) ---- */
+.read__end {
+  margin-top: clamp(56px, 7vw, 88px);
+  padding-top: 36px;
+  border-top: 1px solid var(--pub-hair);
+}
+.read__nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px var(--pub-gap);
+}
+.read__step {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  color: var(--fg-strong);
+  text-decoration: none;
+}
+.read__step--next { align-items: flex-end; text-align: right; }
+.read__step:hover { color: var(--fg-strong); text-decoration: none; }
+.read__step:focus-visible { outline: 2px solid var(--focus); outline-offset: 6px; }
+.read__btn {
+  gap: 12px;
+  min-height: 48px;
+  padding: 15px 22px;
+  font-size: 12px;
+  letter-spacing: .1em;
+}
+/* the whole block is the link, so its button answers the pointer and the keyboard */
+.read__step:hover .read__btn,
+.read__step:focus-visible .read__btn { background: var(--fg-strong); color: var(--bg); }
+.read__step--prev:hover .read__arrow { transform: translateX(-3px); }
+.read__step--next:hover .read__arrow { transform: translateX(3px); }
+.read__step-sub {
+  max-width: 18em;
+  text-wrap: balance;
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.22;
+  color: var(--fg-strong);
+}
+.read__step-sub--note {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+.read__all {
+  max-width: none;
+  margin: 44px 0 0;
+  text-align: center;
+}
+.read__all a {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  text-underline-offset: 5px;
+}
+.read__all a:hover { color: var(--fg-strong); }
+
+/* ---- all the pieces: the heading over the grid (the grid and its cards: publication-pieces.css) ---- */
+.read--index { padding-inline: 0; }
+.read--index .read__head { max-width: none; margin-bottom: clamp(36px, 4vw, 56px); }
+.read--index .read__title { max-width: none; }
+
+/* ---- phones ---- */
+@media (max-width: 640px) {
+  .read__body { font-size: 17px; }
+  .read__figure { margin-inline: calc(-1 * var(--pub-gutter)); }
+  .script__cue { grid-template-columns: minmax(0, 1fr); }
+  .script__name { padding-top: 0; margin-bottom: 2px; }
+  .script__aside { display: inline; margin-left: 4px; }
+  .script__direction { margin-left: 1.2em; }
+  .read__nav { grid-template-columns: minmax(0, 1fr); }
+  .read__step--next { align-items: flex-start; text-align: left; }
+  .read__step-sub:not(.read__step-sub--note) { font-size: 20px; }
+}

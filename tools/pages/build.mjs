@@ -8,12 +8,19 @@
 //                         footer as it rises)
 //   <!-- site:team -->    team.html only: the core team's cards, from content/team.json
 //   <!-- site:contacts --> contact.html and sponsor-apply.html: who to write to (CONTACTS)
-// Run after editing this file or content/team.json:  npm run pages
+//   <!-- site:pubbanner --> the publication and its reading pages: the banner along the bottom
+// It also writes the publication's reading pages whole (READING, below): each piece that is out
+// (piece-<slug>.html, from src/publication/pieces-data.js and the piece's text in
+// content/pieces/<slug>.html), the editor's note (editors-note.html, from content/editors-note.html)
+// and all the pieces (pieces.html).
+// Run after editing this file, content/team.json, content/pieces/, content/editors-note.html or the
+// pieces' data:  npm run pages
 // Each file keeps its own line endings.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
+import { PUBLISHED, pieceHref, FIRST_OF_ISSUE } from '../../src/publication/pieces-data.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -48,12 +55,28 @@ export const CONTACTS = [
   { name: 'Aripra Sharma', role: 'Executive President', email: 'aripras111460@students.chirec.ac.in' },
 ];
 
+// The publication's reading pages, written whole by build() (readingPage, below): one per piece that
+// is out, in reading order, then the editor's note and the page of all the pieces. Each key is the
+// page's own (vite.config.js keys its inputs by them, so they must not repeat).
+const READING = [
+  ...PUBLISHED.map((p) => ({ file: pieceHref(p).slice(2), key: `piece-${p.slug}`, piece: p })),
+  { file: 'editors-note.html', key: 'editors-note' },
+  { file: 'pieces.html', key: 'pieces' },
+];
+
 export const PAGES = [
   { file: 'index.html', key: 'home' },
   ...NAV.map((n) => ({ file: n.href.slice(2), key: n.key })),
   { file: 'sponsor.html', key: 'sponsor' },
   { file: APPLY.href.slice(2), key: APPLY.key },
   { file: SPONSOR_APPLY.href.slice(2), key: SPONSOR_APPLY.key },
+  // the publication's own pages, reached from it and not from the menu: its reading pages (each
+  // piece, the editor's note, all the pieces; written whole by this file, READING below), and,
+  // coming soon for now, our writers, the writer application and the newsletter
+  ...READING.map(({ file, key }) => ({ file, key, reading: true })),
+  { file: 'writers.html', key: 'writers' },
+  { file: 'write.html', key: 'write' },
+  { file: 'newsletter.html', key: 'newsletter' },
   // the stage planner, opened from The production: a full-screen app with its own top bar (no
   // shared parts are written into it; it is listed here so Vite builds it)
   { file: 'stage-planner.html', key: 'planner' },
@@ -145,11 +168,13 @@ ${[CONTACT, APPLY, CTA].map((n) => `        <li>${link(n, page)}</li>`).join('\n
   </header>`;
 };
 
-const stage = () => `<div class="stage" aria-hidden="true">
+// The star sky and the drawn cursor. The reading pages have no sky (nothing to keep it going on a
+// page made to be read): only the cursor, with its glow everywhere (html.is-glow-everywhere).
+const stage = (stars = true) => `${stars ? `<div class="stage" aria-hidden="true">
     <canvas class="stage__stars"></canvas>
   </div>
 
-  <div class="cursor" aria-hidden="true">
+  ` : ''}<div class="cursor" aria-hidden="true">
     <span class="cursor__glow"></span>
     <svg class="cursor__star" viewBox="-12 -17 24 34" focusable="false"><path class="cursor__star-plain" d="M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z"/><path class="cursor__star-text" d="M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z"/></svg>
   </div>`;
@@ -224,19 +249,21 @@ const DEPTS = [
 
 const initials = (name) => name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
+/** A WebP picture's size, read from its header (VP8 / VP8L / VP8X); `path` from the site's root. */
+function webpSize(path) {
+  const b = readFileSync(join(ROOT, path));
+  const kind = b.toString('ascii', 12, 16);
+  let w, h;
+  if (kind === 'VP8 ') { w = b.readUInt16LE(26) & 0x3fff; h = b.readUInt16LE(28) & 0x3fff; }
+  else if (kind === 'VP8L') { const v = b.readUInt32LE(21); w = (v & 0x3fff) + 1; h = ((v >> 14) & 0x3fff) + 1; }
+  else { w = b.readUIntLE(24, 3) + 1; h = b.readUIntLE(27, 3) + 1; }
+  return { w, h };
+}
+
 function team() {
   const { people } = JSON.parse(readFileSync(join(ROOT, 'content', 'team.json'), 'utf8'));
-  const sizes = {}; // photo sizes, read from the WebP headers (VP8 / VP8L / VP8X)
-  const size = (photo) => {
-    if (sizes[photo]) return sizes[photo];
-    const b = readFileSync(join(ROOT, 'assets', 'team', `${photo}.webp`));
-    const kind = b.toString('ascii', 12, 16);
-    let w, h;
-    if (kind === 'VP8 ') { w = b.readUInt16LE(26) & 0x3fff; h = b.readUInt16LE(28) & 0x3fff; }
-    else if (kind === 'VP8L') { const v = b.readUInt32LE(21); w = (v & 0x3fff) + 1; h = ((v >> 14) & 0x3fff) + 1; }
-    else { w = b.readUIntLE(24, 3) + 1; h = b.readUIntLE(27, 3) + 1; }
-    return (sizes[photo] = { w, h });
-  };
+  const sizes = {}; // photo sizes, read once each
+  const size = (photo) => sizes[photo] ?? (sizes[photo] = webpSize(join('assets', 'team', `${photo}.webp`)));
   const filters = `<div class="team-filter" role="group" aria-label="Show a department">
         <button class="team-filter__btn" type="button" aria-pressed="true" data-filter="all">Everyone</button>
 ${DEPTS.map((d) => `        <button class="team-filter__btn" type="button" aria-pressed="false" data-filter="${d.key}">${esc(d.label)}</button>`).join('\n')}
@@ -276,22 +303,207 @@ ${CONTACTS.map((c) => `        <li class="contact-card">
       </ul>`;
 }
 
+// ---- The publication: its banner and its reading pages ----
+
+// The banner along the bottom of the screen (houseofheat's ticker), on the publication and each of
+// its reading pages: the whole <aside>, the last thing in <main>, sticky to the bottom of the screen
+// until it docks on the footer (src/styles/publication-banner.css). The mark; one line, which
+// src/publication/ticker.js rolls round and round (copies of it, hidden from screen readers); the
+// way to write for us, and beside it the top bar's own "Become a sponsor" (the bar is hidden on
+// these pages). [data-mask] keeps the stars from under it in the publication's opening; never
+// [data-fly] (src/site/flyin.js: a button kept in the bottom of the screen never arrives).
+const PUB_LINE = 'India’s first independent, student-run theatre publication';
+const WRITE = { href: './write.html', label: 'Become a writer' };
+const pubBanner = () => `<aside class="pub-ticker" data-pub-ticker aria-label="The publication">
+      <div class="pub-ticker__bar" data-mask>
+        <span class="pub-mark pub-ticker__mark" aria-hidden="true"></span>
+        <div class="pub-ticker__strip">
+          <p class="pub-ticker__track"><span class="pub-ticker__item">${PUB_LINE}</span></p>
+        </div>
+        <div class="pub-ticker__actions">
+          <a class="pub-btn pub-ticker__cta" href="${WRITE.href}">${WRITE.label}</a>
+          <a class="btn btn--inverse btn--sm pub-ticker__sponsor" href="${CTA.href}">${CTA.label}</a>
+        </div>
+      </div>
+    </aside>`;
+
+const MONTHS = { Jan: 'January', Feb: 'February', Mar: 'March', Apr: 'April', May: 'May', Jun: 'June', Jul: 'July', Aug: 'August', Sep: 'September', Oct: 'October', Nov: 'November', Dec: 'December' };
+/** "Oct 2026" as said in a sentence: "October 2026". */
+const issueName = (issue) => issue.replace(/^([A-Z][a-z]{2})\b/, (m) => MONTHS[m] ?? m);
+/** "Oct 2026" as a machine-readable month: "2026-10". */
+const issueDate = (issue) => {
+  const [m, y] = issue.split(' ');
+  const i = Object.keys(MONTHS).indexOf(m);
+  return i < 0 ? '' : `${y}-${String(i + 1).padStart(2, '0')}`;
+};
+/** A text of content/, set in at the given indent (blank lines stay blank). */
+const content = (path, pad) => readFileSync(join(ROOT, 'content', path), 'utf8').replace(/\r\n/g, '\n').trimEnd()
+  .split('\n').map((l) => (l ? pad + l : l)).join('\n');
+
+const ARROW_L = '<svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M13 5H1.5M5 1 1 5l4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ARROW_R = '<svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const BACK = `<a class="read__back" href="./publication.html">${ARROW_L}<span>The publication</span></a>`;
+const PUBLICATION = { href: './publication.html', label: 'The publication', sub: 'This month’s issue and what comes next', note: true };
+const ALL = { href: './pieces.html', label: 'All the pieces', sub: 'Every piece we have published', note: true };
+
+// The two large buttons at a reading page's end, each with where it goes under it: the previous
+// piece on the left (or the publication), the next on the right (or all the pieces); and under them
+// a small way to all the pieces, unless the right-hand button is that already.
+const step = (side, to) => `<a class="read__step read__step--${side}" href="${to.href}"${to.rel ? ` rel="${to.rel}"` : ''}>
+            <span class="pub-btn read__btn">${side === 'prev' ? ARROW_L : ''}<span>${esc(to.label)}</span>${side === 'next' ? ARROW_R : ''}</span>
+            <span class="read__step-sub${to.note ? ' read__step-sub--note' : ''}">${esc(to.sub)}</span>
+          </a>`;
+const readEnd = (prev, next) => `<footer class="read__end">
+        <nav class="read__nav" aria-label="More from the publication">
+          ${step('prev', prev)}
+          ${step('next', next)}
+        </nav>${next === ALL ? '' : `
+        <p class="read__all"><a href="${ALL.href}">${ALL.label}</a></p>`}
+      </footer>`;
+
+// The top of a reading page: the way back, the issue and form, the title (risen into place by the
+// site's [data-reveal]), the piece's dek if it has one (a line under the title), who wrote it and
+// the gold rule.
+const readHead = ({ issue, kind, title, dek, author }) => `<header class="read__head">
+        ${BACK}
+        <p class="pub-label read__kicker"><time datetime="${issueDate(issue)}">${esc(issue)}</time><span class="read__dot" aria-hidden="true"></span><span>${esc(kind)}</span></p>
+        <h1 class="read__title" id="read-title" data-reveal>${esc(title)}</h1>${dek ? `
+        <p class="read__dek">${esc(dek)}</p>` : ''}
+        <p class="read__by">By <span class="read__author">${esc(author)}</span></p>
+        <span class="rule read__rule" aria-hidden="true"></span>
+      </header>`;
+
+const article = (head, figure, body, end) => `    <article class="read" aria-labelledby="read-title">
+      ${head}${figure ? `\n      ${figure}` : ''}
+      <div class="read__body">
+${body}
+      </div>
+      ${end}
+    </article>`;
+
+/** A piece's page: its text (content/pieces/<slug>.html) in the reading layout. */
+function piecePage(p) {
+  const i = PUBLISHED.indexOf(p);
+  const before = PUBLISHED[i - 1];
+  const after = PUBLISHED[i + 1];
+  const prev = before ? { href: pieceHref(before), label: 'Previous piece', sub: before.title, rel: 'prev' } : PUBLICATION;
+  const next = after ? { href: pieceHref(after), label: 'Next piece', sub: after.title, rel: 'next' } : ALL;
+  // a piece's picture, under its byline (its size from the file, so the page holds its place)
+  const figure = p.photo
+    ? (() => { const { w, h } = webpSize(p.photo.src); return `<figure class="read__figure"><img src="./${esc(p.photo.src)}" alt="${esc(p.photo.alt)}" width="${w}" height="${h}" decoding="async"></figure>`; })()
+    : '';
+  const kind = p.form.toLowerCase();
+  return {
+    title: p.title,
+    // (the article by sound: "an essay", but "a one-act play", "a university ...")
+    description: `${/^[aeiou]/i.test(kind) && !/^(one|uni|use|eu)/i.test(kind) ? 'An' : 'A'} ${kind} by ${p.author}, from the ${issueName(p.issue)} issue of The Drama Collective’s publication.`,
+    source: `src/publication/pieces-data.js and content/pieces/${p.slug}.html`,
+    main: article(readHead({ issue: p.issue, kind: p.form, title: p.title, dek: p.dek, author: p.author }), figure,
+      content(`pieces/${p.slug}.html`, '        '), readEnd(prev, next)),
+  };
+}
+
+/** The editor's note (content/editors-note.html), ending on the way into the issue. */
+function editorsNotePage() {
+  const first = FIRST_OF_ISSUE('Oct 2026');
+  return {
+    title: 'Editor’s note',
+    description: 'The editor’s note for the October 2026 issue of The Drama Collective’s publication, by Kodela Gautam.',
+    source: 'content/editors-note.html',
+    main: article(readHead({ issue: 'Oct 2026', kind: 'Editorial', title: 'Editor’s note', author: 'Kodela Gautam' }), '',
+      content('editors-note.html', '        '),
+      readEnd(PUBLICATION, { href: pieceHref(first), label: 'Read the October issue', sub: first.title, rel: 'next' })),
+  };
+}
+
+/** All the pieces: a heading and the grid of every piece that is out, the newest issue first. */
+function piecesPage(pieceCard) {
+  const issues = [...new Set(PUBLISHED.map((p) => p.issue))].reverse();
+  const cards = issues.flatMap((issue) => PUBLISHED.filter((p) => p.issue === issue))
+    .map((p) => pieceCard(p, { level: 2 }).split('\n').map((l) => `          ${l}`).join('\n'));
+  return {
+    title: 'All the pieces',
+    description: 'Every piece published by The Drama Collective’s theatre publication, the newest issue first.',
+    source: 'src/publication/pieces-data.js and src/publication/cards.js',
+    main: `    <section class="read read--index" aria-labelledby="read-title">
+      <div class="pub-wrap">
+        <header class="read__head">
+          ${BACK}
+          <h1 class="read__title" id="read-title" data-reveal>All the pieces</h1>
+          <span class="rule read__rule" aria-hidden="true"></span>
+        </header>
+        <ul class="pub-pieces__grid read__grid">
+${cards.join('\n')}
+        </ul>
+      </div>
+    </section>`,
+  };
+}
+
+/** A reading page, whole, with its shared parts' markers empty (build() fills them like any page's). */
+const readingPage = (key, { title, description, source, main }) => `<!doctype html>
+<html lang="en-IN" class="is-glow-everywhere">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>${esc(title)} · The Drama Collective</title>
+  <meta name="description" content="${esc(description)}">
+  <meta name="theme-color" content="#2a0d1c">
+  <!-- site:head -->
+  <!-- /site:head -->
+</head>
+<body class="page page--reading page--${key}">
+  <!-- Written by tools/pages/build.mjs (npm run pages) from ${source}: edit those, not this file. -->
+  <!-- site:header -->
+  <!-- /site:header -->
+
+  <!-- site:stage -->
+  <!-- /site:stage -->
+
+  <main id="main" class="page__main page__main--pub page__main--reading">
+${main}
+
+    <!-- site:pubbanner -->
+    <!-- /site:pubbanner -->
+  </main>
+
+  <!-- site:footer -->
+  <!-- /site:footer -->
+
+  <script type="module" src="./src/pages/reading.js"></script>
+</body>
+</html>
+`;
+
 function fill(src, name, html, indent = '  ') {
   const re = new RegExp(`<!-- site:${name} -->[\\s\\S]*?<!-- /site:${name} -->`);
   if (!re.test(src)) return src;
   return src.replace(re, () => `<!-- site:${name} -->\n${indent}${html}\n${indent}<!-- /site:${name} -->`);
 }
 
-export function build() {
-  for (const { file, key } of PAGES) {
+/** @param {string[]} [only]  page keys or files to write (none: every page) */
+export async function build(only = []) {
+  // the grid's card is the publication's own (src/publication/cards.js: plain strings, no DOM),
+  // loaded here rather than at the top so that importing the page list (vite.config.js) needs it not
+  const { pieceCard } = await import('../../src/publication/cards.js');
+  for (const { file, key, reading } of PAGES) {
+    if (only.length && !only.includes(key) && !only.includes(file)) continue;
     const path = join(ROOT, file);
     let src;
-    try { src = readFileSync(path, 'utf8'); } catch { console.warn(`skip ${file}: not found`); continue; }
-    const crlf = src.includes('\r\n');
-    let out = src.replace(/\r\n/g, '\n');
+    try { src = readFileSync(path, 'utf8'); } catch { src = null; }
+    // a reading page is written whole each time, from its text (the same text gives the same page)
+    let out;
+    if (reading) {
+      const r = READING.find((p) => p.key === key);
+      out = readingPage(key, r.piece ? piecePage(r.piece) : key === 'pieces' ? piecesPage(pieceCard) : editorsNotePage());
+    } else if (src === null) { console.warn(`skip ${file}: not found`); continue; }
+    else out = src;
+    const crlf = !!src?.includes('\r\n');
+    out = out.replace(/\r\n/g, '\n');
     out = fill(out, 'head', head());
     out = fill(out, 'header', header(key));
-    if (key !== 'home') out = fill(out, 'stage', stage());
+    if (key !== 'home') out = fill(out, 'stage', stage(!reading));
+    out = fill(out, 'pubbanner', pubBanner(), '    ');
     out = fill(out, 'footer', footer(key));
     if (key === 'home') out = fill(out, 'links', pageLinks('home', '        ', 'curtain__links--dock', true), '        ');
     if (key === 'team') out = fill(out, 'team', team(), '      ');
@@ -303,5 +515,6 @@ export function build() {
   }
 }
 
-// run as a script (npm run pages); importing the page list (vite.config.js) writes nothing
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) build();
+// run as a script (npm run pages; or, for some pages only, with their keys or files after it);
+// importing the page list (vite.config.js) writes nothing
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await build(process.argv.slice(2));

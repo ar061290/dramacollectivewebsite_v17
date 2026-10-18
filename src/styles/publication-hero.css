@@ -1,0 +1,142 @@
+/* The opening (publication.html's @hero, src/publication/hero.js): one screen, held in place while
+   it plays. At first only the statue, on the right, alone among the stars; scrolling carries him to
+   the left, and the words come out of the mask he holds into the column on the right (on a phone
+   he starts in the middle and rises, and the words settle under him).
+   The rules below lay out the END of that scene: it stands so with reduced motion, without
+   scripts, and once played. The script sets the start and plays between the two. The publication
+   has no top bar (publication.css), so the scene starts a breath below the screen's top; its
+   bottom is the banner's (publication-banner.css), so the scene keeps above it. */
+
+.pub-hero {
+  --hero-top: 24px;                                   /* no top bar here: a breath of space */
+  --hero-foot: 48px;                                  /* the banner riding along the bottom */
+  --hero-pad: clamp(12px, 3svh, 32px);
+  --hero-gap: clamp(24px, 3.2vw, 64px);               /* between the statue's box and the words */
+  /* the statue's box: as tall as the screen allows, at the still picture's proportions (.82),
+     and never more than 44% of the width (the words need the rest) */
+  --box-h: min(calc(100svh - var(--hero-top) - var(--hero-foot) - 2 * var(--hero-pad)), 900px);
+  --box-w: min(calc(var(--box-h) * .82), 44vw, calc(var(--pub-max) * .44));
+  position: relative;
+  height: 100svh;
+}
+
+.pub-hero__stage {
+  position: relative;
+  height: 100%;
+  max-width: var(--pub-max);
+  margin-inline: auto;
+}
+
+/* the rail: the stage's width less the statue's, so moving it by its own width (translateX(100%))
+   carries him from the left edge to the right one exactly, at any size */
+.pub-hero__rail {
+  position: absolute;
+  left: var(--pub-gutter);
+  top: calc(var(--hero-top) + var(--hero-pad));
+  bottom: calc(var(--hero-foot) + var(--hero-pad));
+  width: calc(100% - 2 * var(--pub-gutter) - var(--box-w));
+  display: flex;
+  align-items: center;
+  pointer-events: none; /* it lies under the words: only the statue itself takes the pointer */
+}
+.pub-hero__statue {
+  flex: none;
+  width: var(--box-w);
+  aspect-ratio: .82;
+  pointer-events: auto;
+}
+
+.pub-hero__words {
+  position: absolute;
+  right: var(--pub-gutter);
+  top: calc(var(--hero-top) + var(--hero-pad));
+  bottom: calc(var(--hero-foot) + var(--hero-pad));
+  width: calc(100% - 2 * var(--pub-gutter) - var(--box-w) - var(--hero-gap));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.pub-hero__title {
+  font-size: clamp(32px, min(4.6vw, 8.4svh, 66px), 84px); /* (66px: its size at the stage's 1440 cap) */
+  line-height: 1.04;
+  letter-spacing: var(--ls-display);
+  max-width: 12.5em;
+}
+.pub-hero__rule { margin: clamp(16px, 3svh, 32px) 0; }
+.pub-hero__from {
+  font-family: var(--font-display);
+  font-size: clamp(18px, min(1.8vw, 3.3svh), 30px);
+  line-height: 1.3;
+  color: var(--fg);
+  max-width: 24em;
+  margin: 0;
+}
+/* the words, each moved on its own by the script (scaled from its middle); a hyphenated word
+   is never broken at its hyphen */
+.pub-hero__w { display: inline-block; transform-origin: 50% 55%; }
+.pub-hero__nobr { white-space: nowrap; }
+/* while the script plays the scene, only words already out take the pointer: at the start he
+   stands under the words' column, and is still to be leaned on and turned there */
+.pub-hero.is-scene .pub-hero__words { pointer-events: none; }
+.pub-hero.is-scene .pub-hero__w { pointer-events: auto; }
+
+/* ---- stacked: phones, and tablets held upright ---- */
+@media (max-width: 767px), (max-width: 1023px) and (orientation: portrait) {
+  .pub-hero {
+    --m-gap: 4px;
+    --m-s: .84; /* his size at the end against his size at the start */
+    --box-h: min(calc((100svh - var(--hero-top) - var(--hero-foot)) * .64), calc((100vw - 2 * var(--pub-gutter)) / .82));
+    --box-w: calc(var(--box-h) * .82);
+    /* at the start he stands in the middle of the screen */
+    --m-dy: calc((100svh - var(--hero-top) - var(--hero-foot) - var(--box-h)) / 2 - var(--m-gap));
+  }
+  .pub-hero__rail {
+    left: 0;
+    right: 0;
+    width: auto;
+    top: calc(var(--hero-top) + var(--m-gap));
+    bottom: auto;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .pub-hero__statue { transform-origin: 50% 0; transform: scale(var(--m-s)); }
+  .pub-hero__words {
+    left: var(--pub-gutter);
+    right: var(--pub-gutter);
+    width: auto;
+    top: calc(var(--hero-top) + var(--m-gap) + var(--box-h) * var(--m-s));
+    bottom: calc(var(--hero-foot) + var(--hero-pad));
+  }
+  .pub-hero__title { font-size: clamp(28px, min(8.4vw, 5.2svh), 58px); max-width: 14em; }
+  .pub-hero__rule { margin: clamp(12px, 2svh, 24px) 0; }
+  .pub-hero__from { font-size: clamp(17px, min(4.4vw, 2.7svh), 26px); }
+}
+/* on a phone, with no top bar above him, he keeps more of his size as he rises: the screen's
+   height is shared between him and the words, with no gap left standing between them */
+@media (max-width: 767px) {
+  .pub-hero { --m-s: .92; }
+}
+
+/* ---- before the script takes the scene: its first frame, so nothing jumps when it does (and
+   should it never come, the end after 4 s: nothing stays hidden) ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .has-js .pub-hero:not(.is-scene):not(.is-still) .pub-hero__words {
+    opacity: 0;
+    animation: pub-hero-show 0s 4s forwards;
+  }
+  .has-js .pub-hero:not(.is-scene):not(.is-still) .pub-hero__rail {
+    transform: translateX(100%);
+    animation: pub-hero-settle 0s 4s forwards;
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 767px),
+  (prefers-reduced-motion: no-preference) and (max-width: 1023px) and (orientation: portrait) {
+  .has-js .pub-hero:not(.is-scene):not(.is-still) .pub-hero__rail { transform: none; animation: none; }
+  .has-js .pub-hero:not(.is-scene):not(.is-still) .pub-hero__statue {
+    transform: translateY(var(--m-dy));
+    animation: pub-hero-rise 0s 4s forwards;
+  }
+}
+@keyframes pub-hero-show { to { opacity: 1; } }
+@keyframes pub-hero-settle { to { transform: none; } }
+@keyframes pub-hero-rise { to { transform: scale(var(--m-s)); } }

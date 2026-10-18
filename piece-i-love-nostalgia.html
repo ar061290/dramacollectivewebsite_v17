@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en-IN" class="is-glow-everywhere">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>I Love Nostalgia · The Drama Collective</title>
+  <meta name="description" content="A soliloquy by Nisha Sriram, from the October 2026 issue of The Drama Collective’s publication.">
+  <meta name="theme-color" content="#2a0d1c">
+  <!-- site:head -->
+  <link rel="icon" href="./assets/brand/mark-gold.png">
+  <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./src/styles/main.css">
+  <!-- Bare-module map for running without a build step (any static server). Vite resolves the same
+       specifiers from node_modules and ignores this map. Keep the versions in step with package.json. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/index.js",
+      "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/",
+      "lottie-web/build/player/lottie_light.js": "https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.js/+esm"
+    }
+  }
+  </script>
+  <script>
+    // theme before first paint: the saved choice, else the dark theatre
+    try { var t = localStorage.getItem('dc-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+    // arriving through the curtain (src/site/transition.js): it starts closed and opens on this page
+    try { if (sessionStorage.getItem('dc-veil') === '1') { sessionStorage.removeItem('dc-veil'); document.documentElement.classList.add('is-veiled'); } } catch (e) {}
+    document.documentElement.classList.add('has-js');
+  </script>
+  <!-- /site:head -->
+</head>
+<body class="page page--reading page--piece-i-love-nostalgia">
+  <!-- Written by tools/pages/build.mjs (npm run pages) from src/publication/pieces-data.js and content/pieces/i-love-nostalgia.html: edit those, not this file. -->
+  <!-- site:header -->
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="veil" aria-hidden="true">
+    <div class="veil__half veil__half--l"></div>
+    <div class="veil__half veil__half--r"></div>
+  </div>
+
+  <header class="topbar" data-topbar>
+    <span class="topbar__ground" aria-hidden="true"></span>
+    <a class="topbar__brand" href="./index.html" aria-label="The Drama Collective, home">
+      <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
+      <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
+    </a>
+    <a class="btn btn--inverse btn--sm topbar__apply" href="./apply.html" data-topbar-keep>Apply now</a>
+    <nav class="topbar__nav" aria-label="Main">
+      <ul class="topbar__links">
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li class="topbar__group" data-dropdown>
+          <button class="topbar__group-toggle" type="button" aria-expanded="false" aria-controls="outputs-menu">Our outputs<svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <ul class="topbar__dropdown" id="outputs-menu" data-dropdown-menu>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+          </ul>
+        </li>
+        <li><a href="./contact.html">Contact us</a></li>
+      </ul>
+      <span class="topbar__glint" aria-hidden="true"></span>
+    </nav>
+    <div class="topbar__tools">
+      <a class="icon-btn" href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="The Drama Collective on Instagram" title="Instagram"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg></a>
+      <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Music" aria-keyshortcuts="K" title="Play music (K)" data-music-toggle>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><rect class="bar" x="2.5" y="8" width="2.2" height="9"/><rect class="bar" x="6.9" y="3" width="2.2" height="14"/><rect class="bar" x="11.3" y="6" width="2.2" height="11"/><rect class="bar" x="15.7" y="9" width="2.2" height="8"/></svg>
+      </button>
+      <button class="icon-btn theme-toggle" type="button" aria-pressed="false" aria-label="Light mode" title="House lights" data-theme-toggle>
+        <svg class="theme-toggle__sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 1.8v2.1M10 16.1v2.1M1.8 10h2.1M16.1 10h2.1M4.2 4.2l1.5 1.5M14.3 14.3l1.5 1.5M4.2 15.8l1.5-1.5M14.3 5.7l1.5-1.5"/></g></svg>
+        <svg class="theme-toggle__moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.9 12.6A6.6 6.6 0 0 1 7.4 4.1a6.6 6.6 0 1 0 8.5 8.5Z" fill="currentColor"/></svg>
+      </button>
+    </div>
+    <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu-sheet" data-menu-toggle>Menu</button>
+    <a class="btn btn--inverse btn--sm topbar__cta" href="./sponsor.html" data-topbar-keep>Become a sponsor</a>
+    <div class="topbar__sheet" id="menu-sheet" data-menu-sheet>
+      <ul>
+        <li><a href="./index.html">Home</a></li>
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li class="topbar__sheet-group"><span class="eyebrow">Our outputs</span>
+          <ul>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+          </ul>
+        </li>
+        <li><a href="./contact.html">Contact us</a></li>
+        <li><a href="./apply.html">Apply now</a></li>
+        <li><a href="./sponsor.html">Become a sponsor</a></li>
+        <li><a href="https://www.instagram.com/" target="_blank" rel="noopener"><span class="ig-word">Instagram</span></a></li>
+      </ul>
+    </div>
+  </header>
+  <!-- /site:header -->
+
+  <!-- site:stage -->
+  <div class="cursor" aria-hidden="true">
+    <span class="cursor__glow"></span>
+    <svg class="cursor__star" viewBox="-12 -17 24 34" focusable="false"><path class="cursor__star-plain" d="M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z"/><path class="cursor__star-text" d="M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z"/></svg>
+  </div>
+  <!-- /site:stage -->
+
+  <main id="main" class="page__main page__main--pub page__main--reading">
+    <article class="read" aria-labelledby="read-title">
+      <header class="read__head">
+        <a class="read__back" href="./publication.html"><svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M13 5H1.5M5 1 1 5l4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>The publication</span></a>
+        <p class="pub-label read__kicker"><time datetime="2026-10">Oct 2026</time><span class="read__dot" aria-hidden="true"></span><span>Soliloquy</span></p>
+        <h1 class="read__title" id="read-title" data-reveal>I Love Nostalgia</h1>
+        <p class="read__dek">A short story performed as a soliloquy</p>
+        <p class="read__by">By <span class="read__author">Nisha Sriram</span></p>
+        <span class="rule read__rule" aria-hidden="true"></span>
+      </header>
+      <div class="read__body">
+        <!-- I Love Nostalgia, by Nisha Sriram (October 2026), a short story performed as a soliloquy, as
+             written: its opening; four parts, each after a break and under its number (one to four); and,
+             after the last break, its close. -->
+        <p>I love nostalgia. It filters all my memories with a fuzzy sepia, making even my worst times seem tenderly beautiful. Maybe that’s the reason I’m up tonight, scrolling through my gallery, skimming over old pictures of us.</p>
+        <p>Sometimes, a particularly happy-looking picture will catch my eye, and I’ll pause to stare at it for a while. Occasionally, the picture will look so raw and intimate with us so caught up in our own joy that it’ll almost feel like I am intruding, looking at it now.</p>
+        <p>But I’ll look at it longer anyway, and wait for the memories to spill in all their romanticised glory.</p>
+        <p>Because as painful as nostalgia is, it is addictive.</p>
+        <p>And as much as thinking of you hurts, I miss you.</p>
+        <hr class="read__break">
+        <h2 class="pub-label read__part">one</h2>
+        <p>It was the middle of March, but winter hadn’t quite made its exit, still clinging to the grass in thin frost, still zipping past in the cold breeze. For the first time in months, sunlight spilled through the branches of your cedar, giving the false impression of warmth. Golden rays seeped into the translucent snow, illuminating the dirt and grime suspended between the layers. Standing outside, bundled in thick wool, I could still feel the sharp chill of winter, and yet cherry blossoms were blooming and birds were chirping and it was definitely, relievingly the start of spring.</p>
+        <p>I trudged over to your front door, but you threw it open before I could even raise my mittened hand to knock. Your face was flushed and your hair stuck out in brown tufts through your ridiculously colourful beanie.</p>
+        <p>On a silent consensus, we ran out into your tiny backyard. I grabbed a fist of the old snow and shoved it down your jacket. The action escalated into a snowball fight, and quickly, we were both shivering wet and the only thing louder than the ice crunching beneath our boots was our manic laughs and gasps.</p>
+        <p>Too soon, your mom dragged us back into your living room, scowling as we dripped all over the floor. But her eyes gleamed with affection as she got us warm mugs of coffee and took her phone out for a photo. You smiled sweetly at the camera while I threw my arm around you – the same way we’d been posing for years. Click.</p>
+        <hr class="read__break">
+        <h2 class="pub-label read__part">two</h2>
+        <p>It was the last day of spring semester. The principal stood at the dias, impatiently waiting for the swarm of students to calm down. This was one of the most anticipated assemblies of the school year – the one where the student selected for the summer exchange program was announced. Everybody wanted to be that student. It was competitive, though. Only one sophomore from hundreds was chosen from each school.</p>
+        <p>Eventually, the noise quieted to a buzz, and I felt myself getting nervous as the principal geared up to announce the winner. I loved home, truly, but even I was tempted by the prospect of a couple months away in Paris, alone, without my family, just soaking in European culture with French students of my age.</p>
+        <p>You held my hand tightly. I held my breath. A strained silence blanketed the long hall as the principal slowly, carefully leaned into the mic – and called out your name.</p>
+        <p>Against my will, disappointment rose up in me, forming a betraying lump in my throat. I quickly pushed it back with a convincing open-mouthed smile and loud cheer. You jumped up in surprise, beaming. Our teacher ushered you up the dias and the principal smiled at you and shook your hand. The school’s cameraman roughly shoved past me to get a better view of the stage. Click.</p>
+        <hr class="read__break">
+        <h2 class="pub-label read__part">three</h2>
+        <p>It was almost August, and you’d already been in Paris for a while. We called each other as often as we could, but between the time zone differences and our busy schedules, it was rare.</p>
+        <p>It was early in the morning for me when you phoned. Even though it was a summer dawn, the sky was a patchy gray, with weak yellow light barely making its way through my floor-to-ceiling windows. I knew in Paris, you probably had been enjoying a warm night, perhaps enveloped in the company of your new friends, strangers to me.</p>
+        <p>I answered the call, video on, smiling. You, instead of wearing a pair of silly onesies like I was used to, had an elegant silk robe on. I didn’t comment on it. You didn’t comment on my horrendous new haircut, either. I wasn’t sure whether to be offended or grateful.</p>
+        <p>You told me about France, and the people, and your dorm, and the bakery next door. I imagined you and your allegedly wonderful roommate chuckling over an inside joke while eating croissants in that stupid bakery every morning. I gagged. I told you about my new job playing gigs at the elderly home, and the courses I was taking at the community college over holidays, and my new freestyle swimming record. I didn’t tell you about how your mom still invited me over every week for ice cream, or the dreary weather, or that I missed you.</p>
+        <p>I had a nagging feeling this was one of the last calls we were going to have in a while. Acting on the preemptive instinct, I swiped down on the screen for a screenshot. Click.</p>
+        <hr class="read__break">
+        <h2 class="pub-label read__part">four</h2>
+        <p>It was the end of summer, and you were back. Tanner, taller, and seemingly happier than when you left.</p>
+        <p>Your family threw you an extravagant welcome-back party. Of course, I was excited to see you. You gave me a big, genuine hug when you first saw me, before strutting off to regroup with the girls from those other schools who got to go on the exchange trip too. Leaving me standing there, frozen in half a smile.</p>
+        <p>Confetti was scattered on the living room ground. A cake sat in all its frosted glory on your wooden table, the one we always sat at for winter coffees. Your friends’ laughter rang loudly, echoing off the cream walls. The air was cosy and bright, but all I felt was bitter.</p>
+        <p>You finally stopped by me, out of grace, and we engaged in careful conversation. Your mom swooped out with her phone, ready to take a picture of us. For tradition’s sake, she said. But you waved her away and gravitated back toward your crowd, filled with people I barely knew. People you barely knew, until just a couple months ago.</p>
+        <p>There was no click this time.</p>
+        <hr class="read__break">
+        <p>I close the gallery and screw my eyes shut. Deciding whether to hold on to the memories desperately, like cupping water in my hands that is slipping through my fingers, or to allow myself to forget. To be content with my current happiness, instead of longing for the distinct flavour of my past.</p>
+        <p>It hurts.</p>
+        <p>I mean, I always knew, certainly, that change was a thing. But I was not prepared for how personal it could be. I was not prepared for how late nights in the kitchen would become tilted glances in the hallway, how long rants and voicemails would dry into inconsistent texts, how unhinged laughter would be silenced by forced smiles.</p>
+        <p>Change crept up on me, and I was not prepared for it.</p>
+      </div>
+      <footer class="read__end">
+        <nav class="read__nav" aria-label="More from the publication">
+          <a class="read__step read__step--prev" href="./piece-i-was-there-first.html" rel="prev">
+            <span class="pub-btn read__btn"><svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M13 5H1.5M5 1 1 5l4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Previous piece</span></span>
+            <span class="read__step-sub">I Was There First</span>
+          </a>
+          <a class="read__step read__step--next" href="./pieces.html">
+            <span class="pub-btn read__btn"><span>All the pieces</span><svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="read__step-sub read__step-sub--note">Every piece we have published</span>
+          </a>
+        </nav>
+      </footer>
+    </article>
+
+    <!-- site:pubbanner -->
+    <aside class="pub-ticker" data-pub-ticker aria-label="The publication">
+      <div class="pub-ticker__bar" data-mask>
+        <span class="pub-mark pub-ticker__mark" aria-hidden="true"></span>
+        <div class="pub-ticker__strip">
+          <p class="pub-ticker__track"><span class="pub-ticker__item">India’s first independent, student-run theatre publication</span></p>
+        </div>
+        <div class="pub-ticker__actions">
+          <a class="pub-btn pub-ticker__cta" href="./write.html">Become a writer</a>
+          <a class="btn btn--inverse btn--sm pub-ticker__sponsor" href="./sponsor.html">Become a sponsor</a>
+        </div>
+      </div>
+    </aside>
+    <!-- /site:pubbanner -->
+  </main>
+
+  <!-- site:footer -->
+  <footer class="curtain" id="contact" aria-label="Pages and contacts">
+    <div class="curtain__grid">
+      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>
+      <nav class="curtain__links" aria-label="All pages">
+        <div class="curtain__col">
+          <p class="eyebrow">The Collective</p>
+          <ul>
+            <li><a href="./index.html">Home</a></li>
+            <li><a href="./about.html">About us</a></li>
+            <li><a href="./team.html">Core team</a></li>
+            <li><a href="./contact.html">Contact us</a></li>
+            <li><a href="./apply.html">Apply now</a></li>
+            <li><a href="./sponsor.html">Become a sponsor</a></li>
+          </ul>
+        </div>
+        <div class="curtain__col">
+          <p class="eyebrow">Our outputs</p>
+          <ul>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+            <li><a href="./stage-planner.html">Stage planner</a></li>
+          </ul>
+        </div>
+        <div class="curtain__col curtain__col--contact">
+          <p class="eyebrow">Write to us</p>
+          <ul>
+            <li><span class="curtain__who">Aadi Ramnani, President</span><a href="mailto:aadir6405@students.chirec.ac.in">aadir6405@students.chirec.ac.in</a></li>
+            <li><span class="curtain__who">Aripra Sharma, Executive President</span><a href="mailto:aripras111460@students.chirec.ac.in">aripras111460@students.chirec.ac.in</a></li>
+            <li><a class="curtain__social" href="https://www.instagram.com/" target="_blank" rel="noopener"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg><span class="ig-word">Instagram</span></a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+    <div class="curtain__base">
+      <div class="curtain__legal">
+        <p class="legal">© 2026 The Drama Collective · CHIREC International School</p>
+        <p class="credits">Music: “the smell of old books, reading, writing and studying (a dark academia playlist)”, <a href="https://www.youtube.com/@DarkEnigmatic68" rel="noopener">Dark Enigmatic</a>.</p>
+      </div>
+      <a class="endorsement" href="https://www.chirec.ac.in" rel="noopener">
+        <img class="endorsement__logo" src="./assets/brand/chirec.webp" alt="CHIREC International School" width="475" height="140">
+        <span>CHIREC International School: the No.&nbsp;1 school in Hyderabad and Telangana</span>
+      </a>
+    </div>
+  </footer>
+  <!-- /site:footer -->
+
+  <script type="module" src="./src/pages/reading.js"></script>
+</body>
+</html>

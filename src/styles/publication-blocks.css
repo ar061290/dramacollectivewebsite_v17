@@ -1,0 +1,479 @@
+/* The publication's blocks (publication.html; src/publication/collection.js, newsletter.js,
+   writers.js): this month's three cards, the monthly newsletter and write for us. houseofheat.co's
+   formats (its feature collection and its UNLCKD block), re-skinned in the design system: square
+   corners, hairline rules, Raung for titles, Lato for the small tracked labels, plum-tinted shadows.
+   (The banner along the bottom is a shared part now: publication-banner.css.) */
+
+/* a button a size up (houseofheat's "Buy now", as the banner's "Become a writer", larger): "All the
+   pieces" under the grid, and the two ways in from write for us */
+.pub-btn--lg {
+  gap: 10px;
+  min-height: 52px;
+  padding: 17px 26px;
+  font-size: 13px;
+  letter-spacing: .1em;
+}
+
+/* ==== This month: the October issue (large), the editor's note and our writers ====
+   Twelve columns: the issue takes eight, the other two stack in the last four (houseofheat's
+   915 / 445 at 1440). Each card is one link: its title's link, stretched over the whole card, so the
+   card reads as a link with the title as its name and nothing else inside it is interactive. */
+.pub-collection { padding-block: var(--space-9) var(--space-8); }
+.pub-collection__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--pub-gap);
+  border-bottom: 1px solid var(--pub-hair);
+}
+.pub-collection__title { margin: 0; color: var(--accent); }
+.pub-collection__issue { margin: 0; color: var(--fg-muted); }
+
+.pub-collection__grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--pub-gap);
+}
+.pub-card--feature { grid-column: 1 / span 8; grid-row: 1 / span 2; }
+.pub-card--paper { grid-column: 9 / span 4; grid-row: 1; }
+.pub-card--ink { grid-column: 9 / span 4; grid-row: 2; }
+
+/* a card's colours: its ground, its ink, a muted ink, its hairlines, its edge, the rule that draws
+   along its top when it is pointed at and the colour its title turns then. The issue sits on the
+   theme's card; the editor's note is the light one of the pair, our writers the ink one (houseofheat's
+   white and navy), in both themes, so each turns its title a colour that reads on its own ground (the
+   site's own link colour, gold on the dark theme, would vanish on the light card and plum on the ink
+   one). */
+.pub-card {
+  --c-bg: var(--card-bg);
+  --c-ink: var(--fg-strong);
+  --c-muted: var(--fg-muted);
+  --c-hair: var(--line);
+  --c-edge: var(--line);
+  --c-rule: var(--gold-500);
+  --c-hover: var(--accent-hover);
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--c-bg);
+  color: var(--c-ink);
+}
+/* its edge, drawn over the picture too (a dark picture on the dark page needs it) */
+.pub-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  box-shadow: inset 0 0 0 1px var(--c-edge);
+  pointer-events: none;
+}
+.pub-card--paper {
+  --c-bg: var(--plum-100);
+  --c-ink: var(--plum-800);
+  --c-muted: var(--plum-600);
+  --c-hair: var(--border-hairline);
+  --c-edge: transparent;
+  --c-rule: var(--plum-500);
+  --c-hover: var(--plum-500);
+}
+.pub-card--ink {
+  --c-bg: var(--plum-800);
+  --c-ink: var(--plum-100);
+  --c-muted: var(--plum-300);
+  --c-hair: var(--border-on-dark);
+  --c-edge: var(--border-on-dark);
+  --c-hover: var(--gold-500);
+}
+[data-theme="light"] .pub-card--paper { --c-bg: var(--white); --c-edge: var(--border-hairline); }
+[data-theme="light"] .pub-card--ink { --c-edge: transparent; }
+
+/* the rule along the top, drawn out from the left as a stage light comes up */
+.pub-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 3;
+  height: var(--rule-thick);
+  background: var(--c-rule);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-curtain) var(--ease-curtain);
+  pointer-events: none;
+}
+.pub-card:hover::before, .pub-card:focus-within::before { transform: scaleX(1); }
+
+/* the picture: one <img> filling its slot (cropped to it, or whole on its own field: below) */
+.pub-card__media {
+  position: relative;
+  flex: none;
+  height: 220px;
+  overflow: hidden;
+}
+.pub-card__media > img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .9s var(--ease-curtain);
+}
+.pub-card:hover .pub-card__media > img { transform: scale(1.03); }
+.pub-card__media > img.is-missing { visibility: hidden; }
+
+.pub-card__body {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+}
+.pub-card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: var(--ls-display);
+  color: var(--c-ink);
+}
+.pub-card__link { color: inherit; text-decoration: none; }
+/* the title's link covers the card: anywhere on it is the link */
+.pub-card__link::after { content: ""; position: absolute; inset: 0; z-index: 2; }
+.pub-card:hover .pub-card__link { color: var(--c-hover); text-decoration: underline 1px; text-underline-offset: .2em; }
+.pub-card__dek { margin: 0; font-size: var(--size-body-s); line-height: 1.55; color: var(--c-muted); max-width: 38em; }
+/* the date and the tags between two hairlines, at the foot (houseofheat's "POSTED 2026.10.01") */
+.pub-card__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-block: 9px;
+  border-block: 1px solid var(--c-hair);
+  color: var(--c-ink);
+}
+.pub-card__tags { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; margin: 0; padding: 0; list-style: none; }
+
+/* keyboard focus lands on the title's link; the ring goes round the whole card */
+.pub-card:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.pub-card__link:focus-visible { outline: none; }
+@supports selector(:has(*)) {
+  .pub-card:focus-within { outline: none; }
+  .pub-card:has(.pub-card__link:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+}
+
+/* the issue: the photograph from its pages takes what the two cards beside it leave (so the card is
+   as tall as those two together, never taller), cropped round the two players; the mark, the title
+   and the row sit below it, the title starting a sixth of the way in (houseofheat's brand logo and
+   headline) */
+.pub-card--feature .pub-card__media { flex: 1 1 auto; height: auto; min-height: 320px; background: var(--plum-900); }
+.pub-card--feature .pub-card__media > img { object-position: 62% 38%; }
+.pub-card--feature .pub-card__body {
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 5fr);
+  align-items: end;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+.pub-card__mark { width: 52px; color: var(--accent); }
+.pub-card__text { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.pub-card--feature .pub-card__title { font-size: clamp(28px, 2.7vw, 40px); line-height: 1.12; max-width: 15em; }
+
+/* the editor's note: the issue in print (a render, its own shadow in it) lying on the gold field;
+   the whole of it, never cropped */
+.pub-card__media--note { background: var(--gold-500); }
+.pub-card__media--note > img { object-fit: contain; }
+
+/* our writers: a typewriter (a render) under the stage's spotlight, on the ink field. The beam comes
+   down from a lamp above the card, narrow there and widening to the floor, soft at its edges, and
+   leaves a pool round the machine; both lie behind the picture, so the light falls onto it */
+.pub-card__media--writers {
+  background:
+    radial-gradient(ellipse 34% 13% at 50% 86%, rgb(243 231 184 / .2), rgb(243 231 184 / 0) 70%),
+    var(--plum-900);
+}
+.pub-card__media--writers::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(from 152deg at 50% -8%, rgb(243 231 184 / 0), rgb(243 231 184 / .2) 9deg, rgb(243 231 184 / .2) 47deg, rgb(243 231 184 / 0) 56deg);
+  -webkit-mask-image: linear-gradient(#000, rgb(0 0 0 / .35) 82%, transparent 94%);
+  mask-image: linear-gradient(#000, rgb(0 0 0 / .35) 82%, transparent 94%);
+}
+.pub-card__media--writers > img { object-fit: contain; }
+
+/* ==== The newsletter ====
+   The sign-up form itself, a band the whole width of the page, in the blush of Fillout's own page.
+   On laptops (1200px and wider) the October cover lies tossed down beside the form's questions:
+   sized to the band's height (measured: --band-h, src/publication/newsletter.js), tilted, a little
+   over the band's top edge and its foot; the cover and the questions, side by side, are centred
+   in the band together. Narrower, there is no room beside the questions: the form alone, the
+   band's whole width. No
+   panel, no card, no heading of ours (the form has its own; ours is for screen readers). The form
+   keeps a height while it loads, so nothing below it jumps when Fillout sets its own. */
+.pub-news {
+  --band-h: 362px;                       /* the band's height: measured once the page is up */
+  --band-bg: #f3e7e9;                    /* Fillout's page colour (plum-100), set in the form's theme */
+  /* the cover, from the band's height: a sheet tilted by 22deg stands 1.19 times its height tall
+     and 1.46 times its width across; it reaches 40px past the band, top and foot together */
+  --cover-w: calc((var(--band-h) + 40px) / 1.192 / 1.416);
+  --cover-across: calc(var(--cover-w) * 1.458);
+  --questions: 604px;                    /* the column Fillout sets the questions in (centred in its frame) */
+  --pair-gap: 48px;                      /* between the cover and the questions */
+  /* Fillout's own page keeps a tall empty margin above the form (the row its logo sits in) and an
+     empty strip below it: the band shows the form without them (see .pub-news__box) */
+  --crop-top: clamp(112px, 4vw + 66px, 140px);
+  --crop-foot: 28px;
+  --tilt: -22deg;
+  padding-block: var(--space-7);
+}
+.pub-news__panel {
+  position: relative;
+  background: var(--band-bg);
+  /* blush in both themes, so our words on it (the line while the form loads, the way to it on
+     Fillout) take the light theme's colours in both */
+  --fg: var(--slate-700);
+  --fg-strong: var(--plum-800);
+  --fg-muted: var(--plum-600);
+  --accent: var(--plum-500);
+  --accent-hover: var(--plum-500);
+  --focus: var(--plum-500);
+}
+/* "Remind me" sends the focus to the (hidden) heading: no ring there */
+.pub-news #news-title:focus { outline: none; }
+
+/* the cover, tossed down across the band's left end: tilted as it landed, centred on the band a
+   touch high (it reaches a little over the band's top edge, a little under its foot), its shadow
+   cast by the light above (on the table it
+   lies on, which does not turn with it): close and dark where the paper meets the form, wide and
+   soft beyond. The pointer goes through it. */
+.pub-news__table {
+  position: absolute;
+  z-index: 2;
+  /* the cover and the questions centred together: the pair's left end, plus the .23 of its width a
+     tilted sheet reaches past its own box */
+  left: calc((100% - var(--cover-across) - var(--pair-gap) - var(--questions)) / 2 + var(--cover-w) * .23);
+  top: 50%;
+  translate: 0 -53%;
+  width: var(--cover-w);
+  pointer-events: none;
+  filter:
+    drop-shadow(0 1px 1px rgb(21 4 8 / .45))
+    drop-shadow(0 10px 12px rgb(21 4 8 / .32))
+    drop-shadow(0 26px 30px rgb(21 4 8 / .34));
+}
+:root[data-theme="light"] .pub-news__table {
+  filter:
+    drop-shadow(0 1px 1px rgb(64 20 42 / .3))
+    drop-shadow(0 10px 12px rgb(64 20 42 / .18))
+    drop-shadow(0 26px 30px rgb(64 20 42 / .2));
+}
+.pub-news__sheet {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1054 / 1492;
+  rotate: var(--tilt);
+}
+.pub-news__cover { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* the cover's satin: a faint band of the light across it, and the paper's edge catching it */
+.pub-news__sheet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(118deg, rgb(255 255 255 / 0) 34%, rgb(255 255 255 / .09) 47%, rgb(255 255 255 / 0) 60%);
+  box-shadow: inset 0 0 0 1px rgb(255 247 236 / .1);
+}
+
+.pub-news__form { position: relative; z-index: 1; min-width: 0; }
+/* laptops: the form's frame starts the cover's width (and the gap) in from the band's left end, so
+   the questions, which Fillout centres in the frame, sit just right of the cover with the pair
+   centred in the band; its "Made with Fillout" badge, which Fillout pins to the frame's lower left
+   on wide frames, would lie under the cover's foot: it is covered in the band's own blush (the
+   pointer cannot reach it either) */
+@media (min-width: 1200px) {
+  .pub-news__form { margin-left: calc(var(--cover-across) + var(--pair-gap)); }
+  .pub-news__form::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    bottom: 0;
+    width: 196px;
+    height: 64px;
+    background: var(--band-bg);
+  }
+}
+/* no box round the form: it is the band, as Fillout draws it, square; the box only trims Fillout's
+   empty margins (pulling the embed up past its top edge, and its own foot up past the embed's), so
+   the band is the form itself. The foot is trimmed only below Fillout's badge, which stays. */
+.pub-news .pub-news__box,
+[data-theme="light"] .pub-news .pub-news__box {
+  overflow: hidden;
+  max-width: none;
+  margin: 0;
+  background: none;
+  color: var(--fg);
+  border-top: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.pub-news .form-box__status { color: var(--fg); }
+.pub-news .form-box__status::before { background: var(--accent); }
+/* the way to the form on Fillout's own site, for a browser that blocks the embed: under the band
+   while it loads, and if it fails; gone once the form is in */
+.pub-news .form-box__alt { position: relative; z-index: 2; padding: var(--space-3) var(--pub-gutter) 0; color: var(--fg-muted); text-align: right; } /* over the empty embed's trimmed foot */
+.pub-news .form-box.is-ready .form-box__alt { display: none; }
+.pub-news .form-box__alt a, .pub-news .form-box__noscript a { color: var(--fg-strong); text-underline-offset: 3px; }
+.pub-news .form-box__alt a:hover, .pub-news .form-box__noscript a:hover { color: var(--accent); }
+.pub-news .form-box__noscript { padding: 0 var(--pub-gutter); text-align: left; color: var(--fg); }
+/* the form's box starts at about the height the loaded form ends at (the embed's own height is set
+   to match, in publication.html: about 514px on wide screens, 534px on tablets, 616px on phones), so
+   the page does not shift under the visitor when Fillout sizes it; once the form is in, Fillout's
+   dynamic resize sets the height */
+.pub-news .form-box [data-fillout-id] { min-height: 514px; margin-block: calc(var(--crop-top) * -1) calc(var(--crop-foot) * -1); }
+.pub-news .form-box.is-ready [data-fillout-id] { min-height: 0; }
+.pub-news .form-box.is-failed [data-fillout-id] { margin-block: 0; }
+
+/* ==== Write for us ====
+   A box on the stage: the invitation on the left with the way to apply and the way to our writers;
+   the statue standing on its floor on the right, in a pool of the stage's gold light. The same ink
+   box in both themes (the metal reads best on it, and the lamp at the cursor shows in it). */
+.pub-writers { padding-block: var(--space-8) var(--space-9); }
+.pub-writers__box {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--pub-gap);
+  align-items: center;
+  min-height: 600px;
+  padding-inline: 80px;
+  background: var(--plum-800);
+  color: var(--plum-100);
+  box-shadow: inset 0 0 0 1px var(--border-on-dark);
+}
+/* the light on him, still, never sweeping: a beam from above, narrow at the lamp (out of the box)
+   and widening to the floor; and on the floor its pool, and a hairline the width of the box at his
+   feet. Both hang from his box, so they stay with him at any size (his feet stand at 89% of it);
+   the box cuts them at its edges. */
+.pub-writers__statue::before, .pub-writers__statue::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+.pub-writers__statue::before {
+  inset: -220px -70% 11%;
+  background: conic-gradient(from 163deg at 50% 0, rgb(243 231 184 / 0), rgb(243 231 184 / .11) 7deg, rgb(243 231 184 / .11) 27deg, rgb(243 231 184 / 0) 34deg);
+  -webkit-mask-image: linear-gradient(#000 60%, rgb(0 0 0 / .45));
+  mask-image: linear-gradient(#000 60%, rgb(0 0 0 / .45));
+}
+.pub-writers__statue::after {
+  left: -100vw;
+  right: -100vw;
+  top: 89%;
+  height: 64px;
+  translate: 0 -50%;
+  background:
+    linear-gradient(to right, rgb(243 231 184 / 0) calc(50% - 640px), rgb(243 231 184 / .24) 50%, rgb(243 231 184 / 0) calc(50% + 640px)) center / 100% 1px no-repeat,
+    radial-gradient(ellipse 240px 30px at 50% 50%, rgb(243 231 184 / .17), rgb(243 231 184 / 0) 70%);
+}
+.pub-writers__statue {
+  grid-column: 8 / span 5;
+  grid-row: 1;
+  align-self: end;
+  justify-self: center;
+  width: auto;
+  height: 560px;
+  max-width: 100%;
+  aspect-ratio: .82;
+  margin-top: 40px;
+}
+.pub-writers__copy { grid-column: 1 / span 6; grid-row: 1; padding-block: 80px; }
+.pub-writers__eyebrow { margin: 0 0 var(--space-4); color: var(--gold-500); }
+.pub-writers__title {
+  margin: 0;
+  max-width: 16ch;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(32px, 3.4vw, 52px);
+  line-height: 1.06;
+  letter-spacing: var(--ls-display);
+  color: var(--plum-100);
+}
+.pub-writers__text { margin: var(--space-5) 0 0; max-width: 32em; font-size: var(--size-body-l); line-height: var(--lh-body); color: var(--plum-200); }
+.pub-writers__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); margin-top: var(--space-7); }
+/* applying: the blush paper, filled, the stronger of the two; on hover it takes the stage light */
+.pub-writers__apply {
+  --pub-btn-ink: var(--plum-100);
+  --pub-btn-paper: var(--plum-800);
+  background: var(--plum-100);
+  color: var(--plum-800);
+  border-color: var(--plum-100);
+  box-shadow: 0 10px 28px rgb(21 4 8 / .35);
+}
+.pub-writers__apply:hover { background: var(--gold-500); border-color: var(--gold-500); color: var(--plum-900); }
+/* our writers: the gold outline; on hover it fills with the gold */
+.pub-writers__more { --pub-btn-ink: var(--gold-500); --pub-btn-paper: var(--plum-800); }
+.pub-writers__more svg { width: 7px; height: 11px; flex: none; transition: transform var(--dur-base) var(--ease-curtain); }
+.pub-writers__more:hover svg { transform: translateX(3px); }
+.pub-writers__box a:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 3px; }
+
+/* ==== Wide tablets and small laptops: the issue across the top, the other two side by side ==== */
+@media (max-width: 1199px) {
+  .pub-news__table { display: none; } /* (no room beside the form's questions: the form alone) */
+  .pub-card--feature { grid-column: 1 / -1; grid-row: auto; }
+  .pub-card--paper { grid-column: 1 / span 6; grid-row: auto; }
+  .pub-card--ink { grid-column: 7 / span 6; grid-row: auto; }
+  .pub-card--feature .pub-card__media { flex: none; min-height: 0; aspect-ratio: 16 / 8; }
+
+
+  .pub-writers__box { padding-inline: 56px; min-height: 0; }
+  .pub-writers__statue { height: 500px; }
+}
+
+/* ==== Tablets: the newsletter and write for us stack; the cover lies by the heading, above the form ==== */
+@media (max-width: 1023px) {
+  .pub-news .form-box:not(.is-ready) [data-fillout-id] { min-height: 534px; }
+  .pub-collection { padding-block: var(--space-8) var(--space-7); }
+  .pub-card--feature .pub-card__body { grid-template-columns: 56px minmax(0, 1fr); }
+
+
+  .pub-writers__box { padding-inline: 48px; }
+  .pub-writers__statue { grid-column: 1 / -1; grid-row: 1; height: 440px; margin-top: 48px; }
+  .pub-writers__copy { grid-column: 1 / -1; grid-row: 2; padding-block: 40px 56px; }
+}
+
+/* ==== Phones ==== */
+@media (max-width: 767px) {
+  .pub-news .form-box:not(.is-ready) [data-fillout-id] { min-height: 616px; }
+  .pub-collection { padding-block: var(--space-7) var(--space-6); }
+  .pub-collection__head { flex-wrap: wrap; }
+  .pub-card--feature, .pub-card--paper, .pub-card--ink { grid-column: 1 / -1; }
+  .pub-card--feature .pub-card__media { aspect-ratio: 4 / 3; }
+  .pub-card--feature .pub-card__body { grid-template-columns: 1fr; gap: var(--space-4); padding: var(--space-5); }
+  .pub-card--feature .pub-card__mark { width: 40px; }
+  .pub-card__media { height: 200px; }
+
+
+  .pub-writers { padding-block: var(--space-7) var(--space-8); }
+  .pub-writers__box { padding-inline: var(--space-5); }
+  .pub-writers__statue { height: 340px; margin-top: 32px; }
+  .pub-writers__copy { padding-block: 32px 40px; }
+  .pub-writers__text { font-size: var(--size-body); }
+  .pub-writers__actions { flex-direction: column; align-items: stretch; }
+  .pub-writers__actions .pub-btn { justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pub-card__media > img { transition: none; }
+  .pub-card:hover .pub-card__media > img { transform: none; }
+}

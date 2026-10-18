@@ -1,0 +1,464 @@
+/* The pieces (publication.html @pieces, src/publication/pieces.js): houseofheat.co's Upcoming
+   Releases and Latest News in one section. The head: the title, which morphs between "Latest pieces"
+   and "Upcoming pieces" (src/type/), and on its right the one toggle and the filter by form. The
+   body: the latest pieces as a grid of cards in the brand's colours (src/publication/cards.js; the
+   same cards make pieces.html), or the upcoming as a list beside the live statue. */
+
+.pub-pieces {
+  padding-block: 32px 64px;
+}
+
+/* ---- the head ---- */
+.pub-pieces__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 40px;
+  margin-bottom: 40px;
+}
+.pub-pieces__title {
+  font-size: 72px;
+  line-height: 1.04;
+  color: var(--fg-strong);
+}
+/* the words as the font's outlines (src/type/morphHeading.js sets --head-w and --head-h, in ems of
+   the title's size): shown once drawn, in place of the text, which stays for screen readers */
+.pub-pieces__word {
+  display: none;
+  width: var(--head-w);
+  height: var(--head-h);
+  overflow: visible;
+  fill: currentColor;
+  fill-rule: evenodd;
+  stroke: currentColor;
+  stroke-linejoin: round;
+}
+.pub-pieces__title.is-drawn .pub-pieces__word { display: block; }
+.pub-pieces__title.is-drawn .pub-pieces__title-text {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* the controls work only with scripts: without them the latest pieces show, and nothing to flip */
+html:not(.has-js) .pub-pieces__controls { display: none; }
+.pub-pieces__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 48px;
+}
+.pub-pieces__controls .pub-label { font-size: 12px; }
+
+/* the toggle: UPCOMING ( o) DROPPED; a real checkbox, the knob slides to the side it names */
+.pub-pieces__switch { display: flex; align-items: center; gap: 12px; }
+.pub-pieces__side {
+  color: var(--fg-muted);
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: color var(--dur-base) var(--ease-curtain);
+}
+.pub-pieces__side.is-on { color: var(--fg-strong); }
+.pub-pieces__toggle {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 58px;
+  height: 28px;
+  margin: 0;
+  border: 1px solid var(--fg-strong);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+/* the knob: 20px, 4px in from the edge; a ring when off, the stage light's gold when on or hovered */
+.pub-pieces__toggle::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border: 1px solid var(--fg-strong);
+  border-radius: 50%;
+  background: transparent;
+  transition: transform 300ms var(--ease-out), background-color 300ms var(--ease-out);
+}
+.pub-pieces__toggle:checked::before { transform: translateX(30px); }
+.pub-pieces__toggle:checked::before,
+.pub-pieces__toggle:hover::before {
+  background-color: var(--gold-500);
+  background-image: linear-gradient(135deg, var(--gold-300), var(--gold-600));
+}
+.pub-pieces__toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* the filter: a pill reading FILTER  FORM v, which drops a panel of chips */
+.pub-pieces__filter { position: relative; }
+.pub-pieces__filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 150px;
+  height: 28px;
+  padding: 0 12px 0 14px;
+  border: 1px solid var(--fg-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-strong);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease-curtain);
+}
+.pub-pieces__filter-btn:hover { background: var(--tag-bg); }
+.pub-pieces__filter-key { color: var(--fg-muted); }
+/* (on the dark stage the muted word fades into the gold wash: it lifts with it) */
+:root:not([data-theme="light"]) .pub-pieces__filter-btn:hover .pub-pieces__filter-key { color: var(--fg); }
+.pub-pieces__filter-value { margin-right: auto; }
+.pub-pieces__filter.is-set .pub-pieces__filter-value { color: var(--accent); }
+.pub-pieces__caret { width: 10px; height: 6px; flex: none; transition: transform var(--dur-base) var(--ease-curtain); }
+.pub-pieces__filter-btn[aria-expanded="true"] .pub-pieces__caret { transform: rotate(180deg); }
+.pub-pieces__forms {
+  position: absolute;
+  z-index: 9; /* above the bottom banner (publication-blocks.css, z-index 8) */
+  top: calc(100% + 8px);
+  right: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: max-content;
+  max-width: min(372px, calc(100vw - 2 * var(--pub-gutter)));
+  padding: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--pub-hair);
+  box-shadow: var(--shadow-lg);
+}
+.pub-pieces__forms[hidden] { display: none; }
+.pub-pieces__chip {
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--tag-bg);
+  color: var(--fg-strong);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease-curtain), color var(--dur-base) var(--ease-curtain), border-color var(--dur-base) var(--ease-curtain);
+}
+.pub-pieces__chip:hover { border-color: var(--fg-strong); }
+.pub-pieces__chip[aria-pressed="true"] { background: var(--fg-strong); color: var(--bg); }
+
+/* ---- the body ---- */
+.pub-pieces__view[hidden] { display: none; }
+
+/* the latest pieces: three columns (two on tablets, one on phones) */
+.pub-pieces__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--pub-gap);
+}
+
+/* a card: one link; its colour is the piece's own (pieces-data.js `tone`), and its ink the one of
+   the brand's colours that reads on it (every pair at least 6:1) */
+.pub-piece { --hair: color-mix(in srgb, var(--ink) 34%, transparent); }
+/* --ghost: the stand-in picture's mark, a shade of the card's own colour (tone on tone, as if
+   pressed into the card) */
+.pub-piece[data-tone="1"] { --card: var(--pub-tone-1); --ink: var(--plum-100); --dot: var(--gold-500); --ghost: var(--plum-600); }
+.pub-piece[data-tone="2"] { --card: var(--pub-tone-2); --ink: var(--plum-100); --dot: var(--gold-500); --ghost: var(--plum-400); }
+.pub-piece[data-tone="3"] { --card: var(--pub-tone-3); --ink: var(--plum-900); --dot: var(--plum-500); --ghost: var(--gold-600); }
+.pub-piece[data-tone="4"] { --card: var(--pub-tone-4); --ink: var(--plum-800); --dot: var(--plum-500); --ghost: var(--plum-200); }
+.pub-piece[data-tone="5"] { --card: var(--pub-tone-5); --ink: var(--plum-100); --dot: var(--gold-500); --ghost: var(--slate-500); }
+.pub-piece__link {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+.pub-piece__link:hover { color: var(--ink); }
+/* where a card's colour is close to the page's (the deep plum on the dark stage, blush with the
+   house lights up), a hairline keeps its edge */
+:root:not([data-theme="light"]) .pub-piece[data-tone="1"] .pub-piece__link { box-shadow: inset 0 0 0 1px var(--line); }
+:root[data-theme="light"] .pub-piece[data-tone="4"] .pub-piece__link { box-shadow: inset 0 0 0 1px var(--border-soft); }
+
+/* the picture's place: the piece's title, set large and at a tilt in the card's own colours, under
+   the logo mark at the top left, where houseofheat has the brand's. Its size goes by its length
+   (cards.js data-len), in the card's own width, so every card's title fills its picture alike; it
+   rises a little on hover. */
+.pub-piece__media {
+  position: relative;
+  display: flex;
+  align-items: center;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  padding: 80px 28px 24px 24px;
+  container-type: inline-size;
+  background: radial-gradient(70% 70% at 30% 60%, color-mix(in srgb, var(--ink) 7%, transparent), transparent 72%);
+}
+.pub-piece__brand { position: absolute; top: 24px; left: 24px; width: 40px; color: var(--ink); }
+.pub-piece__title {
+  margin: 0;
+  max-width: 96%;
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: var(--ls-display);
+  color: var(--ink);
+  text-wrap: balance;
+  rotate: -7deg;                  /* at a tilt, from its left end, so the long ones fit the picture */
+  transform-origin: 0 50%;
+  translate: 0 4%;
+  transition: transform .6s var(--ease-curtain);
+}
+.pub-piece__title[data-len="s"] { font-size: clamp(42px, 15cqw, 74px); }
+.pub-piece__title[data-len="m"] { font-size: clamp(36px, 13cqw, 64px); }
+.pub-piece__title[data-len="l"] { font-size: clamp(30px, 10.6cqw, 52px); }
+.pub-piece__link:hover .pub-piece__title,
+.pub-piece__link:focus-visible .pub-piece__title { transform: translateY(-5px); }
+
+.pub-piece__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 20px;
+  padding: 4px 24px 24px;
+}
+/* the writer and the form (whole: a long one, "Contemporary monologue", runs on to a second line
+   rather than being cut); the row below keeps to the card's foot */
+.pub-piece__head { display: flex; flex-direction: column; gap: 8px; }
+.pub-piece__form { margin: 0; text-wrap: balance; }
+.pub-piece__by {
+  margin: 0;
+  font-size: var(--size-body-s);
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--ink) 80%, transparent);
+}
+.pub-piece__meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto; /* the issue, and Read now at the end */
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding: 10px 0;
+  border-block: 1px solid var(--hair);
+}
+.pub-piece__meta .pub-label { white-space: nowrap; }
+.pub-piece__read { justify-self: end; --pub-btn-ink: var(--ink); --pub-btn-paper: var(--card); padding: 6px 10px; min-height: 28px; }
+.pub-piece__dot { width: 5px; height: 5px; border-radius: 50%; background: var(--dot); flex: none; }
+.pub-pieces__chev { width: 5px; height: 9px; flex: none; }
+/* the whole card is the link, so the button answers the card (to the pointer and the keyboard) */
+.pub-piece__link:hover .pub-piece__read,
+.pub-piece__link:focus-visible .pub-piece__read { background: var(--ink); color: var(--card); }
+
+/* under the grid, the way to every piece (pieces.html) */
+.pub-pieces__more { display: flex; justify-content: center; margin-top: 48px; }
+.pub-pieces__all .pub-pieces__chev { width: 6px; height: 10px; transition: transform var(--dur-base) var(--ease-curtain); }
+.pub-pieces__all:hover .pub-pieces__chev { transform: translateX(3px); }
+
+/* ---- the upcoming pieces: the statue (7 of 12 columns) and the list (5), the same height ----
+   No panel round him: he stands on the page itself, as in write for us, under a beam of the stage's
+   light from above (narrow at the lamp, out of sight above, widening to the floor) with its pool at
+   his feet and the floor's hairline running out from them. The column clips the light at its edges,
+   and the beam fades in from nothing at its head, so no edge of a box shows. In the light theme the
+   house lights are up: the beam is warmer and stronger to read on the blush, and the floor holds a
+   faint plum shadow under the pool. */
+.pub-pieces__view--list {
+  --panel-h: clamp(480px, 44vw, 640px);
+  --beam: rgb(243 231 184 / .1);
+  --pool: rgb(243 231 184 / .16);
+  --floor: rgb(243 231 184 / .22);
+  --under: rgb(21 4 8 / 0);
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--pub-gap);
+}
+:root[data-theme="light"] .pub-pieces__view--list {
+  --beam: rgb(203 174 87 / .2);
+  --pool: rgb(235 216 140 / .55);
+  --floor: rgb(169 143 56 / .4);
+  --under: rgb(64 20 42 / .12);
+}
+.pub-pieces__panel {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  grid-column: span 7;
+  height: var(--panel-h);
+  display: grid;
+  place-items: end center;
+  container-type: size;
+}
+/* the statue's box: his own proportions (.82), the column's whole height, or narrower where the
+   column is (the canvas stays only as large as he needs) */
+.pub-pieces__statue { height: min(100cqh, 100cqw / .82); aspect-ratio: .82; }
+.pub-pieces__statue::before, .pub-pieces__statue::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+.pub-pieces__statue::before {
+  inset: -4% -60% 11%;
+  background: conic-gradient(from 162deg at 50% 0, transparent, var(--beam) 7deg, var(--beam) 29deg, transparent 36deg);
+  -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, rgb(0 0 0 / .5));
+  mask-image: linear-gradient(transparent, #000 30%, #000 70%, rgb(0 0 0 / .5));
+}
+/* (the floor's hairline runs the column's width exactly, fading out at both ends: 100cqw is the
+   column's width, the statue standing in its middle) */
+.pub-pieces__statue::after {
+  left: calc((100% - 100cqw) / 2);
+  right: calc((100% - 100cqw) / 2);
+  top: 89%;
+  height: 72px;
+  translate: 0 -50%;
+  background:
+    linear-gradient(to right, transparent, var(--floor) 35%, var(--floor) 65%, transparent) center / 100% 1px no-repeat,
+    radial-gradient(closest-side, var(--pool), transparent) 50% 50% / min(100%, 420px) 100% no-repeat,
+    radial-gradient(closest-side, var(--under), transparent) 50% 45% / min(60%, 260px) 40% no-repeat;
+}
+
+/* the list: still, the same height as the statue's column, fading away at its foot as if it ran on
+   (it never scrolls: the wheel and the finger scroll the page). The rows past its foot are cut off
+   (and out of the keyboard's way, pieces.js); the fade is a mask, so a row half under it is still
+   there to click. */
+.pub-pieces__list {
+  grid-column: span 5;
+  height: var(--panel-h);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: clip;
+  container-type: inline-size;
+  -webkit-mask-image: linear-gradient(#000, #000 58%, transparent);
+  mask-image: linear-gradient(#000, #000 58%, transparent);
+}
+.pub-pieces__list.is-fits { -webkit-mask-image: none; mask-image: none; }
+
+/* a row: the issue with its dot, the picture (the mark in one of the brand's colours, on a tile of
+   another that it reads on), the form over the title and the writer, and Remind me (houseofheat:
+   the countdown, the brand over the title, the temperature) */
+.pub-row {
+  display: grid;
+  grid-template-columns: 84px 70px minmax(0, 1fr) auto;
+  grid-template-areas: "when tile text act";
+  align-items: start;
+  column-gap: 18px;
+  min-height: 96px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--pub-hair);
+}
+.pub-row__when { grid-area: when; display: flex; align-items: center; gap: 8px; padding-top: 3px; color: var(--fg-strong); white-space: nowrap; }
+.pub-row__dot { width: 6px; height: 6px; flex: none; border: 1px solid var(--fg-muted); border-radius: 50%; }
+.pub-row.is-next .pub-row__dot { border-color: var(--accent); background: var(--accent); }
+.pub-row[data-tone="1"] { --tile: var(--gold-500); --mark: var(--plum-800); }
+.pub-row[data-tone="2"] { --tile: var(--plum-100); --mark: var(--plum-500); }
+.pub-row[data-tone="3"] { --tile: var(--plum-800); --mark: var(--gold-500); }
+.pub-row[data-tone="4"] { --tile: var(--plum-500); --mark: var(--plum-100); }
+.pub-row[data-tone="5"] { --tile: var(--plum-100); --mark: var(--slate-700); }
+.pub-row__tile {
+  grid-area: tile;
+  display: grid;
+  place-items: center;
+  width: 70px;
+  height: 70px;
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.pub-row__tile .pub-mark { width: 46px; color: var(--mark); }
+.pub-row__text { grid-area: text; min-width: 0; padding-top: 2px; }
+.pub-row__form { display: block; margin-bottom: 6px; color: var(--fg-muted); }
+.pub-row__title { font-size: 20px; line-height: 1.25; color: var(--fg-strong); }
+.pub-row__by { margin: 6px 0 0; font-size: var(--size-body-s); line-height: 1.4; color: var(--fg); }
+.pub-row__by.is-tba { color: var(--fg-muted); font-style: italic; }
+.pub-row__remind { grid-area: act; align-self: start; }
+
+/* in a narrow list the issue goes over the form, beside the picture */
+@container (max-width: 470px) {
+  .pub-row {
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    grid-template-areas: "tile when act" "tile text act";
+    column-gap: 14px;
+    row-gap: 4px;
+  }
+  .pub-row__tile { width: 64px; height: 64px; }
+  .pub-row__tile .pub-mark { width: 42px; }
+  .pub-row__when { padding-top: 0; }
+  .pub-row__title { font-size: 18px; }
+}
+
+/* nothing of that form in this mode */
+.pub-pieces__empty {
+  grid-column: 1 / -1;
+  padding: 40px 0;
+  border-block: 1px solid var(--pub-hair);
+  color: var(--fg);
+  font-size: var(--size-body-s);
+}
+.pub-pieces__reset {
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.pub-pieces__reset:hover { color: var(--accent-hover); }
+
+/* ---- tablets and phones ---- */
+@media (max-width: 1099px) {
+  .pub-pieces__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 1023px) {
+  .pub-pieces__title { font-size: 56px; }
+  .pub-pieces__view--list { --panel-h: 520px; }
+  .pub-pieces__panel { grid-column: span 6; }
+  .pub-pieces__list { grid-column: span 6; }
+}
+@media (max-width: 767px) {
+  .pub-pieces { padding-block: 16px 48px; }
+  .pub-pieces__head { gap: 20px; margin-bottom: 28px; }
+  .pub-pieces__title { font-size: clamp(36px, 11.4vw, 56px); }
+  /* the toggle in a row under the title and the filter on a row of its own (so a long form never
+     wraps it and jolts the grid), the chips' panel dropping across the whole width beneath them */
+  .pub-pieces__controls { position: relative; width: 100%; justify-content: space-between; gap: 12px; }
+  .pub-pieces__controls .pub-label { font-size: 11px; letter-spacing: .1em; }
+  .pub-pieces__switch { gap: 8px; }
+  .pub-pieces__filter { position: static; flex-basis: 100%; }
+  .pub-pieces__filter-btn { min-width: 0; gap: 8px; padding: 0 10px 0 12px; }
+  .pub-pieces__forms { left: 0; right: 0; width: auto; max-width: none; }
+  .pub-pieces__grid { grid-template-columns: minmax(0, 1fr); }
+  .pub-pieces__more { margin-top: 32px; }
+  .pub-pieces__more .pub-btn { flex: 1; justify-content: center; }
+  /* the statue goes above the list, smaller; the list keeps a height of its own, and its fade */
+  .pub-pieces__view--list { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .pub-pieces__panel { grid-column: auto; height: 360px; }
+  .pub-pieces__list { grid-column: auto; height: 520px; }
+}
+
+@media (max-width: 400px) {
+  .pub-piece__media { padding: 72px 24px 20px 22px; }
+  .pub-piece__body { padding-inline: 20px; }
+  .pub-piece__meta { gap: 8px; }
+  .pub-piece__meta .pub-label, .pub-piece__read { font-size: 10px; letter-spacing: .08em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pub-piece__link:hover .pub-piece__title,
+  .pub-piece__link:focus-visible .pub-piece__title { transform: none; }
+  .pub-pieces__toggle::before { transition: background-color 300ms var(--ease-out); }
+}
