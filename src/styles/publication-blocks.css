@@ -226,9 +226,11 @@
   --cover-across: calc(var(--cover-w) * 1.458);
   --questions: 604px;                    /* the column Fillout sets the questions in (centred in its frame) */
   --pair-gap: 48px;                      /* between the cover and the questions */
-  /* Fillout's own page keeps a tall empty margin above the form (the row its logo sits in) and an
-     empty strip below it: the band shows the form without them (see .pub-news__box) */
-  --crop-top: clamp(112px, 4vw + 66px, 140px);
+  /* Fillout's own page keeps a margin above the form, with the mark in it, and an empty strip below
+     it. The top is kept whole: it is the band's breathing room over the form's heading, and Fillout
+     moves its heading up or down with its theme, so a trim cut into it (the heading, then the
+     subtitle under the band's top edge). Only the empty strip at the foot is trimmed. */
+  --crop-top: 0px;
   --crop-foot: 28px;
   --tilt: -22deg;
   padding-block: var(--space-7);
@@ -334,10 +336,10 @@
 .pub-news .form-box__alt a:hover, .pub-news .form-box__noscript a:hover { color: var(--accent); }
 .pub-news .form-box__noscript { padding: 0 var(--pub-gutter); text-align: left; color: var(--fg); }
 /* the form's box starts at about the height the loaded form ends at (the embed's own height is set
-   to match, in publication.html: about 514px on wide screens, 534px on tablets, 616px on phones), so
+   to match, in publication.html: about 400px on wide screens, 420px on tablets, 545px on phones), so
    the page does not shift under the visitor when Fillout sizes it; once the form is in, Fillout's
    dynamic resize sets the height */
-.pub-news .form-box [data-fillout-id] { min-height: 514px; margin-block: calc(var(--crop-top) * -1) calc(var(--crop-foot) * -1); }
+.pub-news .form-box [data-fillout-id] { min-height: 400px; margin-block: calc(var(--crop-top) * -1) calc(var(--crop-foot) * -1); }
 .pub-news .form-box.is-ready [data-fillout-id] { min-height: 0; }
 .pub-news .form-box.is-failed [data-fillout-id] { margin-block: 0; }
 
@@ -442,7 +444,7 @@
 
 /* ==== Tablets: the newsletter and write for us stack; the cover lies by the heading, above the form ==== */
 @media (max-width: 1023px) {
-  .pub-news .form-box:not(.is-ready) [data-fillout-id] { min-height: 534px; }
+  .pub-news .form-box:not(.is-ready) [data-fillout-id] { min-height: 420px; }
   .pub-collection { padding-block: var(--space-8) var(--space-7); }
   .pub-card--feature .pub-card__body { grid-template-columns: 56px minmax(0, 1fr); }
 
@@ -454,7 +456,7 @@
 
 /* ==== Phones ==== */
 @media (max-width: 767px) {
-  .pub-news .form-box:not(.is-ready) [data-fillout-id] { min-height: 616px; }
+  .pub-news .form-box:not(.is-ready) [data-fillout-id] { min-height: 545px; }
   .pub-collection { padding-block: var(--space-7) var(--space-6); }
   .pub-collection__head { flex-wrap: wrap; }
   .pub-card--feature, .pub-card--paper, .pub-card--ink { grid-column: 1 / -1; }
