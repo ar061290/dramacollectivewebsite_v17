@@ -506,9 +506,11 @@ html:not(.has-js) .pub-pieces__controls { display: none; }
   .pub-pieces__grid { grid-template-columns: minmax(0, 1fr); }
   .pub-pieces__more { margin-top: 32px; }
   .pub-pieces__more .pub-btn { flex: 1; justify-content: center; }
-  /* the statue goes above the list, smaller; the list keeps a height of its own, and its fade */
-  .pub-pieces__view--list { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .pub-pieces__panel { grid-column: auto; height: 360px; }
+  /* on a phone the list stands alone: no statue beside it (and, hidden, he is never made: his box
+     never comes near the screen, src/publication/statue.js); the list keeps a height of its own,
+     and its fade */
+  .pub-pieces__view--list { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .pub-pieces__panel { display: none; }
   .pub-pieces__list { grid-column: auto; height: 520px; }
 }
 

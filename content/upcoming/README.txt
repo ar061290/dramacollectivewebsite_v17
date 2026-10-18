@@ -1,0 +1,1 @@
+The texts of pieces announced but not yet out, exactly as the writers sent them. When a piece drops, its formatted body goes in content/pieces/<slug>.html (as the October pieces' were made) and its status in src/publication/pieces-data.js becomes 'latest'.

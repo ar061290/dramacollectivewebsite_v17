@@ -117,9 +117,9 @@ export const PIECES = [
     tone: 3,
     special: true,
   },
-  { slug: 'the-modern-drama-and-the-unities', title: 'The Modern Drama and the Unities', author: 'Kodela Gautam', form: null, issue: 'Nov 2026', status: 'upcoming', order: 2, tone: 1 },
-  { slug: 'i-cant-stop-thinking-about-you-yes-you', title: 'I Can’t Stop Thinking About You. Yes, You', author: 'Aadi Ramnani', form: null, issue: 'Nov 2026', status: 'upcoming', order: 3, tone: 2 },
-  { slug: 'the-you-inside-of-you-doesnt-exist', title: 'The ‘You’ Inside of You Doesn’t Exist', author: 'Aadi Ramnani', form: null, issue: 'Dec 2026', status: 'upcoming', order: 4, tone: 4 },
+  { slug: 'the-modern-drama-and-the-unities', title: 'The Modern Drama and the Unities', author: 'Kodela Gautam', form: 'Essay', issue: 'Nov 2026', status: 'upcoming', order: 2, tone: 1 },
+  { slug: 'i-cant-stop-thinking-about-you-yes-you', title: 'I Can’t Stop Thinking About You. Yes, You', author: 'Aadi Ramnani', form: 'Reflection', issue: 'Nov 2026', status: 'upcoming', order: 3, tone: 2 },
+  { slug: 'the-you-inside-of-you-doesnt-exist', title: 'The ‘You’ Inside of You Doesn’t Exist', author: 'Aadi Ramnani', form: 'Reflection', issue: 'Dec 2026', status: 'upcoming', order: 4, tone: 4 },
   { slug: 'change', title: 'change', author: 'Anika Megha Kruthiventi', form: 'Shakespearean verse', issue: 'TBA', status: 'upcoming', order: 5, tone: 5 },
 ];
 
