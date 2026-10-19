@@ -119,6 +119,33 @@ export class CurtainStage {
     r.toneMappingExposure = 1.05;
     // the canvas stays hidden until the page fades it in over the still (soon.css)
     container.append(r.domElement);
+    // the browser can take the context away while the page is open (its GPU process crashed): the
+    // loop stops and the page shows its still velvet (onLost, src/pages/soon.js); when it is given
+    // back, three restores its programs, buffers and maps, the room's light (drawn into a target) is
+    // made again, and the curtain carries on (onRestored)
+    this.lost = false;
+    this.onLost = null;
+    this.onRestored = null;
+    this._onLost = (e) => {
+      e.preventDefault(); // so the browser may give it back
+      if (this.lost) return;
+      this.lost = true;
+      this._sync();
+      this.onLost?.();
+    };
+    this._onRestored = () => {
+      if (this.disposed || !this.lost) return;
+      this.lost = false;
+      if (this.ready) {
+        this._makeEnv();
+        this._wake();
+        this._render();
+      }
+      this._sync();
+      this.onRestored?.();
+    };
+    r.domElement.addEventListener('webglcontextlost', this._onLost);
+    r.domElement.addEventListener('webglcontextrestored', this._onRestored);
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#150408');
@@ -203,10 +230,7 @@ export class CurtainStage {
     await compile(room);
     await frame();
     if (this.disposed) return;
-    const pmrem = new THREE.PMREMGenerator(r);
-    this.scene.environment = pmrem.fromScene(room, 0.04).texture;
-    pmrem.dispose();
-    room.dispose?.();
+    this._makeEnv(room);
     await frame();
     if (this.disposed) return;
     this._layout();
@@ -231,6 +255,15 @@ export class CurtainStage {
     // two frames drawn by the loop before the page shows it
     await frame();
     await frame();
+  }
+
+  /** The room's soft light for the sheen and the gold, pre-filtered. */
+  _makeEnv(room = new RoomEnvironment()) {
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.scene.environment?.dispose();
+    this.scene.environment = pmrem.fromScene(room, 0.04).texture;
+    pmrem.dispose();
+    room.dispose?.();
   }
 
   /** Bring the rig up from the still's light (the page fades the canvas in as this starts). */
@@ -587,7 +620,7 @@ export class CurtainStage {
   // ---- frame loop ----
 
   _sync() {
-    const go = this.visible && !document.hidden && !this.disposed;
+    const go = this.visible && !document.hidden && !this.disposed && !this.lost;
     if (go && !this.running) {
       this.running = true;
       // a light cue not yet seen, or cut short, plays on from where it was when it comes into view
@@ -704,6 +737,8 @@ export class CurtainStage {
   dispose() {
     this.disposed = true;
     this.renderer.setAnimationLoop(null);
+    this.renderer.domElement.removeEventListener('webglcontextlost', this._onLost);
+    this.renderer.domElement.removeEventListener('webglcontextrestored', this._onRestored);
     this.ro.disconnect();
     this.io.disconnect();
     document.removeEventListener('visibilitychange', this._onVisibility);

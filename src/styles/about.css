@@ -127,6 +127,10 @@
   will-change: transform; /* turned and drawn back by the scroll: moved as a layer, not repainted */
 }
 .lexicon__ring.is-live .lexicon__still { opacity: 0; visibility: hidden; transition: opacity .9s var(--ease-curtain), visibility 0s .9s; }
+/* the marble's WebGL context taken away (a GPU crash, src/scene/aboutRing.js): the drawn ring until
+   it is given back */
+.lexicon__ring.is-live.is-lost .lexicon__canvas { opacity: 0; transition: none; }
+.lexicon__ring.is-live.is-lost .lexicon__still { opacity: 1; visibility: visible; transition: none; }
 .lexicon__band { fill: none; stroke-width: 27; }
 .lexicon__stone-hi { stop-color: var(--gold-100); }
 .lexicon__stone-mid { stop-color: color-mix(in srgb, var(--slate-100) 70%, var(--gold-300)); }

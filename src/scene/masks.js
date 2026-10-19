@@ -154,6 +154,26 @@ export class Masks {
     this.glowTo = new THREE.Vector3();
     this.frame = 0;
     this._tick = this._tick.bind(this);
+    // the browser can take the context away while the page is open (its GPU process crashed): the
+    // masks fade away (they have no still) and nothing is drawn; when it is given back, three
+    // restores their programs and maps itself, and they fade in again as they did at first
+    this.lost = false;
+    this._onLost = (e) => {
+      e.preventDefault(); // so the browser may give it back
+      this.lost = true;
+      cancelAnimationFrame(this.frame);
+      this.frame = 0;
+      r.domElement.style.opacity = '0';
+    };
+    this._onRestored = () => {
+      if (!this.lost || !this.renderer) return;
+      this.lost = false;
+      this.last = undefined;
+      this._wake();
+      requestAnimationFrame(() => { if (!this.lost) r.domElement.style.opacity = '1'; });
+    };
+    r.domElement.addEventListener('webglcontextlost', this._onLost);
+    r.domElement.addEventListener('webglcontextrestored', this._onRestored);
     this._onMove = (e) => {
       if (e.pointerType === 'touch' && e.buttons === 0) return; // a finger lights only while it is down
       this.pointer.x = e.clientX; this.pointer.y = e.clientY; this.pointer.to = 1;
@@ -265,7 +285,7 @@ export class Masks {
     if (snap) this.glowAt.copy(this.glowTo);
   }
 
-  _wake() { if (!this.frame) this.frame = requestAnimationFrame(this._tick); }
+  _wake() { if (!this.frame && !this.lost) this.frame = requestAnimationFrame(this._tick); }
 
   _tick(now) {
     this.frame = 0;
@@ -296,10 +316,12 @@ export class Masks {
     else this.last = undefined;
   }
 
-  _draw() { this.renderer.render(this.scene, this.camera); }
+  _draw() { if (!this.lost) this.renderer.render(this.scene, this.camera); }
 
   dispose() {
     cancelAnimationFrame(this.frame);
+    this.renderer.domElement.removeEventListener('webglcontextlost', this._onLost);
+    this.renderer.domElement.removeEventListener('webglcontextrestored', this._onRestored);
     window.removeEventListener('pointermove', this._onMove);
     window.removeEventListener('pointerdown', this._onMove);
     window.removeEventListener('click', this._onClick);

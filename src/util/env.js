@@ -6,11 +6,15 @@ export const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)'
 export const finePointer = () => matchMedia('(hover: hover) and (pointer: fine)').matches;
 export const isMobileLayout = () => matchMedia('(max-width: 767px)').matches;
 
-/** Probe WebGL once; returns { ok, renderer } where renderer is the unmasked GPU string if exposed. */
+/**
+ * Probe WebGL once; returns { ok, renderer } where renderer is the unmasked GPU string if exposed.
+ * WebGL 2 only: three.js (0.170) draws with nothing less, so a browser offering WebGL 1 alone gets
+ * the still pictures at once rather than downloading a scene it cannot draw.
+ */
 export function probeWebGL() {
   try {
     const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    const gl = canvas.getContext('webgl2');
     if (!gl) return { ok: false, renderer: '' };
     const info = gl.getExtension('WEBGL_debug_renderer_info');
     const renderer = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : '';

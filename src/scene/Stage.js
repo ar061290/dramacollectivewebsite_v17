@@ -84,6 +84,12 @@ export class Stage {
     this.fill = 0.68; // statue height as a fraction of the viewport (hero, desktop)
     this.running = false;
     this.disposed = false;
+    // the browser has dropped the WebGL context (a GPU crash): nothing is drawn until it is given
+    // back; `onLost` and `onRestored` let the page show its still picture meanwhile (src/main.js)
+    this.lost = false;
+    this.onLost = null;
+    this.onRestored = null;
+    this._resume = false; // asked to run while lost: runs again once restored
     this._lastSig = '';
     this._maskDue = 0;
     this._shadowYaw = NaN;
@@ -103,17 +109,16 @@ export class Stage {
     renderer.shadowMap.autoUpdate = false; // lights never move; the map is redrawn only when the statue turns
     container.appendChild(renderer.domElement);
     this.renderer = renderer;
+    this._onLost = this._onLost.bind(this);
+    this._onRestored = this._onRestored.bind(this);
+    renderer.domElement.addEventListener('webglcontextlost', this._onLost);
+    renderer.domElement.addEventListener('webglcontextrestored', this._onRestored);
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(14, 1, 0.1, 400);
     this.scene.add(this.camera); // the ring is the camera's child
 
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    const room = new RoomEnvironment();
-    this.envTarget = pmrem.fromScene(room, 0.04);
-    room.dispose();
-    pmrem.dispose();
-    this.scene.environment = this.envTarget.texture;
+    this._makeEnv();
     this.scene.environmentIntensity = 0;
 
     this._buildLights();
@@ -122,6 +127,54 @@ export class Stage {
     this.resizeObserver.observe(container);
     this._tick = this._tick.bind(this);
     this.clock = new THREE.Clock(false);
+  }
+
+  /**
+   * The room the marble reflects (three's RoomEnvironment), pre-filtered. After a lost context the
+   * old one is let go rather than disposed: its GPU objects went with the context.
+   */
+  _makeEnv({ restored = false } = {}) {
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    const room = new RoomEnvironment();
+    if (!restored) this.envTarget?.dispose();
+    this.envTarget = pmrem.fromScene(room, 0.04);
+    this.scene.environment = this.envTarget.texture;
+    room.dispose();
+    pmrem.dispose();
+  }
+
+  // ---- a lost WebGL context ----
+  // The browser can take the context away while the page is open (its GPU process crashed). The
+  // loop stops, the footer's own mark comes back (the stage's logo was bringing it in) and the page
+  // shows its still picture (onLost); the vector stand-in is put away. When the browser gives the
+  // context back, three restores its own programs, buffers and textures; what was drawn into a
+  // target (the room the marble reflects, the shadow) is made again, and the stage carries on
+  // where the scroll has got to.
+
+  _onLost(e) {
+    e.preventDefault(); // so the browser may give it back
+    if (this.lost) return;
+    this.lost = true;
+    const was = this.running;
+    this.stop();
+    this._resume = was;
+    this.vector?.setOpacity(0);
+    if (this.emblem) { this.emblem.style.opacity = ''; this._emblemO = undefined; }
+    this.onLost?.();
+  }
+
+  _onRestored() {
+    if (this.disposed || !this.lost) return;
+    this._makeEnv({ restored: true });
+    this.renderer.shadowMap.needsUpdate = true;
+    this.lost = false;
+    this._lastSig = '';
+    this._maskDue = 0;
+    this._vectorKey = null; // the vector's colours are read from the canvas again
+    this.onRestored?.();
+    this.renderOnce();
+    if (this._resume) this.start();
+    this._resume = false;
   }
 
   _buildLights() {
@@ -626,7 +679,7 @@ export class Stage {
   }
 
   renderOnce() {
-    if (!this.statue) return;
+    if (!this.statue || this.lost) return;
     this._updateRig(0);
     this._updateLights();
     this._draw();
@@ -807,6 +860,7 @@ export class Stage {
 
   start() {
     this._settling = false;
+    if (this.lost) { this._resume = true; return; } // (once the context is back)
     if (this.running || this.disposed || !this.statue) return;
     this.running = true;
     this.clock.start();
@@ -815,6 +869,7 @@ export class Stage {
 
   stop() {
     this._settling = false;
+    if (this.lost) this._resume = false;
     if (!this.running) return;
     this.running = false;
     this.clock.stop();
@@ -838,7 +893,7 @@ export class Stage {
 
   /** True if the CSS pixel (x, y) is covered by the statue. */
   covers(x, y) {
-    return this.mask ? this.mask.covers(x, y) : false;
+    return this.mask && !this.lost ? this.mask.covers(x, y) : false;
   }
 
   /** PNG of the current frame (transparent background). */
@@ -851,6 +906,8 @@ export class Stage {
     this.disposed = true;
     this.stop();
     this.resizeObserver.disconnect();
+    this.renderer.domElement.removeEventListener('webglcontextlost', this._onLost);
+    this.renderer.domElement.removeEventListener('webglcontextrestored', this._onRestored);
     this.scene.traverse((o) => {
       o.geometry?.dispose();
       for (const m of [].concat(o.material || [])) {

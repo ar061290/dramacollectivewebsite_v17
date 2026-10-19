@@ -120,9 +120,11 @@ async function boot() {
     }
   }
   const still = document.querySelector('.stage__fallback');
+  // the still picture is fetched only when it is needed (it is most of a megabyte): no live stage,
+  // or the stage's WebGL context taken away later
+  const loadStill = () => { if (!still.getAttribute('src')) still.src = new URL('../assets/fallback/hero.png', import.meta.url).href; };
   if (!stage) {
-    // the still picture is fetched only when it is needed (it is most of a megabyte)
-    still.src = new URL('../assets/fallback/hero.png', import.meta.url).href;
+    loadStill();
     still.hidden = false;
     // never let a stalled decode hold the curtain
     await Promise.race([still.decode().catch(() => {}), new Promise((r) => setTimeout(r, 1500))]);
@@ -148,6 +150,18 @@ async function boot() {
     stage.setOccluder(document.querySelector('.curtain'));
     document.querySelector('.curtain')?.classList.add('has-stage-logo');
     stage.start();
+    // the browser may take the stage's WebGL context away while the page is open (its GPU process
+    // crashed): the still picture stands in, faded up, until the context is given back
+    stage.onLost = () => {
+      loadStill();
+      still.hidden = false;
+      gsap.fromTo(still, { autoAlpha: 0 }, { autoAlpha: 1, duration: reduced ? 0 : 0.4, ease: 'curtain' });
+    };
+    stage.onRestored = () => {
+      gsap.killTweensOf(still);
+      still.hidden = true;
+      gsap.set(still, { clearProps: 'opacity,visibility' });
+    };
     cleanups.push(setupScenes({ stage }));
     cleanups.push(app.setupStatueInteraction({ stage, sky }));
     const onPointer = (e) => {

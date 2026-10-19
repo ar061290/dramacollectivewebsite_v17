@@ -122,6 +122,8 @@ QA flags:
 - `?static` forces the still picture;
 - `?live` forces WebGL.
 
+The live scenes run only on WebGL 2 (`probeWebGL()` in `src/util/env.js`; three.js 0.170 needs it), and stand down to their stills where it runs poorly (`prefersStatic()`). If the browser takes the WebGL context away while a page is open (its GPU process crashed), every scene falls back the same way and comes back when the context is restored: the home stage to `hero.png` (`Stage.js` `onLost`/`onRestored`, `src/main.js`), the About ring to its drawn ring (`.is-lost`, `about.css`), the coming-soon curtain to its CSS velvet and sign (`src/pages/soon.js`), the writer and publication statues to their stills; the reading-page masks and the earrings, which have no still, fade away. To test it, in the console: `document.querySelector('canvas').getContext('webgl2').getExtension('WEBGL_lose_context').loseContext()` (then `.restoreContext()` on the same extension). A browser whose graphics are off for the whole session (chrome://gpu shows "WebGL: Disabled", as after repeated GPU crashes) shows the stills everywhere until it is restarted.
+
 ## The statue sequence
 
 One number, the scroll progress through `<main>` (0 at the top, 1 where the footer begins), drives everything. The sequence is laid out in **screens of scroll** (one viewport height each, `LENGTHS` in [`src/scene/sequence.js`](src/scene/sequence.js)); `retime()` turns them into the phases (`PHASES`) for the page's own scroll length, measured on every refresh. The morph and the logo keep their lengths whatever the page; the hero, the turn and the close-up share what is left. The home page's `<main>` is at least 6.4 screens tall (5.4 screens of scroll), the designed length, so every phase runs at its designed pace:

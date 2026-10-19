@@ -40,9 +40,22 @@ bootPage(({ reduced, onTheme, opened }) => {
         if (gone) return;
         // the live curtain fades in over the still at the still's light, then its lamps come up;
         // once it covers the still, the still's sign is put away (pages.css: .is-live)
-        host.classList.add('is-on');
+        const show = () => {
+          host.classList.add('is-on');
+          if (hint) hint.hidden = false;
+          clearTimeout(settle);
+          settle = setTimeout(() => { if (!gone && !stage.lost) host.classList.add('is-live'); }, fadeTime(stage.renderer.domElement) + 60);
+        };
+        show();
         stage.reveal();
-        settle = setTimeout(() => { if (!gone) host.classList.add('is-live'); }, fadeTime(stage.renderer.domElement) + 60);
+        // the browser may take the curtain's WebGL context away while the page is open (its GPU
+        // process crashed): the still velvet and its sign come back until it is given back
+        stage.onLost = () => {
+          clearTimeout(settle);
+          host.classList.remove('is-on', 'is-live');
+          if (hint) hint.hidden = true;
+        };
+        stage.onRestored = () => { if (!gone) show(); };
       })
       .catch((err) => {
         console.warn('Curtain unavailable; showing the still velvet.', err);

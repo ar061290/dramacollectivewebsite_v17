@@ -56,6 +56,24 @@ export class AboutRing {
     r.setClearColor(0x000000, 0);
     r.domElement.className = 'lexicon__canvas';
     container.append(r.domElement);
+    // the browser can take the context away while the page is open (its GPU process crashed): the
+    // drawn ring comes back meanwhile (.is-lost, about.css); when it is given back, three restores
+    // the stone's programs and maps itself (nothing here is drawn into a target), and the ring is
+    // drawn again where the scroll has got to
+    this.lost = false;
+    this._onLost = (e) => {
+      e.preventDefault(); // so the browser may give it back
+      this.lost = true;
+      container.classList.add('is-lost');
+    };
+    this._onRestored = () => {
+      if (this.disposed) return;
+      this.lost = false;
+      this.render();
+      container.classList.remove('is-lost');
+    };
+    r.domElement.addEventListener('webglcontextlost', this._onLost);
+    r.domElement.addEventListener('webglcontextrestored', this._onRestored);
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
@@ -180,7 +198,7 @@ export class AboutRing {
   }
 
   render() {
-    if (!this.ring || this.disposed) return;
+    if (!this.ring || this.disposed || this.lost) return;
     this.ring.spinner.rotation.z = this.view.spin;
     this.renderer.render(this.scene, this.camera);
   }
@@ -188,6 +206,9 @@ export class AboutRing {
   dispose() {
     this.disposed = true;
     this.ro.disconnect();
+    this.renderer.domElement.removeEventListener('webglcontextlost', this._onLost);
+    this.renderer.domElement.removeEventListener('webglcontextrestored', this._onRestored);
+    this.container.classList.remove('is-lost');
     if (this.ring) {
       this.ring.frame.children.forEach((c) => c.geometry.dispose());
       this.material.map?.dispose();
