@@ -18,7 +18,7 @@ node tools/perf/visual.mjs --out shots/after --compare shots/before   # pixel-by
 node tools/perf/run.mjs --bench home-load --net 4g --h2   # HTTP/2 like GitHub Pages: use --h2 for every run with a network profile
 ```
 
-Devices: `laptop` (1366×768, no throttling), `laptop-slow` (CPU 4× slower), `phone` (390×844, DPR 3, touch, CPU 4× slower; the WebGL gate lets it through, as on most real phones). Networks: `none`, `4g` (9 Mbps, 170 ms), `slow4g` (1.6 Mbps, 150 ms), `3g`.
+Devices: `laptop` (1366×768, no throttling), `laptop-slow` (CPU 4× slower), `phone` (390×844, DPR 3, touch, CPU 4× slower; the WebGL gate lets it through, as on most real phones). `midphone` (393×851, DPR 2.75, CPU 5×, the page reads 4 GB and 8 cores: a Galaxy A5x class, the commonest phone that gets the live 3D, and the site's lite tier) and `lowend` (360×800, DPR 2, CPU 6×, 2 GB and 4 cores: it gets the still pictures). The GPU cannot be slowed: what a weak GPU would feel is read from the GPU memory a page holds (`weight.mjs`) and the pixels it draws. On the `phone` profile the site's frame governor turns the lite tier on during the first scroll of the home page (its frames are slow enough): a run there measures the lite tier from that moment. Networks: `none`, `4g` (9 Mbps, 170 ms), `slow4g` (1.6 Mbps, 150 ms), `3g`.
 
 ## The benches
 
@@ -67,7 +67,9 @@ When a bench moves and the reason is not obvious, these ask the page itself. Eac
 - `after-curtain.mjs page --before <dist> [--runs 5] [--secs 5]`: two builds, loaded alternately, from the curtain parting to some seconds after: main-thread time, style, layout, long tasks.
 - `profile.mjs page [--scroll | --boot] [--secs n] [--save file.cpuprofile]`: a function profile (self and total time) through the scroll bench's scroll, a still page, or a load (`--boot`, after a warm-up load); `--save` writes Chrome's profile for DevTools.
 - `idle-breakdown.mjs page [--device phone] [--secs 2] [--js "<override>"]`: a still page's main thread by the browser's own steps (script, style, layout, pre-paint, layering, commit), as self time, with counts.
-- `scroll-ab.mjs page --js "<override>"`: prices one piece of per-frame work by switching it off in the page (the override may look wrong: it prices, it does not fix).
+- `weight.mjs [pages] [--device lowend|midphone] [--detail]`: what a page holds once settled (GPU memory as the page asks for it: every WebGL texture, buffer and drawing buffer, tallied as they are made; 2D canvases; decoded pictures; the heap) and what it costs at rest (the main thread; the page's and the GPU process's CPU; their private memory as Windows counts it). `--detail` lists each canvas and its largest textures.
+- **Comparing two builds fairly:** serve both from one root, as `a/` and `b/` (junctions to the two `dist` folders), and give `scroll-ab.mjs` `a/page.html --file-b b/page.html`: two servers (`--dist-b`) slow the second arm by ~6 ms a frame on the phone profiles, whichever build is in it (a build against itself: 31 against 37 ms).
+- `scroll-ab.mjs page [--js "<override>"] [--query ?x --query-b ?y] [--file-b other.html] [--dist-b dir]`: two arms through the scroll bench's scroll, alternately first: frames (average, 95th percentile, over 33 ms), main-thread time, style, layout, long tasks. With `--js` it prices one piece of per-frame work by switching it off in the page (the override may look wrong: it prices, it does not fix).
 - `long-tasks.mjs page [--scroll] [--device phone]`: every task over 50 ms through the boot and the scroll bench's own scroll, with the script that ran in it, and totals by function.
 
 ## Measuring without disturbing
