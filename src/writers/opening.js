@@ -235,6 +235,7 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
 
   // the sizes the scene is laid out in, taken again on each refresh
   const L = { w: 1, h: 1, W: 1, H: 1, bx: 0, by: 0, shift: 0, s0: 1, leafH: 1, Y0: 0, X0: 0, still: null, slot: null };
+  let taken = null; // the section's size when the places were last taken (below: a report of that size moves nothing)
   const measure = () => {
     const w = stage.clientWidth, h = stage.clientHeight;
     const stacked = matchMedia(STACKED).matches;
@@ -264,6 +265,7 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
     // where the section will stand when the hold lets go (it is pulled up under the opening, so its
     // top is then just below the top bar): the picture on the page is put there
     const r = section.getBoundingClientRect();
+    taken = { w: r.width, h: r.height };
     L.X0 = r.left - stage.getBoundingClientRect().left;
     L.Y0 = pin ? r.top + window.scrollY - pin.end : 0;
     stillQuads();
@@ -283,7 +285,11 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
 
   // ---- the picture of the section on the book's first page: the real cards, inert (the book is
   // inert in writers.html: nothing in the picture takes focus or a click) ----
+  // (a new picture is restyled and laid out, some 30-50 ms on a phone: when the copy would come out
+  // as the picture already is, the picture stands, only its size and place set again; a refresh, or
+  // the hold taken again on the way back up, mostly finds the section as it was)
   let picture = null;
+  let pictured = ''; // the picture's markup as it was made, before its size and place were set
   const paint = () => {
     const copy = section.cloneNode(true);
     copy.className = 'wbook__section';
@@ -296,9 +302,13 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
     copy.querySelectorAll('.is-lit').forEach((el) => el.classList.remove('is-lit'));
     copy.querySelectorAll('.member__photo, .member__card').forEach((el) => el.removeAttribute('style'));
     copy.querySelectorAll('img').forEach((img) => { img.loading = 'eager'; });
-    copy.style.width = `${section.offsetWidth}px`;
-    copy.style.left = `${L.X0}px`;
-    copy.style.top = `${L.Y0}px`;
+    const made = copy.outerHTML;
+    const target = picture && made === pictured ? picture : copy;
+    target.style.width = `${section.offsetWidth}px`;
+    target.style.left = `${L.X0}px`;
+    target.style.top = `${L.Y0}px`;
+    if (target === picture) return;
+    pictured = made;
     picture?.remove();
     picture = copy;
     leaf.replaceChildren(copy);
@@ -459,9 +469,16 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
     if (!starsOn) sky?.start();
   });
   // the type may land late, or the window change: the places are taken again
-  // (a filter's rearranging changes its height many times over: measured once it has settled)
+  // (a filter's rearranging changes its height many times over: measured once it has settled).
+  // A report of the size the places were last taken at (the observer's first report, as a rule:
+  // the places were taken as the page was set up) has nothing to take again.
   let refreshTimer = 0;
-  const ro = new ResizeObserver(() => { clearTimeout(refreshTimer); refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 160); });
+  const ro = new ResizeObserver(([entry]) => {
+    const box = entry?.borderBoxSize?.[0];
+    if (box && taken && Math.abs(box.inlineSize - taken.w) < 0.01 && Math.abs(box.blockSize - taken.h) < 0.01) return;
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 160);
+  });
   ro.observe(section);
   cleanups.push(() => { ro.disconnect(); clearTimeout(refreshTimer); });
 

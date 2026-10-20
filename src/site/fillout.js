@@ -63,7 +63,10 @@ export function embedFillout(host, { opened, title }) {
   let lastHeight = -1;
   const ro = new ResizeObserver(([entry]) => {
     const h = Math.round(entry.contentRect.height);
-    if (Math.abs(h - lastHeight) < 2) return; // the first call, or a width-only change: nothing below has moved
+    // the first call (the box as the page was set up and measured with it), or a width-only change:
+    // nothing below has moved
+    if (lastHeight < 0) { lastHeight = h; return; }
+    if (Math.abs(h - lastHeight) < 2) return;
     lastHeight = h;
     clearTimeout(t);
     t = setTimeout(() => ScrollTrigger.refresh(), 250);
