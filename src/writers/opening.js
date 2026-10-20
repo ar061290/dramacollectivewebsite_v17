@@ -388,21 +388,26 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
     const lift = ease.inOut(span(p, LIFT));
     const op = ease.sine(span(p, OPEN));
     const dive = span(p, DIVE);
-    put(book, 'visibility', hand > 0 && quad ? '' : 'hidden');
+    const shown = hand > 0 && !!quad;
+    put(book, 'visibility', shown ? '' : 'hidden');
     put(front, 'opacity', hand < 1 ? ease.sine(hand).toFixed(3) : '');
     // (its shadow comes as it leaves the hand)
     put(shadow, 'opacity', lift.toFixed(3));
-    let tf;
-    if (lift < 1 && quad) {
-      const q = quad.map(([x, y], i) => {
-        const tx = (i === 1 || i === 2 ? L.W : 0), ty = (i >= 2 ? L.H : 0);
-        return [lerp(x - L.bx, tx, lift), lerp(y - L.by, ty, lift)];
-      });
-      tf = quadMatrix(L.W, L.H, q);
-    } else {
-      tf = op > 0 ? `rotateY(${(-180 * op).toFixed(3)}deg)` : 'none';
+    // (placed only while the book is shown: hidden, its place changed nothing on the screen, but its 3D
+    // transform, new in every frame of the camera's move, had the page's layers sorted again each time)
+    if (shown) {
+      let tf;
+      if (lift < 1 && quad) {
+        const q = quad.map(([x, y], i) => {
+          const tx = (i === 1 || i === 2 ? L.W : 0), ty = (i >= 2 ? L.H : 0);
+          return [lerp(x - L.bx, tx, lift), lerp(y - L.by, ty, lift)];
+        });
+        tf = quadMatrix(L.W, L.H, q);
+      } else {
+        tf = op > 0 ? `rotateY(${(-180 * op).toFixed(3)}deg)` : 'none';
+      }
+      put(cover, 'transform', tf);
     }
-    put(cover, 'transform', tf);
     // the page under the cover shows once the cover is in its place
     put(page, 'visibility', lift >= 1 ? '' : 'hidden');
     // 4. into the first page: the book grows about the point that takes the page onto the screen
