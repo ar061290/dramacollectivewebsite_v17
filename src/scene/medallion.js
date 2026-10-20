@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import gsap from 'gsap';
+import { antialias } from '../util/env.js';
 import { buildLogoGeometry } from './logo.js';
 
 // albedo of each finish (metals: their reflectance colour)
@@ -23,7 +24,7 @@ export class Medallion {
     this.reduced = reduced;
     this.visible = true;
     this.dirty = true;
-    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }));
+    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: antialias(true), alpha: true }));
     r.setPixelRatio(Math.min(devicePixelRatio, 2));
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;

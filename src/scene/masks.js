@@ -13,7 +13,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { readToken } from '../util/env.js';
+import { readToken, antialias } from '../util/env.js';
 
 // the Draco decoder served with the site (as for the statues)
 const DRACO_PATH = import.meta.env ? new URL('draco/', document.baseURI).href : new URL('../../public/draco/', import.meta.url).href;
@@ -112,7 +112,7 @@ export class Masks {
     this.reduced = reduced;
     this.textColumn = textColumn;
     const dpr = Math.min(devicePixelRatio, 1.75);
-    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: dpr < 1.5, alpha: true }));
+    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: antialias(dpr < 1.5), alpha: true }));
     r.setPixelRatio(dpr);
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;

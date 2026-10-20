@@ -18,28 +18,42 @@ export const phoneTier = () => document.documentElement.classList.contains('tier
 export const liteTier = () => document.documentElement.classList.contains('tier-lite');
 
 const PIXEL_BUDGET = 2e6; // device pixels a full-screen canvas may have under the phone tier
+const LITE_PIXEL_BUDGET = 0.75e6; // and under the lite tier (a 393x851 phone at DPR 2.75 draws at 1.5)
 
 /**
  * The pixel ratio to draw a canvas at: the device's, at most `cap`; under the phone tier, also at most what
  * keeps a canvas of w x h CSS pixels (the screen by default) within the pixel budget (a tablet's large
- * screen at DPR 2 is 5.6 million device pixels; the budget is 2 million).
+ * screen at DPR 2 is 5.6 million device pixels; the budget is 2 million); under the lite tier within 0.75
+ * million.
  */
 export function pixelRatio(cap, w = innerWidth, h = innerHeight) {
   const r = Math.min(devicePixelRatio || 1, cap);
-  return phoneTier() ? Math.min(r, Math.max(1, Math.sqrt(PIXEL_BUDGET / Math.max(1, w * h)))) : r;
+  const budget = liteTier() ? LITE_PIXEL_BUDGET : phoneTier() ? PIXEL_BUDGET : 0;
+  return budget ? Math.min(r, Math.max(1, Math.sqrt(budget / Math.max(1, w * h)))) : r;
 }
 
 /**
- * Under the phone tier, at most 60 frames a second however fast the screen: the gate returned answers, for
- * each animation frame's time, whether to draw it (on a 120 Hz screen, every other one; on 90 Hz, two in
- * three). Without the tier it always says yes.
+ * Multisampling for a WebGL canvas, in one place: what the scene asks for, the lite tier included. (Turned
+ * off under lite, the home statue's outline came out visibly stepped; and on the tile-based GPUs of phones
+ * Chrome resolves the samples on the chip, so they cost little memory or bandwidth there: the lite tier's
+ * saving is its pixel budget.)
  */
-export function frameGate() {
+export const antialias = (want = true) => !!want;
+
+/**
+ * Under the phone tier, at most 60 frames a second however fast the screen; under the lite tier at most
+ * `liteFps` (a scene that loops passes 30: a steady 30 rather than an uneven 40-50 on a weak GPU). The
+ * gate returned answers, for each animation frame's time, whether to draw it (on a 120 Hz screen, every
+ * other one; on 90 Hz, two in three). Without a tier it always says yes.
+ */
+export function frameGate(liteFps = 60) {
   let next = 0;
   return (now) => {
-    if (!phoneTier()) return true;
+    const lite = liteTier();
+    if (!lite && !phoneTier()) return true;
+    const step = 1000 / (lite ? liteFps : 60);
     if (now < next - 2) return false;
-    next = now - next < 1000 / 60 ? next + 1000 / 60 : now + 1000 / 60;
+    next = now - next < step ? next + step : now + step;
     return true;
   };
 }

@@ -18,7 +18,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { frameGate } from '../../util/env.js';
+import { frameGate, pixelRatio } from '../../util/env.js';
 
 // velvet and light per page, from the plum palette (tokens.css) and the gold of the stage lamps;
 // `day` is the light theme's curtain (house lights up): a pale rose velvet in a lit house
@@ -117,7 +117,7 @@ export class CurtainStage {
     // none), and the only thing drawn to the canvas is the output pass's full-screen quad, so the
     // pixels are the same without the 4x buffer (66 MB at 1080p) and its resolve every frame
     const r = (this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' }));
-    r.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+    r.setPixelRatio(pixelRatio(1.75)); // at most 1.75; under the phone and lite tiers within their pixel budgets
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.toneMappingExposure = 1.05;
@@ -188,7 +188,7 @@ export class CurtainStage {
     this._onUp = this._onUp.bind(this);
     this._onLeave = this._onLeave.bind(this);
     this._tick = this._tick.bind(this);
-    this._gate = frameGate(); // under the phone tier, at most 60 frames a second
+    this._gate = frameGate(30); // under the phone tier, at most 60 frames a second; lite, 30
     container.addEventListener('pointermove', this._onPointer, { passive: true });
     container.addEventListener('pointerdown', this._onDown, { passive: true });
     container.addEventListener('pointerleave', this._onLeave);

@@ -33,7 +33,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import gsap from 'gsap';
-import { readToken } from '../util/env.js';
+import { readToken, antialias } from '../util/env.js';
 import { mark } from '../util/perf.js';
 
 // the Draco decoder served with the site (as for the home page's statue, src/scene/statue.js)
@@ -384,7 +384,7 @@ export class Thinker {
     // high-DPI screens are drawn at 1.5x at most, without multisampling (the extra pixels smooth the
     // edges well enough): a weak GPU cannot afford both
     const dpr = Math.min(devicePixelRatio, 1.5);
-    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: dpr < 1.25, alpha: true, powerPreference: 'high-performance' }));
+    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: antialias(dpr < 1.25), alpha: true, powerPreference: 'high-performance' }));
     r.setPixelRatio(dpr);
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;

@@ -18,7 +18,7 @@
 // where the browser can (compileAsync) before the first frame is drawn.
 import * as THREE from 'three';
 import { createRing, placeRing } from './ringStone.js';
-import { pixelRatio } from '../util/env.js';
+import { pixelRatio, antialias } from '../util/env.js';
 
 // the statue's average stone colour (its Meshy base colour map, sRGB, as statue.js measures it on
 // the home page), so the marble matches without loading the statue here
@@ -50,8 +50,8 @@ export class AboutRing {
     this.container = container;
     this.day = theme === 'light';
     // low-power: on a laptop with two graphics chips the built-in one is plenty for one ring
-    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' }));
-    r.setPixelRatio(pixelRatio(2)); // at most 2; under the phone tier within its pixel budget
+    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: antialias(true), alpha: true, powerPreference: 'low-power' }));
+    r.setPixelRatio(pixelRatio(2)); // at most 2; under the phone and lite tiers within their pixel budgets
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.setClearColor(0x000000, 0);

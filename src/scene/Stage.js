@@ -21,7 +21,8 @@ import { SilhouetteMask } from './silhouette.js';
 import { evaluate, TURN } from './sequence.js';
 import { growAt, MORPH, morphJob, buildInWorker, buildHere, assembleMorph } from './morph.js';
 import { mark } from '../util/perf.js';
-import { pixelRatio, frameGate } from '../util/env.js';
+import { pixelRatio, frameGate, antialias } from '../util/env.js';
+import { liteTextures } from './lite.js';
 import { VectorLogo } from './vectorLogo.js';
 import { LogoStar } from './star.js';
 import { hexToVec3, flattenStar } from './flat.js';
@@ -99,8 +100,8 @@ export class Stage {
     this.tracks = evaluate(0);
     this.time = 0;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(pixelRatio(2)); // at most 2; under the phone tier within its pixel budget
+    const renderer = new THREE.WebGLRenderer({ antialias: antialias(true), alpha: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(pixelRatio(2)); // at most 2; under the phone and lite tiers within their pixel budgets
     // three.js otherwise asks the driver for every program's info log on its first use, which
     // waits for the link to finish; the logs are only read with ?debug
     renderer.debug.checkShaderErrors = new URLSearchParams(location.search).has('debug');
@@ -130,7 +131,7 @@ export class Stage {
     this.resizeObserver = new ResizeObserver(this._resize);
     this.resizeObserver.observe(container);
     this._tick = this._tick.bind(this);
-    this._gate = frameGate(); // under the phone tier, at most 60 frames a second
+    this._gate = frameGate(30); // under the phone tier, at most 60 frames a second; lite, 30
     this.clock = new THREE.Clock(false);
   }
 
@@ -221,6 +222,7 @@ export class Stage {
         onBytes: (e) => { if (e.lengthComputable) bytes = e.loaded / e.total; report(); },
       }),
     ]);
+    await liteTextures(statue.object); // (lite tier: its 2048-pixel maps at 1024, before they are uploaded)
     mark('statue decoded');
     if (this.disposed) return;
 

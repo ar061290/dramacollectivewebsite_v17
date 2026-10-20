@@ -38,13 +38,13 @@ const LEDGER = `(() => {
     wrap('bindTexture', function (target, t) { st(this).bound['t' + target + ':' + st(this).unit] = t; });
     wrap('bindBuffer', function (target, b) { st(this).bound['b' + target] = b; });
     wrap('bindRenderbuffer', function (target, r) { st(this).bound.rb = r; });
-    const setTex = (gl, target, key, bytes) => { const t = boundTex(gl, target); if (!t) return; const s = st(gl); const m = s.tex.get(t) || {}; m[key] = bytes; s.tex.set(t, m); };
+    const setTex = (gl, target, key, bytes, dims) => { const t = boundTex(gl, target); if (!t) return; const s = st(gl); const m = s.tex.get(t) || {}; m[key] = bytes; if (dims) Object.defineProperty(m, 'dims', { value: dims, enumerable: false, configurable: true }); s.tex.set(t, m); };
     wrap('texImage2D', function (target, level, fmt, ...r) {
       let w, h, type;
       if (r.length >= 6) { w = r[0]; h = r[1]; type = r[4]; } else { const src = r[2]; type = r[1]; w = src?.naturalWidth || src?.videoWidth || src?.width || 0; h = src?.naturalHeight || src?.videoHeight || src?.height || 0; }
-      setTex(this, target, target + ':' + level, w * h * bpp(this, fmt, type));
+      setTex(this, target, target + ':' + level, w * h * bpp(this, fmt, type), level === 0 ? w + 'x' + h + (target !== 0x0DE1 ? ' cube' : '') : null);
     });
-    wrap('texStorage2D', function (target, levels, fmt, w, h) { let b = 0; for (let l = 0; l < levels; l++) b += Math.max(1, w >> l) * Math.max(1, h >> l) * bpp(this, fmt); setTex(this, target, 'storage', b * (target === 0x8513 ? 6 : 1)); });
+    wrap('texStorage2D', function (target, levels, fmt, w, h) { let b = 0; for (let l = 0; l < levels; l++) b += Math.max(1, w >> l) * Math.max(1, h >> l) * bpp(this, fmt); setTex(this, target, 'storage', b * (target === 0x8513 ? 6 : 1), w + 'x' + h + ' x' + levels + (target === 0x8513 ? ' cube' : '')); });
     wrap('texStorage3D', function (target, levels, fmt, w, h, d) { let b = 0; for (let l = 0; l < levels; l++) b += Math.max(1, w >> l) * Math.max(1, h >> l) * d * bpp(this, fmt); setTex(this, target, 'storage', b); });
     wrap('texImage3D', function (target, level, fmt, w, h, d, border, f2, type) { setTex(this, target, 'l' + level, w * h * d * bpp(this, fmt, type)); });
     wrap('compressedTexImage2D', function (target, level, fmt, w, h, border, data) { setTex(this, target, target + ':' + level, data?.byteLength || 0); });
@@ -76,7 +76,8 @@ const REPORT = `(() => {
     const aa = !!ctx.getContextAttributes?.()?.antialias;
     const draw = s.canvas.width * s.canvas.height * (4 + 4) * (aa ? 1 + 4 : 1); // colour and depth-stencil, and a 4x multisampled copy when antialiased
     const lost = ctx?.isContextLost?.();
-    return { canvas: (s.canvas.className || s.canvas.parentElement?.className || 'canvas').toString().split(' ')[0], size: s.canvas.width + 'x' + s.canvas.height, aa, lost, texMB: MB(tex), bufMB: MB(buf), rbMB: MB(rb), drawMB: MB(draw), totalMB: MB(lost ? 0 : tex + buf + rb + draw) };
+    const big = [...s.tex.values()].map((m) => [Object.values(m).reduce((a, v) => a + v, 0), m.dims || '?']).sort((a, b) => b[0] - a[0]).slice(0, 8).map(([b, d]) => d + ' ' + MB(b) + ' MB').join(', ');
+    return { big, canvas: (s.canvas.className || s.canvas.parentElement?.className || 'canvas').toString().split(' ')[0], size: s.canvas.width + 'x' + s.canvas.height, aa, lost, texMB: MB(tex), bufMB: MB(buf), rbMB: MB(rb), drawMB: MB(draw), totalMB: MB(lost ? 0 : tex + buf + rb + draw) };
   });
   const c2d = L.c2d.map((c) => ({ canvas: (c.className || (c.isConnected ? c.parentElement?.className : 'offscreen') || 'canvas').toString().split(' ')[0], size: c.width + 'x' + c.height, MB: MB(c.width * c.height * 4) }));
   let img = 0; for (const i of document.images) if (i.complete && i.naturalWidth) img += i.naturalWidth * i.naturalHeight * 4;
@@ -117,7 +118,7 @@ try {
       const row = { page: file.replace('.html', ''), heapMB: m1.heapMB, nodes: m1.nodes, glMB: w.glMB, c2dMB: w.c2dMB, imgMB: w.imgMB, mainBusy: Math.round((m1.taskMs - m0.taskMs) / (secs * 10)), rendererCpu: cpu('renderer'), gpuCpu: cpu('GPU'), rendererPrivMB: mem[renderers[0]?.id], gpuPrivMB: mem[gpu?.id], gl: w.gl, c2d: w.c2d };
       rows.push(row);
       console.log(`${row.page.padEnd(30)} heap ${String(row.heapMB).padStart(5)} MB | GPU (WebGL) ${String(row.glMB).padStart(6)} MB, 2D ${String(row.c2dMB).padStart(5)} MB, pictures ${String(row.imgMB).padStart(5)} MB | still: main ${String(row.mainBusy).padStart(3)}%, renderer CPU ${String(row.rendererCpu).padStart(3)}%, GPU process CPU ${String(row.gpuCpu).padStart(3)}% | private: renderer ${row.rendererPrivMB} MB, GPU ${row.gpuPrivMB} MB`);
-      if (flags.detail) { for (const g of w.gl) console.log(`     webgl ${g.canvas} ${g.size}${g.aa ? ' aa' : ''}${g.lost ? ' (lost)' : ''}: textures ${g.texMB}, buffers ${g.bufMB}, renderbuffers ${g.rbMB}, drawing buffer ${g.drawMB} MB`); for (const c of w.c2d) console.log(`     2d ${c.canvas} ${c.size}: ${c.MB} MB`); }
+      if (flags.detail) { for (const g of w.gl) { console.log(`     webgl ${g.canvas} ${g.size}${g.aa ? ' aa' : ''}${g.lost ? ' (lost)' : ''}: textures ${g.texMB}, buffers ${g.bufMB}, renderbuffers ${g.rbMB}, drawing buffer ${g.drawMB} MB`); if (g.big) console.log(`       largest textures: ${g.big}`); } for (const c of w.c2d) console.log(`     2d ${c.canvas} ${c.size}: ${c.MB} MB`); }
     } catch (err) {
       console.log(`${file}: FAILED ${err.message}`);
     } finally {

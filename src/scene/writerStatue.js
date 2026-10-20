@@ -28,7 +28,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import gsap from 'gsap';
-import { readToken } from '../util/env.js';
+import { readToken, antialias } from '../util/env.js';
+import { liteTexture, liteTextures } from './lite.js';
 import { rig } from '../writers/rig.js';
 import { mark } from '../util/perf.js';
 
@@ -405,7 +406,7 @@ export class WriterStatue {
     this.view = 0;
     this.slot = null;
     const dpr = Math.min(devicePixelRatio, 1.5);
-    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: dpr < 1.25, alpha: true, powerPreference: 'high-performance' }));
+    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: antialias(dpr < 1.25), alpha: true, powerPreference: 'high-performance' }));
     r.setPixelRatio(dpr);
     this.res = { base: dpr, low: false, sharp: false, slow: 0, moved: 0 };
     r.outputColorSpace = THREE.SRGBColorSpace;
@@ -628,6 +629,7 @@ export class WriterStatue {
     if (this.measures !== (await measuring)) this._useMeasures(await measuring);
     const gltf = await loading;
     if (this.disposed) { gltf.scene.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose?.(); } }); return; }
+    await liteTextures(gltf.scene); // (lite tier: its 2048-pixel maps at 1024, before they are uploaded)
     step('statue model');
     // the cover's picture: mipmapped and sharp at a slant, its sRGB kept as it is (the shader decodes
     // it after filtering); if it fails, the book is the model's own
@@ -638,6 +640,7 @@ export class WriterStatue {
         tex.flipY = false; // (its rows from the top, as the map in the shader reads them)
         tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
         tex.needsUpdate = true;
+        await liteTexture(tex); // (lite tier: at most 1024 a side; it keeps its rows from the top)
         this.coverTex = tex;
         this.uniforms.uWsDecalMap.value = tex;
         this.uniforms.uWsDecalOn.value = this.decal.on;
