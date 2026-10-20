@@ -22,6 +22,10 @@ export function followSpot(el, { glow = true, onMove, reduced = false } = {}) {
   const qx = gsap.quickTo(spot, 'x', { duration: dur, ease: 'power3.out', onUpdate: mark });
   const qy = gsap.quickTo(spot, 'y', { duration: dur, ease: 'power3.out', onUpdate: mark });
   const qa = gsap.quickTo(spot, 'a', { duration: reduced ? 0 : 0.35, ease: 'power2.out', onUpdate: mark });
+  // the glow is moved by GSAP's own CSS renderer, as gsap.set would, without a new tween in every frame
+  // (gsap.set made, started and finished one each time: the most of a touch screen's scroll past the
+  // writers' cards that the page's own code spent)
+  const glowAt = halo ? { x: gsap.quickSetter(halo, 'x', 'px'), y: gsap.quickSetter(halo, 'y', 'px'), a: gsap.quickSetter(halo, 'opacity') } : null;
 
   const tick = () => {
     if (!dirty) { gsap.ticker.remove(tick); ticking = false; return; } // nothing moved: off the ticker until something does
@@ -31,7 +35,7 @@ export function followSpot(el, { glow = true, onMove, reduced = false } = {}) {
       el.style.setProperty('--spot-x', `${spot.x}px`);
       el.style.setProperty('--spot-y', `${spot.y}px`);
     }
-    if (halo) gsap.set(halo, { x: spot.x, y: spot.y, opacity: spot.a });
+    if (glowAt) { glowAt.x(spot.x); glowAt.y(spot.y); glowAt.a(spot.a); }
     onMove?.(spot.x, spot.y, spot.a);
   };
   mark();
