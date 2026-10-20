@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Visual guardrail: screenshots of every page at several viewports, with time held still (the sky
-// drawn at one fixed instant, every CSS and Web Animation paused at one fixed time, the pointer off
-// the page), and a pixel-by-pixel comparison against an earlier set.
+// drawn at one fixed instant, the statues and the curtain held, every CSS and Web Animation paused at
+// one fixed time, the pointer off the page), and a pixel-by-pixel comparison against an earlier set.
 //
 //   node tools/perf/visual.mjs --out tools/perf/shots/before            # take a set
 //   node tools/perf/visual.mjs --out tools/perf/shots/after --compare tools/perf/shots/before
@@ -45,6 +45,11 @@ const FREEZE = `(async () => {
   // board still, one frame drawn
   const st = window.__stage;
   if (st && st.renderer && st.u) { try { st.renderer.setAnimationLoop(null); st.running = false; st.u.uTime.value = 1000; st.swing.a = 0; st.swing.v = 0; st.state.push = 0; st.state.x = 0; st.state.y = 0; st.flash = 0; st.chase = -1; if (st.sign) st.sign.rotation.z = 0; st._applyLit && st._applyLit(); st._lightBulbs && st._lightBulbs(); st._render(); } catch (e) {} }
+  // the writer statue (the write page, exposed as window.__writeStatue with ?debug): its eased view, lamp
+  // and glow brought to where they were going, its resolution at its own (not lowered for a slow
+  // frame), its loop stopped, one frame drawn
+  const ws = window.__writeStatue;
+  if (ws && ws.renderer && ws.ready) { try { ws.renderer.setAnimationLoop(null); ws.running = false; ws.yaw.now = ws.yaw.to; ws.pitch.now = ws.pitch.to; ws.pointer.on = ws.pointer.to; ws.glowAt.copy(ws.glowTo); if (ws.res.low) ws._setRes({ low: false }); ws._draw(true); } catch (e) {} }
   // every running animation held at the same moment
   for (const a of document.getAnimations()) { try { a.pause(); a.currentTime = 1000; } catch (e) {} }
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -61,17 +66,23 @@ try {
       const page = await browser.newPage();
       try {
         await page.emulate({ device: { width: w, height: h, dpr: 1, mobile: w < 800, touch: w < 800, cpu: 1 }, network: 'none' });
-        await page.goto(`${srv.url}${def.file}${def.kind === 'soon' ? '?debug' : ''}`, { timeout: 60000 });
+        // ?debug exposes what the freeze holds still (the coming-soon curtain, the writer statue) and changes nothing on the page
+        await page.goto(`${srv.url}${def.file}${def.kind === 'soon' || key === 'write' ? '?debug' : ''}`, { timeout: 60000 });
         if (def.ready) await page.waitForMark(def.ready, { timeout: 60000 });
         if (def.kind === 'home') { await page.waitForMark('intro-done', { timeout: 30000 }); await page.waitForMark('morph-ready', { timeout: 30000 }); }
         await sleep(def.kind === 'home' ? 800 : def.kind === 'soon' ? 4500 : 1200); // the curtain's light cue (0.3 s + 1.8 s) has played out
         // settled: no long task for a second and no embedded form still loading (at most 15 s), so that both builds
-        // are shot with their statues, rings and forms arrived, not at whatever moment of their arrival
+        // are shot with their statues, rings and forms arrived, not at whatever moment of their arrival; an embedded
+        // form (Fillout's page, in a frame) goes on fading in and resizing its frame once it says it is ready, so its
+        // frame's height must also have held for a second and a half
+        let formH = null, formSince = Date.now();
         for (const t0 = Date.now(); Date.now() - t0 < 15000; await sleep(250)) {
-          const settled = await page.evaluate(`(() => { const P = window.__dcPerf; const last = P && P.longTasks.length ? P.longTasks[P.longTasks.length - 1] : null;
+          const s = await page.evaluate(`(() => { const P = window.__dcPerf; const last = P && P.longTasks.length ? P.longTasks[P.longTasks.length - 1] : null;
             const quiet = last ? performance.now() - (last[0] + last[1]) : performance.now();
-            return quiet > 1000 && !document.querySelector('.form-box.is-loading'); })()`);
-          if (settled) break;
+            const frame = document.querySelector('.form-box iframe');
+            return { quiet: quiet > 1000, loading: !!document.querySelector('.form-box.is-loading'), formH: frame ? frame.getBoundingClientRect().height : null }; })()`);
+          if (s.formH !== formH) { formH = s.formH; formSince = Date.now(); }
+          if (s.quiet && !s.loading && (formH === null || Date.now() - formSince >= 1500)) break;
         }
         await sleep(500);
         await page.evaluate(FREEZE);
