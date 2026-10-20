@@ -442,6 +442,17 @@ export function setupMusic({ reduced, opened }) {
   window.addEventListener('pagehide', remember);
   setUi('paused');
 
+  // the lite tier: the bars hold still while the page scrolls, and go on from where they were once it
+  // has stopped (drawn on the page's thread, their motion is a frame of the page's style, layout and
+  // paint: src/styles/components.css)
+  let heldTimer = 0;
+  const onScroll = () => {
+    if (!document.documentElement.classList.contains('tier-lite')) return;
+    if (heldTimer) clearTimeout(heldTimer); else button.classList.add('is-held');
+    heldTimer = setTimeout(() => { heldTimer = 0; button.classList.remove('is-held'); }, 200);
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+
   // on unless the visitor turned it off earlier in this visit (or their browser is set to save data:
   // the playlist is a large file): from a new point. It is asked to play at once, silent (volume 0, but
   // not muted: a browser may let a muted start through, then stop it when it is unmuted), but with no file
@@ -477,6 +488,9 @@ export function setupMusic({ reduced, opened }) {
     document.removeEventListener('visibilitychange', onVisibility);
     window.removeEventListener('pageshow', onPageShow);
     window.removeEventListener('pagehide', remember);
+    window.removeEventListener('scroll', onScroll);
+    clearTimeout(heldTimer);
+    button.classList.remove('is-held');
     teardown();
   };
 }
