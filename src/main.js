@@ -5,7 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
 import { SplitText } from 'gsap/SplitText.js';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin.js';
 import { CustomEase } from 'gsap/CustomEase.js';
-import { reducedMotion, probeWebGL, prefersStatic, readToken } from './util/env.js';
+import { reducedMotion, probeWebGL, prefersStatic, readToken, phoneTier } from './util/env.js';
 import { mark as perfMark } from './util/perf.js';
 import { setupField } from './util/field.js';
 import { ConstellationField } from './constellation/Constellation.js';
@@ -235,7 +235,15 @@ async function boot() {
   for (const el of document.querySelectorAll('[data-tilt]')) cleanups.push(tilt(el, { reduced, max: 10 }));
 
   watchVisibility();
-  if (stage) prepareMorph();
+  if (stage) {
+    // the phone tier (README): the morph (a large mesh, built in a worker, then put on the GPU) is made
+    // once the visitor has begun to scroll toward it, rather than as soon as the intro ends; and the
+    // stage's GPU memory is given back after half a minute in a hidden tab
+    if (phoneTier()) {
+      whenScrolled(0.5).then(() => { if (stage) prepareMorph(); });
+      releaseWhenHidden();
+    } else prepareMorph();
+  }
   if (new URLSearchParams(location.search).has('debug') && stage) {
     const { setupDebug } = await import('./ui/debug.js');
     cleanups.push(setupDebug({ stage }));
@@ -244,6 +252,44 @@ async function boot() {
 
 // The morph mesh is built once the hero is up, in a worker (src/scene/morph.js); then, in a quiet
 // moment, its vertices go to the GPU and its programs compile, so its first frame on screen is cheap.
+/** Resolves once the page has been scrolled `screens` screens down. */
+function whenScrolled(screens) {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (scrollY < innerHeight * screens) return;
+      removeEventListener('scroll', check);
+      resolve();
+    };
+    addEventListener('scroll', check, { passive: true });
+    check();
+  });
+}
+
+/**
+ * The phone tier: after 30 s in a hidden tab the stage's WebGL context is let go (its GPU memory given
+ * back: a phone short of memory may otherwise discard the whole tab), and asked for again when the tab is
+ * back; meanwhile the stage shows its still picture, as when the browser drops a context itself.
+ */
+function releaseWhenHidden() {
+  let timer = 0;
+  let released = false;
+  const onVisibility = () => {
+    clearTimeout(timer);
+    if (document.hidden) {
+      timer = setTimeout(() => {
+        if (!document.hidden || !stage || stage.lost) return;
+        released = true;
+        stage.renderer.forceContextLoss();
+      }, 30000);
+    } else if (released) {
+      released = false;
+      stage?.renderer.forceContextRestore();
+    }
+  };
+  document.addEventListener('visibilitychange', onVisibility);
+  cleanups.push(() => { clearTimeout(timer); document.removeEventListener('visibilitychange', onVisibility); });
+}
+
 async function prepareMorph() {
   try {
     const [svg, parts] = await Promise.all([

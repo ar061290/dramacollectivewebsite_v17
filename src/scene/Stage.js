@@ -21,6 +21,7 @@ import { SilhouetteMask } from './silhouette.js';
 import { evaluate, TURN } from './sequence.js';
 import { growAt, MORPH, morphJob, buildInWorker, buildHere, assembleMorph } from './morph.js';
 import { mark } from '../util/perf.js';
+import { pixelRatio, frameGate } from '../util/env.js';
 import { VectorLogo } from './vectorLogo.js';
 import { LogoStar } from './star.js';
 import { hexToVec3, flattenStar } from './flat.js';
@@ -99,7 +100,7 @@ export class Stage {
     this.time = 0;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(pixelRatio(2)); // at most 2; under the phone tier within its pixel budget
     // three.js otherwise asks the driver for every program's info log on its first use, which
     // waits for the link to finish; the logs are only read with ?debug
     renderer.debug.checkShaderErrors = new URLSearchParams(location.search).has('debug');
@@ -129,6 +130,7 @@ export class Stage {
     this.resizeObserver = new ResizeObserver(this._resize);
     this.resizeObserver.observe(container);
     this._tick = this._tick.bind(this);
+    this._gate = frameGate(); // under the phone tier, at most 60 frames a second
     this.clock = new THREE.Clock(false);
   }
 
@@ -739,6 +741,7 @@ export class Stage {
   }
 
   _tick() {
+    if (!this._gate(performance.now())) return;
     const dt = Math.min(0.1, this.clock.getDelta());
     this._updateRig(dt);
     if (this._settling) {

@@ -16,6 +16,7 @@
 // and a path of many circles by different means), so the picture would not have been the same.
 
 import { SpatialGrid } from './SpatialGrid.js';
+import { pixelRatio, frameGate } from '../util/env.js';
 
 const STAR_CELL = 34; // jittered-grid cell for the twinkling stars (px)
 const STAR_KEEP = 0.66; // share of cells that hold a star
@@ -90,6 +91,7 @@ export class ConstellationField {
     this.suspended = false; // true while the statue is being turned: no new constellations
     this.raf = 0;
     this.skip = false; // every other frame is skipped while the sky is calm
+    this.gate = frameGate(); // under the phone tier, at most 60 frames a second
     this.dust = document.createElement('canvas');
 
     this.lastScroll = -Infinity; // the text blocks move with the scroll: the sky keeps to every frame then
@@ -147,7 +149,7 @@ export class ConstellationField {
     const h = this.canvas.clientHeight || window.innerHeight;
     if (w === this.w && h === this.h) return;
     this.w = w; this.h = h;
-    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.dpr = pixelRatio(2, w, h); // at most 2; under the phone tier within its pixel budget
     this.canvas.width = Math.round(w * this.dpr);
     this.canvas.height = Math.round(h * this.dpr);
     this._seed();
@@ -365,6 +367,7 @@ export class ConstellationField {
 
   _frame(now) {
     this.raf = requestAnimationFrame(this._frame);
+    if (!this.gate(now)) return;
     // calm: nothing but the twinkle is going on, and that is slow enough to draw every other frame
     const calm = !this.pointer && !this.constellations.length && !this.lively && now - this.lastScroll > 250;
     if (calm && !this.reducedMotion) { this.skip = !this.skip; if (this.skip) return; } else this.skip = false;

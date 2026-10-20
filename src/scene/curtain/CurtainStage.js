@@ -18,6 +18,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { frameGate } from '../../util/env.js';
 
 // velvet and light per page, from the plum palette (tokens.css) and the gold of the stage lamps;
 // `day` is the light theme's curtain (house lights up): a pale rose velvet in a lit house
@@ -187,6 +188,7 @@ export class CurtainStage {
     this._onUp = this._onUp.bind(this);
     this._onLeave = this._onLeave.bind(this);
     this._tick = this._tick.bind(this);
+    this._gate = frameGate(); // under the phone tier, at most 60 frames a second
     container.addEventListener('pointermove', this._onPointer, { passive: true });
     container.addEventListener('pointerdown', this._onDown, { passive: true });
     container.addEventListener('pointerleave', this._onLeave);
@@ -651,6 +653,7 @@ export class CurtainStage {
   }
 
   _tick() {
+    if (!this._gate(performance.now())) return;
     // at rest, every other frame is enough: the sway (amplitude 0.03, 0.55 rad/s) and the pleats'
     // drift move under one shade between frames, so the skipped frame would look the same, and the
     // GPU does half the work (this page's whole chain: velvet, glow, vignette) while the visitor reads
