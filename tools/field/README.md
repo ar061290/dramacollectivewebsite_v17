@@ -23,8 +23,13 @@ Apps Script appends each report as a row.
 5. The next push to `main` (or **Actions → Build and deploy to GitHub Pages → Run workflow**) builds the
    pages with the endpoint. Rows appear in the sheet's `visits` tab as visitors leave pages.
 
-To stop: delete the `FIELD_ENDPOINT` variable and deploy again (the pages then carry no endpoint), or
-archive the Apps Script deployment.
+**Set up (21 October 2026):** the owner's receiver is deployed, and its address is written into
+`.github/workflows/pages.yml` as the endpoint the deploy uses when no `FIELD_ENDPOINT` variable is set (a
+variable, if set, takes its place). Only that deploy writes the endpoint into the pages: a build on one's
+own machine (the lab's) carries none, so lab runs never add rows.
+
+To stop: archive the Apps Script deployment (the pages keep sending, to an address that no longer answers),
+or take the address out of the workflow and deploy again (the pages then carry no endpoint).
 
 ## Reading it
 

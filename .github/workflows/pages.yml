@@ -6,10 +6,11 @@
 # Until then this workflow only builds: the deploy job runs only when the repository's Pages site is set
 # to be published by GitHub Actions (a site published from a branch is left as it is).
 #
-# Field measurements (src/util/field.js, tools/field/README.md): set the repository variable
-# FIELD_ENDPOINT (Settings → Secrets and variables → Actions → Variables) to the receiver's address,
-# and the pages are written with it; FIELD_SAMPLE is the share of visits that report (0.1 if unset).
-# Without FIELD_ENDPOINT the pages carry no endpoint and nothing is sent.
+# Field measurements (src/util/field.js, tools/field/README.md): the pages are written with the owner's
+# receiver (a Google Apps Script web app, deployed 21 October 2026), or with the repository variable
+# FIELD_ENDPOINT (Settings → Secrets and variables → Actions → Variables) where one is set; FIELD_SAMPLE
+# is the share of visits that report (0.1 if unset). Only this deploy writes the endpoint in: a build on
+# a machine of one's own (the lab's) carries none and sends nothing.
 name: Build and deploy to GitHub Pages
 
 on:
@@ -41,7 +42,7 @@ jobs:
       - name: Write the pages (with the field endpoint, if one is set)
         run: node tools/pages/build.mjs
         env:
-          FIELD_ENDPOINT: ${{ vars.FIELD_ENDPOINT }}
+          FIELD_ENDPOINT: ${{ vars.FIELD_ENDPOINT || 'https://script.google.com/macros/s/AKfycbwfUNFx4Wms8VBHr3G38L0rs-lg3QQ7pqmtSAZhjVyc0dRPmzGLAFebm53JPC6yZeSv/exec' }}
           FIELD_SAMPLE: ${{ vars.FIELD_SAMPLE }}
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
