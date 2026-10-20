@@ -762,7 +762,15 @@ export class Thinker {
    * lamp keeps to the pointer, and the mask's point moves with him.
    */
   boxMoved() {
-    if (this.pointer.seen && this.visible) this._wake();
+    // (a finger's lamp has gone out once it lifted: then the frame would be the same, and the box moved
+    // only by a transform, so the picture is unchanged; it used to be drawn again in every frame of the
+    // crossing all the same)
+    if (this.visible && this._lit()) this._wake();
+  }
+
+  /** The cursor's lamp is lit, or lighting (out, it is not placed: nothing of it would be seen). */
+  _lit() {
+    return this.pointer.seen && (this.pointer.on > 0.002 || this.pointer.to > 0);
   }
 
   /** Where the mask's centre is on the page now (client pixels), or null before he is drawn. */
@@ -777,7 +785,7 @@ export class Thinker {
   _onScroll() {
     // the box moves under a still pointer: the lamp keeps to the pointer (while it is lit; a
     // finger's lamp has gone out once it lifted, and then the frame would be the same)
-    if (this.pointer.seen && this.visible && (this.pointer.on > 0.002 || this.pointer.to > 0)) this._wake();
+    if (this.visible && this._lit()) this._wake();
   }
 
   _onDown(e) {
@@ -867,7 +875,7 @@ export class Thinker {
     this.uniforms.uTkView.value.getNormalMatrix(mv);
     // the cursor's lamp, where the pointer is now (eased after it in _tick; at once when still)
     const glow = this.lights.glow;
-    if (this.pointer.seen) {
+    if (this._lit()) {
       this._placeGlow(this.reduced);
       glow.position.copy(this.glowAt);
     }
