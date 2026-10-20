@@ -28,6 +28,9 @@
     try { if (sessionStorage.getItem('dc-veil') === '1') { sessionStorage.removeItem('dc-veil'); document.documentElement.classList.add('is-veiled'); } } catch (e) {}
     // the conditions were confirmed earlier this visit (src/planner/main.js): straight to the hall
     try { if (sessionStorage.getItem('dc-planner-ok') === '1') document.documentElement.classList.add('planner-ok'); } catch (e) {}
+    // the failsafe (README): if the planner's script has not started 8 s after the page has loaded, the
+    // curtain is opened, so the page does not stay closed
+    addEventListener('load', function () { setTimeout(function () { if (window.dcBooted) return; document.documentElement.classList.remove('is-veiled'); document.querySelectorAll('.veil, .veil__half').forEach(function (v) { v.style.transform = ''; v.style.pointerEvents = ''; }); }, 8000); });
   </script>
 </head>
 <body>

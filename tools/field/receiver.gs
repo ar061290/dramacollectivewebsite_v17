@@ -22,12 +22,17 @@ function doPost(e) {
     const book = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = book.getSheetByName(SHEET) || book.insertSheet(SHEET);
     if (sheet.getLastRow() === 0) sheet.appendRow(COLUMNS);
+    // the endpoint is public (it is in every page): numbers are kept only if they are numbers, and text is
+    // kept short and never read as a formula
+    const num = (x) => (typeof x === 'number' && isFinite(x) ? x : '');
+    const text = (x, n) => { const s = String(x == null ? '' : x).slice(0, n || 40); return /^[=+\-@]/.test(s) ? "'" + s : s; };
+    const yes = (x) => x === true;
     const m = d.marks || {}, dev = d.device || {}, lt = d.longTasks || {};
     sheet.appendRow([
-      new Date(), String(d.page || '').slice(0, 80), d.type, d.ttfb, d.fcp, m['curtain-up'], m.parted, m['intro-done'],
-      m['morph-ready'], lt.count, lt.ms, lt.longest, d.cls, (d.lost || []).length, d.discarded === true,
-      dev.w, dev.h, dev.dpr, dev.cores, dev.mem, dev.touch, dev.reduced, dev.net, dev.save, dev.webgl2,
-      d.theme, JSON.stringify(m).slice(0, 2000),
+      new Date(), text(d.page, 80), text(d.type), num(d.ttfb), num(d.fcp), num(m['curtain-up']), num(m.parted), num(m['intro-done']),
+      num(m['morph-ready']), num(lt.count), num(lt.ms), num(lt.longest), num(d.cls), Array.isArray(d.lost) ? d.lost.length : '', yes(d.discarded),
+      num(dev.w), num(dev.h), num(dev.dpr), num(dev.cores), num(dev.mem), yes(dev.touch), yes(dev.reduced), text(dev.net), yes(dev.save), yes(dev.webgl2),
+      text(d.theme), text(JSON.stringify(m), 2000),
     ]);
   } finally {
     lock.releaseLock();

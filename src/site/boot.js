@@ -35,12 +35,13 @@ export async function bootPage(setup) {
     // a start that throws before the curtain has parted would leave a closed curtain (arriving from
     // another page) or a half-made page: shown as it is without script instead (the failsafe, README)
     console.error('The page could not start.', err);
-    try { if (!performance.getEntriesByName('dc:parted').length) window.dcFailsafe?.(); } catch { /* fine */ }
+    if (!window.dcUp) window.dcFailsafe?.();
     return null;
   }
 }
 
 async function start(setup) {
+  window.dcBooted = true; // for the failsafe in the head (tools/pages/build.mjs)
   mark('boot');
   const reduced = reducedMotion();
   const cleanups = [];
@@ -109,6 +110,7 @@ async function start(setup) {
   await new Promise((r) => requestAnimationFrame(r));
   await transitions.open();
   mark('parted');
+  window.dcUp = true;
   parted();
   ScrollTrigger.refresh();
   // only now, with the curtain open, may the bar's buttons fly to their spots on the page

@@ -122,8 +122,9 @@ const ICON_INSTAGRAM = '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6
 // (FIELD_ENDPOINT=https://… node tools/pages/build.mjs); without it the pages carry no endpoint and
 // nothing is sent. FIELD_SAMPLE (0-1) is the share of visits that report: one in ten unless set (the
 // Pages workflow passes both from the repository's variables; tools/field/README.md).
-const FIELD = process.env.FIELD_ENDPOINT ? `<meta name="dc-field" content="${process.env.FIELD_ENDPOINT}">
-  <meta name="dc-field-sample" content="${process.env.FIELD_SAMPLE || '0.1'}">
+const attr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const FIELD = process.env.FIELD_ENDPOINT ? `<meta name="dc-field" content="${attr(process.env.FIELD_ENDPOINT)}">
+  <meta name="dc-field-sample" content="${attr(process.env.FIELD_SAMPLE || '0.1')}">
   ` : '';
 const head = () => `${FIELD}<link rel="icon" href="./assets/brand/mark-gold-144.png">
   <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>
@@ -164,8 +165,16 @@ const head = () => `${FIELD}<link rel="icon" href="./assets/brand/mark-gold-144.
     // curtain, the intro's parts shown, the scroll free), for a page whose own script failed before it was
     // up; and if that script has not even started 8 s after the page has loaded (a browser without
     // modules or import maps, a script that did not arrive), it is called then
-    window.dcFailsafe = function () { var c = document.documentElement.classList; if (c.contains('is-failsafe')) return; c.remove('has-js', 'is-loading', 'is-intro', 'is-veiled'); c.add('is-failsafe'); };
-    addEventListener('load', function () { setTimeout(function () { try { if (!performance.getEntriesByName('dc:boot').length) window.dcFailsafe(); } catch (e) {} }, 8000); });
+    // (the page's script sets window.dcBooted as it starts and window.dcUp once the page is up: flags, not
+    // performance marks, which some privacy settings hide from scripts)
+    window.dcFailsafe = function () {
+      var c = document.documentElement.classList; if (c.contains('is-failsafe')) return;
+      c.remove('has-js', 'is-loading', 'is-intro', 'is-veiled'); c.add('is-failsafe');
+      try { if (window.dcLoader) window.dcLoader.stop(); } catch (e) {}
+      // the curtain, taken over by the page's script with inline styles on arrival: back to its open place
+      document.querySelectorAll('.veil, .veil__half').forEach(function (v) { v.style.transform = ''; v.style.pointerEvents = ''; });
+    };
+    addEventListener('load', function () { setTimeout(function () { if (!window.dcBooted) window.dcFailsafe(); }, 8000); });
   </script>`;
 
 // the writers' own pages (Meet our writers, a writer's page, Apply to be a writer) have no Apply now in

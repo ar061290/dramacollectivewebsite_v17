@@ -652,8 +652,8 @@ export class CurtainStage {
     return true;
   }
 
-  _tick() {
-    if (!this._gate(performance.now())) return;
+  _tick(time) {
+    if (!this._gate(time ?? performance.now())) return; // the frame's own time, not when this callback began
     // at rest, every other frame is enough: the sway (amplitude 0.03, 0.55 rad/s) and the pleats'
     // drift move under one shade between frames, so the skipped frame would look the same, and the
     // GPU does half the work (this page's whole chain: velvet, glow, vignette) while the visitor reads

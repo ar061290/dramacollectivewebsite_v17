@@ -7,7 +7,8 @@
 import { mark } from './perf.js';
 
 const ENDPOINT = document.querySelector('meta[name="dc-field"]')?.content || '';
-const SAMPLE = Number(document.querySelector('meta[name="dc-field-sample"]')?.content || 1); // 1 = every visit, 0.1 = one in ten
+// the share of visits that report (0.1 = one in ten); anything that is not a number from 0 to 1 counts as 0.1
+const SAMPLE = ((s) => (Number.isFinite(s) && s >= 0 && s <= 1 ? s : 0.1))(Number(document.querySelector('meta[name="dc-field-sample"]')?.content ?? 0.1));
 
 const lost = [];
 const longTasks = { count: 0, ms: 0, longest: 0 };
@@ -68,6 +69,8 @@ function send() {
   } catch { return; }
   try {
     const body = JSON.stringify(data);
-    if (!navigator.sendBeacon?.(ENDPOINT, body)) fetch(ENDPOINT, { method: 'POST', body, keepalive: true, mode: 'no-cors' }).catch(() => {});
+    // a keepalive fetch rather than sendBeacon, which always sends the visitor's cookies for the endpoint's site
+    // (a Google receiver would get their Google session's): this one sends none
+    fetch(ENDPOINT, { method: 'POST', body, keepalive: true, mode: 'no-cors', credentials: 'omit' }).catch(() => {});
   } catch { /* nothing to be done */ }
 }

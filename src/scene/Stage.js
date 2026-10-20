@@ -740,8 +740,8 @@ export class Stage {
       this.star?.twinkling ? Math.round(this.time * 30) : 0].map(r).join(',');
   }
 
-  _tick() {
-    if (!this._gate(performance.now())) return;
+  _tick(time) {
+    if (!this._gate(time ?? performance.now())) return; // the frame's own time, not when this callback began
     const dt = Math.min(0.1, this.clock.getDelta());
     this._updateRig(dt);
     if (this._settling) {

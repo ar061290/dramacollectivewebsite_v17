@@ -147,7 +147,7 @@ export function setupMusic({ reduced, opened }) {
       // shortcut would turn it off again
       if (e.type === 'keydown' && (isShortcut(e) || isMediaKey(e))) return;
       if (multiTouch && e.type !== 'keydown') return;
-      if (wanted && audio?.paused && !document.hidden) play();
+      if (wanted && audio?.paused && !document.hidden) { load(); play(); }
     };
     for (const type of GESTURES) document.addEventListener(type, waitGesture, true);
   };
@@ -220,7 +220,14 @@ export function setupMusic({ reduced, opened }) {
         try { audio.currentTime = pickStart(audio.duration, last); } catch { /* not seekable here: it plays from the top */ }
       }
     }, { once: true });
-    audio.src = FILE;
+  };
+
+  // the file is given only when it is to be heard: at the curtain, or inside the visitor's own tap, click or
+  // key. Until then the element can be asked to play without anything being fetched, so a browser that
+  // refuses says so at once, and one that allows it simply waits for the file.
+  const load = () => {
+    if (!audio) build();
+    if (!audio.getAttribute('src')) audio.src = FILE;
   };
 
   // Inside the visitor's click: the element is made and set playing there and then, not once its
@@ -228,7 +235,7 @@ export function setupMusic({ reduced, opened }) {
   // own tap or click, and from then on lets that element play. Until it really plays, from its new
   // place, it is muted rather than only silent: iOS ignores volume, so the fade cannot hush it there.
   const start = () => {
-    if (!audio) build();
+    load();
     if (!placed) audio.muted = true;
     play();
   };
@@ -436,18 +443,19 @@ export function setupMusic({ reduced, opened }) {
   setUi('paused');
 
   // on unless the visitor turned it off earlier in this visit (or their browser is set to save data:
-  // the playlist is a large file): from a new point, once the page's curtain is up (its file, and the
-  // artwork the system's media controls fetch with it, would otherwise share the link with the page's
-  // own loading). It is asked to play then, silent (volume 0, but not muted: a browser may let a muted
-  // start through, then stop it when it is unmuted), so that a refusal shows on the button straight
-  // away, and the visitor's first tap, click or key starts it. Until then the button shows it on, and
-  // a press of it starts it at once (or turns it off).
+  // the playlist is a large file): from a new point. It is asked to play at once, silent (volume 0, but
+  // not muted: a browser may let a muted start through, then stop it when it is unmuted), but with no file
+  // yet, so that a refusal shows on the button straight away and the visitor's first tap, click or key
+  // starts it, as ever. The file itself comes once the page's curtain is up: with it, and with the
+  // artwork the system's media controls fetch for it, it would otherwise share the link with the page's
+  // own loading.
   if (storedWant()) {
     wanted = true;
-    setUi('paused');
+    build();
+    if (document.hidden) setUi('paused'); else play();
     Promise.resolve(opened).then(() => {
-      if (disposed || !wanted || audio) return; // turned off, or started by the visitor, meanwhile
-      build();
+      if (disposed || !wanted || !audio || audio.getAttribute('src')) return; // off, or started by the visitor
+      load();
       if (document.hidden) setUi('paused'); else play();
     });
   }

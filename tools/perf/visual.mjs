@@ -65,6 +65,15 @@ try {
         if (def.ready) await page.waitForMark(def.ready, { timeout: 60000 });
         if (def.kind === 'home') { await page.waitForMark('intro-done', { timeout: 30000 }); await page.waitForMark('morph-ready', { timeout: 30000 }); }
         await sleep(def.kind === 'home' ? 800 : def.kind === 'soon' ? 4500 : 1200); // the curtain's light cue (0.3 s + 1.8 s) has played out
+        // settled: no long task for a second and no embedded form still loading (at most 15 s), so that both builds
+        // are shot with their statues, rings and forms arrived, not at whatever moment of their arrival
+        for (const t0 = Date.now(); Date.now() - t0 < 15000; await sleep(250)) {
+          const settled = await page.evaluate(`(() => { const P = window.__dcPerf; const last = P && P.longTasks.length ? P.longTasks[P.longTasks.length - 1] : null;
+            const quiet = last ? performance.now() - (last[0] + last[1]) : performance.now();
+            return quiet > 1000 && !document.querySelector('.form-box.is-loading'); })()`);
+          if (settled) break;
+        }
+        await sleep(500);
         await page.evaluate(FREEZE);
         await sleep(150);
         const name = `${key}-${w}x${h}.png`;

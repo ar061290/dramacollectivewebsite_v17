@@ -3,7 +3,8 @@
 # Today the live site serves the source tree as-is (115 requests and an import map to jsDelivr for
 # the home page); the built site is 48 requests, tree-shaken, minified, with hashed file names.
 # To turn this on: the repository's Settings → Pages → Build and deployment → Source: GitHub Actions.
-# Until then this workflow only builds: the deploy job runs only when the repository has a Pages site.
+# Until then this workflow only builds: the deploy job runs only when the repository's Pages site is set
+# to be published by GitHub Actions (a site published from a branch is left as it is).
 #
 # Field measurements (src/util/field.js, tools/field/README.md): set the repository variable
 # FIELD_ENDPOINT (Settings → Secrets and variables → Actions → Variables) to the receiver's address,
@@ -46,12 +47,13 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
-      - name: Does the repository have a Pages site?
+      - name: Is the Pages site published by GitHub Actions?
         id: pages
         run: |
-          code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/${{ github.repository }}/pages")
-          echo "GitHub answered $code for this repository's Pages site"
-          if [ "$code" = 200 ]; then echo 'enabled=true' >> "$GITHUB_OUTPUT"; else echo 'enabled=false' >> "$GITHUB_OUTPUT"; fi
+          resp=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/${{ github.repository }}/pages")
+          kind=$(printf '%s' "$resp" | node -e "let s='';process.stdin.on('data',(d)=>{s+=d}).on('end',()=>{try{process.stdout.write(String(JSON.parse(s).build_type||'none'))}catch(e){process.stdout.write('none')}})")
+          echo "This repository's Pages site is published by: $kind"
+          if [ "$kind" = workflow ]; then echo 'enabled=true' >> "$GITHUB_OUTPUT"; else echo 'enabled=false' >> "$GITHUB_OUTPUT"; fi
 
   deploy:
     needs: build

@@ -19,6 +19,7 @@ CustomEase.create('curtain', '.22,.61,.36,1'); // --ease-curtain from the design
 // set here on Confirm; the inline script in stage-planner.html reads it before paint (.planner-ok)
 const OK_KEY = 'dc-planner-ok';
 
+window.dcBooted = true; // for the failsafe in stage-planner.html's head
 const root = document.documentElement;
 const reduced = reducedMotion();
 const veiled = root.classList.contains('is-veiled'); // read before setupTransitions clears it

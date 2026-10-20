@@ -47,6 +47,7 @@ let stage = null;
 let sky = null;
 
 async function boot() {
+  window.dcBooted = true; // for the failsafe in the head (tools/pages/build.mjs)
   mark('boot');
   cleanups.push(setupField());
   // arriving through the curtain from another page: part it now, onto the loader
@@ -123,8 +124,16 @@ async function boot() {
       let arriving = performance.now();
       let watch = 0;
       const stalled = new Promise((_, reject) => {
-        watch = setInterval(() => { if (performance.now() - arriving > 20000) reject(new Error('The statue stopped arriving.')); }, 1000);
+        watch = setInterval(() => {
+          // time the page spends hidden or frozen (a phone's screen off, the browser in the background) is
+          // not a stall: the clock starts again when it is back
+          if (document.hidden) { arriving = performance.now(); return; }
+          if (performance.now() - arriving > 20000) reject(new Error('The statue stopped arriving.'));
+        }, 1000);
       });
+      const awake = () => { arriving = performance.now(); };
+      document.addEventListener('visibilitychange', awake);
+      document.addEventListener('resume', awake);
       try {
         await Promise.race([
           stage.load({
@@ -136,6 +145,8 @@ async function boot() {
         ]);
       } finally {
         clearInterval(watch);
+        document.removeEventListener('visibilitychange', awake);
+        document.removeEventListener('resume', awake);
       }
       mark('statue loaded');
     } catch (err) {
@@ -168,6 +179,7 @@ async function boot() {
   document.documentElement.classList.remove('is-loading');
   window.scrollTo(0, 0);
   mark('curtain up');
+  window.dcUp = true;
   curtainUp();
   if (new URLSearchParams(location.search).has('debug')) console.info('start:', marks.map(([n, t]) => `${n} ${t} ms`).join(' · '));
 
@@ -186,6 +198,14 @@ async function boot() {
       gsap.killTweensOf(still);
       still.hidden = true;
       gsap.set(still, { clearProps: 'opacity,visibility' });
+      // once the stage has started again: whether it should settle and stop (at the footer, under the
+      // Menu sheet) as before the loss, and the morph's programs and buffers warmed again in a quiet moment
+      // (a context that comes back starts with nothing on the GPU)
+      requestAnimationFrame(() => reapply?.());
+      if (stage?.morph) {
+        const rewarm = () => stage?.warmMorph();
+        if (window.requestIdleCallback) requestIdleCallback(rewarm, { timeout: 4000 }); else setTimeout(rewarm, 1000);
+      }
     };
     cleanups.push(setupScenes({ stage }));
     cleanups.push(app.setupStatueInteraction({ stage, sky }));
@@ -335,6 +355,8 @@ async function setupLotties() {
 // Pause both canvases when the tab is hidden or the stage is covered by the footer. Covered by the
 // footer, the stage first plays out to where the scroll has got to (a fast scroll to the end leaves
 // the scrubbed sequence behind it) and only then stops, so it never freezes mid-morph over the footer.
+let reapply = null; // watchVisibility's apply, for a stage whose context has come back
+
 function watchVisibility() {
   let stageInView = true;
   let covered = false; // the phone's Menu sheet over the page
@@ -346,6 +368,7 @@ function watchVisibility() {
     sky?.stop();
     stage?.stopWhenSettled();
   };
+  reapply = apply;
   const onMenu = (e) => { covered = e.detail === 'covered'; apply(); };
   document.addEventListener('dc:menu', onMenu);
   cleanups.push(() => document.removeEventListener('dc:menu', onMenu));
@@ -376,5 +399,5 @@ boot().catch((err) => {
   // a start that throws before the curtain is up would leave the loader up for good: the page is shown
   // as it is without script instead (the failsafe, README); after that, the page is left as it is
   console.error('The home page could not start.', err);
-  try { if (!performance.getEntriesByName('dc:curtain-up').length) window.dcFailsafe?.(); } catch { /* fine */ }
+  if (!window.dcUp) window.dcFailsafe?.();
 });

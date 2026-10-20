@@ -9,6 +9,8 @@ const root = process.argv[2] || DIST;
 const STATE = `(() => { const h = document.documentElement, l = document.querySelector('.loader'), s = document.querySelector('.stage__fallback');
   return { failsafe: h.classList.contains('is-failsafe'), hasJs: h.classList.contains('has-js'), veiled: h.classList.contains('is-veiled'), locked: h.classList.contains('is-loading'),
     loader: l ? getComputedStyle(l).display + (l.classList.contains('is-done') ? ' (done)' : '') : '-', still: s ? (!s.hidden && !!s.getAttribute('src')) : '-',
+    curtain: (() => { const h = document.querySelector('.veil__half'); if (!h) return '-'; const r = h.getBoundingClientRect(); return r.right <= 1 || r.left >= innerWidth - 1 ? 'open' : 'CLOSED'; })(),
+    booted: !!window.dcBooted, up: !!window.dcUp,
     marks: performance.getEntriesByType('mark').map((m) => m.name.replace('dc:', '')).filter((n) => /boot|parted|curtain-up|still/.test(n)).join(',') }; })()`;
 
 const srv = await serve({ root, base: '/' });
@@ -41,7 +43,7 @@ try {
       const s = await page.evaluate(STATE);
       const errors = [...page.errors, ...page.console.filter((m) => m.type === 'error').map((m) => m.text)].map((e) => e.slice(0, 90));
       console.log(`== ${c.name} (after ${Math.round((Date.now() - t0) / 1000)} s)`);
-      console.log(`   failsafe ${s.failsafe} | has-js ${s.hasJs} | veiled ${s.veiled} | scroll locked ${s.locked} | loader ${s.loader} | still ${s.still} | marks ${s.marks || '-'}`);
+      console.log(`   failsafe ${s.failsafe} | has-js ${s.hasJs} | curtain ${s.curtain} | scroll locked ${s.locked} | loader ${s.loader} | still ${s.still} | booted ${s.booted} up ${s.up}`);
       if (errors.length) console.log(`   errors: ${errors.slice(0, 3).join(' || ')}`);
     } catch (err) {
       console.log(`== ${c.name}: FAILED ${err.message}`);

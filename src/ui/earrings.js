@@ -19,7 +19,8 @@
 // scene itself (its WebGL context, the earrings on the GPU,
 // their shaders) is made only when it is likely to be wanted: when the pointer comes near the
 // switch, the focus reaches it, or it is pressed. A switch made before the scene is ready changes
-// the theme at once, and the earring comes down when it is ready if that is soon (LATE: 3 s, time
+// the theme at once, and the earring comes down when it is ready if that is soon (LATE: 3 s, 8 s where
+// nothing was fetched ahead, time
 // for a tablet, where nothing points at the switch before the first tap, to make the scene) and the
 // theme is still the one chosen, or not at all. Where the switch is above the page's heading (on a tablet held upright), the earring is
 // drawn smaller, so that it hangs beside the heading and its lede rather than over them (FIT).
@@ -37,6 +38,7 @@ import { probeWebGL, prefersStatic } from '../util/env.js';
 
 const MODEL = new URL('../../assets/models/earrings.glb', import.meta.url).href;
 const LATE = 3000; // ms: a switch clicked before the scene is ready drops it if ready by then
+const LATE_ON_INTENT = 8000; // ms: the same where nothing was fetched ahead (touch, slow links): the download comes first
 const STILL = { fadeIn: 300, hold: 600, fadeOut: 300 }; // ms: reduced motion's still earring
 const TUCK = 1; // px under the button's glyph (the sun or the moon) where the top of the star's loop hangs
 const CLIP = 4; // px above the glyph's foot where the earring comes out from behind it (the canvas's top)
@@ -129,6 +131,9 @@ export function setupEarrings({ reduced, opened }) {
     if (loading || off || gone || !wide.matches) return loading;
     unwatch();
     if (!capable()) { off = true; return null; }
+    // nothing fetched ahead (a touch screen, a slow link): the code and the model are fetched together now
+    code ??= import('../scene/earrings.js').catch(() => null);
+    bytes ??= fetch(MODEL).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
     // the code and the bytes fetched ahead, if they came (or fetched now, if not)
     loading = Promise.all([code, bytes])
       .then(async ([mod, data]) => {
@@ -453,7 +458,7 @@ export function setupEarrings({ reduced, opened }) {
     p?.then((made) => {
       // only the latest switch, only while its theme is still the page's, only if it is still soon
       // after it, and only on a wide screen
-      if (!made || asked?.at !== at || root.dataset.theme !== theme || performance.now() - at > LATE || !wide.matches) return;
+      if (!made || asked?.at !== at || root.dataset.theme !== theme || performance.now() - at > (onIntentOnly() ? LATE_ON_INTENT : LATE) || !wide.matches) return;
       asked = null;
       show(name, theme);
     });
