@@ -24,6 +24,11 @@ import { tilt } from './tilt.js';
 import { setupFlyIn } from './flyin.js';
 
 gsap.registerPlugin(ScrollTrigger, SplitText, ScrollToPlugin, CustomEase);
+// GSAP looks whether it can sleep (nothing left to animate) every autoSleep frames, 120 by default: after
+// every scroll, tap or tween it ticked on with nothing to do for up to 2 s, and every frame loop that waits
+// for it to stand still (the home stage's, src/scene/Stage.js) with it. It looks every 30 now; while
+// anything is animating it does not sleep, and a new tween wakes it, so no motion changes.
+gsap.config({ autoSleep: 30 });
 // lite tier: ScrollTrigger looks for a scroll it may have missed every 2 s rather than every 250 ms (each
 // look asks for a frame of its own on a still page; today's browsers do not miss scroll events)
 if (liteTier()) ScrollTrigger.config({ syncInterval: 2000 });
