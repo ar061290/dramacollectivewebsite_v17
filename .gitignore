@@ -10,3 +10,11 @@ tools/masks/source/
 tools/earrings/source/
 # the writers statue's source model (tools/writers/build-statue.mjs); the site uses assets/models/writer-statue.glb
 tools/writers/source/
+# the performance lab (tools/perf): screenshots and the rolling latest results are not kept
+tools/perf/shots/
+# the lab's runs stay on this machine; the ones a report cites are committed (the back-to-back runs w5, w6, w6b)
+tools/perf/results/*.json
+!tools/perf/results/*-w5-*.json
+!tools/perf/results/*-w6-*.json
+!tools/perf/results/*-w6b-*.json
+tools/perf/lib/cert/

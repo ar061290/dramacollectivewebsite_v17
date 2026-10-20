@@ -7,15 +7,25 @@
   <meta name="description" content="Aripra Sharma writes for The Drama Collective’s theatre publication: an introduction in their own words, and their published pieces.">
   <meta name="theme-color" content="#2a0d1c">
   <!-- site:head -->
-  <link rel="icon" href="./assets/brand/mark-gold.png">
+  <link rel="icon" href="./assets/brand/mark-gold-144.png">
   <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/Lato-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/Lato-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/OpenSans-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./src/styles/main.css">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin data-dc-live>
+  <!-- the page a link points at is fetched when the pointer settles on it or presses it (prefetch,
+       never prerender: a prerendered page would miss the curtain's hand-off), so the velvet closes
+       onto a page that is already here -->
+  <script type="speculationrules">
+  { "prefetch": [{ "source": "document", "where": { "and": [{ "href_matches": "/*" }, { "not": { "selector_matches": "[target], [download], [href^='#']" } }] }, "eagerness": "moderate" }] }
+  </script>
   <!-- Bare-module map for running without a build step (any static server). Vite resolves the same
        specifiers from node_modules and ignores this map. Keep the versions in step with package.json. -->
   <script type="importmap">
   {
     "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
       "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
       "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/index.js",
       "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/",
@@ -28,6 +38,9 @@
     try { var t = localStorage.getItem('dc-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
     // arriving through the curtain (src/site/transition.js): it starts closed and opens on this page
     try { if (sessionStorage.getItem('dc-veil') === '1') { sessionStorage.removeItem('dc-veil'); document.documentElement.classList.add('is-veiled'); } } catch (e) {}
+    // the owner's trial switches for changes that would show (README: Trial switches): ?flags=a,b turns
+    // them on in this browser, ?flags= turns them off; each is a class, flag-<name>, on <html>
+    try { var fm = /[?&]flags=([^&#]*)/.exec(location.search), fl = fm ? decodeURIComponent(fm[1]) : (localStorage.getItem('dc-flags') || ''); if (fm) { if (fl) localStorage.setItem('dc-flags', fl); else localStorage.removeItem('dc-flags'); } fl.split(',').forEach(function (n) { if (/^[a-z0-9-]+$/.test(n)) document.documentElement.classList.add('flag-' + n); }); } catch (e) {}
     document.documentElement.classList.add('has-js');
   </script>
   <!-- /site:head -->
@@ -45,7 +58,7 @@
   <header class="topbar" data-topbar>
     <span class="topbar__ground" aria-hidden="true"></span>
     <a class="topbar__brand" href="./index.html" aria-label="The Drama Collective, home">
-      <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold.png" alt=""></span>
+      <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold-144.png" alt="" width="48" height="48"></span>
       <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
     </a>
     <nav class="topbar__nav" aria-label="Main">
@@ -69,7 +82,7 @@
     <div class="topbar__tools">
       <a class="icon-btn" href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="The Drama Collective on Instagram" title="Instagram"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg></a>
       <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Music" aria-keyshortcuts="K" title="Play music (K)" data-music-toggle>
-        <svg viewBox="0 0 20 20" aria-hidden="true"><rect class="bar" x="2.5" y="8" width="2.2" height="9"/><rect class="bar" x="6.9" y="3" width="2.2" height="14"/><rect class="bar" x="11.3" y="6" width="2.2" height="11"/><rect class="bar" x="15.7" y="9" width="2.2" height="8"/></svg>
+        <span class="music-bars" aria-hidden="true"><svg class="bar" viewBox="0 0 20 20"><rect x="2.5" y="8" width="2.2" height="9"/></svg><svg class="bar" viewBox="0 0 20 20"><rect x="6.9" y="3" width="2.2" height="14"/></svg><svg class="bar" viewBox="0 0 20 20"><rect x="11.3" y="6" width="2.2" height="11"/></svg><svg class="bar" viewBox="0 0 20 20"><rect x="15.7" y="9" width="2.2" height="8"/></svg></span>
       </button>
       <button class="icon-btn theme-toggle" type="button" aria-pressed="false" aria-label="Light mode" title="House lights" data-theme-toggle>
         <svg class="theme-toggle__sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 1.8v2.1M10 16.1v2.1M1.8 10h2.1M16.1 10h2.1M4.2 4.2l1.5 1.5M14.3 14.3l1.5 1.5M4.2 15.8l1.5-1.5M14.3 5.7l1.5-1.5"/></g></svg>

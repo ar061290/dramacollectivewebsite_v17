@@ -16,9 +16,20 @@ function fadeTime(el) {
   return (parseFloat(d) || 0) * (d.endsWith('ms') ? 1 : 1000);
 }
 
-bootPage(({ reduced, onTheme, opened }) => {
+bootPage(({ reduced, onTheme, opened, sky }) => {
   const host = document.querySelector('[data-curtain]');
   if (!host) return undefined;
+  // the curtain is opaque and fills the screen at the top of the page: the star sky under it drew
+  // every frame for no one; it draws again as soon as any of it can show
+  let covered = false;
+  const io = sky ? new IntersectionObserver(([e]) => {
+    const r = e.boundingClientRect;
+    const covers = e.isIntersecting && r.top <= 0 && r.bottom >= innerHeight;
+    if (covers === covered) return;
+    covered = covers;
+    if (covers) sky.stop(); else sky.start();
+  }, { threshold: [0, 0.98, 1] }) : null;
+  io?.observe(host);
   const hint = document.querySelector('[data-curtain-hint]');
   const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
   if (hint) hint.textContent = fine ? 'Drag across the curtain' : 'Swipe across the curtain';
@@ -68,5 +79,5 @@ bootPage(({ reduced, onTheme, opened }) => {
     hint.hidden = true;
   }
 
-  return () => { gone = true; clearTimeout(settle); stage?.dispose(); };
+  return () => { gone = true; clearTimeout(settle); io?.disconnect(); if (covered) sky?.start(); stage?.dispose(); };
 });

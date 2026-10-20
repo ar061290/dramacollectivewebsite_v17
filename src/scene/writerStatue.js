@@ -30,6 +30,9 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import gsap from 'gsap';
 import { readToken } from '../util/env.js';
 import { rig } from '../writers/rig.js';
+import { mark } from '../util/perf.js';
+
+let statueMarked = false; // the steps are marked for the first statue on a page only
 
 // the Draco decoder served with the site (as for the other statues)
 const DRACO_PATH = import.meta.env ? new URL('draco/', document.baseURI).href : new URL('../../public/draco/', import.meta.url).href;
@@ -616,12 +619,16 @@ export class WriterStatue {
     measuring.catch(() => {});
     const covering = this.coverUrl ? new THREE.TextureLoader().loadAsync(this.coverUrl) : Promise.resolve(null);
     covering.catch(() => {});
+    const step = statueMarked ? () => {} : mark; // dc:statue-env, -model, -compiled, -drawn, for the lab
+    statueMarked = true;
     await frames(2);
     if (this.disposed) return;
     this._makeEnv();
+    step('statue env');
     if (this.measures !== (await measuring)) this._useMeasures(await measuring);
     const gltf = await loading;
     if (this.disposed) { gltf.scene.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose?.(); } }); return; }
+    step('statue model');
     // the cover's picture: mipmapped and sharp at a slant, its sRGB kept as it is (the shader decodes
     // it after filtering); if it fails, the book is the model's own
     try {
@@ -694,10 +701,34 @@ export class WriterStatue {
     this.io.observe(this.container);
     this._listen();
     this._applyStage();
-    await this.renderer.compileAsync(this.scene, this.camera).catch(() => {});
-    if (this.disposed) return;
+    // the shadow pass's depth material is not in the scene: a stand-in with the same material on
+    // the same kind of mesh, compiled against the scene's lights into a render target, builds the
+    // program the pass will ask for, which the first draw used to compile on the spot
+    const shadowed = new THREE.Scene();
+    const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+    depth.map = m.map ?? null;
+    depth.alphaMap = m.alphaMap ?? null;
+    depth.alphaTest = m.alphaTest;
+    depth.side = m.shadowSide ?? (m.side === THREE.FrontSide ? THREE.BackSide : m.side === THREE.BackSide ? THREE.FrontSide : THREE.DoubleSide);
+    const standIn = new THREE.Mesh(geometry, depth);
+    standIn.castShadow = true;
+    shadowed.add(standIn);
+    const target = new THREE.WebGLRenderTarget(1, 1);
+    const onStage = this.renderer.compileAsync(this.scene, this.camera).catch(() => {});
+    this.renderer.setRenderTarget(target);
+    const offStage = this.renderer.compileAsync(shadowed, this.camera, this.scene).catch(() => {});
+    this.renderer.setRenderTarget(null);
+    await Promise.all([onStage, offStage]);
+    target.dispose();
+    standIn.removeFromParent();
+    if (this.disposed) { depth.dispose(); return; }
+    step('statue compiled');
     this.ready = true;
     this._draw(true);
+    // the stand-in's material is let go only after the first draw: disposing a material releases its
+    // program when nothing else holds it yet, and the draw's shadow pass would compile it again on the spot
+    depth.dispose();
+    step('statue drawn');
     requestAnimationFrame(() => { this.renderer.domElement.style.opacity = '1'; });
     this._sync();
   }
@@ -815,7 +846,11 @@ export class WriterStatue {
 
   /** The page moved under a still pointer (a scroll): the lamp keeps to the pointer. */
   boxMoved() {
-    if (this.pointer.seen) this._wake();
+    // the box's place is read here, in the scroll's own handler where the layout is settled,
+    // rather than inside each drawn frame (where it forced the page's layout every time)
+    this.rect = this.container.getBoundingClientRect();
+    // a finger's lamp has gone out once it lifted: then the frame would be the same
+    if (this.pointer.seen && (this.pointer.on > 0.002 || this.pointer.to > 0)) this._wake();
   }
 
   /**
@@ -825,7 +860,7 @@ export class WriterStatue {
    */
   _placeGlow(snap = false) {
     if (!this.ready || !this.front) return;
-    const r = this.rect ?? this.container.getBoundingClientRect();
+    const r = (this.rect ??= this.container.getBoundingClientRect()); // kept until the box moves or resizes
     if (!r.width || !r.height) return;
     const cam = this.camera;
     const dir = (this._ndc ??= new THREE.Vector3());
@@ -883,6 +918,8 @@ export class WriterStatue {
   _resize() {
     const w = Math.max(1, this.container.clientWidth);
     const h = Math.max(1, this.container.clientHeight);
+    this.rect = null;
+    if (this.size && this.size.w === w && this.size.h === h) return; // the observer's first call, at the size already set: nothing to redo
     this.size = { w, h };
     this.renderer.setSize(w, h, false);
     this.renderer.getDrawingBufferSize(this.canvasSize.value);

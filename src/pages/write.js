@@ -93,7 +93,7 @@ function mountStatue(box, stage, { reduced, onTheme, opened }) {
       }
       if (gone) { s.dispose(); return; }
       // (the theme may have changed while it loaded)
-      s.setTheme(pageTheme(), { instant: true });
+      if (s.theme !== pageTheme()) s.setTheme(pageTheme(), { instant: true }); // changed while loading: else its first frame stands
       statue = s;
       box.classList.add('is-live');
       const ro = new ResizeObserver(fit);

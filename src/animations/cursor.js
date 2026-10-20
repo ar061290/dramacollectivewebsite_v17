@@ -80,6 +80,7 @@ export function setupCursor() {
   const update = () => {
     raf = 0;
     if (!last) return;
+    if (scrolled) { scrolled = false; last.target = document.elementFromPoint(last.x, last.y); }
     const { x, y, target } = last;
     rehome(target?.closest?.('dialog[open]') ?? home);
     root.classList.toggle('is-over-text', overText(x, y, target));
@@ -88,13 +89,17 @@ export function setupCursor() {
     free = root.classList.contains('is-glow-everywhere') && !target?.closest?.('[data-quiet], iframe');
     box = free ? null : target?.closest?.(BOXES) ?? null;
     boxRect = box?.getBoundingClientRect() ?? null;
-    root.classList.toggle('is-on-box', free || !!box);
+    const on = free || !!box;
+    root.classList.toggle('is-on-box', on);
+    if (on && !shown) place(x, y); // coming onto a box: placed at once, before the first raw event
+    shown = on;
     clip(x, y);
   };
   const look = () => { if (last && !raf) raf = requestAnimationFrame(update); };
 
+  let shown = false; // the drawn star (is-on-box): only then is its place written per raw event
   const onRaw = (e) => {
-    if (e.pointerType === 'touch') return;
+    if (e.pointerType === 'touch' || !shown) return;
     place(e.clientX, e.clientY);
   };
   const onMove = (e) => {
@@ -107,14 +112,16 @@ export function setupCursor() {
   const onLeave = () => {
     el.classList.remove('is-visible');
     root.classList.remove('is-over-text', 'is-over-link', 'is-on-box');
+    shown = false;
     last = null;
   };
   // scrolling moves the page under a still pointer: look again at what is there now
   const onScroll = () => {
     if (!last) return;
-    last.target = document.elementFromPoint(last.x, last.y);
+    scrolled = true; // what is under the pointer is looked up in the frame's update, not in the scroll event
     look();
   };
+  let scrolled = false;
   const rawEvents = 'onpointerrawupdate' in window;
   if (rawEvents) window.addEventListener('pointerrawupdate', onRaw, { passive: true });
   window.addEventListener('pointermove', onMove, { passive: true });

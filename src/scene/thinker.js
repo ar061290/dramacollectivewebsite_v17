@@ -34,6 +34,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import gsap from 'gsap';
 import { readToken } from '../util/env.js';
+import { mark } from '../util/perf.js';
 
 // the Draco decoder served with the site (as for the home page's statue, src/scene/statue.js)
 const DRACO_PATH = import.meta.env ? new URL('draco/', document.baseURI).href : new URL('../../public/draco/', import.meta.url).href;
@@ -218,14 +219,24 @@ export function loadModel(url) {
       let mesh = null;
       object.traverse((o) => { if (o.isMesh && !mesh) mesh = o; });
       if (!mesh) throw new Error('The model has no mesh.');
-      const geometry = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
-      object.traverse((o) => { if (o.isMesh) o.geometry.dispose(); });
+      // the loader's own geometry, transformed in place (it was cloned, and the original thrown away),
+      // with its bounds computed once from the final positions rather than again after every step:
+      // the loader presets them, and three recomputes bounds that are set on every transform
+      const debugFrom = /[?&]debug\b/.test(location.search) ? mesh.geometry.clone() : null;
+      const geometry = mesh.geometry;
+      geometry.boundingBox = null;
+      geometry.boundingSphere = null;
+      geometry.applyMatrix4(mesh.matrixWorld);
+      object.traverse((o) => { if (o.isMesh && o.geometry !== geometry) o.geometry.dispose(); });
       geometry.computeBoundingBox();
       const bb = geometry.boundingBox;
+      geometry.boundingBox = null;
       const s = HEIGHT / (bb.max.y - bb.min.y);
       geometry.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
       geometry.scale(s, s, s);
+      geometry.computeBoundingBox();
       geometry.computeBoundingSphere();
+      if (debugFrom) checkPrep(debugFrom, mesh.matrixWorld, geometry);
       // the rock's footprint: the lowest few percent of the model
       const pos = geometry.attributes.position;
       const foot = new THREE.Vector3();
@@ -255,6 +266,26 @@ export function loadModel(url) {
   entry.users++;
   return entry.promise;
 }
+
+/** ?debug: the way the model used to be prepared (a clone, bounds recomputed at every step), beside the
+ *  way it is now, compared number for number. */
+function checkPrep(from, matrix, now) {
+  const g = from.applyMatrix4(matrix);
+  g.computeBoundingBox();
+  const bb = g.boundingBox;
+  const s = HEIGHT / (bb.max.y - bb.min.y);
+  g.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
+  g.scale(s, s, s);
+  g.computeBoundingSphere();
+  const same = (a, b) => a.length === b.length && a.every((x, i) => Object.is(x, b[i]));
+  const attrs = Object.keys(g.attributes).filter((k) => !same(g.attributes[k].array, now.attributes[k].array));
+  const bounds = same(g.boundingBox.min.toArray().concat(g.boundingBox.max.toArray(), g.boundingSphere.center.toArray(), [g.boundingSphere.radius]),
+    now.boundingBox.min.toArray().concat(now.boundingBox.max.toArray(), now.boundingSphere.center.toArray(), [now.boundingSphere.radius]));
+  console[attrs.length || !bounds ? 'warn' : 'info'](`thinker model prep: ${attrs.length || !bounds ? 'DIFFERS (' + attrs.join(', ') + (bounds ? '' : ' bounds') + ')' : 'identical to the old way, every attribute and bound'}`);
+  g.dispose();
+}
+
+let statueMarked = false; // the steps are marked for the first statue on a page only
 
 /**
  * The figure's front as the camera sees it in his view (the turn at REST): over a grid across the
@@ -505,13 +536,17 @@ export class Thinker {
 
   async load(url) {
     this.url = url;
+    const step = statueMarked ? () => {} : mark; // dc:statue-env, -model, -compiled, -drawn, for the lab
+    statueMarked = true;
     const loading = loadModel(url);
     loading.catch(() => {}); // reported below
     await frames(2);
     if (this.disposed) return;
     this._makeEnv();
+    step('statue env');
     const { geometry, foot, mask, front } = await loading;
     if (this.disposed) return;
+    step('statue model');
     this.maskAt = mask;
     this.front = front;
 
@@ -543,11 +578,35 @@ export class Thinker {
     this._listen();
     this._applyStage();
     // compiled off the main thread where the browser can (KHR_parallel_shader_compile); the loop
-    // waits for it, so no frame forces the compile on the page
-    await this.renderer.compileAsync(this.scene, this.camera).catch(() => {});
-    if (this.disposed) return;
+    // waits for it, so no frame forces the compile on the page. The shadow pass's depth material
+    // is not in the scene: a stand-in with the same material on the same kind of mesh, compiled
+    // against the scene's lights into a render target (linear colour, no tone mapping) builds
+    // the program the pass will ask for, which the first draw used to compile on the spot
+    const shadowed = new THREE.Scene();
+    const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+    depth.side = m.shadowSide ?? (m.side === THREE.FrontSide ? THREE.BackSide : m.side === THREE.BackSide ? THREE.FrontSide : THREE.DoubleSide);
+    const standIn = new THREE.Mesh(geometry, depth);
+    standIn.castShadow = true;
+    shadowed.add(standIn);
+    const target = new THREE.WebGLRenderTarget(1, 1);
+    const onStage = this.renderer.compileAsync(this.scene, this.camera).catch(() => {});
+    this.renderer.setRenderTarget(target);
+    const offStage = this.renderer.compileAsync(shadowed, this.camera, this.scene).catch(() => {});
+    this.renderer.setRenderTarget(null);
+    await Promise.all([onStage, offStage]);
+    target.dispose();
+    standIn.removeFromParent();
+    if (this.disposed) { depth.dispose(); return; }
+    step('statue compiled');
     this.ready = true;
+    const debug = /[?&]debug\b/.test(location.search) && { programs: this.renderer.info.programs?.length ?? 0, t: performance.now() };
     this._draw(true);
+    // the stand-in's material is let go only after the first draw: disposing a material releases its
+    // program when nothing else holds it yet, and the draw's shadow pass would compile it again on the spot
+    depth.dispose();
+    step('statue drawn');
+    if (debug) window.__dcThinker ??= this;
+    if (debug) console.info(`thinker first draw: ${Math.round(performance.now() - debug.t)} ms; programs ${debug.programs} compiled before it, ${this.renderer.info.programs?.length ?? 0} after`);
     requestAnimationFrame(() => { this.renderer.domElement.style.opacity = '1'; });
     this._sync();
   }
@@ -715,8 +774,9 @@ export class Thinker {
   }
 
   _onScroll() {
-    // the box moves under a still pointer: the lamp keeps to the pointer
-    if (this.pointer.seen && this.visible) this._wake();
+    // the box moves under a still pointer: the lamp keeps to the pointer (while it is lit; a
+    // finger's lamp has gone out once it lifted, and then the frame would be the same)
+    if (this.pointer.seen && this.visible && (this.pointer.on > 0.002 || this.pointer.to > 0)) this._wake();
   }
 
   _onDown(e) {
@@ -861,6 +921,10 @@ export class Thinker {
       this.glowAt.lerp(this.glowTo, 1 - Math.exp(-dt * GLOW.ease));
       this.dirty = true;
     }
+    // a step under a hundredth of a degree (a tenth of a pixel on his box) is not worth a frame:
+    // the lean lands on its target exactly, in one last frame, instead of creeping toward it for
+    // another second of full redraws
+    if (!turning && Math.abs(want - this.yaw.now) < 1e-4 && Math.abs(this.elev.to - this.elev.now) < 1e-4) { this.yaw.now = want; this.elev.now = this.elev.to; }
     // nothing moves while it is still: drawn only when something has changed
     if (Math.abs(this.yaw.now - y0) > 1e-5 || Math.abs(this.elev.now - e0) > 1e-5) this.dirty = true;
     if (!this.dirty) return;

@@ -66,7 +66,11 @@ function placeVisitor() {
   const save = () => { try { sessionStorage.setItem(PLACE, JSON.stringify(place)); } catch { /* storage blocked */ } };
   window.addEventListener('scroll', keep, { passive: true });
   window.addEventListener('pagehide', save);
+  // a phone that puts the tab away (an app switch, the lock screen) may discard it without pagehide
+  const onHidden = () => { if (document.hidden) save(); };
+  document.addEventListener('visibilitychange', onHidden);
   const cleanups = [];
+  cleanups.push(() => document.removeEventListener('visibilitychange', onHidden));
 
   ScrollTrigger.refresh(); // the hold's length is in the page now
   const id = decodeURIComponent(location.hash.slice(1));

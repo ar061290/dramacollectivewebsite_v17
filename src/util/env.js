@@ -11,7 +11,13 @@ export const isMobileLayout = () => matchMedia('(max-width: 767px)').matches;
  * WebGL 2 only: three.js (0.170) draws with nothing less, so a browser offering WebGL 1 alone gets
  * the still pictures at once rather than downloading a scene it cannot draw.
  */
+let probed = null;
 export function probeWebGL() {
+  if (probed) return probed;
+  return (probed = probe());
+}
+
+function probe() {
   try {
     const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl2');

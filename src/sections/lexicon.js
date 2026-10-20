@@ -682,9 +682,10 @@ export function setupLexicon(host, { reduced, opened, onTheme }) {
     };
     idle(work);
   };
-  const gl = probeWebGL();
-  if (gl.ok && !prefersStatic(gl.renderer)) {
-    opened.then(() => new Promise((r) => idle(r))).then(() => (gone ? null : import('../scene/aboutRing.js'))).then(async (mod) => {
+  opened.then(prepare);
+  const live = opened.then(() => { const gl = probeWebGL(); return gl.ok && !prefersStatic(gl.renderer); });
+  {
+    live.then((ok) => (ok ? new Promise((r) => idle(r)) : null)).then((go) => (go === null || gone ? null : import('../scene/aboutRing.js'))).then(async (mod) => {
       if (!mod || gone) return;
       ring = new mod.AboutRing(ringHost, {
         theme: currentTheme(),
@@ -694,10 +695,10 @@ export function setupLexicon(host, { reduced, opened, onTheme }) {
       if (gone) return;
       ring.set({ ppu, cx: HOLE.cx, cy: HOLE.cy, ...ringAt(progress) });
       requestAnimationFrame(() => ringHost.classList.add('is-live'));
-    }).catch((err) => console.warn('Marble ring unavailable; the drawn ring stays.', err)).finally(prepare);
+    }).catch((err) => console.warn('Marble ring unavailable; the drawn ring stays.', err));
     onTheme((theme) => ring?.setTheme(theme));
     cleanups.push(() => ring?.dispose());
-  } else opened.then(prepare);
+  }
 
   return () => cleanups.forEach((c) => c());
 }

@@ -112,7 +112,10 @@ export class CurtainStage {
     this.spotLevel = STILL.spot;
     this.ready = false;
 
-    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' }));
+    // no multisampling on the canvas: the set is drawn into the composer's own targets (which have
+    // none), and the only thing drawn to the canvas is the output pass's full-screen quad, so the
+    // pixels are the same without the 4x buffer (66 MB at 1080p) and its resolve every frame
+    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' }));
     r.setPixelRatio(Math.min(devicePixelRatio, 1.75));
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;
@@ -637,7 +640,21 @@ export class CurtainStage {
 
   _wake() { this.dirty = true; }
 
+  /** Nothing but the slow sway is going on: no input easing, no chase or flash, no light or theme cue, no ripple. */
+  _calm() {
+    if (this.reduced || this.dirty || this._wasMoving) return false;
+    if (this.litFrom >= 0 && this.lit < 1) return false;
+    if (this.day !== this.dayTarget) return false;
+    const now = this.u.uTime.value;
+    for (const r of this.u.uRipples.value) if (r.w > 0 && now - r.z < 2.6) return false;
+    return true;
+  }
+
   _tick() {
+    // at rest, every other frame is enough: the sway (amplitude 0.03, 0.55 rad/s) and the pleats'
+    // drift move under one shade between frames, so the skipped frame would look the same, and the
+    // GPU does half the work (this page's whole chain: velvet, glow, vignette) while the visitor reads
+    if (this._calm()) { this._skipped = !this._skipped; if (this._skipped) return; } else this._skipped = false;
     const dt = Math.min(0.05, this.clock.getDelta());
     const s = this.state, t = this.target;
     const ease = (k) => 1 - Math.exp(-dt * k);
@@ -670,6 +687,7 @@ export class CurtainStage {
     }
 
     const moving = Math.abs(s.part + s.push + s.x + s.y + this.swing.a - before) > 1e-5 || this.chase >= 0 || this.flash > 0;
+    this._wasMoving = moving;
     if (this.reduced && !moving && !this.dirty) return; // nothing changed: keep the last frame
     this.dirty = false;
 
@@ -694,6 +712,8 @@ export class CurtainStage {
     };
     this.spotLevel = STILL.spot + (1 - STILL.spot) * rise(0.1, 1);
     this.bloom.strength = BLOOM * rise(0, 0.85);
+    // at zero the glow adds nothing: its passes are skipped (its programs were compiled all the same)
+    this.bloom.enabled = this.bloom.strength > 0;
   }
 
   /**

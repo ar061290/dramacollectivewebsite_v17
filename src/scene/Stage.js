@@ -19,8 +19,8 @@ import { createRing, placeRing } from './ringStone.js';
 import { loadStatue, prepareStatue, forEachVertex, STATUE_LAYER } from './statue.js';
 import { SilhouetteMask } from './silhouette.js';
 import { evaluate, TURN } from './sequence.js';
-import { buildLogoGeometry } from './logo.js';
-import { buildMorph, growAt, MORPH } from './morph.js';
+import { growAt, MORPH, morphJob, buildInWorker, buildHere, assembleMorph } from './morph.js';
+import { mark } from '../util/perf.js';
 import { VectorLogo } from './vectorLogo.js';
 import { LogoStar } from './star.js';
 import { hexToVec3, flattenStar } from './flat.js';
@@ -100,6 +100,9 @@ export class Stage {
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // three.js otherwise asks the driver for every program's info log on its first use, which
+    // waits for the link to finish; the logs are only read with ?debug
+    renderer.debug.checkShaderErrors = new URLSearchParams(location.search).has('debug');
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
@@ -214,6 +217,7 @@ export class Stage {
         onBytes: (e) => { if (e.lengthComputable) { bytes = e.loaded / e.total; report(); } },
       }),
     ]);
+    mark('statue decoded');
     if (this.disposed) return;
 
     this.statue = prepareStatue(statue.object, { kind: statue.kind, yaw });
@@ -244,6 +248,7 @@ export class Stage {
     this._frameStatue();
     this.mask = new SilhouetteMask(this.renderer);
     this.renderer.shadowMap.needsUpdate = true;
+    mark('stage built');
     // size the view without drawing: the first frame waits for warm(), which compiles the shaders
     this._sizing = true;
     this._resize();
@@ -372,48 +377,138 @@ export class Stage {
   }
 
   /**
-   * Build the morph from the logo's SVG (takes a few hundred milliseconds; call it once the hero is
-   * up). Until it is ready the statue simply holds its end pose through the morph section (the
-   * close-up still opens out on the morph's schedule).
+   * Build the morph from the logo's SVG (in a worker; call it once the hero is up). Until it is
+   * ready the statue simply holds its end pose through the morph section (the close-up still opens
+   * out on the morph's schedule).
    */
-  prepareMorph(svgText, regions = null) {
-    if (!this.skinned || this.morph || this.disposed) return null;
-    const { arm, head } = this.tracks;
-    this._applyPose(1, 1);
+  async prepareMorph(svgText, regions = null) {
+    if (!this.skinned || this.morph || this._morphPending || this.disposed) return null;
+    this._morphPending = true;
     const c = this.statue.center;
     const triangles = this.skinned.geometry.index.count / 3;
-    // the logo's base triangles must fit every part's budget; the curves are sampled to suit
-    const logo = buildLogoGeometry(svgText, { center: c, radius: this.statue.radius - MORPH.lift - 0.02, regions, maxTriangles: triangles * 0.6 });
-    logo.geometry.computeBoundingBox();
-    this.logoWidth = logo.geometry.boundingBox.max.x - logo.geometry.boundingBox.min.x;
-    // the change starts at the mask: a little above the hand
-    const hand = this.skinned.skeleton.bones.find((b) => /^hand/.test(b.name));
-    const origin = this.turntable.worldToLocal(hand.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.13, 0)));
-    this.morph = buildMorph({ skinned: this.skinned, space: this.turntable, logo, center: c, origin });
+    // the job: the rig's arrays and its bone matrices at the end pose (a few milliseconds here), the
+    // logo's inputs (its base triangles must fit every part's budget; the curves are sampled to
+    // suit), and where the change starts: at the mask, a little above the hand
+    const job = () => {
+      const { arm, head } = this.tracks;
+      this._applyPose(1, 1);
+      const hand = this.skinned.skeleton.bones.find((b) => /^hand/.test(b.name));
+      const origin = this.turntable.worldToLocal(hand.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.13, 0)));
+      const j = morphJob(this.skinned, this.turntable, { svgText, regions, center: c.toArray(), radius: this.statue.radius - MORPH.lift - 0.02, maxTriangles: triangles * 0.6, origin: origin.toArray() });
+      this._applyPose(arm, head);
+      return j;
+    };
+    let r;
+    try {
+      const j = job();
+      mark('morph job');
+      // the soup is cooked in a worker: the page's thread, and the visitor's scrolling, go on meanwhile
+      r = await buildInWorker(j);
+      mark('morph built (worker)');
+    } catch (err) {
+      if (this.disposed) { this._morphPending = false; return null; }
+      console.warn('Morph worker unavailable; building on the page instead.', err);
+      r = buildHere(job()); // the first job's buffers went to the worker: gather them again
+      mark('morph built (page)');
+    }
+    this._morphPending = false;
+    if (this.disposed || this.morph) return null;
+    this.logoWidth = r.logoWidth;
+    this.morph = assembleMorph(r, { material: this.skinned.material, space: this.turntable, center: c });
     // the logo is the statue's own stone: its average colour (texture times tint)
     if (this.statue.averageColor) this.morph.uniforms.uStone.value.copy(this.statue.averageColor);
-    logo.geometry.dispose();
     this.morph.mesh.layers.enable(STATUE_LAYER);
     // the star beside the mask is not made from her: it flies in from the sky (src/scene/star.js)
-    if (logo.star) this.star = new LogoStar({ geometry: logo.star, space: this.turntable, scene: this.scene, stone: this.statue.averageColor });
+    if (r.star) {
+      const starGeo = new THREE.BufferGeometry();
+      starGeo.setAttribute('position', new THREE.BufferAttribute(r.star.position, 3));
+      starGeo.setAttribute('normal', new THREE.BufferAttribute(r.star.normal, 3));
+      this.star = new LogoStar({ geometry: starGeo, space: this.turntable, scene: this.scene, stone: this.statue.averageColor });
+    }
     // the vector stand-in it hands over to at the end, laid exactly over it
-    this.logoFlat = logo.flat;
-    this.vector = new VectorLogo(svgText, { after: this.container, outline: logo.flat.outline });
+    const flat = { svgToLocal: new THREE.Matrix4().fromArray(r.flat.svgToLocal), z: r.flat.z, outline: r.flat.outline };
+    this.logoFlat = flat;
+    this.vector = new VectorLogo(svgText, { after: this.container, outline: flat.outline });
     this.vector.setBehind(this.logoInFront === false);
     // before it hands over, the 3D logo goes flat (src/scene/flat.js): into the plane of its front
     // face, in the vector's gradient, which runs from the top of the SVG's box to its foot
-    const f = logo.flat, S = this.vector.size;
+    const f = flat, S = this.vector.size;
     const top = new THREE.Vector3(S.w / 2, 0, f.z).applyMatrix4(f.svgToLocal);
     const foot = new THREE.Vector3(S.w / 2, S.h, f.z).applyMatrix4(f.svgToLocal);
     this.morph.uniforms.uFlatY.value.set(top.y, foot.y);
     this.morph.uniforms.uFlatZ.value = top.z;
     if (this.star) flattenStar(this.star.material, this.morph.uniforms, this.star.home);
     this._setEmblem(0); // from now on the stage's logo brings the footer's mark in
-    this._applyPose(arm, head);
     // arriving in the middle of the close-up, its framing eases over from the stand-in's
     this._focusBlend = this.tracks.zoom > 0 ? 0 : 1;
     this._lastSig = '';
     return this.morph;
+  }
+
+  /**
+   * The morph's first frame on screen used to upload its 40 MB of vertices and compile its three
+   * programs there and then, mid-scroll. Done here instead, in a quiet moment after the build, into
+   * a one-pixel target nobody sees.
+   */
+  async warmMorph() {
+    const m = this.morph;
+    if (!m || this.lost || this.disposed || !this.skinned) return;
+    const r = this.renderer;
+    const star = this.star;
+    const was = { mesh: m.mesh.visible, statue: this.skinned.visible, star: star?.mesh.visible, glow: star?.glow.visible };
+    // what the morph's act shows: the morph in the statue's place, the logo star and its glow
+    const show = () => { m.mesh.visible = true; this.skinned.visible = false; if (star) { star.mesh.visible = true; star.glow.visible = true; } };
+    const restore = () => { m.mesh.visible = was.mesh; this.skinned.visible = was.statue; if (star) { star.mesh.visible = was.star; star.glow.visible = was.glow; } };
+    show();
+    try {
+      // the morph's and the star's own programs; and, as stand-ins keyed like the real passes
+      // (targets bound; the stage's lights for the shadow pass, none for the silhouette's), the
+      // shadow pass's depth programs and the silhouette's, so the one draw below links nothing
+      const shadowed = new THREE.Scene();
+      const unlit = new THREE.Scene();
+      const flip = (side) => (side === THREE.FrontSide ? THREE.BackSide : side === THREE.BackSide ? THREE.FrontSide : THREE.DoubleSide);
+      const depthFor = (mesh) => {
+        const own = mesh.material;
+        const d = mesh.customDepthMaterial ?? new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+        // as the shadow pass sets them on the depth material before each draw
+        d.side = own.shadowSide ?? flip(own.side);
+        d.map = own.map ?? null;
+        d.alphaMap = own.alphaMap ?? null;
+        d.alphaTest = own.alphaTest;
+        return d;
+      };
+      for (const mesh of [m.mesh, star?.mesh].filter(Boolean)) {
+        shadowed.add(new THREE.Mesh(mesh.geometry, depthFor(mesh)));
+        unlit.add(new THREE.Mesh(mesh.geometry, mesh.userData.maskMaterial ?? this.mask?.material ?? new THREE.MeshBasicMaterial({ color: 0xffffff })));
+      }
+      const target = new THREE.WebGLRenderTarget(1, 1);
+      const onStage = r.compileAsync(this.scene, this.camera);
+      r.setRenderTarget(target);
+      const offStage = [r.compileAsync(shadowed, this.camera, this.scene), r.compileAsync(unlit, this.camera)];
+      r.setRenderTarget(null);
+      await Promise.all([onStage, ...offStage]);
+      target.dispose();
+    } catch { /* compiled on first draw instead */ }
+    if (this.disposed || this.lost) return;
+    // the stage's own frame may have run during that compile and put the statue back (_updateRig
+    // shows the morph only while the scroll is in its act): shown again, and drawn at once
+    show();
+    // keyed like the screen: three.js gives an 'XR' target its own colour space and the renderer's tone
+    // mapping (any other target gets linear and none), so this one-pixel draw compiles the very programs
+    // the first frame on screen will use, and not a second set that nothing would ever draw with
+    const target = new THREE.WebGLRenderTarget(1, 1, { colorSpace: THREE.SRGBColorSpace });
+    target.isXRRenderTarget = true;
+    const prev = r.getRenderTarget();
+    r.shadowMap.needsUpdate = true; // the shadow pass too: its depth programs
+    r.setRenderTarget(target);
+    r.render(this.scene, this.camera);
+    r.setRenderTarget(prev);
+    target.dispose();
+    this.mask?.update(this.scene, this.camera, this.width, this.height); // and the silhouette's
+    restore();
+    r.shadowMap.needsUpdate = true; // the statue's own shadow again on the next frame
+    this._lastSig = '';
+    mark('morph warm');
   }
 
   /** ?debug: drive the sequence directly (null hands it back to the scroll). */
@@ -665,6 +760,104 @@ export class Stage {
   }
 
   /**
+   * Compile the stage's programs before the statue has arrived, so the compile (a fifth to a third
+   * of a second on an integrated GPU, more on a phone) overlaps the download instead of following
+   * it. three.js keys a program by what a material is (which maps it has, its side, the kind of mesh,
+   * the lights on hand, where it is drawn into), not by the pixels of its textures, so stand-ins made
+   * of one-pixel textures on three-vertex meshes compile the very programs the statue, the ring, the
+   * floor, the shadow pass and the silhouette will ask for; warm() then finds each in the cache and
+   * has only the real textures to upload. Where anything differs, that program compiles in warm() as
+   * before: nothing is lost. The stand-ins' materials are kept for the page's life (a few small
+   * objects): disposing one releases its program when nothing else holds it yet, and the ring's
+   * opaque program has no other holder until its reveal has ended.
+   */
+  async preWarm() {
+    if (this._standIns || this.disposed || this.lost) return;
+    const r = this.renderer;
+    const made = { materials: [], textures: [], geometries: [], meshes: [] };
+    this._standIns = made;
+    try {
+      const pixel = (srgb) => {
+        const t = new THREE.DataTexture(new Uint8Array([128, 128, 255, 255]), 1, 1);
+        if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+        t.needsUpdate = true;
+        made.textures.push(t);
+        return t;
+      };
+      const triangle = (skinned) => {
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, 0, 0, 1, 0], 3));
+        g.setAttribute('normal', new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 0, 0, 1], 3));
+        g.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, 1], 2));
+        if (skinned) {
+          g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 4));
+          g.setAttribute('skinWeight', new THREE.Float32BufferAttribute([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], 4));
+        }
+        g.setIndex([0, 1, 2]);
+        made.geometries.push(g);
+        return g;
+      };
+      const keep = (m) => { made.materials.push(m); return m; };
+      const skeleton = new THREE.Skeleton([new THREE.Bone()]);
+      const skinnedWith = (material, scene) => {
+        const mesh = new THREE.SkinnedMesh(triangle(true), material);
+        mesh.bind(skeleton);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.frustumCulled = false;
+        scene.add(mesh);
+        made.meshes.push(mesh);
+        return mesh;
+      };
+      // on stage, as the GLTF loader, createRing and _buildFloor make them
+      const statue = keep(new THREE.MeshStandardMaterial({ map: pixel(true), normalMap: pixel(false), roughnessMap: pixel(false), metalnessMap: pixel(false), side: THREE.DoubleSide }));
+      const stone = keep(new THREE.MeshMatcapMaterial({ matcap: pixel(false), map: pixel(true), normalMap: pixel(false), transparent: true, opacity: 0 }));
+      // the ring once revealed: _updateLights makes it opaque at the end of its reveal, which is a
+      // different program (three.js forces alpha to one in an opaque material's shader)
+      const stoneSolid = keep(new THREE.MeshMatcapMaterial({ matcap: pixel(false), map: pixel(true), normalMap: pixel(false) }));
+      const catcher = keep(new THREE.ShadowMaterial({ opacity: 0.5, depthWrite: false }));
+      const pool = keep(new THREE.MeshBasicMaterial({ map: pixel(true), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+      const onStage = [skinnedWith(statue, this.scene)];
+      for (const [material, receive] of [[stone, false], [stoneSolid, false], [catcher, true], [pool, false]]) {
+        const mesh = new THREE.Mesh(triangle(false), material);
+        mesh.receiveShadow = receive;
+        mesh.frustumCulled = false;
+        this.scene.add(mesh);
+        onStage.push(mesh);
+        made.meshes.push(mesh);
+      }
+      // off stage: the shadow pass's depth material (the statue's map, faces inward) under the stage's
+      // lights, and the silhouette's flat white under none, both drawn into targets
+      const depth = keep(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }));
+      depth.map = statue.map;
+      depth.side = THREE.DoubleSide;
+      const white = keep(new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      const shadowed = new THREE.Scene();
+      const unlit = new THREE.Scene();
+      skinnedWith(depth, shadowed);
+      skinnedWith(white, unlit);
+      const target = new THREE.WebGLRenderTarget(1, 1);
+      const compiling = [r.compileAsync(this.scene, this.camera)];
+      r.setRenderTarget(target);
+      compiling.push(r.compileAsync(shadowed, this.camera, this.scene), r.compileAsync(unlit, this.camera));
+      r.setRenderTarget(null);
+      await Promise.all(compiling);
+      target.dispose();
+      for (const m of onStage) m.removeFromParent();
+    } catch { /* compiled in warm() instead */ }
+    mark(`programs pre-warmed (${this.renderer.info.programs?.length ?? 0} programs)`);
+  }
+
+  _dropStandIns() {
+    const made = this._standIns;
+    if (!made) return;
+    this._standIns = { materials: made.materials }; // the materials stay (see preWarm); the rest goes
+    for (const m of made.meshes) m.removeFromParent();
+    for (const t of made.textures) t.dispose();
+    for (const g of made.geometries) g.dispose();
+  }
+
+  /**
    * Compile every shader on stage (in parallel where the driver allows) and draw the first frame,
    * so the first frame the visitor sees is not the one that stalls on compiling.
    */
@@ -673,9 +866,55 @@ export class Stage {
     this._updateRig(0);
     this._updateLights();
     try {
-      await this.renderer.compileAsync(this.scene, this.camera);
+      // the stage's own materials, and the two the first frame would otherwise compile on the
+      // spot (about 0.85 s on an integrated GPU): the shadow pass's depth material, skinned for
+      // the statue and plain for the rest, and the silhouette's flat white (src/scene/silhouette.js).
+      // Stand-ins with the same materials on the same kinds of mesh make three.js build the same
+      // programs, which it then finds in its cache when the real passes ask for them.
+      // (three.js keys its program cache by the material, the kind of mesh, the lights on hand and the
+      // colour space and tone mapping of what is being drawn into: the two passes draw into targets,
+      // in linear colour and untouched by tone mapping; the shadow pass sees the stage's lights, the
+      // silhouette none; the shadow's depth material carries the statue's own map and faces inward)
+      const r = this.renderer;
+      const shadowed = new THREE.Scene(); // for the shadow pass: compiled against the stage's lights
+      const unlit = new THREE.Scene(); // for the silhouette pass: no lights at all
+      const standIns = [];
+      if (this.skinned) {
+        const own = this.skinned.material;
+        const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+        depth.map = own.map ?? null;
+        depth.alphaMap = own.alphaMap ?? null;
+        depth.alphaTest = own.alphaTest;
+        depth.side = own.shadowSide ?? (own.side === THREE.FrontSide ? THREE.BackSide : own.side === THREE.BackSide ? THREE.FrontSide : THREE.DoubleSide);
+        const white = this.mask?.material ?? new THREE.MeshBasicMaterial({ color: 0xffffff });
+        for (const [scene, material] of [[shadowed, depth], [unlit, white]]) {
+          const standIn = new THREE.SkinnedMesh(this.skinned.geometry, material);
+          standIn.bind(this.skinned.skeleton, this.skinned.bindMatrix);
+          standIn.castShadow = true;
+          scene.add(standIn);
+          standIns.push(standIn);
+        }
+      }
+      const target = new THREE.WebGLRenderTarget(1, 1);
+      const onStage = r.compileAsync(this.scene, this.camera); // its programs are gathered at once, before the target is bound
+      r.setRenderTarget(target);
+      const offStage = [r.compileAsync(shadowed, this.camera, this.scene), r.compileAsync(unlit, this.camera)];
+      r.setRenderTarget(null);
+      // the textures go to the GPU now, while the driver is compiling (a quarter of a second for
+      // three 2048 px images on an integrated GPU), rather than on the first frame
+      this.scene.traverse((o) => {
+        for (const m of [].concat(o.material || [])) {
+          for (const tex of [m.map, m.normalMap, m.roughnessMap, m.metalnessMap, m.aoMap, m.emissiveMap, m.alphaMap]) if (tex?.isTexture) r.initTexture(tex);
+        }
+      });
+      await Promise.all([onStage, ...offStage]);
+      target.dispose();
+      for (const s of standIns) s.removeFromParent();
     } catch { /* compiled on first draw instead */ }
+    this._dropStandIns(); // preWarm()'s meshes, textures and geometries
+    mark(`shaders compiled (${this.renderer.info.programs?.length ?? 0} programs)`);
     this.renderOnce();
+    mark(`first frame (${this.renderer.info.programs?.length ?? 0} programs)`);
   }
 
   renderOnce() {
@@ -697,6 +936,14 @@ export class Stage {
    */
   setOccluder(el, { logoInFront = true } = {}) {
     this.occluder = el;
+    this._occKey = '';
+    this._occRO?.disconnect();
+    if (el) {
+      // the page above the footer changes height (text split into lines, a form arriving, a resize): read again
+      this._occRO = new ResizeObserver(() => { this._occKey = ''; });
+      this._occRO.observe(document.body);
+      this._occRO.observe(el);
+    }
     this.logoInFront = logoInFront;
     this.dockSlot = el?.querySelector('.curtain__mark') ?? null;
     this.emblem = el?.querySelector('.curtain__emblem') ?? null;
@@ -721,7 +968,14 @@ export class Stage {
 
   _occluderTop() {
     if (!this.occluder) return Infinity;
-    return Math.round(this.occluder.getBoundingClientRect().top);
+    // read once per scroll position and viewport height (every tick asked the layout for it, before
+    // the 'nothing moved' return); a change of layout (the observer below) reads it again
+    const key = `${scrollY},${innerHeight}`;
+    if (this._occKey !== key) {
+      this._occKey = key;
+      this._occTop = Math.round(this.occluder.getBoundingClientRect().top);
+    }
+    return this._occTop;
   }
 
   _draw() {
@@ -917,6 +1171,7 @@ export class Stage {
     });
     for (const l of Object.values(this.lights)) l.dispose?.();
     this.mask?.dispose();
+    this._occRO?.disconnect();
     this.morph?.dispose();
     this.star?.dispose();
     this.vector?.dispose();

@@ -67,8 +67,8 @@ export function mountStatue(host, { reduced, opened, onTheme, sky = null, fit = 
         throw err;
       }
       if (gone) { t.dispose(); return null; }
-      // the theme may have changed while it loaded
-      t.setTheme(pageTheme(), { instant: true });
+      // the theme may have changed while it loaded (if not, the frame it drew stands: no second draw)
+      if (t.theme !== pageTheme()) t.setTheme(pageTheme(), { instant: true });
       thinker = t;
       host.classList.add('is-live');
       host.classList.toggle('is-turnable', turnable && !reduced);

@@ -166,7 +166,7 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
         throw err;
       }
       if (gone) { s.dispose(); return null; }
-      s.setTheme(pageTheme(), { instant: true });
+      if (s.theme !== pageTheme()) s.setTheme(pageTheme(), { instant: true }); // changed while loading: else its first frame stands
       // (the still picture is part way through the story: the live statue waits out of sight, and
       // takes over when the scroll next leaves the hold's middle: render, goLive)
       if (!reduced && progress > STILL_HAND[0] && progress < 1) {

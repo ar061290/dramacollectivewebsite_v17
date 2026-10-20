@@ -29,13 +29,13 @@ export function setupDock() {
   if (!block || !footer) return () => {};
   const nav = block.querySelector('nav') ?? block;
   const cols = [...block.querySelectorAll('[data-dock-col]')]
-    .map((el) => ({ el, slot: footer.querySelector(`[data-dock-slot="${el.dataset.dockCol}"]`), x: 0, y: 0, sx: 0, sy: 0, w: 0, up: false }))
+    .map((el) => ({ el, slot: footer.querySelector(`[data-dock-slot="${el.dataset.dockCol}"]`), x: 0, y: 0, sx: 0, sy: 0, w: 0, h: 0, up: false }))
     .filter((c) => c.slot);
   if (!cols.length) return () => {};
 
   // scroll positions (page px), measured with the layout: hold (the columns settle on screen), from
   // (the footer's top at the foot of the screen) and to (the footer risen as far as it will)
-  const at = { hold: 0, from: 0, to: 1 };
+  const at = { hold: 0, from: 0, to: 1, fTop: 0 };
   let shaped = false;
   let mode = 'static';
   const docTop = (el) => el.getBoundingClientRect().top + window.scrollY;
@@ -64,11 +64,12 @@ export function setupDock() {
     for (const c of cols) {
       gsap.set(c.el, { x: 0, y: 0 });
       const r = c.el.getBoundingClientRect(), s = c.slot.getBoundingClientRect();
-      c.x = r.left; c.y = r.top + window.scrollY; c.w = r.width;
+      c.x = r.left; c.y = r.top + window.scrollY; c.w = r.width; c.h = r.height;
       c.sx = s.left; c.sy = s.top + window.scrollY;
     }
     const top = docTop(nav), h = nav.offsetHeight;
     const fTop = docTop(footer);
+    at.fTop = fTop;
     at.from = fTop - vh;
     at.to = fTop - Math.max(0, vh - footer.offsetHeight);
     // centred on screen where they fit with room for the top bar, else with their top just under it;
@@ -103,18 +104,24 @@ export function setupDock() {
       setMode('fixed');
       for (const c of cols) {
         const [kx, ky] = path(c, t);
-        gsap.set(c.el, { x: (c.sx - c.x) * kx, y: (c.sy - y - (c.y - at.hold)) * ky, force3D: true });
+        const ty = (c.sy - y - (c.y - at.hold)) * ky;
+        gsap.set(c.el, { x: (c.sx - c.x) * kx, y: ty, force3D: true });
+        c.top = c.y - at.hold + ty; // where it is on screen: pinned at the hold, moved by the transform
       }
     } else {
       // arrived: in the slot, scrolling with the footer
       setMode('static');
-      for (const c of cols) gsap.set(c.el, { x: c.sx - c.x, y: c.sy - c.y, force3D: true });
+      for (const c of cols) { gsap.set(c.el, { x: c.sx - c.x, y: c.sy - c.y, force3D: true }); c.top = c.sy - y; }
     }
-    const f = footer.getBoundingClientRect().top;
+    if (y < at.hold) for (const c of cols) c.top = c.y - y;
+    // how far each column has gone over the footer's edge: from the measures and the scroll (the
+    // same numbers getBoundingClientRect gave, read without forcing the layout four times a scroll)
+    const f = at.fTop - y;
+    const dock = ease(t).toFixed(3);
     for (const c of cols) {
-      c.el.style.setProperty('--dock', ease(t).toFixed(3));
-      const r = c.el.getBoundingClientRect();
-      c.el.style.setProperty('--over', clamp01((r.bottom - f) / Math.max(1, r.height)).toFixed(3));
+      const over = clamp01((c.top + c.h - f) / Math.max(1, c.h)).toFixed(3);
+      if (c.dock !== dock) { c.dock = dock; c.el.style.setProperty('--dock', dock); }
+      if (c.over !== over) { c.over = over; c.el.style.setProperty('--over', over); }
     }
   };
 

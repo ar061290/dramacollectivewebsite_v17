@@ -26,11 +26,15 @@ export function setupNav({ reduced }) {
     root.classList.toggle('is-locked', open);
     if (open) bar.classList.remove('is-hidden');
     sheetTl?.kill();
+    // the page under the sheet is told when the sheet covers it and when it is about to lift (the
+    // sky and the stage rest meanwhile: nothing of them can be seen)
+    const tell = (what) => document.dispatchEvent(new CustomEvent('dc:menu', { detail: what }));
+    if (!open) tell('uncovered');
     if (open) {
       sheet.classList.add('is-open');
       sheetTl = reduced
-        ? gsap.timeline().set(sheet, { clipPath: 'none' }).set(sheetLinks, { yPercent: 0, autoAlpha: 1 })
-        : gsap.timeline({ defaults: { ease: 'curtain' } })
+        ? gsap.timeline({ onComplete: () => tell('covered') }).set(sheet, { clipPath: 'none' }).set(sheetLinks, { yPercent: 0, autoAlpha: 1 })
+        : gsap.timeline({ defaults: { ease: 'curtain' }, onComplete: () => tell('covered') })
           .fromTo(sheet, { clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0% 0)', duration: 0.45 })
           .fromTo(sheetLinks, { yPercent: 110, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.5, stagger: 0.04 }, 0.12);
     } else {

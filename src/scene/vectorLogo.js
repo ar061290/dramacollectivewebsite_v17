@@ -68,6 +68,8 @@ export class VectorLogo {
   }
 
   setColors(top, bottom) {
+    if (top === this._top && bottom === this._bottom) return;
+    this._top = top; this._bottom = bottom;
     this.stops[0].setAttribute('stop-color', top);
     this.stops[1].setAttribute('stop-color', bottom);
   }

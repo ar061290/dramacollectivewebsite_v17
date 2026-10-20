@@ -53,11 +53,13 @@ export function makeStoneMatcap(size = 256, { ambient = 0.035, diffuse = 0.78, s
  * the largest circle, centred on the viewing axis, that fits inside the ring's hole, in
  * tan(angle) units. Anything whose silhouette stays inside it can never touch the ring, at any spin.
  */
-export function createRing({ albedo, normal }) {
+export function createRing({ albedo, normal }, { matcaps = true } = {}) {
   const { ring, lower, upper } = buildRing();
-  const matcap = makeStoneMatcap();
-  const dayMatcap = makeStoneMatcap(256, { ambient: 0.34, diffuse: 0.6, spec: 0.08 });
-  const material = new THREE.MeshMatcapMaterial({
+  // the About page's ring takes its own marble material straight away: it needs no matcaps (two
+  // 256 px per-pixel renders, half of the build's time)
+  const matcap = matcaps ? makeStoneMatcap() : null;
+  const dayMatcap = matcaps ? makeStoneMatcap(256, { ambient: 0.34, diffuse: 0.6, spec: 0.08 }) : null;
+  const material = !matcaps ? new THREE.MeshBasicMaterial({ name: 'RingStone' }) : new THREE.MeshMatcapMaterial({
     name: 'RingStone',
     matcap,
     map: albedo,

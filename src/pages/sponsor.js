@@ -142,9 +142,14 @@ function metalLight({ reduced }) {
     s.style.setProperty('--spec', spec);
     s.style.setProperty('--band', band);
   };
-  const lamp = (s) => {
+  // r, vw, vh: the piece's box and the viewport, read by paint before it writes anything (a read
+  // after a write makes the browser bring its styles up to date first: five times a frame, once per
+  // piece, when each piece read its own box between the writes)
+  const lamp = (s, r, vw, vh) => {
     if (!at) return set(s, '18%', '12%', '.45', '30%');
-    const r = s.getBoundingClientRect();
+    r ??= s.getBoundingClientRect();
+    vw ||= innerWidth;
+    vh ||= innerHeight;
     const x = (at.x - r.left) / r.width, y = (at.y - r.top) / r.height;
     const dx = Math.max(r.left - at.x, 0, at.x - r.right), dy = Math.max(r.top - at.y, 0, at.y - r.bottom);
     const near = Math.exp(-((dx * dx + dy * dy) / (REACH * REACH)) * 3);
@@ -152,14 +157,18 @@ function metalLight({ reduced }) {
     const clamp = (v) => Math.min(1.12, Math.max(-0.12, v));
     // the streak lies across the grain and sweeps the other way to the lamp as it crosses the
     // screen, as a reflection does
-    const off = (at.x - (r.left + r.width / 2)) / innerWidth + (at.y - (r.top + r.height / 2)) / innerHeight * 0.35;
+    const off = (at.x - (r.left + r.width / 2)) / vw + (at.y - (r.top + r.height / 2)) / vh * 0.35;
     set(s, `${(clamp(x) * 100).toFixed(1)}%`, `${(clamp(y) * 100).toFixed(1)}%`, (0.35 + 0.65 * near).toFixed(3), `${(50 - off * 170).toFixed(1)}%`);
   };
   const paint = (now) => {
     raf = 0;
-    for (const s of pieces) {
+    // every read before any write: the pieces' boxes and the viewport
+    const rects = at ? pieces.map((s) => s.getBoundingClientRect()) : null;
+    const vw = at ? innerWidth : 0, vh = at ? innerHeight : 0;
+    for (let i = 0; i < pieces.length; i++) {
+      const s = pieces[i];
       const t0 = sweeps.get(s);
-      if (at || t0 !== undefined) lamp(s);
+      if (at || t0 !== undefined) lamp(s, rects?.[i], vw, vh);
       if (t0 === undefined) continue;
       const p = Math.min(1, Math.max(0, (now - t0) / SWEEP));
       if (p >= 1) {
@@ -184,7 +193,7 @@ function metalLight({ reduced }) {
   };
   const onUp = (e) => { if (e.pointerType !== 'mouse') { at = null; pieces.forEach((s) => { if (!sweeps.has(s)) lamp(s); }); } };
   const onScroll = () => { if (at) frame(); };
-  pieces.forEach(lamp);
+  pieces.forEach((s) => lamp(s));
   if (reduced) return { sweep() {}, dispose() {} };
   window.addEventListener('pointermove', onMove, { passive: true });
   window.addEventListener('pointerdown', onMove, { passive: true });

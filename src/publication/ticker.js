@@ -6,7 +6,10 @@
 // The line is repeated after itself (the copies hidden from screen readers, which read it once)
 // until the strip is covered with one to spare, and the row is moved left by one line's width,
 // again and again, at a steady 40px a second: each time it comes round, the first copy stands
-// exactly where the line stood, so there is no seam. Transforms only, one tween.
+// exactly where the line stood, so there is no seam. Transforms only, one animation, and that one
+// is the browser's own (a Web Animation of the transform): the compositor moves the row, and the
+// page's thread does nothing for it from frame to frame. (Moving it from script, as before, cost
+// a style recalculation and a layout on every frame of every page that has the banner.)
 // It comes to rest while the pointer is on the bar or the keyboard is in it (easing down rather
 // than stopping dead, and easing back up after), so the line can be read and a button pressed; on
 // a touch screen a tap on the line holds it, and another lets it go. Reduced motion, or no script:
@@ -28,18 +31,24 @@ export function setupTicker({ reduced }) {
   const unshown = watchSponsor(bar);
   if (!line || reduced) return unshown;
 
-  let loop = null;
+  let loop = null; // the Web Animation rolling the row
+  let duration = 0; // one line's travel, in ms
   let copies = [];
   let timer = 0;
   // what holds it still: the pointer on the bar, the keyboard in it, a tap
   const holds = new Set();
+  // the loop's speed, 1 rolling and 0 at rest, eased between the two by GSAP (the only moments
+  // the page's thread touches the animation)
+  const rate = { value: 1 };
 
   const build = () => {
-    const progress = loop ? loop.progress() : 0;
-    loop?.kill();
+    // the row keeps its place: the same way through one line's travel as before the rebuild
+    const progress = loop && duration ? ((loop.currentTime || 0) % duration) / duration : 0;
+    loop?.cancel();
+    loop = null;
     copies.forEach((c) => c.remove());
     copies = [];
-    gsap.set(track, { x: 0 });
+    track.style.transform = '';
     if (!strip.clientWidth) return; // not shown (a narrow phone): nothing to roll
     // one line's width, to its copy's start: the distance the row travels before it repeats
     const first = line.cloneNode(true);
@@ -53,8 +62,13 @@ export function setupTicker({ reduced }) {
       track.append(c);
       copies.push(c);
     }
-    loop = gsap.fromTo(track, { x: 0 }, { x: -width, duration: width / SPEED, ease: 'none', repeat: -1 });
-    loop.progress(progress).timeScale(holds.size ? 0 : 1);
+    duration = (width / SPEED) * 1000;
+    loop = track.animate(
+      [{ transform: 'translateX(0px)' }, { transform: `translateX(${-width}px)` }],
+      { duration, iterations: Infinity, easing: 'linear' },
+    );
+    loop.currentTime = progress * duration;
+    loop.playbackRate = rate.value;
   };
 
   // the strip's width (a resize, or the strip shown again) or the line's (the type arriving late)
@@ -74,7 +88,13 @@ export function setupTicker({ reduced }) {
   const settle = () => {
     if (!loop) return;
     const still = holds.size > 0;
-    gsap.to(loop, { timeScale: still ? 0 : 1, duration: still ? 0.45 : 0.7, ease: still ? 'power2.out' : 'power1.in', overwrite: true });
+    gsap.to(rate, {
+      value: still ? 0 : 1,
+      duration: still ? 0.45 : 0.7,
+      ease: still ? 'power2.out' : 'power1.in',
+      overwrite: true,
+      onUpdate: () => { if (loop) loop.playbackRate = rate.value; },
+    });
   };
   const hold = (why, on) => {
     if (on === holds.has(why)) return;
@@ -110,9 +130,11 @@ export function setupTicker({ reduced }) {
     bar.removeEventListener('focusout', onFocusOut);
     strip.removeEventListener('pointerdown', onDown);
     strip.removeEventListener('pointerup', onUp);
-    if (loop) { gsap.killTweensOf(loop); loop.kill(); }
+    gsap.killTweensOf(rate);
+    loop?.cancel();
+    loop = null;
     copies.forEach((c) => c.remove());
-    gsap.set(track, { clearProps: 'transform' });
+    track.style.transform = '';
     unshown();
   };
 }

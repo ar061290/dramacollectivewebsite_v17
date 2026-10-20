@@ -8,6 +8,8 @@ import { SplitText } from 'gsap/SplitText.js';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin.js';
 import { CustomEase } from 'gsap/CustomEase.js';
 import { reducedMotion } from '../util/env.js';
+import { mark } from '../util/perf.js';
+import { setupField } from '../util/field.js';
 import { ConstellationField } from '../constellation/Constellation.js';
 import { setupTransitions } from './transition.js';
 import { setupNav } from '../animations/nav.js';
@@ -27,8 +29,15 @@ CustomEase.create('curtain', '.22,.61,.36,1'); // --ease-curtain from the design
  * @param {(ctx: { reduced: boolean, sky: ConstellationField|null, onTheme: (fn: (theme: string, opts: { instant?: boolean }) => void) => void, opened: Promise<void> }) => (void|(() => void))} [setup]
  */
 export async function bootPage(setup) {
+  mark('boot');
   const reduced = reducedMotion();
   const cleanups = [];
+  cleanups.push(setupField());
+  // the page's pieces are taken down in the reverse of the order they were made, each on its own
+  // (one that fails must not keep a statue's WebGL context alive under the next page), and from the
+  // first moment, so leaving during the boot frees what had been made by then
+  const teardown = () => { while (cleanups.length) { try { cleanups.pop()?.(); } catch (err) { console.warn(err); } } };
+  window.addEventListener('pagehide', (e) => { if (!e.persisted) teardown(); });
   const themeListeners = [];
   const transitions = setupTransitions({ reduced });
   cleanups.push(transitions.dispose);
@@ -57,6 +66,12 @@ export async function bootPage(setup) {
   if (canvas) {
     sky = new ConstellationField({ canvas, theme: skyTheme(), reducedMotion: reduced });
     sky.start();
+    // under the phone's Menu sheet (opaque, the whole screen) the sky rests
+    const onMenu = (e) => { if (e.detail === 'covered') sky.hold('menu'); else sky.release('menu'); };
+    document.addEventListener('dc:menu', onMenu);
+    cleanups.push(() => document.removeEventListener('dc:menu', onMenu));
+    // for the lab (tools/perf) and the console, as the home page does in src/main.js
+    window.dramaCollective = Object.assign(window.dramaCollective || {}, { sky });
     cleanups.push(() => sky.dispose());
   }
   cleanups.push(setupNav({ reduced }));
@@ -65,6 +80,7 @@ export async function bootPage(setup) {
 
   // the type has to be in before lines are split (never wait on it for long: the curtain is closed)
   await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 450))]);
+  mark('fonts');
   cleanups.push(setupReveals({ reduced }));
   const ctx = { reduced, sky, onTheme: (fn) => themeListeners.push(fn), opened };
   try {
@@ -74,14 +90,15 @@ export async function bootPage(setup) {
     console.error('Page setup failed.', err);
   }
   setupBrandMark({ reduced }).then((c) => cleanups.push(c));
+  mark('setup');
 
   // one frame for the page to settle, then the curtain parts
   await new Promise((r) => requestAnimationFrame(r));
   await transitions.open();
+  mark('parted');
   parted();
   ScrollTrigger.refresh();
   // only now, with the curtain open, may the bar's buttons fly to their spots on the page
   cleanups.push(setupFlyIn({ reduced }));
-  window.addEventListener('pagehide', (e) => { if (!e.persisted) cleanups.forEach((c) => c?.()); });
   return ctx;
 }

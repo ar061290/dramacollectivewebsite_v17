@@ -45,12 +45,19 @@ export class SilhouetteMask {
     r.clear();
     r.render(scene, camera);
     r.setRenderTarget(null);
-    r.readRenderTargetPixels(this.target, 0, 0, w, h, this.data);
+    if (r.readRenderTargetPixelsAsync) {
+      // the pixels come back once the GPU has them, without holding the page's thread until it does
+      // (a plain read stalled it for about 10 ms seven times a second)
+      const data = this.data;
+      r.readRenderTargetPixelsAsync(this.target, 0, 0, w, h, data).then(() => { if (data === this.data) this.ready = true; }).catch(() => {});
+    } else {
+      r.readRenderTargetPixels(this.target, 0, 0, w, h, this.data);
+      this.ready = true;
+    }
     for (const [o, m] of swapped) o.material = m;
     camera.layers.mask = prevMask;
     r.setClearColor(this._clear, prevAlpha);
     r.shadowMap.autoUpdate = prevShadowAuto;
-    this.ready = true;
   }
 
   /** True when the CSS pixel (x, y) lies on the statue (with a small dilation). */

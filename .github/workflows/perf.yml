@@ -1,0 +1,37 @@
+# The performance lab on every push: builds the site, runs the deterministic benches in the
+# runner's Chrome, keeps the results as an artifact, and gates on the counters once a baseline has
+# been ratcheted in (tools/perf/baselines/gate.json). The runner's Chrome draws WebGL in software,
+# so the 3D pages take the still-picture path here: the gate covers the pages' boot, their idle
+# cost, bytes and requests; the live-stage numbers come from the owner's machine (tools/perf/README.md).
+name: Performance lab
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Benches (boot, idle, bytes on every page)
+        env:
+          CHROME: /usr/bin/google-chrome
+          CHROME_FLAGS: --no-sandbox --disable-dev-shm-usage
+        run: node tools/perf/run.mjs --bench page-boot,idle --page all --device laptop --net none --runs 2 --label ci
+      - name: Gate on the deterministic counters
+        run: test -f tools/perf/baselines/gate.json && node tools/perf/gate.mjs || echo "no baseline ratcheted yet (node tools/perf/gate.mjs --ratchet on a CI result)"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf-results
+          path: tools/perf/results/*.json

@@ -10,9 +10,11 @@ const pageTheme = () => (document.documentElement.dataset.theme === 'light' ? 'l
 /** @param {{ reduced: boolean, opened: Promise<void>, onTheme: Function }} ctx  @returns {() => void} */
 export function setupMasks({ reduced, opened, onTheme }) {
   if (![...document.body.classList].some((c) => c.startsWith('page--piece-'))) return () => {};
-  const gl = probeWebGL();
-  if (!gl.ok || prefersStatic(gl.renderer)) return () => {};
   const wide = matchMedia(WIDE);
+  // WebGL is asked about only where the masks could show (a wide screen), and only then: the probe
+  // makes a context, a synchronous round trip to the GPU process, on every phone otherwise
+  let able = null;
+  const capable = () => { if (able === null) { const gl = probeWebGL(); able = gl.ok && !prefersStatic(gl.renderer); } return able; };
   let masks = null;
   let gone = false;
   let making = null;
@@ -22,8 +24,11 @@ export function setupMasks({ reduced, opened, onTheme }) {
   document.body.append(host);
 
   const make = () => {
-    making ??= Promise.all([opened, import('../scene/masks.js')])
-      .then(async ([, mod]) => {
+    if (!capable()) return;
+    // three.js is imported once the curtain has parted (importing it during the curtain's own tween
+    // made the tween stutter), as boot.js asks of every page
+    making ??= Promise.resolve(opened).then(() => import('../scene/masks.js'))
+      .then(async (mod) => {
         const textColumn = parseFloat(getComputedStyle(document.body).getPropertyValue('--read-w')) || 680;
         const made = await mod.Masks.create(host, MODEL, { theme: pageTheme(), reduced, textColumn });
         if (gone) { made.dispose(); return; }

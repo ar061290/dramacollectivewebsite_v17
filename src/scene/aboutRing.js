@@ -113,7 +113,7 @@ export class AboutRing {
     // the first frame), so none of them stands in the way of a scroll or a tap
     await quiet();
     if (this.disposed) { a.dispose(); n.dispose(); return; }
-    this.ring = createRing({ albedo: a, normal: n });
+    this.ring = createRing({ albedo: a, normal: n }, { matcaps: false });
     // the same geometry, in the statue's material in place of the matcap stone
     this.ring.material.dispose();
     this.material = new THREE.MeshStandardMaterial({
@@ -214,8 +214,8 @@ export class AboutRing {
       this.material.map?.dispose();
       this.material.normalMap?.dispose();
       this.material.dispose();
-      this.ring.matcap.dispose();
-      this.ring.dayMatcap.dispose();
+      this.ring.matcap?.dispose();
+      this.ring.dayMatcap?.dispose();
     }
     this.renderer.dispose();
     this.renderer.domElement.remove();

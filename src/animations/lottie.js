@@ -1,5 +1,8 @@
-// lottie-web, light build (SVG renderer only, no expressions). Each file is under 50 KB.
-import lottie from 'lottie-web/build/player/lottie_light.js';
+// lottie-web, light build (SVG renderer only, no expressions). Each file is under 50 KB. The player
+// (about 46 KB compressed) is fetched the first time a Lottie is asked for, which is always after
+// the page's curtain: it used to sit on every page's boot path, the deepest module of the graph.
+let player = null; // the promise of lottie-web
+const files = new Map(); // each file's JSON, fetched once per page (the sponsor page asks for the spark five times)
 
 const FILES = {
   'scroll-cue': new URL('../../assets/lottie/scroll-cue.json', import.meta.url),
@@ -12,7 +15,9 @@ const FILES = {
 export async function loadLottie(container, name, { loop = false, autoplay = false } = {}) {
   if (!container || !FILES[name]) return null;
   try {
-    const data = await (await fetch(FILES[name])).json();
+    player ??= import('lottie-web/build/player/lottie_light.js').then((m) => m.default ?? m);
+    if (!files.has(name)) files.set(name, fetch(FILES[name]).then((r) => r.json()));
+    const [lottie, data] = await Promise.all([player, files.get(name)]);
     return lottie.loadAnimation({
       container,
       renderer: 'svg',

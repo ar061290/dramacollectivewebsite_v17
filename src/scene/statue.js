@@ -60,11 +60,17 @@ export function prepareStatue(object, { kind, height = 2, yaw = Math.PI, roughne
   root.name = 'Statue';
   root.add(spin);
 
+  // Every measure below walks every vertex as drawn (skinned), pass after pass, exactly as three's
+  // Box3.setFromObject(root, true) and getVertexPosition do; only each pass's skinning reads each
+  // bone's matrix once instead of once per vertex and influence (vertexReader), which was most of the
+  // longest stretch of the page's thread between the model's decode and its first frame. (Skinning
+  // once and re-using the vertices across the passes gave the same measures mathematically but not
+  // to the last bit, and moved the statue's framing by a fraction of a pixel.)
   root.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(root, true);
+  const box = boxOf(root);
   root.scale.setScalar(height / (box.max.y - box.min.y));
   root.updateMatrixWorld(true);
-  box.setFromObject(root, true);
+  boxOf(root, box);
 
   // centre on the plinth's footprint (lowest 4% of the model), not on the whole box
   const cut = box.min.y + 0.04 * (box.max.y - box.min.y);
@@ -77,7 +83,7 @@ export function prepareStatue(object, { kind, height = 2, yaw = Math.PI, roughne
 
   // bounding sphere on the turning axis, at mid-height: turning about y keeps x² + z² per vertex,
   // so this sphere contains every vertex at any turn
-  box.setFromObject(root, true);
+  boxOf(root, box);
   const center = new THREE.Vector3(0, box.getCenter(v).y, 0);
   let radius = 0;
   forEachVertex(root, (p) => { radius = Math.max(radius, p.distanceTo(center)); }, v);
@@ -100,13 +106,70 @@ export function prepareStatue(object, { kind, height = 2, yaw = Math.PI, roughne
   return { root, center, radius, height, averageColor: averageStoneColor(root) };
 }
 
+/**
+ * A reader of a mesh's vertices as drawn: three's SkinnedMesh.getVertexPosition, step for step, except
+ * that each bone's matrix (bone.matrixWorld x boneInverse) is made once when the reader is made rather
+ * than again for every vertex and every influence. The bones must not move while the reader is used
+ * (both callers read all the vertices in one go, after updateMatrixWorld). With ?debug it checks itself
+ * against three's own on every vertex and says so in the console.
+ */
+const DEBUG = typeof location !== 'undefined' && /[?&]debug\b/.test(location.search);
+
+function vertexReader(o) {
+  if (!o.isSkinnedMesh) return (i, v) => o.getVertexPosition(i, v);
+  const { bones, boneInverses } = o.skeleton;
+  const bone = bones.map((b, k) => new THREE.Matrix4().multiplyMatrices(b.matrixWorld, boneInverses[k]));
+  const { skinIndex, skinWeight } = o.geometry.attributes;
+  const si = new THREE.Vector4(), sw = new THREE.Vector4(), base = new THREE.Vector3(), t = new THREE.Vector3();
+  const read = (i, v) => {
+    THREE.Mesh.prototype.getVertexPosition.call(o, i, v); // the position, morphs included, as three does
+    si.fromBufferAttribute(skinIndex, i);
+    sw.fromBufferAttribute(skinWeight, i);
+    base.copy(v).applyMatrix4(o.bindMatrix);
+    v.set(0, 0, 0);
+    for (let k = 0; k < 4; k++) {
+      const w = sw.getComponent(k);
+      if (w !== 0) v.addScaledVector(t.copy(base).applyMatrix4(bone[si.getComponent(k)]), w);
+    }
+    return v.applyMatrix4(o.bindMatrixInverse);
+  };
+  if (DEBUG) {
+    const a = new THREE.Vector3(), b = new THREE.Vector3();
+    let differ = 0;
+    const n = o.geometry.attributes.position.count;
+    for (let i = 0; i < n; i++) { read(i, a); o.getVertexPosition(i, b); if (!Object.is(a.x, b.x) || !Object.is(a.y, b.y) || !Object.is(a.z, b.z)) differ++; }
+    console[differ ? 'warn' : 'info'](`statue vertex reader: ${differ ? differ + ' of ' + n + ' vertices differ from three\u2019s' : 'all ' + n + ' vertices identical to three\u2019s'}`);
+  }
+  return read;
+}
+
+/** What Box3.setFromObject(root, true) measures, vertex for vertex (the world matrices must be up to
+ *  date, as they are wherever it is called). ?debug checks it against three's own. */
+function boxOf(root, box = new THREE.Box3()) {
+  box.makeEmpty();
+  const v = new THREE.Vector3();
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    const n = o.geometry.attributes.position.count;
+    const read = vertexReader(o);
+    for (let i = 0; i < n; i++) box.expandByPoint(read(i, v).applyMatrix4(o.matrixWorld));
+  });
+  if (DEBUG) {
+    const own = new THREE.Box3().setFromObject(root, true);
+    const same = own.min.toArray().concat(own.max.toArray()).every((x, i) => Object.is(x, box.min.toArray().concat(box.max.toArray())[i]));
+    console[same ? 'info' : 'warn'](`statue bounds: ${same ? 'identical to Box3.setFromObject' : 'DIFFER from Box3.setFromObject'}`);
+  }
+  return box;
+}
+
 /** Every vertex in world space, as drawn (skinning applied for a skinned mesh). */
 export function forEachVertex(root, fn, v = new THREE.Vector3()) {
   root.updateMatrixWorld(true);
   root.traverse((o) => {
     if (!o.isMesh) return;
     const n = o.geometry.attributes.position.count;
-    for (let i = 0; i < n; i++) fn(o.getVertexPosition(i, v).applyMatrix4(o.matrixWorld));
+    const read = vertexReader(o);
+    for (let i = 0; i < n; i++) fn(read(i, v).applyMatrix4(o.matrixWorld));
   });
 }
 

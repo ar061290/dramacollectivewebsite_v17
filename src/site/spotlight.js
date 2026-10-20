@@ -13,21 +13,28 @@ export function followSpot(el, { glow = true, onMove, reduced = false } = {}) {
   if (halo) { halo.setAttribute('aria-hidden', 'true'); el.prepend(halo); }
 
   let dirty = true;
-  const mark = () => { dirty = true; };
+  let ticking = false;
+  // --spot-x / --spot-y are read only by a lit copy of the text (.spot-text__lit, the About
+  // statement); elsewhere writing them restyled every descendant of the block for nothing
+  let reads = null;
+  const mark = () => { dirty = true; if (!ticking) { ticking = true; gsap.ticker.add(tick); } };
   const dur = reduced ? 0 : 0.45;
   const qx = gsap.quickTo(spot, 'x', { duration: dur, ease: 'power3.out', onUpdate: mark });
   const qy = gsap.quickTo(spot, 'y', { duration: dur, ease: 'power3.out', onUpdate: mark });
   const qa = gsap.quickTo(spot, 'a', { duration: reduced ? 0 : 0.35, ease: 'power2.out', onUpdate: mark });
 
   const tick = () => {
-    if (!dirty) return;
+    if (!dirty) { gsap.ticker.remove(tick); ticking = false; return; } // nothing moved: off the ticker until something does
     dirty = false;
-    el.style.setProperty('--spot-x', `${spot.x}px`);
-    el.style.setProperty('--spot-y', `${spot.y}px`);
+    reads ??= !!el.querySelector('.spot-text__lit');
+    if (reads) {
+      el.style.setProperty('--spot-x', `${spot.x}px`);
+      el.style.setProperty('--spot-y', `${spot.y}px`);
+    }
     if (halo) gsap.set(halo, { x: spot.x, y: spot.y, opacity: spot.a });
     onMove?.(spot.x, spot.y, spot.a);
   };
-  gsap.ticker.add(tick);
+  mark();
 
   let placed = false;
   const aim = (x, y, a = 1) => {
@@ -66,6 +73,7 @@ export function followSpot(el, { glow = true, onMove, reduced = false } = {}) {
     aim,
     dispose() {
       gsap.ticker.remove(tick);
+      ticking = false;
       st?.kill();
       halo?.remove();
       el.removeEventListener('pointermove', onMoveEv);

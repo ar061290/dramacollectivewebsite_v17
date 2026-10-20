@@ -15,6 +15,19 @@ import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const PARTS = ['body', 'mask', 'hand', 'face'];
 
+/**
+ * The mark's shapes from its SVG, as plain JSON (THREE.Shape.toJSON), so that the extrusion can
+ * run in a worker: the SVG's parsing needs the page's DOM, the extrusion does not.
+ * @param {string} svgText
+ * @returns {object[]}
+ */
+export function logoShapes(svgText) {
+  const svg = new SVGLoader().parse(svgText);
+  const shapes = [];
+  for (const path of svg.paths) shapes.push(...SVGLoader.createShapes(path));
+  return shapes.map((s) => s.toJSON());
+}
+
 function insidePolygon(x, y, poly) {
   let inside = false;
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -65,7 +78,7 @@ function splitAcross(geo, regionAt, minEdge = 8) {
 }
 
 /**
- * @param {string} svgText
+ * @param {string|object[]} source  the SVG's text (parsed here, on the page) or logoShapes()'s JSON (in a worker)
  * @param {object} o
  * @param {THREE.Vector3} o.center   where the logo's centre sits
  * @param {number} o.radius          the logo fits inside this sphere about `center`
@@ -77,10 +90,8 @@ function splitAcross(geo, regionAt, minEdge = 8) {
  *          non-indexed geometry with position and normal; part[t] indexes PARTS for triangle t; the
  *          star on its own, in the same space (null without regions.star)
  */
-export function buildLogoGeometry(svgText, { center, radius, regions = null, depth = 0.07, maxTriangles = Infinity }) {
-  const svg = new SVGLoader().parse(svgText);
-  let shapes = [];
-  for (const path of svg.paths) shapes.push(...SVGLoader.createShapes(path));
+export function buildLogoGeometry(source, { center, radius, regions = null, depth = 0.07, maxTriangles = Infinity }) {
+  let shapes = (typeof source === 'string' ? logoShapes(source) : source).map((j) => new THREE.Shape().fromJSON(j));
   // the star: the smallest shape around regions.star
   let starShapes = [];
   if (regions?.star) {

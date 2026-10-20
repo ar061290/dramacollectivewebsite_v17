@@ -56,6 +56,8 @@ export function setupTransitions({ reduced }) {
     leaving = true;
     if (reduced) { location.href = url.href; return; }
     try { sessionStorage.setItem(FLAG, '1'); } catch { /* no storage: the next page simply appears */ }
+    // the next page's HTML is fetched now, during the 0.36 s close, rather than after it
+    try { document.head.append(Object.assign(document.createElement('link'), { rel: 'prefetch', href: url.href, as: 'document' })); } catch { /* fine */ }
     gsap.set('.veil', { pointerEvents: 'auto' });
     gsap.to(halves, {
       xPercent: 0,

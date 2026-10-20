@@ -150,6 +150,7 @@ export function setupEarrings({ reduced, opened }) {
   const onNear = (e) => {
     if (!curtain || !wide.matches || e.pointerType === 'touch') return;
     const r = button.getBoundingClientRect();
+    if (r.bottom <= 0) return; // the bar waits above the screen (the publication's pages): not near
     const dx = Math.max(r.left - e.clientX, 0, e.clientX - r.right);
     const dy = Math.max(r.top - e.clientY, 0, e.clientY - r.bottom);
     if (dx * dx + dy * dy < NEAR * NEAR) load();

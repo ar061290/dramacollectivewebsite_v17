@@ -6,6 +6,8 @@ import { SplitText } from 'gsap/SplitText.js';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin.js';
 import { CustomEase } from 'gsap/CustomEase.js';
 import { reducedMotion, probeWebGL, prefersStatic, readToken } from './util/env.js';
+import { mark as perfMark } from './util/perf.js';
+import { setupField } from './util/field.js';
 import { ConstellationField } from './constellation/Constellation.js';
 import { loadLottie, freeze } from './animations/lottie.js';
 import { playIntro } from './animations/intro.js';
@@ -40,15 +42,21 @@ const reduced = reducedMotion();
 const cleanups = [];
 // ?debug: how long each step of the start takes (printed once the curtain is up)
 const marks = [];
-const mark = (name) => marks.push([name, Math.round(performance.now())]);
+const mark = (name) => { perfMark(name); marks.push([name, Math.round(performance.now())]); };
 let stage = null;
 let sky = null;
 
 async function boot() {
+  mark('boot');
+  cleanups.push(setupField());
   // arriving through the curtain from another page: part it now, onto the loader
   const transitions = setupTransitions({ reduced });
   cleanups.push(transitions.dispose);
   transitions.open();
+  // one frame for the loader to be painted before the rest of the start-up (the sky, the WebGL probe and
+  // the stage's import took the page's thread for a tenth of a second before the first frame could be
+  // painted); in a background tab, where no frame comes, it goes on after a tenth of a second
+  await new Promise((r) => { requestAnimationFrame(() => setTimeout(r, 0)); setTimeout(r, 100); });
 
   // the theme and music switches work from the first moment, before the stage has loaded; the
   // earrings on the theme switch wait for the curtain (their model is fetched once the page is idle)
@@ -108,6 +116,7 @@ async function boot() {
         },
       });
       stage.state.daylight = currentTheme() === 'light' ? 1 : 0;
+      stage.preWarm(); // the shaders compile while the statue downloads (Stage.preWarm)
       await stage.load({
         statueUrl: ASSETS.statue,
         textureUrls: { albedo: ASSETS.albedo, normal: ASSETS.normal },
@@ -126,6 +135,7 @@ async function boot() {
   if (!stage) {
     loadStill();
     still.hidden = false;
+    mark('still shown');
     // never let a stalled decode hold the curtain
     await Promise.race([still.decode().catch(() => {}), new Promise((r) => setTimeout(r, 1500))]);
   }
@@ -146,7 +156,6 @@ async function boot() {
   if (new URLSearchParams(location.search).has('debug')) console.info('start:', marks.map(([n, t]) => `${n} ${t} ms`).join(' · '));
 
   if (stage) {
-    stage.renderOnce();
     stage.setOccluder(document.querySelector('.curtain'));
     document.querySelector('.curtain')?.classList.add('has-stage-logo');
     stage.start();
@@ -202,9 +211,9 @@ async function boot() {
   playIntro({
     hero: document.querySelector('.hero'),
     light,
-    scrollCue: { play: () => lotties.then(() => app.scrollCue?.play()) },
+    scrollCue: { play: () => lotties.then(() => { cueOn = true; if (cueSeen) app.scrollCue?.play(); }) },
     reduced,
-    onComplete: () => ScrollTrigger.refresh(),
+    onComplete: () => { mark('intro done'); ScrollTrigger.refresh(); },
   });
   // the footer's mark leans toward the pointer, as on the other pages
   for (const el of document.querySelectorAll('[data-tilt]')) cleanups.push(tilt(el, { reduced, max: 10 }));
@@ -217,7 +226,8 @@ async function boot() {
   }
 }
 
-// The morph mesh is built once the hero is up, in a quiet moment (a few hundred milliseconds).
+// The morph mesh is built once the hero is up, in a worker (src/scene/morph.js); then, in a quiet
+// moment, its vertices go to the GPU and its programs compile, so its first frame on screen is cheap.
 async function prepareMorph() {
   try {
     const [svg, parts] = await Promise.all([
@@ -225,14 +235,21 @@ async function prepareMorph() {
       fetch(ASSETS.logoParts).then((r) => r.json()).catch(() => null), // without it, the morph is whole-figure
     ]);
     await new Promise((r) => (window.requestIdleCallback ? requestIdleCallback(r, { timeout: 1500 }) : setTimeout(r, 300)));
-    const morph = stage?.prepareMorph(svg, parts);
-    if (morph) console.info(`morph ready: ${morph.triangles} triangles in ${morph.ms} ms`, morph.parts);
+    const morph = await stage?.prepareMorph(svg, parts);
+    if (morph) mark('morph ready');
+    if (morph) console.info(`morph ready: ${morph.triangles} triangles in ${morph.ms} ms (the logo ${morph.logoMs} ms)`, morph.parts);
+    if (morph && stage) {
+      await new Promise((r) => (window.requestIdleCallback ? requestIdleCallback(r, { timeout: 2000 }) : setTimeout(r, 300)));
+      await stage.warmMorph();
+    }
   } catch (err) {
     console.warn('Morph unavailable; the statue holds its pose instead.', err);
   }
 }
 
 const app = { scrollCue: null, setupStatueInteraction: null };
+let cueOn = false; // the intro has started the scroll cue
+let cueSeen = true; // the hero (and its cue) on the screen
 
 async function setupLotties() {
   // nav mark: the curtain rises on the mark once, and again on hover
@@ -244,6 +261,12 @@ async function setupLotties() {
     if (reduced) freeze(cue, 60);
     app.scrollCue = reduced ? null : cue;
     cleanups.push(() => cue.destroy());
+    if (!reduced) {
+      // the cue loops in the hero only: off the screen it stops writing its SVG every frame
+      const io = new IntersectionObserver(([e]) => { cueSeen = e.isIntersecting; if (!cueOn) return; if (cueSeen) cue.play(); else cue.pause(); });
+      io.observe(document.querySelector('[data-lottie="scroll-cue"]'));
+      cleanups.push(() => io.disconnect());
+    }
   }
 }
 
@@ -252,12 +275,18 @@ async function setupLotties() {
 // the scrubbed sequence behind it) and only then stops, so it never freezes mid-morph over the footer.
 function watchVisibility() {
   let stageInView = true;
+  let covered = false; // the phone's Menu sheet over the page
   const apply = () => {
     if (document.hidden) { stage?.stop(); sky?.stop(); return; }
+    if (covered) { sky?.hold('menu'); stage?.stopWhenSettled(); return; }
+    sky?.release('menu');
     if (stageInView) { stage?.start(); sky?.start(); return; }
     sky?.stop();
     stage?.stopWhenSettled();
   };
+  const onMenu = (e) => { covered = e.detail === 'covered'; apply(); };
+  document.addEventListener('dc:menu', onMenu);
+  cleanups.push(() => document.removeEventListener('dc:menu', onMenu));
   // a pixel off the top: at the end of the page <main>'s foot sits exactly on the screen's top edge,
   // which an observer still counts as in view
   const io = new IntersectionObserver(([entry]) => { stageInView = entry.isIntersecting; apply(); }, { rootMargin: '-1px 0px 0px 0px' });

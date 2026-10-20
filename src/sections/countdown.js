@@ -8,6 +8,7 @@ export function setupCountdown(el, reduced) {
   const units = Object.fromEntries([...el.querySelectorAll('[data-unit]')].map((dd) => [dd.dataset.unit, dd]));
   const shown = {};
   let timer = 0;
+  let seen = true; // the card on the screen: off it, the digits need no roll (and no timer)
 
   // one span per digit; a changed digit rolls up and the new one rises in under it
   const write = (unit, text) => {
@@ -33,7 +34,7 @@ export function setupCountdown(el, reduced) {
         // while it rolls out, the old digit is not read: the unit reads as its new value only
         old.setAttribute('aria-hidden', 'true');
         const next = Object.assign(document.createElement('span'), { textContent: c });
-        if (reduced || document.hidden) { box.replaceChildren(next); return; }
+        if (reduced || document.hidden || !seen) { box.replaceChildren(next); return; }
         gsap.set(next, { position: 'absolute', left: 0, top: 0, yPercent: 100 });
         box.append(next);
         gsap.to(old, { yPercent: -100, duration: 0.45, ease: 'power2.inOut', onComplete: () => old.remove() });
@@ -50,8 +51,14 @@ export function setupCountdown(el, reduced) {
     write('hours', String(Math.floor((s % 86400) / 3600)).padStart(2, '0'));
     write('minutes', String(Math.floor((s % 3600) / 60)).padStart(2, '0'));
     write('seconds', String(s % 60).padStart(2, '0'));
-    if (left > 0) timer = setTimeout(tick, 1000 - (Date.now() % 1000) + 5);
+    if (left > 0 && seen) timer = setTimeout(tick, 1000 - (Date.now() % 1000) + 5);
   };
+  const io = new IntersectionObserver(([e]) => {
+    seen = e.isIntersecting;
+    clearTimeout(timer);
+    if (seen) tick(); // back on the screen: right at once, then the seconds again
+  });
+  io.observe(el);
   tick();
-  return () => clearTimeout(timer);
+  return () => { clearTimeout(timer); io.disconnect(); };
 }

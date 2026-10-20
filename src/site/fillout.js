@@ -60,7 +60,14 @@ export function embedFillout(host, { opened, title }) {
   // the page below the form moves as it grows: measure the scroll-linked effects again, once it
   // has settled
   let t = 0;
-  const ro = new ResizeObserver(() => { clearTimeout(t); t = setTimeout(() => ScrollTrigger.refresh(), 250); });
+  let lastHeight = -1;
+  const ro = new ResizeObserver(([entry]) => {
+    const h = Math.round(entry.contentRect.height);
+    if (Math.abs(h - lastHeight) < 2) return; // the first call, or a width-only change: nothing below has moved
+    lastHeight = h;
+    clearTimeout(t);
+    t = setTimeout(() => ScrollTrigger.refresh(), 250);
+  });
   ro.observe(host);
 
   // the pointer into the form: this page is left (a moment later, once that move's own handlers have

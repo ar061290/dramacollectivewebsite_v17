@@ -5,6 +5,15 @@
 //
 // Two layers: twinkling stars (drawn every frame) over a static dust of faint points (drawn once per
 // resize or theme change, then copied).
+//
+// What a frame costs is kept small, since the sky runs under every page: the text blocks it keeps
+// clear of are looked up once a second (and whenever the page's markup changes), not on every
+// frame, though where they are is still read every frame; a star that lies wholly under a text
+// block is not drawn, since the block's clear would take it away again; and while nothing is
+// happening (no pointer, no constellation, no glow) the sky is drawn every other frame, which the
+// slow twinkle does not show. Each star is still its own arc and fill: gathering them into one
+// path per brightness drew the one-pixel dots differently (the browser rasterises a lone circle
+// and a path of many circles by different means), so the picture would not have been the same.
 
 import { SpatialGrid } from './SpatialGrid.js';
 
@@ -23,6 +32,7 @@ const HOLD_MS = 400;
 const FADE_MS = 3500;
 const MAX_VISIBLE = 3;
 const MASK_PAD = 10;
+const RELOOK_MS = 1000; // how often the text blocks are looked up again
 
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
@@ -71,18 +81,28 @@ export class ConstellationField {
     this.touch = null;
     this.maskRects = [];
     this.quietRects = [];
+    this.maskEls = []; // the elements the masks come from, looked up once in a while
+    this.quietEls = [];
+    this.lookedAt = -Infinity;
+    this.markupChanged = true;
     this.running = false;
+    this.holds = new Set(); // what holds the sky still for a while (the phone's Menu sheet over it), whatever its owners asked
     this.suspended = false; // true while the statue is being turned: no new constellations
     this.raf = 0;
+    this.skip = false; // every other frame is skipped while the sky is calm
     this.dust = document.createElement('canvas');
+
+    this.lastScroll = -Infinity; // the text blocks move with the scroll: the sky keeps to every frame then
 
     this._frame = this._frame.bind(this);
     this._onMove = this._onMove.bind(this);
     this._onDown = this._onDown.bind(this);
     this._onUp = this._onUp.bind(this);
     this._onLeave = this._onLeave.bind(this);
+    this._onScroll = () => { this.lastScroll = performance.now(); };
     this._resize = this._resize.bind(this);
     this.setTheme(theme);
+    window.addEventListener('scroll', this._onScroll, { passive: true });
     window.addEventListener('pointermove', this._onMove, { passive: true });
     window.addEventListener('pointerdown', this._onDown, { passive: true });
     window.addEventListener('pointerup', this._onUp, { passive: true });
@@ -90,6 +110,10 @@ export class ConstellationField {
     document.documentElement.addEventListener('pointerleave', this._onLeave, { passive: true });
     this.resizeObserver = new ResizeObserver(this._resize);
     this.resizeObserver.observe(canvas);
+    // new or removed markup (the text split into lines, cards rearranged, a form arriving): look
+    // the blocks up again on the next frame
+    this.mutations = new MutationObserver(() => { this.markupChanged = true; });
+    this.mutations.observe(document.body, { childList: true, subtree: true });
     this._resize();
   }
 
@@ -245,6 +269,12 @@ export class ConstellationField {
     return this._quiet(s);
   }
 
+  /** Whether a dot of radius `rad` about (x, y) lies wholly inside one of the text blocks' rects. */
+  _underMask(x, y, rad, rects) {
+    for (const m of rects) if (x - rad >= m.x && x + rad <= m.x + m.w && y - rad >= m.y && y + rad <= m.y + m.h) return true;
+    return false;
+  }
+
   _quiet(s) {
     for (const r of this.quietRects) if (s.x >= r.x && s.x <= r.x + r.w && s.y >= r.y && s.y <= r.y + r.h) return true;
     return false;
@@ -304,16 +334,28 @@ export class ConstellationField {
 
   // ---- loop ----
 
-  _collectMasks() {
+  /** The blocks to keep clear of: looked up again once a second, or sooner if the markup changed. */
+  _lookForMasks(now) {
+    if (!this.markupChanged && now - this.lookedAt < RELOOK_MS) return;
+    this.markupChanged = false;
+    this.lookedAt = now;
+    // the candidates: the selectors' class conditions (.is-hidden, .is-away) are checked per frame
+    this.maskEls = [...document.querySelectorAll('[data-mask], .topbar, .topbar > .btn')];
+    this.quietEls = [...document.querySelectorAll(this.quietSelector)];
+  }
+
+  _collectMasks(now) {
+    this._lookForMasks(now);
     const rects = [];
-    for (const el of document.querySelectorAll(this.maskSelector)) {
+    for (const el of this.maskEls) {
+      if (!el.matches(this.maskSelector)) continue;
       const r = el.getBoundingClientRect();
       if (r.bottom < -MASK_PAD || r.top > this.h + MASK_PAD || r.width === 0) continue;
       rects.push({ x: r.left - MASK_PAD, y: r.top - MASK_PAD, w: r.width + MASK_PAD * 2, h: r.height + MASK_PAD * 2 });
     }
     this.maskRects = rects;
     const quiet = [];
-    for (const el of document.querySelectorAll(this.quietSelector)) {
+    for (const el of this.quietEls) {
       const r = el.getBoundingClientRect();
       if (r.bottom < 0 || r.top > this.h || r.width === 0) continue;
       quiet.push({ x: r.left, y: r.top, w: r.width, h: r.height });
@@ -323,9 +365,12 @@ export class ConstellationField {
 
   _frame(now) {
     this.raf = requestAnimationFrame(this._frame);
+    // calm: nothing but the twinkle is going on, and that is slow enough to draw every other frame
+    const calm = !this.pointer && !this.constellations.length && !this.lively && now - this.lastScroll > 250;
+    if (calm && !this.reducedMotion) { this.skip = !this.skip; if (this.skip) return; } else this.skip = false;
     const dt = Math.min(0.1, (now - (this.prevNow || now)) / 1000);
     this.prevNow = now;
-    this._collectMasks();
+    this._collectMasks(now);
 
     if (this.active && now - this.lastMove > REST_MS) this._complete(this.active, now);
 
@@ -346,20 +391,24 @@ export class ConstellationField {
     // glow around the cursor; it decays, so it trails behind a moving cursor
     const p = this.pointer;
     const decay = Math.exp(-dt * GLOW_DECAY);
+    let lively = false;
     for (const s of this.stars) {
       s.boost *= decay;
+      if (s.boost > 0.001) lively = true; else s.boost = 0;
       s.lit = 0;
     }
     if (p) {
       const R = GLOW_RADIUS;
       this.grid.query(p.x - R, p.y - R, p.x + R, p.y + R, (s) => {
-        const d = Math.hypot(s.x - p.x, s.y - p.y);
+        const d = Math.sqrt((s.x - p.x) * (s.x - p.x) + (s.y - p.y) * (s.y - p.y));
         if (d >= R || this._quiet(s)) return;
         const k = 1 - d / R;
         s.boost = Math.max(s.boost, k * k * (3 - 2 * k)); // smooth falloff
       });
+      lively = true;
     }
     for (const c of this.constellations) for (const s of c.stars) s.lit = Math.max(s.lit, Math.min(1, c.alpha));
+    this.lively = lively;
 
     this._draw(now);
   }
@@ -373,18 +422,24 @@ export class ConstellationField {
     ctx.drawImage(this.dust, 0, 0);
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
-    // stars
+    // stars (one that lies wholly under a text block, with its soft edge, is left out: the block's
+    // clear below would take it away again, so the picture is the same)
     const t = now / 1000;
     const glowing = [];
+    const masks = this.maskRects;
     ctx.fillStyle = `rgb(${r},${g},${b})`;
+    const TAU = Math.PI * 2;
     for (const s of this.stars) {
       const tw = this.reducedMotion ? 1 : 0.72 + 0.28 * Math.sin(t * s.speed + s.phase);
       const a = Math.min(1, s.base * tw + s.boost * 0.85 + s.lit * 0.55);
+      const radius = s.r * (1 + 0.9 * s.boost) + s.lit * 0.5;
+      const lit = s.boost > 0.03 || s.lit > 0.03;
+      if (lit) glowing.push(s);
+      if (!lit && this._underMask(s.x, s.y, radius + 1.5, masks)) continue;
       ctx.globalAlpha = a;
       ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r * (1 + 0.9 * s.boost) + s.lit * 0.5, 0, Math.PI * 2);
+      ctx.arc(s.x, s.y, radius, 0, TAU);
       ctx.fill();
-      if (s.boost > 0.03 || s.lit > 0.03) glowing.push(s);
     }
 
     // glow: one pass, additive on the dark stage so overlapping halos bloom
@@ -425,18 +480,34 @@ export class ConstellationField {
     if (this.running) return;
     this.running = true;
     this.prevNow = 0;
-    this.raf = requestAnimationFrame(this._frame);
+    this.markupChanged = true;
+    if (!this.holds.size) this.raf = requestAnimationFrame(this._frame);
   }
 
   stop() {
     this.running = false;
     cancelAnimationFrame(this.raf);
+    this.raf = 0;
     this.last = null;
+  }
+
+  /** Hold the sky still (nothing of it can be seen) until released; its owners' start/stop stand. */
+  hold(reason) {
+    this.holds.add(reason);
+    cancelAnimationFrame(this.raf);
+    this.raf = 0;
+  }
+
+  release(reason) {
+    this.holds.delete(reason);
+    if (this.running && !this.holds.size && !this.raf) { this.prevNow = 0; this.markupChanged = true; this.raf = requestAnimationFrame(this._frame); }
   }
 
   dispose() {
     this.stop();
     this.resizeObserver.disconnect();
+    this.mutations.disconnect();
+    window.removeEventListener('scroll', this._onScroll);
     window.removeEventListener('pointermove', this._onMove);
     window.removeEventListener('pointerdown', this._onDown);
     window.removeEventListener('pointerup', this._onUp);

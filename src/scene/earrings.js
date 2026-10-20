@@ -758,7 +758,8 @@ export class Earrings {
     this.reduced = reduced;
     const dpr = Math.min(devicePixelRatio || 1, 2);
     this.dpr = dpr;
-    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' }));
+    // the low-power GPU: the same pixels, and no switch to a laptop's second GPU for a 1.5 s drop
+    const r = (this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' }));
     r.setPixelRatio(dpr);
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.ACESFilmicToneMapping;

@@ -7,7 +7,10 @@
     "dev": "vite",
     "pages": "node tools/pages/build.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "perf": "node tools/perf/run.mjs",
+    "perf:gate": "node tools/perf/gate.mjs",
+    "perf:visual": "node tools/perf/visual.mjs"
   },
   "dependencies": {
     "gsap": "3.13.0",

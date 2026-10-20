@@ -66,6 +66,9 @@ function placeVisitor() {
   const save = () => { try { sessionStorage.setItem(PLACE, String(y)); } catch { /* storage blocked */ } };
   window.addEventListener('scroll', keep, { passive: true });
   window.addEventListener('pagehide', save);
+  // a phone that puts the tab away (an app switch, the lock screen) may discard it without pagehide
+  const onHidden = () => { if (document.hidden) save(); };
+  document.addEventListener('visibilitychange', onHidden);
   ScrollTrigger.sort();
   ScrollTrigger.refresh();
   const id = decodeURIComponent(location.hash.slice(1));
@@ -81,5 +84,6 @@ function placeVisitor() {
     save();
     window.removeEventListener('scroll', keep);
     window.removeEventListener('pagehide', save);
+    document.removeEventListener('visibilitychange', onHidden);
   };
 }

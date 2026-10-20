@@ -14,6 +14,9 @@ export function setupReveals({ reduced }) {
   // after the page's ScrollTriggers were measured, so they are measured again once it has settled
   let refreshTimer = 0;
   const refreshSoon = () => { clearTimeout(refreshTimer); refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 200); };
+  // a refresh already under way (a resize's own) covers the re-split: no second one
+  const onRefreshInit = () => clearTimeout(refreshTimer);
+  ScrollTrigger.addEventListener('refreshInit', onRefreshInit);
 
   for (const el of gsap.utils.toArray('[data-reveal]')) {
     if (el.closest('[data-intro]')) continue;
@@ -57,6 +60,7 @@ export function setupReveals({ reduced }) {
 
   return () => {
     clearTimeout(refreshTimer);
+    ScrollTrigger.removeEventListener('refreshInit', onRefreshInit);
     splits.forEach((s) => s.revert());
     triggers.forEach((t) => { t.scrollTrigger?.kill(); t.kill(); });
     focusers.forEach((f) => f());
