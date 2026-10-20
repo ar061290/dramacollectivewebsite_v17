@@ -43,10 +43,11 @@ export async function bootPage(setup) {
   cleanups.push(transitions.dispose);
 
   let sky = null;
-  cleanups.push(setupMusic({ reduced }));
-  // pages hold their heavy work (three.js) until the curtain has parted, so it parts smoothly
+  // pages hold their heavy work (three.js) until the curtain has parted, so it parts smoothly; the
+  // music starts by itself only then too
   let parted;
   const opened = new Promise((r) => { parted = r; });
+  cleanups.push(setupMusic({ reduced, opened }));
   // the earrings that come down from the theme switch (their model is fetched once the page is idle)
   const earrings = setupEarrings({ reduced, opened });
   cleanups.push(earrings.cleanup);

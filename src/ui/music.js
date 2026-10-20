@@ -63,7 +63,11 @@ function pickStart(duration, last) {
   return t;
 }
 
-export function setupMusic({ reduced }) {
+/**
+ * @param {{ reduced: boolean, opened?: Promise<void> }} o  opened: the page's curtain is up (the music
+ *   starts by itself only then; a press of the button before then starts it at once)
+ */
+export function setupMusic({ reduced, opened }) {
   const button = document.querySelector('[data-music-toggle]');
   if (!button) return () => {};
 
@@ -79,6 +83,7 @@ export function setupMusic({ reduced }) {
   let fromAway = false; // started from the system's controls while the tab is hidden: heard there too
   let multiTouch = false; // a touch of two or more fingers is under way (or just ended)
   let everPlayed = false; // played on this page at least once: the browser then sends media keys to its media session
+  let disposed = false; // the page has been taken down
   const session = 'mediaSession' in navigator ? navigator.mediaSession : null;
   const saveData = navigator.connection?.saveData === true; // the visitor's browser asks to save data
   const last = read().t; // where the previous page had got to, to start well away from it
@@ -431,16 +436,24 @@ export function setupMusic({ reduced }) {
   setUi('paused');
 
   // on unless the visitor turned it off earlier in this visit (or their browser is set to save data:
-  // the playlist is a large file): from a new point. It is asked to play at once, silent (volume 0,
-  // but not muted: a browser may let a muted start through, then stop it when it is unmuted), so that
-  // a refusal shows on the button straight away, and the visitor's first tap, click or key starts it.
+  // the playlist is a large file): from a new point, once the page's curtain is up (its file, and the
+  // artwork the system's media controls fetch with it, would otherwise share the link with the page's
+  // own loading). It is asked to play then, silent (volume 0, but not muted: a browser may let a muted
+  // start through, then stop it when it is unmuted), so that a refusal shows on the button straight
+  // away, and the visitor's first tap, click or key starts it. Until then the button shows it on, and
+  // a press of it starts it at once (or turns it off).
   if (storedWant()) {
     wanted = true;
-    build();
-    if (document.hidden) setUi('paused'); else play();
+    setUi('paused');
+    Promise.resolve(opened).then(() => {
+      if (disposed || !wanted || audio) return; // turned off, or started by the visitor, meanwhile
+      build();
+      if (document.hidden) setUi('paused'); else play();
+    });
   }
 
   return () => {
+    disposed = true;
     clearInterval(timer);
     if (wanted) remember();
     button.removeEventListener('click', toggle);

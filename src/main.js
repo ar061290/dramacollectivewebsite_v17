@@ -59,10 +59,11 @@ async function boot() {
   await new Promise((r) => { requestAnimationFrame(() => setTimeout(r, 0)); setTimeout(r, 100); });
 
   // the theme and music switches work from the first moment, before the stage has loaded; the
-  // earrings on the theme switch wait for the curtain (their model is fetched once the page is idle)
-  cleanups.push(setupMusic({ reduced }));
+  // music starts by itself once the curtain is up, and the earrings on the theme switch wait for it
+  // too (their model is fetched once the page is idle)
   let curtainUp;
   const opened = new Promise((r) => { curtainUp = r; });
+  cleanups.push(setupMusic({ reduced, opened }));
   const earrings = setupEarrings({ reduced, opened });
   cleanups.push(earrings.cleanup);
   cleanups.push(setupTheme({
