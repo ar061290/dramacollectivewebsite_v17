@@ -194,7 +194,19 @@ class Page {
     this.device = typeof device === 'string' ? device : 'custom';
     await this.send('Emulation.setDeviceMetricsOverride', { width: d.width, height: d.height, deviceScaleFactor: d.dpr, mobile: d.mobile, screenWidth: d.width, screenHeight: d.height });
     await this.send('Emulation.setTouchEmulationEnabled', { enabled: !!d.touch, maxTouchPoints: d.touch ? 5 : 1 });
-    if (d.ua) await this.send('Emulation.setUserAgentOverride', { userAgent: d.ua, platform: d.mobile ? 'Linux armv8l' : 'Win32' });
+    if (d.ua) {
+      // with the client hints a real Android Chrome sends (navigator.userAgentData): an override without
+      // them leaves the brands empty, and the site's Chromium-only paths (pictures decoded as ImageBitmaps
+      // off the page's thread: src/scene/aboutRing.js, writerStatue.js) were not taken on the lab's phones
+      const major = /Chrome\/(\d+)/.exec(d.ua)?.[1] ?? '0';
+      const android = /Android (\d+)/.exec(d.ua)?.[1] ?? '';
+      const model = /Android [^;]+; ([^)]+)\)/.exec(d.ua)?.[1] ?? '';
+      const userAgentMetadata = d.mobile ? {
+        brands: [{ brand: 'Chromium', version: major }, { brand: 'Google Chrome', version: major }, { brand: 'Not_A Brand', version: '24' }],
+        fullVersion: `${major}.0.0.0`, platform: 'Android', platformVersion: android ? `${android}.0.0` : '', architecture: '', model, mobile: true,
+      } : undefined;
+      await this.send('Emulation.setUserAgentOverride', { userAgent: d.ua, platform: d.mobile ? 'Linux armv8l' : 'Win32', ...(userAgentMetadata ? { userAgentMetadata } : {}) });
+    }
     const rate = cpu ?? d.cpu ?? 1;
     await this.send('Emulation.setCPUThrottlingRate', { rate });
     if (d.cores) await this.send('Emulation.setHardwareConcurrencyOverride', { hardwareConcurrency: d.cores });
