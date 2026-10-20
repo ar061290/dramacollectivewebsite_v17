@@ -9,9 +9,13 @@ export const isMobileLayout = () => matchMedia('(max-width: 767px)').matches;
 /** A trial switch is on (?flags=name, kept in this browser; tools/pages/build.mjs sets html.flag-<name>). */
 export const flag = (name) => document.documentElement.classList.contains(`flag-${name}`);
 
-let tier;
-/** The phone and tablet tier (README): the trial switch phone-tier, on a touch screen. Read once. */
-export const phoneTier = () => (tier ??= flag('phone-tier') && matchMedia('(hover: none) and (pointer: coarse)').matches);
+/**
+ * The device's tiers (README: Tiers), set on <html> by the head script before the first paint
+ * (tools/pages/build.mjs): the phone tier on every touch screen; the lite tier on a device short of memory
+ * or cores, where fidelity gives way to a steady frame. ?flags=full turns both off, ?flags=lite forces lite.
+ */
+export const phoneTier = () => document.documentElement.classList.contains('tier-phone');
+export const liteTier = () => document.documentElement.classList.contains('tier-lite');
 
 const PIXEL_BUDGET = 2e6; // device pixels a full-screen canvas may have under the phone tier
 

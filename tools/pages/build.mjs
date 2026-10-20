@@ -161,6 +161,19 @@ const head = () => `${FIELD}<link rel="icon" href="./assets/brand/mark-gold-144.
     // them on in this browser, ?flags= turns them off; each is a class, flag-<name>, on <html>
     try { var fm = /[?&]flags=([^&#]*)/.exec(location.search), fl = fm ? decodeURIComponent(fm[1]) : (localStorage.getItem('dc-flags') || ''); if (fm) { if (fl) localStorage.setItem('dc-flags', fl); else localStorage.removeItem('dc-flags'); } fl.split(',').forEach(function (n) { if (/^[a-z0-9-]+$/.test(n)) document.documentElement.classList.add('flag-' + n); }); } catch (e) {}
     document.documentElement.classList.add('has-js');
+    // the device's tier (README: Tiers), on <html> before the first paint so that styles can follow it too:
+    // tier-phone on every touch screen (no hover, a coarse pointer); tier-lite as well on a device short of
+    // memory or cores: a touch screen reading 4 GB or less (Chrome rounds down to a power of two: a 4-6 GB
+    // phone reads 4) or 4 cores or fewer, or another device reading 4 GB and 4 cores or less, or 2 GB or
+    // less. ?flags=full turns both off (the full experience anywhere), ?flags=lite forces lite.
+    try {
+      var hc = document.documentElement.classList, mm = function (q) { return !!(window.matchMedia && matchMedia(q).matches); };
+      if (!hc.contains('flag-full')) {
+        var touch = mm('(hover: none) and (pointer: coarse)'), mem = navigator.deviceMemory || 0, cores = navigator.hardwareConcurrency || 0;
+        if (touch) hc.add('tier-phone');
+        if (hc.contains('flag-lite') || (touch ? (mem && mem <= 4) || (cores && cores <= 4) : (mem && mem <= 2) || (mem && mem <= 4 && cores && cores <= 4))) hc.add('tier-lite');
+      }
+    } catch (e) {}
     // the failsafe (README): dcFailsafe() shows the page as it is without script (no loader, no closed
     // curtain, the intro's parts shown, the scroll free), for a page whose own script failed before it was
     // up; and if that script has not even started 8 s after the page has loaded (a browser without

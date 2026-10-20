@@ -188,7 +188,7 @@ export const BENCHES = {
     pages: SCROLLABLE,
     async run({ page, url, pageDef, device }) {
       await load(page, url, pageDef);
-      if (pageDef.kind === 'home') await page.waitForMark('morph-ready', { timeout: 30000 });
+      if (pageDef.kind === 'home' && !(await page.evaluate("document.documentElement.classList.contains('tier-phone')"))) await page.waitForMark('morph-ready', { timeout: 30000 });
       await sleep(600);
       const p0 = await page.probe();
       const m0 = await page.metrics();
@@ -315,7 +315,7 @@ export const BENCHES = {
     pages: ['home', 'publication', 'writers', 'write', 'piece', 'flash-plays', 'about'],
     async run({ page, url, pageDef }) {
       await load(page, url, pageDef);
-      if (pageDef.kind === 'home') { await page.waitForMark('morph-ready', { timeout: 30000 }); await page.waitForMark('intro-done', { timeout: 30000 }); }
+      if (pageDef.kind === 'home') { if (!(await page.evaluate("document.documentElement.classList.contains('tier-phone')"))) await page.waitForMark('morph-ready', { timeout: 30000 }); await page.waitForMark('intro-done', { timeout: 30000 }); }
       await sleep(1500);
       await gc(page);
       const m = await page.metrics();

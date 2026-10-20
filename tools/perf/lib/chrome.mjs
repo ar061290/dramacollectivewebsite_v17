@@ -33,6 +33,19 @@ export const DEVICES = {
     width: 390, height: 844, dpr: 3, mobile: true, touch: true, cpu: 4,
     ua: 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36',
   },
+  // a budget Android phone (a Galaxy A12 or a Redmi 9 class: 3 GB, eight slow cores, a PowerVR or Mali
+  // GPU): what the page reads of it (navigator.deviceMemory, hardwareConcurrency) is set too. The GPU
+  // cannot be slowed: the lab's own (Intel UHD 620) draws, so GPU work is measured, not felt.
+  lowend: {
+    width: 360, height: 800, dpr: 2, mobile: true, touch: true, cpu: 6, memory: 2, cores: 4,
+    ua: 'Mozilla/5.0 (Linux; Android 11; SM-A125F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36',
+  },
+  // a mid-range Android phone (a Galaxy A5x class: 4-6 GB, which the page reads as 4; DPR 2.75): the
+  // commonest phone that gets the live 3D (devices reading 2 GB or less get the still pictures)
+  midphone: {
+    width: 393, height: 851, dpr: 2.75, mobile: true, touch: true, cpu: 5, memory: 4, cores: 8,
+    ua: 'Mozilla/5.0 (Linux; Android 14; SM-A546B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Mobile Safari/537.36',
+  },
 };
 
 /** Network presets (bytes per second, ms). 4g is WebPageTest's 4G; slow4g is Lighthouse's mobile default. */
@@ -184,6 +197,11 @@ class Page {
     if (d.ua) await this.send('Emulation.setUserAgentOverride', { userAgent: d.ua, platform: d.mobile ? 'Linux armv8l' : 'Win32' });
     const rate = cpu ?? d.cpu ?? 1;
     await this.send('Emulation.setCPUThrottlingRate', { rate });
+    if (d.cores) await this.send('Emulation.setHardwareConcurrencyOverride', { hardwareConcurrency: d.cores });
+    if (d.memory && !this.__memorySet) {
+      this.__memorySet = true; // (navigator.deviceMemory has no override in the protocol: set before the page's own scripts)
+      await this.send('Page.addScriptToEvaluateOnNewDocument', { source: `Object.defineProperty(Navigator.prototype, 'deviceMemory', { configurable: true, get: () => ${Number(d.memory)} });` });
+    }
     this.cpu = rate;
     const n = typeof network === 'string' ? NETWORKS[network] : network;
     this.networkName = typeof network === 'string' ? network : 'custom';

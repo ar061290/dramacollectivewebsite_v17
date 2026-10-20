@@ -69,7 +69,8 @@ try {
         // ?debug exposes what the freeze holds still (the coming-soon curtain, the writer statue) and changes nothing on the page
         await page.goto(`${srv.url}${def.file}${def.kind === 'soon' || key === 'write' ? '?debug' : ''}`, { timeout: 60000 });
         if (def.ready) await page.waitForMark(def.ready, { timeout: 60000 });
-        if (def.kind === 'home') { await page.waitForMark('intro-done', { timeout: 30000 }); await page.waitForMark('morph-ready', { timeout: 30000 }); }
+        // (under the phone tier the home morph is built once the visitor scrolls: not waited for)
+        if (def.kind === 'home') { await page.waitForMark('intro-done', { timeout: 30000 }); if (!(await page.evaluate("document.documentElement.classList.contains('tier-phone')"))) await page.waitForMark('morph-ready', { timeout: 30000 }); }
         await sleep(def.kind === 'home' ? 800 : def.kind === 'soon' ? 4500 : 1200); // the curtain's light cue (0.3 s + 1.8 s) has played out
         // settled: no long task for a second and no embedded form still loading (at most 15 s), so that both builds
         // are shot with their statues, rings and forms arrived, not at whatever moment of their arrival; an embedded
