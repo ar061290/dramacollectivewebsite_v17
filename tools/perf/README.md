@@ -58,6 +58,9 @@ When a bench moves and the reason is not obvious, these ask the page itself. Eac
 - `forced-style.mjs pages [--why]`: every style recalculation and layout on a still page, by the script that forced it (or the frame's own rendering), and with `--why` which elements were invalidated and why.
 - `compositor.mjs page`: Chrome's reasons for running an animation on the page's thread rather than the compositor.
 - `logpoint.mjs page --script flyin --at 16:20971 [--expr …]`: who calls a function (its stack, or any expression), without pausing the page; the line:column comes from idle-calls or idle-loops.
+- `failsafe.mjs [dist]`: each way a page can fail to start, caused on purpose (its script blocked, a start that throws, a script that throws as it loads, a statue that stops arriving), and what a visitor would see.
+- `music.mjs [dist]`: the music's start where the browser allows it and where it refuses: when the file and the media controls' artwork are fetched against the curtain, the button before and after, a tap.
+- `phone-tier.mjs [dist]`: the phone tier off and on, on a phone, a laptop and a touch tablet: the pixel budget, the morph waiting for a scroll, the stage's context let go in a hidden tab and back.
 - `long-tasks.mjs page [--scroll] [--device phone]`: every task over 50 ms through the boot and the scroll bench's own scroll, with the script that ran in it, and totals by function.
 
 ## Measuring without disturbing
@@ -66,6 +69,7 @@ When a bench moves and the reason is not obvious, these ask the page itself. Eac
 - **Nothing of the lab's in a still page.** The idle bench runs no in-page frame counter: a `requestAnimationFrame` loop keeps a page producing frames, and in each frame Chrome refreshes the style of every running animation, composited or not, so the counter added the very work being measured. Jank on a still page comes from the browser's long-animation-frame entries, observed passively. Each page waits until it has settled (no long task for a second, at most six). The scroll and pointer benches keep their counter, since those journeys make frames anyway.
 - **A finger really scrolls.** `Input.synthesizeScrollGesture` with a touch source delivers the touches but does not scroll a page in headless Chrome; the phone's scroll drags with touch events (`Page.touchDrag`), and the bench reports the distance actually scrolled.
 - **The music plays in every run** (the lab's Chrome allows autoplay), so the benches measure a visit with the music on.
+- **The pixel guardrail lets a page settle** before freezing it (no long task for a second, no embedded form still loading, at most 15 s): a statue's fade or a form's arrival caught at different moments in two builds is not a difference between them.
 - **The pixel guardrail's blind spot:** the writer statue (writers page) keeps its own clock, which `visual.mjs`'s freeze does not hold yet; shot twice, the same build differs there by up to 227 of 255. Count differences at `--threshold 0` when a claim is about every pixel.
 
 ## How a round goes
