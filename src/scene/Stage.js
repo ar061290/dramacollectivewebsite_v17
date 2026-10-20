@@ -21,7 +21,7 @@ import { SilhouetteMask } from './silhouette.js';
 import { evaluate, TURN } from './sequence.js';
 import { growAt, MORPH, morphJob, buildInWorker, buildHere, assembleMorph } from './morph.js';
 import { mark } from '../util/perf.js';
-import { pixelRatio, frameGate, antialias } from '../util/env.js';
+import { pixelRatio, frameGate, antialias, liteTier } from '../util/env.js';
 import { onLite } from '../util/governor.js';
 import { liteTextures } from './lite.js';
 import { stopLoop } from './loop.js';
@@ -135,6 +135,12 @@ export class Stage {
     this.resizeObserver.observe(container);
     this._tick = this._tick.bind(this);
     this._gate = frameGate(30); // under the phone tier, at most 60 frames a second; lite, 30
+    // lite tier: the logo's idle drift alone, 15 a second (_driftOnly)
+    this._driftGate = frameGate(15);
+    this._driftFrame = -1;
+    this._driftPointer = '';
+    this._scrollAt = -Infinity;
+    this._onScrollAt = () => { this._scrollAt = performance.now(); };
     // asleep: the loop stopped while nothing on the stage can change (see _rest); woken by wake()
     this._asleep = false;
     this._quiet = 0;
@@ -150,6 +156,7 @@ export class Stage {
     }
     ticker.__dcWakers.add(this.wake);
     window.addEventListener('scroll', this.wake, { passive: true });
+    window.addEventListener('scroll', this._onScrollAt, { passive: true });
     // the frame governor may put the device in the lite tier while the page is open: its pixel budget from
     // then on (its frame rate follows by itself: frameGate reads the tier every frame)
     this.offLite = onLite(() => { if (this.disposed) return; this.renderer.setPixelRatio(pixelRatio(2)); this._resize(); this.wake(); });
@@ -773,7 +780,12 @@ export class Stage {
   }
 
   _tick(time) {
-    if (!this._gate(time ?? performance.now())) return; // the frame's own time, not when this callback began
+    const at = time ?? performance.now();
+    if (!this._gate(at)) return; // the frame's own time, not when this callback began
+    // lite tier: a frame in which only the logo's idle drift has moved is drawn 15 times a second, not 30
+    // (the drift moves the logo's edge by less than half a pixel between two of them, and keeps its path
+    // and pace: it follows the clock); each such frame was the whole stage drawn again, its shadow too
+    if (liteTier() && this._driftOnly(at) && !this._driftGate(at)) return;
     const dt = Math.min(0.1, this.clock.getDelta());
     this._updateRig(dt);
     if (this._settling) {
@@ -1174,6 +1186,17 @@ export class Stage {
     }
   }
 
+  /** Lite tier: whether the frame would move nothing but the logo's idle drift (no scroll, tween, hand, fling or pointer since the last frame). */
+  _driftOnly(now) {
+    const t = this.turn, tr = this.tracks;
+    const frame = gsap.ticker.frame, pointer = `${this.pointer.x},${this.pointer.y}`;
+    const still = frame === this._driftFrame && pointer === this._driftPointer;
+    this._driftFrame = frame;
+    this._driftPointer = pointer;
+    return still && now - this._scrollAt > 250 && !this.reducedMotion && !t.held && !t.vel && !t.drag && t.hover === t.hoverTarget
+      && !this._settling && !this.star?.twinkling && tr.logo > 0 && !(this.vector && tr.vector >= 1);
+  }
+
   /** Something may have changed what the stage shows: a stage asleep asks for frames again. */
   wake() {
     if (!this._asleep) return;
@@ -1234,6 +1257,7 @@ export class Stage {
     gsap.ticker.__dcWakers?.delete(this.wake);
     this.offLite?.();
     window.removeEventListener('scroll', this.wake);
+    window.removeEventListener('scroll', this._onScrollAt);
     this.resizeObserver.disconnect();
     this.renderer.domElement.removeEventListener('webglcontextlost', this._onLost);
     this.renderer.domElement.removeEventListener('webglcontextrestored', this._onRestored);
