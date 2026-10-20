@@ -120,9 +120,10 @@ const ICON_INSTAGRAM = '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6
 // their lines on the real type (SplitText used to split on the fallback, then split again).
 // Field measurements (src/util/field.js) go to FIELD_ENDPOINT when the pages are written with it set
 // (FIELD_ENDPOINT=https://… node tools/pages/build.mjs); without it the pages carry no endpoint and
-// nothing is sent. FIELD_SAMPLE (0-1) is the share of visits that report.
+// nothing is sent. FIELD_SAMPLE (0-1) is the share of visits that report: one in ten unless set (the
+// Pages workflow passes both from the repository's variables; tools/field/README.md).
 const FIELD = process.env.FIELD_ENDPOINT ? `<meta name="dc-field" content="${process.env.FIELD_ENDPOINT}">
-  <meta name="dc-field-sample" content="${process.env.FIELD_SAMPLE || '1'}">
+  <meta name="dc-field-sample" content="${process.env.FIELD_SAMPLE || '0.1'}">
   ` : '';
 const head = () => `${FIELD}<link rel="icon" href="./assets/brand/mark-gold-144.png">
   <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>

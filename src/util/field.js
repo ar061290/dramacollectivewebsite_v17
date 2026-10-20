@@ -22,7 +22,9 @@ export function setupField() {
   try {
     new PerformanceObserver((l) => { for (const e of l.getEntries()) if (!e.hadRecentInput) shift += e.value; }).observe({ type: 'layout-shift', buffered: true });
   } catch { /* fine */ }
-  const onLost = () => { lost.push(Math.round(performance.now())); mark('context lost'); };
+  // a context the browser took away (the home page's loader lets its own satin go on purpose as the
+  // curtain goes up: not counted)
+  const onLost = (e) => { if (e.target?.closest?.('.loader')) return; lost.push(Math.round(performance.now())); mark('context lost'); };
   document.addEventListener('webglcontextlost', onLost, true);
   const flush = () => { if (document.visibilityState === 'hidden') send(); };
   document.addEventListener('visibilitychange', flush);
