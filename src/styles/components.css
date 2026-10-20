@@ -370,34 +370,27 @@ html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links
 .icon-btn:hover { color: var(--accent); border-color: var(--line); }
 .icon-btn svg { width: 20px; height: 20px; display: block; }
 /* music: four bars, resting low; they play while the music does. Each bar is its own small <svg>
-   (the same 20x20 viewBox, all four stacked where one <svg> used to hold them), so that a trial
-   switch can move their animation from the rects, which the page's thread animates (a style
-   recalculation and a layout every frame while the music plays), to the outer <svg>s, which the
-   compositor animates: html.flag-compositor-bars, below */
+   (the same 20x20 viewBox, all four stacked) inside a <span> of its own, and the <span> is what moves:
+   a transform and an opacity on an HTML box, which the compositor animates, so the page's thread
+   does no layout and no paint for them in any frame (moved on the rects before, they cost a style
+   recalculation and a layout in every frame while the music played; Chrome does not hand an <svg>'s
+   own animation to the compositor at a device pixel ratio above 1). Each span's origin is its rect's
+   bottom centre (x 3.6, 8, 12.4, 16.8 and y 17 of 20), where the rect's own 50% 100% was */
 .music-bars { position: relative; display: block; width: 20px; height: 20px; }
-.music-bars > .bar { position: absolute; top: 0; left: 0; }
-.music-toggle .bar rect { fill: currentColor; transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(.55); transition: transform var(--dur-slow) var(--ease-curtain); }
+.music-bars > .bar { position: absolute; top: 0; left: 0; display: block; width: 20px; height: 20px; }
+.music-toggle .bar rect { fill: currentColor; }
+.music-toggle .bar { transform: scaleY(.55); transition: transform var(--dur-slow) var(--ease-curtain); }
+.music-toggle .bar:nth-child(1) { transform-origin: 18% 85%; }
+.music-toggle .bar:nth-child(2) { transform-origin: 40% 85%; }
+.music-toggle .bar:nth-child(3) { transform-origin: 62% 85%; }
+.music-toggle .bar:nth-child(4) { transform-origin: 84% 85%; }
 .music-toggle[aria-pressed="true"] { color: var(--accent); }
-.music-toggle[aria-pressed="true"] .bar rect { transform: scaleY(.8); }
-.music-toggle.is-playing .bar rect { animation: music-bar 1.1s var(--ease-in-out) infinite alternate; }
-.music-toggle.is-playing .bar:nth-child(2) rect { animation-duration: .8s; animation-delay: -.3s; }
-.music-toggle.is-playing .bar:nth-child(3) rect { animation-duration: 1.3s; animation-delay: -.6s; }
-.music-toggle.is-playing .bar:nth-child(4) rect { animation-duration: .95s; animation-delay: -.15s; }
-.music-toggle.is-loading .bar rect { animation: music-wait 1.2s var(--ease-in-out) infinite alternate; }
-/* trial switch compositor-bars: the same motion, on the outer <svg>s; each one's origin is its
-   rect's bottom centre (x 3.6, 8, 12.4, 16.8 and y 17 of 20), where the rect's own 50% 100% was */
-html.flag-compositor-bars .music-toggle .bar rect { transform: none; transition: none; animation: none; }
-html.flag-compositor-bars .music-toggle .bar { transform: scaleY(.55); transition: transform var(--dur-slow) var(--ease-curtain); }
-html.flag-compositor-bars .music-toggle .bar:nth-child(1) { transform-origin: 18% 85%; }
-html.flag-compositor-bars .music-toggle .bar:nth-child(2) { transform-origin: 40% 85%; }
-html.flag-compositor-bars .music-toggle .bar:nth-child(3) { transform-origin: 62% 85%; }
-html.flag-compositor-bars .music-toggle .bar:nth-child(4) { transform-origin: 84% 85%; }
-html.flag-compositor-bars .music-toggle[aria-pressed="true"] .bar { transform: scaleY(.8); }
-html.flag-compositor-bars .music-toggle.is-playing .bar { animation: music-bar 1.1s var(--ease-in-out) infinite alternate; }
-html.flag-compositor-bars .music-toggle.is-playing .bar:nth-child(2) { animation-duration: .8s; animation-delay: -.3s; }
-html.flag-compositor-bars .music-toggle.is-playing .bar:nth-child(3) { animation-duration: 1.3s; animation-delay: -.6s; }
-html.flag-compositor-bars .music-toggle.is-playing .bar:nth-child(4) { animation-duration: .95s; animation-delay: -.15s; }
-html.flag-compositor-bars .music-toggle.is-loading .bar { animation: music-wait 1.2s var(--ease-in-out) infinite alternate; }
+.music-toggle[aria-pressed="true"] .bar { transform: scaleY(.8); }
+.music-toggle.is-playing .bar { animation: music-bar 1.1s var(--ease-in-out) infinite alternate; }
+.music-toggle.is-playing .bar:nth-child(2) { animation-duration: .8s; animation-delay: -.3s; }
+.music-toggle.is-playing .bar:nth-child(3) { animation-duration: 1.3s; animation-delay: -.6s; }
+.music-toggle.is-playing .bar:nth-child(4) { animation-duration: .95s; animation-delay: -.15s; }
+.music-toggle.is-loading .bar { animation: music-wait 1.2s var(--ease-in-out) infinite alternate; }
 /* wanted, but held back by the browser until the visitor taps (src/ui/music.js): not on, so the bars
    rest low and still, but lit on a tint, as waiting to be started */
 .music-toggle.is-blocked { color: var(--accent); background: var(--tag-bg); }
