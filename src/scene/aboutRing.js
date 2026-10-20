@@ -104,9 +104,22 @@ export class AboutRing {
   }
 
   async load({ albedo, normal }) {
-    const loader = new THREE.TextureLoader();
+    // In Chromium each map is decoded as an ImageBitmap already turned the way the upload would turn it
+    // (flipY), so the upload is a straight copy: an <img> flipped at upload is turned on the CPU there, half
+    // a second of a slow phone's thread for the two. The same pixels either way. Elsewhere, as before.
+    const bitmaps = typeof createImageBitmap === 'function' && !!navigator.userAgentData?.brands?.some((b) => /Chromium/.test(b.brand));
+    const load = async (url, srgb) => {
+      if (!bitmaps) return new THREE.TextureLoader().loadAsync(url);
+      const bitmap = await new THREE.ImageBitmapLoader()
+        .setOptions({ imageOrientation: 'flipY', premultiplyAlpha: 'none', colorSpaceConversion: srgb ? 'default' : 'none' })
+        .loadAsync(url);
+      const t = new THREE.Texture(bitmap);
+      t.flipY = false; // (turned already)
+      t.needsUpdate = true;
+      return t;
+    };
     const tex = async (url, srgb) => {
-      const t = await loader.loadAsync(url);
+      const t = await load(url, srgb);
       t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
       t.wrapS = t.wrapT = THREE.RepeatWrapping;
       t.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());

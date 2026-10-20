@@ -18,7 +18,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
 import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin.js';
 import TYPE from '../../assets/type/about-words.js';
 import { BAND, GRID, Y0, ROWS, TOP, BOTTOM, fields, buildField, fieldOf, takeField } from './lexiconFields.js';
-import { probeWebGL, prefersStatic, readToken } from '../util/env.js';
+import { probeWebGL, prefersStatic, readToken, phoneTier } from '../util/env.js';
 import { currentTheme } from '../ui/theme.js';
 
 gsap.registerPlugin(ScrollTrigger, DrawSVGPlugin);
@@ -579,7 +579,14 @@ export function setupLexicon(host, { reduced, opened, onTheme }) {
   opened.then(prepare);
   const live = opened.then(() => { const gl = probeWebGL(); return gl.ok && !prefersStatic(gl.renderer); });
   {
-    live.then((ok) => (ok ? new Promise((r) => idle(r)) : null)).then((go) => (go === null || gone ? null : import('../scene/aboutRing.js'))).then(async (mod) => {
+    // on a touch screen the marble ring is made only once the lexicon is near (two screens ahead: a visit
+    // that never gets there spends nothing on it; the drawn ring stands in until it comes); elsewhere at once
+    const near = !phoneTier() ? Promise.resolve() : new Promise((resolve) => {
+      const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); resolve(); } }, { rootMargin: '200% 0px 200% 0px' });
+      io.observe(host);
+      cleanups.push(() => io.disconnect());
+    });
+    live.then((ok) => (ok ? near.then(() => new Promise((r) => idle(r))) : null)).then((go) => (go === null || gone ? null : import('../scene/aboutRing.js'))).then(async (mod) => {
       if (!mod || gone) return;
       ring = new mod.AboutRing(ringHost, {
         theme: currentTheme(),
