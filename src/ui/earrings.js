@@ -14,7 +14,9 @@
 // switch works as ever. Nor are there any where WebGL does not run well (no WebGL, a software
 // renderer, a weak device: src/util/env.js), and there nothing of theirs is fetched either. On the
 // other screens, once the page is idle after its curtain has opened, the model's bytes are fetched
-// ahead (and the scene's code), but the scene itself (its WebGL context, the earrings on the GPU,
+// ahead (and the scene's code), except on a touch screen, a slow link or with Save-Data, where they
+// wait for the visitor's intent (most visits never switch the theme, and the model is 1.5 MB); the
+// scene itself (its WebGL context, the earrings on the GPU,
 // their shaders) is made only when it is likely to be wanted: when the pointer comes near the
 // switch, the focus reaches it, or it is pressed. A switch made before the scene is ready changes
 // the theme at once, and the earring comes down when it is ready if that is soon (LATE: 3 s, time
@@ -108,9 +110,15 @@ export function setupEarrings({ reduced, opened }) {
     return gpu.ok && !prefersStatic(gpu.renderer);
   };
 
+  // on a touch screen, a slow link or with Save-Data the model waits for intent (the switch pressed or
+  // focused: onReach, below) rather than being fetched at idle on every page
+  const onIntentOnly = () => navigator.connection?.saveData === true
+    || matchMedia('(hover: none)').matches
+    || /^(slow-2g|2g|3g)$/.test(navigator.connection?.effectiveType || '');
+
   /** The model's bytes and the scene's code, fetched ahead: nothing is drawn, nothing is on the GPU. */
   const prefetch = () => {
-    if (bytes || loading || off || gone || !wide.matches || navigator.connection?.saveData) return;
+    if (bytes || loading || off || gone || !wide.matches || onIntentOnly()) return;
     if (!capable()) { off = true; return; }
     bytes = fetch(MODEL).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
     code = import('../scene/earrings.js').catch(() => null);
