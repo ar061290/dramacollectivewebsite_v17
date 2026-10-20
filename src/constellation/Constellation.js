@@ -21,6 +21,7 @@
 
 import { SpatialGrid } from './SpatialGrid.js';
 import { pixelRatio, frameGate, liteTier } from '../util/env.js';
+import { noteFrame, onLite } from '../util/governor.js';
 
 const STAR_CELL = 34; // jittered-grid cell for the twinkling stars (px)
 const STAR_KEEP = 0.66; // share of cells that hold a star
@@ -100,6 +101,8 @@ export class ConstellationField {
     this.lite = liteTier();
     this.liteDue = 0; // when the lite tier's calm sky is next drawn
     this.liteTimer = 0;
+    // the frame governor may put the device in the lite tier while the page is open: drawn the lite way from then on
+    this.offLite = onLite(() => { this.lite = true; this.w = 0; this._resize(); });
     this.dust = document.createElement('canvas');
 
     this.lastScroll = -Infinity; // the text blocks move with the scroll: the sky keeps to every frame then
@@ -408,6 +411,8 @@ export class ConstellationField {
     if (!this.gate(now)) return;
     // calm: nothing but the twinkle is going on, and that is slow enough to draw every other frame
     const calm = !this.pointer && !this.constellations.length && !this.lively && now - this.lastScroll > 250;
+    // a busy frame's length tells the frame governor how the device keeps up (src/util/governor.js)
+    if (!calm && this.prevNow && !this.lite) noteFrame(now - this.prevNow);
     if (calm && !this.reducedMotion && !this.lite) { this.skip = !this.skip; if (this.skip) return; } else this.skip = false;
     const dt = Math.min(0.1, (now - (this.prevNow || now)) / 1000);
     this.prevNow = now;
@@ -550,6 +555,7 @@ export class ConstellationField {
 
   dispose() {
     this.stop();
+    this.offLite?.();
     this.resizeObserver.disconnect();
     this.mutations.disconnect();
     window.removeEventListener('scroll', this._onScroll);

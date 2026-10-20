@@ -53,6 +53,8 @@
         var touch = mm('(hover: none) and (pointer: coarse)'), mem = navigator.deviceMemory || 0, cores = navigator.hardwareConcurrency || 0;
         if (touch) hc.add('tier-phone');
         if (hc.contains('flag-lite') || (touch ? (mem && mem <= 4) || (cores && cores <= 4) : (mem && mem <= 2) || (mem && mem <= 4 && cores && cores <= 4))) hc.add('tier-lite');
+        // or the frame governor found this device's frames slow earlier in the visit (src/util/governor.js)
+        try { if (sessionStorage.getItem('dc-lite') === '1') hc.add('tier-lite'); } catch (e) {}
       }
     } catch (e) {}
     // the failsafe (README): dcFailsafe() shows the page as it is without script (no loader, no closed

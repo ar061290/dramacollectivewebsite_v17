@@ -20,6 +20,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { frameGate, pixelRatio } from '../../util/env.js';
 import { stopLoop } from '../loop.js';
+import { onLite } from '../../util/governor.js';
 
 // velvet and light per page, from the plum palette (tokens.css) and the gold of the stage lamps;
 // `day` is the light theme's curtain (house lights up): a pale rose velvet in a lit house
@@ -190,6 +191,8 @@ export class CurtainStage {
     this._onLeave = this._onLeave.bind(this);
     this._tick = this._tick.bind(this);
     this._gate = frameGate(30); // under the phone tier, at most 60 frames a second; lite, 30
+    // the frame governor may put the device in the lite tier while the page is open: its pixel budget from then on
+    this.offLite = onLite(() => { if (this.disposed) return; this.renderer.setPixelRatio(pixelRatio(1.75)); this.composer.setPixelRatio?.(this.renderer.getPixelRatio()); this._layout(); });
     container.addEventListener('pointermove', this._onPointer, { passive: true });
     container.addEventListener('pointerdown', this._onDown, { passive: true });
     container.addEventListener('pointerleave', this._onLeave);
@@ -760,6 +763,7 @@ export class CurtainStage {
 
   dispose() {
     this.disposed = true;
+    this.offLite?.();
     this.renderer.setAnimationLoop(null);
     this.renderer.domElement.removeEventListener('webglcontextlost', this._onLost);
     this.renderer.domElement.removeEventListener('webglcontextrestored', this._onRestored);

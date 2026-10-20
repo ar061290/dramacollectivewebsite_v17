@@ -22,6 +22,7 @@ import { evaluate, TURN } from './sequence.js';
 import { growAt, MORPH, morphJob, buildInWorker, buildHere, assembleMorph } from './morph.js';
 import { mark } from '../util/perf.js';
 import { pixelRatio, frameGate, antialias } from '../util/env.js';
+import { onLite } from '../util/governor.js';
 import { liteTextures } from './lite.js';
 import { stopLoop } from './loop.js';
 import gsap from 'gsap';
@@ -149,6 +150,9 @@ export class Stage {
     }
     ticker.__dcWakers.add(this.wake);
     window.addEventListener('scroll', this.wake, { passive: true });
+    // the frame governor may put the device in the lite tier while the page is open: its pixel budget from
+    // then on (its frame rate follows by itself: frameGate reads the tier every frame)
+    this.offLite = onLite(() => { if (this.disposed) return; this.renderer.setPixelRatio(pixelRatio(2)); this._resize(); this.wake(); });
     this.clock = new THREE.Clock(false);
   }
 
@@ -1225,6 +1229,7 @@ export class Stage {
     this.disposed = true;
     this.stop();
     gsap.ticker.__dcWakers?.delete(this.wake);
+    this.offLite?.();
     window.removeEventListener('scroll', this.wake);
     this.resizeObserver.disconnect();
     this.renderer.domElement.removeEventListener('webglcontextlost', this._onLost);

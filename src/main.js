@@ -1,6 +1,7 @@
 // Boot: loader, stage (lazy), constellation sky, scroll scenes, reveals, nav, cursor, theme (and
 // the earrings on its switch), music, intro.
 import gsap from 'gsap';
+import { onLite } from './util/governor.js';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
 import { SplitText } from 'gsap/SplitText.js';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin.js';
@@ -30,6 +31,7 @@ gsap.registerPlugin(ScrollTrigger, SplitText, ScrollToPlugin, CustomEase);
 // lite tier: ScrollTrigger looks for a scroll it may have missed every 2 s rather than every 250 ms (each
 // look asks for a frame of its own on a still page; today's browsers do not miss scroll events)
 if (liteTier()) ScrollTrigger.config({ syncInterval: 2000 });
+else onLite(() => ScrollTrigger.config({ syncInterval: 2000 })); // (the frame governor's verdict, src/util/governor.js)
 CustomEase.create('curtain', '.22,.61,.36,1'); // --ease-curtain from the design system
 
 const ASSETS = {

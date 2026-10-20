@@ -19,6 +19,7 @@
 import * as THREE from 'three';
 import { createRing, placeRing } from './ringStone.js';
 import { pixelRatio, antialias } from '../util/env.js';
+import { onLite } from '../util/governor.js';
 
 // the statue's average stone colour (its Meshy base colour map, sRGB, as statue.js measures it on
 // the home page), so the marble matches without loading the statue here
@@ -98,6 +99,8 @@ export class AboutRing {
 
     this.view = { spin: 0, scale: 1, ppu: 1000, cx: 0, cy: 0 };
     this.ro = new ResizeObserver(() => this._resize());
+    // the frame governor may put the device in the lite tier while the page is open: its pixel budget from then on
+    this.offLite = onLite(() => { if (this.disposed) return; this.renderer.setPixelRatio(pixelRatio(2)); this._resize(); });
   }
 
   async load({ albedo, normal }) {
@@ -206,6 +209,7 @@ export class AboutRing {
 
   dispose() {
     this.disposed = true;
+    this.offLite?.();
     this.ro.disconnect();
     this.renderer.domElement.removeEventListener('webglcontextlost', this._onLost);
     this.renderer.domElement.removeEventListener('webglcontextrestored', this._onRestored);

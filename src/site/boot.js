@@ -3,6 +3,7 @@
 // the bar's two buttons flying to their spots on the page, and the earrings on the theme switch. A page passes `setup(ctx)` for its own
 // pieces; the curtain parts once they are in place.
 import gsap from 'gsap';
+import { onLite } from '../util/governor.js';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
 import { SplitText } from 'gsap/SplitText.js';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin.js';
@@ -26,6 +27,7 @@ gsap.registerPlugin(ScrollTrigger, SplitText, ScrollToPlugin, CustomEase);
 // lite tier: ScrollTrigger looks for a scroll it may have missed every 2 s rather than every 250 ms (each
 // look asks for a frame of its own on a still page; today's browsers do not miss scroll events)
 if (liteTier()) ScrollTrigger.config({ syncInterval: 2000 });
+else onLite(() => ScrollTrigger.config({ syncInterval: 2000 })); // (the frame governor's verdict, src/util/governor.js)
 CustomEase.create('curtain', '.22,.61,.36,1'); // --ease-curtain from the design system
 
 /**
