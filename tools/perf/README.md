@@ -109,3 +109,20 @@ Versions before v18 have no `dc:` marks: the benches wait for them, so an older 
 
 Two things to know about the pixel comparison: the sky is drawn at one fixed instant on both sides, the Lotties and the publication banner's rolling line are hidden (the line keeps its own time, a Web Animation now and a GSAP tween before), so a page's stars differ only where the drawing itself changed; and the coming-soon curtain is held at one instant through its `?debug` handle. Anything else that moves on its own clock (the rolling banner's phase, a statue still easing) shows up as a difference box, which `diff-report.json` records, so read the box before reading the count.
 
+## The code sweep of 21 October: what is left
+
+A read-only sweep (four readers, one area of the site each, and four skeptics trying to refute each finding) for main-thread work wasted per frame, per scroll or at rest on phones found 27 candidates, 21 confirmed. Eight were measured and shipped (README, "Every page at rest and after a touch"). Left, each confirmed in the code, none measured yet:
+
+- `src/scene/Stage.js:794` (medium, silhouette-mask-refresh-on-touch): if (now >= this._maskDue) { this._maskDue = now + 140; this.mask.update(this.scene, this.camera, this.width, this.height); } re-renders the statue layer into a 128-px target (the skinned ~183k-triangl.
+- `src/sections/lexicon.js:521` (medium, lexicon-uncapped-at-high-refresh): The site's other WebGL scenes follow the phone-tier rule 'at most 60 frames a second however fast the screen' (frameGate in src/util/env.js, used by Stage.js, CurtainStage.js and Constellation.js).
+- `src/sections/lexicon.js:479` (medium, lexicon-morph-contour-on-main-thread-lite): between() resamples two distance fields into a fresh grid, contours it with marching squares, simplifies the loops and builds the path string on the main thread every frame.
+- `src/writers/opening.js:423` (medium, writers-dive-page-reraster): put(paper, 'opacity', (1 - e).toFixed(3)); put(gutter, 'opacity', (1 - e).toFixed(3)); and put(page, 'height', ...) change every frame.
+- `src/scene/Stage.js:614` (low, stage-redundant-matrix-updates): if (this.pose.length) this._applyPose(tr.arm, tr.head); runs every tick.
+- `src/sections/pillars.js:325` (low, pillars-follow-tween-per-scroll): follow() creates a new gsap.to(state, { p: to, duration: 0.3, ease: 'power2.out', overwrite: true, onUpdate: render, onComplete }) on every drive update.
+- `src/styles/layout.css:66` (low, loader-svg-child-animations): .loader__star { ...
+- `src/sections/lexicon.js:497` (low, lexicon-stand-in-ring-written-while-hidden): apply() always runs stillTo.rotation((-spin * 180) / Math.PI); stillTo.scaleX(s4); stillTo.scaleY(s4);.
+- `src/pages/about.js:114` (low, spot-lit-unchanged-custom-property-writes): onMove does b.el.style.setProperty('--lit', (falloff(...) * a).toFixed(3)) for every item on every tick: 6 values on About, 3 roles on Apply now, 6 funds items on Become a sponsor.
+- `src/pages/production.js:104` (low, production-walk-13-rects-per-scroll): Each call to walkTo(p) reads lamps[0], the last lamp and the first .lamp__word.
+- `src/publication/peekbar.js:93` (low, peekbar-timer-every-down-scroll): else if (dy > 6 && !menuOpen()) { pointerIn = false; hideSoon(0); } runs bar.querySelector('[aria-expanded="true"]'), clearTimeout and a new setTimeout(…, 0) on every downward scroll event, even when .
+- `src/publication/statue.js:82` (low, pub-statue-sky-measure-on-scroll): window.addEventListener('scroll', measure, { passive: true }) with measure = () => { box = host.getBoundingClientRect(); }.
+- `src/scene/curtain/CurtainStage.js:560` (low, curtain-toworld-allocs-per-move): _toWorld(e) runs for every pointermove from _onPointer.
