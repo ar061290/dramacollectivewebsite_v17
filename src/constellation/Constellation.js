@@ -11,12 +11,16 @@
 // frame, though where they are is still read every frame; a star that lies wholly under a text
 // block is not drawn, since the block's clear would take it away again; and while nothing is
 // happening (no pointer, no constellation, no glow) the sky is drawn every other frame, which the
-// slow twinkle does not show. Each star is still its own arc and fill: gathering them into one
+// slow twinkle does not show. Under the lite tier (a device short of memory or cores, README: Tiers)
+// it is drawn at a device pixel ratio of 1, and while calm 15 times a second, from a timer, so that no
+// frame is asked for in between (a twinkle takes 4 to 16 s: a fifteenth of a second moves a star's
+// brightness by under 3%); a scroll, a touch or the pointer wakes it at once, and it then draws every
+// frame, so the text blocks never move ahead of the sky's clearings. Each star is still its own arc and fill: gathering them into one
 // path per brightness drew the one-pixel dots differently (the browser rasterises a lone circle
 // and a path of many circles by different means), so the picture would not have been the same.
 
 import { SpatialGrid } from './SpatialGrid.js';
-import { pixelRatio, frameGate } from '../util/env.js';
+import { pixelRatio, frameGate, liteTier } from '../util/env.js';
 
 const STAR_CELL = 34; // jittered-grid cell for the twinkling stars (px)
 const STAR_KEEP = 0.66; // share of cells that hold a star
@@ -34,6 +38,7 @@ const FADE_MS = 3500;
 const MAX_VISIBLE = 3;
 const MASK_PAD = 10;
 const RELOOK_MS = 1000; // how often the text blocks are looked up again
+const LITE_CALM_MS = 1000 / 15; // the lite tier's calm cadence
 
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
@@ -92,6 +97,9 @@ export class ConstellationField {
     this.raf = 0;
     this.skip = false; // every other frame is skipped while the sky is calm
     this.gate = frameGate(); // under the phone tier, at most 60 frames a second
+    this.lite = liteTier();
+    this.liteDue = 0; // when the lite tier's calm sky is next drawn
+    this.liteTimer = 0;
     this.dust = document.createElement('canvas');
 
     this.lastScroll = -Infinity; // the text blocks move with the scroll: the sky keeps to every frame then
@@ -101,7 +109,7 @@ export class ConstellationField {
     this._onDown = this._onDown.bind(this);
     this._onUp = this._onUp.bind(this);
     this._onLeave = this._onLeave.bind(this);
-    this._onScroll = () => { this.lastScroll = performance.now(); };
+    this._onScroll = () => { this.lastScroll = performance.now(); this._wake(); };
     this._resize = this._resize.bind(this);
     this.setTheme(theme);
     window.addEventListener('scroll', this._onScroll, { passive: true });
@@ -126,6 +134,9 @@ export class ConstellationField {
     this.additive = additive;
     this.glow = this._makeGlow();
     if (this.w) this._paintDust();
+    // (lite: a sleeping sky takes its new colours in the next frame, not at its next calm turn)
+    this.liteDue = 0;
+    if (this.raf === 0 && this.liteTimer) this._wake();
   }
 
   _makeGlow() {
@@ -149,7 +160,7 @@ export class ConstellationField {
     const h = this.canvas.clientHeight || window.innerHeight;
     if (w === this.w && h === this.h) return;
     this.w = w; this.h = h;
-    this.dpr = pixelRatio(2, w, h); // at most 2; under the phone tier within its pixel budget
+    this.dpr = this.lite ? 1 : pixelRatio(2, w, h); // at most 2; under the phone tier within its pixel budget; lite, 1
     this.canvas.width = Math.round(w * this.dpr);
     this.canvas.height = Math.round(h * this.dpr);
     this._seed();
@@ -241,6 +252,7 @@ export class ConstellationField {
     const samples = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
     if (samples && samples.length > 1) for (const s of samples) this._feed(s.clientX, s.clientY, now);
     else this._feed(e.clientX, e.clientY, now);
+    this._wake();
   }
 
   _feed(x, y, now) {
@@ -365,12 +377,38 @@ export class ConstellationField {
     this.quietRects = quiet;
   }
 
-  _frame(now) {
+  /**
+   * Lite tier: what this frame is: 'busy' (drawn, and the next frame asked for, as on other devices),
+   * 'calm' (drawn, then asleep until the next calm turn) or null (not due yet: asleep until it is).
+   */
+  _liteTurn(now) {
+    const busy = this.pointer || this.touch || this.constellations.length || this.lively || now - this.lastScroll <= 250;
+    if (busy || this.reducedMotion) return 'busy';
+    if (now >= this.liteDue - 4) { this.liteDue = now + LITE_CALM_MS; this._sleep(now); return 'calm'; }
+    this._sleep(now);
+    return null;
+  }
+
+  _sleep(now) {
+    clearTimeout(this.liteTimer);
+    this.liteTimer = setTimeout(() => { this.liteTimer = 0; this._wake(); }, Math.max(0, this.liteDue - now - 8));
+  }
+
+  /** Lite tier: a sleeping sky asks for a frame now (a scroll, a touch, the timer). */
+  _wake() {
+    if (!this.lite || !this.running || this.holds.size || this.raf) return;
+    clearTimeout(this.liteTimer);
+    this.liteTimer = 0;
     this.raf = requestAnimationFrame(this._frame);
+  }
+
+  _frame(now) {
+    if (this.lite) { this.raf = 0; const turn = this._liteTurn(now); if (!turn) return; if (turn === 'busy') this.raf = requestAnimationFrame(this._frame); }
+    else this.raf = requestAnimationFrame(this._frame);
     if (!this.gate(now)) return;
     // calm: nothing but the twinkle is going on, and that is slow enough to draw every other frame
     const calm = !this.pointer && !this.constellations.length && !this.lively && now - this.lastScroll > 250;
-    if (calm && !this.reducedMotion) { this.skip = !this.skip; if (this.skip) return; } else this.skip = false;
+    if (calm && !this.reducedMotion && !this.lite) { this.skip = !this.skip; if (this.skip) return; } else this.skip = false;
     const dt = Math.min(0.1, (now - (this.prevNow || now)) / 1000);
     this.prevNow = now;
     this._collectMasks(now);
@@ -489,6 +527,8 @@ export class ConstellationField {
 
   stop() {
     this.running = false;
+    clearTimeout(this.liteTimer);
+    this.liteTimer = 0;
     cancelAnimationFrame(this.raf);
     this.raf = 0;
     this.last = null;
@@ -497,6 +537,8 @@ export class ConstellationField {
   /** Hold the sky still (nothing of it can be seen) until released; its owners' start/stop stand. */
   hold(reason) {
     this.holds.add(reason);
+    clearTimeout(this.liteTimer);
+    this.liteTimer = 0;
     cancelAnimationFrame(this.raf);
     this.raf = 0;
   }

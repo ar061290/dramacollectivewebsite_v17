@@ -5,7 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
 import { SplitText } from 'gsap/SplitText.js';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin.js';
 import { CustomEase } from 'gsap/CustomEase.js';
-import { reducedMotion, probeWebGL, prefersStatic, readToken, phoneTier } from './util/env.js';
+import { reducedMotion, probeWebGL, prefersStatic, readToken, phoneTier, liteTier } from './util/env.js';
 import { mark as perfMark } from './util/perf.js';
 import { setupField } from './util/field.js';
 import { ConstellationField } from './constellation/Constellation.js';
@@ -28,6 +28,9 @@ import { tilt } from './site/tilt.js';
 import { setupFlyIn } from './site/flyin.js';
 
 gsap.registerPlugin(ScrollTrigger, SplitText, ScrollToPlugin, CustomEase);
+// lite tier: ScrollTrigger looks for a scroll it may have missed every 2 s rather than every 250 ms (each
+// look asks for a frame of its own on a still page; today's browsers do not miss scroll events)
+if (liteTier()) ScrollTrigger.config({ syncInterval: 2000 });
 CustomEase.create('curtain', '.22,.61,.36,1'); // --ease-curtain from the design system
 
 const ASSETS = {
