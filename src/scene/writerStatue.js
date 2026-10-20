@@ -30,6 +30,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import gsap from 'gsap';
 import { readToken, antialias } from '../util/env.js';
 import { liteTexture, liteTextures } from './lite.js';
+import { stopLoop } from './loop.js';
 import { rig } from '../writers/rig.js';
 import { mark } from '../util/perf.js';
 
@@ -997,14 +998,29 @@ export class WriterStatue {
   }
 
   _sync() {
-    const go = this.visible && !this.hidden && this.ready && !this.lost && !this.disposed;
+    const go = this.visible && !this.hidden && this.ready && !this.lost && !this.disposed && !this.asleep;
     if (go && !this.running) { this.running = true; this.last = performance.now(); this.renderer.setAnimationLoop(this._tick); }
-    else if (!go && this.running) { this.running = false; this.renderer.setAnimationLoop(null); }
+    else if (!go && this.running) { this.running = false; stopLoop(this.renderer, () => !this.running); }
   }
 
   _wake(moving = false) {
     this.dirty = true;
     if (moving) this.moving = true;
+    if (this.asleep) { this.asleep = false; this._sync(); }
+  }
+
+  /**
+   * A tick with nothing to draw: once nothing is still easing toward its target either (the lean, the
+   * lamp, its glow; the resolution back at its own) for half a second, the loop stops asking for frames
+   * until something wakes it (_wake: the pointer, a scroll, the theme, the view, a resize). It was only
+   * waiting: what it would draw next is what is on the screen.
+   */
+  _rest() {
+    const p = this.pointer;
+    const settled = !this.moving && !this.res.low && Math.abs(this.yaw.to - this.yaw.now) < 1e-5 && Math.abs(this.pitch.to - this.pitch.now) < 1e-5
+      && Math.abs(p.to - p.on) < 1e-5 && (!p.seen || this.glowAt.distanceToSquared(this.glowTo) <= 1e-7);
+    this.still = settled ? (this.still || 0) + 1 : 0;
+    if (this.still > 30) { this.still = 0; this.asleep = true; this._sync(); }
   }
 
   _tick(now) {
@@ -1024,7 +1040,8 @@ export class WriterStatue {
     }
     if (Math.abs(this.yaw.now - y0) > 1e-5 || Math.abs(this.pitch.now - p0) > 1e-5) this.dirty = true;
     this._adapt(now);
-    if (!this.dirty) return;
+    if (!this.dirty) { this._rest(); return; }
+    this.still = 0;
     // every frame while the view moves (the page lays the cover on it as it is drawn); else about
     // 30 a second, so the page's other animations keep the rest of the GPU
     if (!this.moving && now - this.lastFrame < IDLE_FRAME - 2) return;

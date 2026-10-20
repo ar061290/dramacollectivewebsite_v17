@@ -23,6 +23,8 @@ import { growAt, MORPH, morphJob, buildInWorker, buildHere, assembleMorph } from
 import { mark } from '../util/perf.js';
 import { pixelRatio, frameGate, antialias } from '../util/env.js';
 import { liteTextures } from './lite.js';
+import { stopLoop } from './loop.js';
+import gsap from 'gsap';
 import { VectorLogo } from './vectorLogo.js';
 import { LogoStar } from './star.js';
 import { hexToVec3, flattenStar } from './flat.js';
@@ -132,6 +134,21 @@ export class Stage {
     this.resizeObserver.observe(container);
     this._tick = this._tick.bind(this);
     this._gate = frameGate(30); // under the phone tier, at most 60 frames a second; lite, 30
+    // asleep: the loop stopped while nothing on the stage can change (see _rest); woken by wake()
+    this._asleep = false;
+    this._quiet = 0;
+    this._gsapFrame = -1;
+    this.wake = this.wake.bind(this);
+    // GSAP starting to animate again (a tween on the stage's state, the scroll's scrub) wakes it: its
+    // ticker's wake() is called whenever it starts from asleep (gsap-core's _wake)
+    const ticker = gsap.ticker;
+    if (!ticker.__dcWakers) {
+      const wake = ticker.wake;
+      ticker.__dcWakers = new Set();
+      ticker.wake = function (...a) { ticker.__dcWakers.forEach((f) => f()); return wake.apply(this, a); };
+    }
+    ticker.__dcWakers.add(this.wake);
+    window.addEventListener('scroll', this.wake, { passive: true });
     this.clock = new THREE.Clock(false);
   }
 
@@ -339,6 +356,7 @@ export class Stage {
     this.fill = fill;
     this._applyFov();
     this._lastSig = '';
+    this.wake();
   }
 
   _resize() {
@@ -351,6 +369,7 @@ export class Stage {
     this._lastSig = '';
     this._maskDue = 0;
     if (!this.running && this.statue && !this._sizing) this.renderOnce();
+    this.wake();
   }
 
   /** Rest and end rotations per bone, from the GLB's "Pose" clip (frame 0 = rest, last = end). */
@@ -421,6 +440,7 @@ export class Stage {
     if (this.disposed || this.morph) return null;
     this.logoWidth = r.logoWidth;
     this.morph = assembleMorph(r, { material: this.skinned.material, space: this.turntable, center: c });
+    this.wake(); // (the frame's signature counts the morph)
     // the logo is the statue's own stone: its average colour (texture times tint)
     if (this.statue.averageColor) this.morph.uniforms.uStone.value.copy(this.statue.averageColor);
     this.morph.mesh.layers.enable(STATUE_LAYER);
@@ -521,11 +541,13 @@ export class Stage {
   setSequenceOverride(p) {
     this.seqOverride = p;
     this._lastSig = '';
+    this.wake();
   }
 
   setPointer(nx, ny) {
     this.pointer.x = nx;
     this.pointer.y = ny;
+    this.wake();
   }
 
   // ---- statue interaction (see src/scene/interaction.js) ----
@@ -533,17 +555,20 @@ export class Stage {
   /** The cursor is over the statue: the key light leans in a little. */
   setHover(on) {
     this.turn.hoverTarget = on ? 1 : 0;
+    this.wake();
   }
 
   /** Start a drag: any fling still running stops under the hand. */
   grab() {
     this.turn.held = true;
     this.turn.vel = 0;
+    this.wake();
   }
 
   /** Turn the statue by a horizontal drag of `dx` CSS pixels. */
   dragBy(dx) {
     this.turn.drag += dx * DRAG_RAD_PER_PX;
+    this.wake();
   }
 
   /** End a drag; `pxPerSec` is the release speed, carried on as a fling that slows to rest. */
@@ -551,6 +576,7 @@ export class Stage {
     this.turn.held = false;
     const v = pxPerSec * DRAG_RAD_PER_PX;
     this.turn.vel = this.reducedMotion ? 0 : Math.max(-MAX_FLING, Math.min(MAX_FLING, v));
+    this.wake();
   }
 
   _updateRig(dt) {
@@ -755,7 +781,8 @@ export class Stage {
       if (this._still > 20) { this.stop(); return; }
     }
     const sig = this._signature();
-    if (sig === this._lastSig) return; // nothing moved: skip the frame
+    if (sig === this._lastSig) { this._rest(); return; } // nothing moved: skip the frame
+    this._quiet = 0;
     this._lastSig = sig;
     this._updateLights();
     this._draw();
@@ -947,7 +974,7 @@ export class Stage {
     this._occRO?.disconnect();
     if (el) {
       // the page above the footer changes height (text split into lines, a form arriving, a resize): read again
-      this._occRO = new ResizeObserver(() => { this._occKey = ''; });
+      this._occRO = new ResizeObserver(() => { this._occKey = ''; this.wake(); });
       this._occRO.observe(document.body);
       this._occRO.observe(el);
     }
@@ -957,6 +984,7 @@ export class Stage {
     if (this.vector) this._setEmblem(0);
     this.vector?.setBehind(!logoInFront);
     this._lastSig = '';
+    this.wake();
   }
 
   /**
@@ -1119,7 +1147,36 @@ export class Stage {
     this.renderer.render(this.scene, this.camera);
   }
 
+  /**
+   * A tick with nothing to draw. Before the morph (no time-driven drift or twinkle yet), with no hand on
+   * the statue and no fling running down, once the frame's signature has held for half a second while
+   * GSAP's ticker stood still too (nothing animating the stage's state, the scroll's scrub caught up),
+   * the loop stops asking for frames: the stage only waits, and what it would draw is on the screen.
+   * wake() starts it again.
+   */
+  _rest() {
+    const t = this.turn, tr = this.tracks;
+    const frame = gsap.ticker.frame;
+    const calm = frame === this._gsapFrame && !t.held && !t.vel && !t.drag && !tr.logo && !tr.morph && !this._settling && !this.lost;
+    this._gsapFrame = frame;
+    this._quiet = calm ? this._quiet + 1 : 0;
+    if (this._quiet > 30) {
+      this._quiet = 0;
+      this._asleep = true;
+      stopLoop(this.renderer, () => this._asleep);
+    }
+  }
+
+  /** Something may have changed what the stage shows: a stage asleep asks for frames again. */
+  wake() {
+    if (!this._asleep) return;
+    this._asleep = false;
+    this._quiet = 0;
+    if (this.running && !this.lost && !this.disposed) { this.clock.getDelta(); this.renderer.setAnimationLoop(this._tick); }
+  }
+
   start() {
+    if (this._asleep) this.wake();
     this._settling = false;
     if (this.lost) { this._resume = true; return; } // (once the context is back)
     if (this.running || this.disposed || !this.statue) return;
@@ -1129,12 +1186,13 @@ export class Stage {
   }
 
   stop() {
+    this._asleep = false;
     this._settling = false;
     if (this.lost) this._resume = false;
     if (!this.running) return;
     this.running = false;
     this.clock.stop();
-    this.renderer.setAnimationLoop(null);
+    stopLoop(this.renderer, () => !this.running); // (stopWhenSettled stops it from inside its own frame)
   }
 
   /**
@@ -1166,6 +1224,8 @@ export class Stage {
   dispose() {
     this.disposed = true;
     this.stop();
+    gsap.ticker.__dcWakers?.delete(this.wake);
+    window.removeEventListener('scroll', this.wake);
     this.resizeObserver.disconnect();
     this.renderer.domElement.removeEventListener('webglcontextlost', this._onLost);
     this.renderer.domElement.removeEventListener('webglcontextrestored', this._onRestored);

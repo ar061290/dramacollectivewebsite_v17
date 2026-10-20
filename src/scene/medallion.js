@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import gsap from 'gsap';
 import { antialias } from '../util/env.js';
+import { stopLoop } from './loop.js';
 import { buildLogoGeometry } from './logo.js';
 
 // albedo of each finish (metals: their reflectance colour)
@@ -168,7 +169,7 @@ export class Medallion {
   _sync() {
     const go = this.visible && !document.hidden;
     if (go && !this.running) { this.running = true; this.last = performance.now(); this.renderer.setAnimationLoop(this._tick); }
-    else if (!go && this.running) { this.running = false; this.renderer.setAnimationLoop(null); }
+    else if (!go && this.running) { this.running = false; stopLoop(this.renderer, () => !this.running); }
   }
 
   _wake() { this.dirty = true; }

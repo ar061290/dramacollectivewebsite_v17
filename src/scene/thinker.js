@@ -34,6 +34,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import gsap from 'gsap';
 import { readToken, antialias } from '../util/env.js';
+import { stopLoop } from './loop.js';
 import { mark } from '../util/perf.js';
 
 // the Draco decoder served with the site (as for the home page's statue, src/scene/statue.js)
@@ -890,12 +891,29 @@ export class Thinker {
   }
 
   _sync() {
-    const go = this.visible && this.ready && !this.lost && !this.disposed;
+    const go = this.visible && this.ready && !this.lost && !this.disposed && !this.asleep;
     if (go && !this.running) { this.running = true; this.last = performance.now(); this.renderer.setAnimationLoop(this._tick); }
-    else if (!go && this.running) { this.running = false; this.renderer.setAnimationLoop(null); }
+    else if (!go && this.running) { this.running = false; stopLoop(this.renderer, () => !this.running); }
   }
 
-  _wake() { this.dirty = true; }
+  _wake() {
+    this.dirty = true;
+    if (this.asleep) { this.asleep = false; this._sync(); }
+  }
+
+  /**
+   * A tick with nothing to draw: once nothing is still easing toward its target either (the lean, the
+   * lamp, its glow) and no hand is on it, for half a second, the loop stops asking for frames until
+   * something wakes it (_wake: the pointer, a scroll, the theme, a turn's drag, a resize). It was only
+   * waiting: what it would draw next is what is on the screen.
+   */
+  _rest(want) {
+    const p = this.pointer;
+    const settled = !this.press && want === this.yaw.now && this.elev.to === this.elev.now
+      && Math.abs(p.to - p.on) < 1e-5 && (!p.seen || this.glowAt.distanceToSquared(this.glowTo) <= 1e-6);
+    this.still = settled ? (this.still || 0) + 1 : 0;
+    if (this.still > 30) { this.still = 0; this.asleep = true; this._sync(); }
+  }
 
   _tick(now) {
     const dt = Math.min(0.05, (now - (this.last ?? now)) / 1000);
@@ -927,7 +945,8 @@ export class Thinker {
     if (!turning && Math.abs(want - this.yaw.now) < 1e-4 && Math.abs(this.elev.to - this.elev.now) < 1e-4) { this.yaw.now = want; this.elev.now = this.elev.to; }
     // nothing moves while it is still: drawn only when something has changed
     if (Math.abs(this.yaw.now - y0) > 1e-5 || Math.abs(this.elev.now - e0) > 1e-5) this.dirty = true;
-    if (!this.dirty) return;
+    if (!this.dirty) { this._rest(want); return; }
+    this.still = 0;
     // about 30 frames a second, every frame only while a hand turns it: the page's other
     // animations keep the rest of the GPU
     if (!turning && now - this.lastFrame < IDLE_FRAME - 2) return;

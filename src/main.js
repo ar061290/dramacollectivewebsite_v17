@@ -9,7 +9,6 @@ import { reducedMotion, probeWebGL, prefersStatic, readToken, phoneTier, liteTie
 import { mark as perfMark } from './util/perf.js';
 import { setupField } from './util/field.js';
 import { ConstellationField } from './constellation/Constellation.js';
-import { loadLottie, freeze } from './animations/lottie.js';
 import { playIntro } from './animations/intro.js';
 import { setupNav } from './animations/nav.js';
 import { setupBrandMark } from './animations/brand.js';
@@ -83,6 +82,7 @@ async function boot() {
         gsap.killTweensOf(stage.state, 'daylight');
         stage.state.daylight = daylight;
         stage.renderOnce();
+        stage.wake();
         return;
       }
       gsap.to(stage.state, { daylight, duration: reduced ? 0 : 0.7, ease: 'sine.inOut', overwrite: 'auto' });
@@ -239,7 +239,7 @@ async function boot() {
   // what the intro animates: the live lights, or the still picture's opacity
   const light = stage
     ? {
-        set: (s, r) => Object.assign(stage.state, { stageLight: s, ringReveal: r }),
+        set: (s, r) => { Object.assign(stage.state, { stageLight: s, ringReveal: r }); stage.wake(); },
         tween: (vars) => gsap.to(stage.state, vars),
       }
     : {
@@ -337,22 +337,23 @@ let cueOn = false; // the intro has started the scroll cue
 let cueSeen = true; // the hero (and its cue) on the screen
 
 async function setupLotties() {
+  // scroll cue: a slow descending dot, two CSS animations the compositor plays (src/styles/layout.css:
+  // the Lottie it was, frame for frame); with reduced motion the CSS's own still frame
+  const cueEl = document.querySelector('.hero__cue');
+  if (cueEl && !reduced) {
+    const cue = {
+      play: () => { cueEl.classList.add('is-playing'); cueEl.classList.remove('is-paused'); },
+      pause: () => cueEl.classList.add('is-paused'),
+    };
+    app.scrollCue = cue;
+    // the cue plays in the hero only: off the screen it rests
+    const io = new IntersectionObserver(([e]) => { cueSeen = e.isIntersecting; if (!cueOn) return; if (cueSeen) cue.play(); else cue.pause(); });
+    io.observe(cueEl);
+    cleanups.push(() => io.disconnect());
+  }
+
   // nav mark: the curtain rises on the mark once, and again on hover
   cleanups.push(await setupBrandMark({ reduced }));
-
-  // scroll cue: a slow descending dot (static frame with reduced motion)
-  const cue = await loadLottie(document.querySelector('[data-lottie="scroll-cue"]'), 'scroll-cue', { loop: !reduced });
-  if (cue) {
-    if (reduced) freeze(cue, 60);
-    app.scrollCue = reduced ? null : cue;
-    cleanups.push(() => cue.destroy());
-    if (!reduced) {
-      // the cue loops in the hero only: off the screen it stops writing its SVG every frame
-      const io = new IntersectionObserver(([e]) => { cueSeen = e.isIntersecting; if (!cueOn) return; if (cueSeen) cue.play(); else cue.pause(); });
-      io.observe(document.querySelector('[data-lottie="scroll-cue"]'));
-      cleanups.push(() => io.disconnect());
-    }
-  }
 }
 
 // Pause both canvases when the tab is hidden or the stage is covered by the footer. Covered by the

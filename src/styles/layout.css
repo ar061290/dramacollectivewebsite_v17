@@ -167,6 +167,31 @@ main { position: relative; z-index: var(--z-content); }
   width: 24px; height: 64px;
   margin-left: -12px;
 }
+/* the scroll cue: a slow descending dot on a faint line, as the Lottie (assets/lottie/scroll-cue.json) drew
+   it, frame for frame: a 2.5 s loop; the dot from y 8 to 56 of 64 over its first 112 of 150 frames
+   (cubic-bezier(.36, 0, .22, 1)), coming in over frames 0-22 and going over 86-112 (cubic-bezier(.4, 0,
+   .2, 1)). Two CSS animations of a transform and an opacity, which the compositor plays: none of the
+   page's frames is spent on it (the Lottie rewrote its SVG in every one, and the page laid it out again).
+   It plays once the intro starts it (.is-playing, src/main.js) and rests off the screen (.is-paused);
+   with reduced motion it stands at the Lottie's still, frame 60 */
+.hero__cue-track { position: absolute; inset: 0; display: block; width: 24px; height: 64px; overflow: visible; }
+.hero__cue-track path { fill: none; stroke: var(--plum-300); stroke-width: 1; stroke-linecap: round; opacity: .45; }
+.hero__cue-dot { position: absolute; left: 10px; top: 6px; width: 4px; height: 4px; border-radius: 50%; background: var(--gold-500); opacity: 0; }
+.hero__cue.is-playing .hero__cue-dot { animation: cue-move 2.5s linear infinite, cue-fade 2.5s linear infinite; }
+.hero__cue.is-paused .hero__cue-dot { animation-play-state: paused; }
+@keyframes cue-move {
+  0% { transform: translateY(0); animation-timing-function: cubic-bezier(.36, 0, .22, 1); }
+  74.6667%, 100% { transform: translateY(48px); }
+}
+@keyframes cue-fade {
+  0% { opacity: 0; animation-timing-function: cubic-bezier(.4, 0, .2, 1); }
+  14.6667% { opacity: 1; }
+  57.3333% { opacity: 1; animation-timing-function: cubic-bezier(.4, 0, .2, 1); }
+  74.6667%, 100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__cue-dot { opacity: 1; transform: translateY(39.108px); }
+}
 
 /* ---- Scenes ---- */
 .scene {
