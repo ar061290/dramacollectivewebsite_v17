@@ -66,13 +66,20 @@ function setupReel({ reduced }) {
   const frames = [...track.children];
   const SPEED = 1.5; // sideways pixels per pixel scrolled
   let run = 0;
+  // every frame's box read before any is written (a frame's light and shift change only its own
+  // transform, never the layout, so the boxes are the same either way; read between the writes, each
+  // changed frame made the browser restyle the strip before the next read), and only what changed written
+  const shown = frames.map(() => ({ lit: '', shift: '' }));
   const light = () => {
     const mid = innerWidth / 2;
-    for (const f of frames) {
-      const r = f.getBoundingClientRect();
+    const boxes = frames.map((f) => f.getBoundingClientRect());
+    for (let i = 0; i < frames.length; i++) {
+      const r = boxes[i], f = frames[i], was = shown[i];
       const d = (r.left + r.width / 2 - mid) / (r.width * 0.9 + 1);
-      f.style.setProperty('--lit', Math.max(0, 1 - Math.abs(d)).toFixed(3));
-      f.style.setProperty('--shift', (Math.max(-1, Math.min(1, d)) * -4).toFixed(2));
+      const lit = Math.max(0, 1 - Math.abs(d)).toFixed(3);
+      const shift = (Math.max(-1, Math.min(1, d)) * -4).toFixed(2);
+      if (lit !== was.lit) { f.style.setProperty('--lit', lit); was.lit = lit; }
+      if (shift !== was.shift) { f.style.setProperty('--shift', shift); was.shift = shift; }
     }
   };
   // the section's height: one screen for the sticky frame, plus the run
