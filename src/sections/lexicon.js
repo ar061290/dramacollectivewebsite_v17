@@ -484,12 +484,20 @@ export function setupLexicon(host, { reduced, opened, onTheme }) {
 
   // ---- one place where the scroll position becomes the picture ----
   let shown = -1;
+  // the drawn ring is turned and sized by GSAP's own CSS renderer, as gsap.set would, without a new
+  // tween in every frame of the scroll (gsap.set made, started and finished one each time)
+  // (scaleX and scaleY: quickSetter does not take gsap.set's scale shorthand; the scale rounded to four
+  // places, as gsap.set rounds it and quickSetter does not)
+  const stillTo = still ? { rotation: gsap.quickSetter(still, 'rotation', 'deg'), scaleX: gsap.quickSetter(still, 'scaleX'), scaleY: gsap.quickSetter(still, 'scaleY') } : { rotation() {}, scaleX() {}, scaleY() {} };
   const apply = (p, force = false) => {
     progress = p;
     const { spin, scale } = ringAt(p);
     ring?.set({ spin, scale });
     // the drawn stand-in ring turns and draws back the same way (CSS turns clockwise for a positive angle)
-    gsap.set(still, { rotation: (-spin * 180) / Math.PI, scale });
+    stillTo.rotation((-spin * 180) / Math.PI);
+    const s4 = Math.round(scale * 10000) / 10000;
+    stillTo.scaleX(s4);
+    stillTo.scaleY(s4);
     const at = wordAt(p);
     if (at.word !== shown || force) {
       shown = at.word;
