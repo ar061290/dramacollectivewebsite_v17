@@ -214,7 +214,9 @@ export class Stage {
       loadTex(textureUrls.normal, false),
       loadStatue(statueUrl, {
         manager,
-        onBytes: (e) => { if (e.lengthComputable) { bytes = e.loaded / e.total; report(); } },
+        // every chunk is reported, its share only when the length is known: a caller watching for a stall
+        // (src/main.js) hears that bytes are still arriving either way
+        onBytes: (e) => { if (e.lengthComputable) bytes = e.loaded / e.total; report(); },
       }),
     ]);
     mark('statue decoded');

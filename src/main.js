@@ -118,10 +118,25 @@ async function boot() {
       });
       stage.state.daylight = currentTheme() === 'light' ? 1 : 0;
       stage.preWarm(); // the shaders compile while the statue downloads (Stage.preWarm)
-      await stage.load({
-        statueUrl: ASSETS.statue,
-        textureUrls: { albedo: ASSETS.albedo, normal: ASSETS.normal },
+      // a statue that stops arriving (no bytes for 20 s: a stalled connection, not a slow one) gives way to
+      // the still picture, as a statue that fails does (the failsafe, README)
+      let arriving = performance.now();
+      let watch = 0;
+      const stalled = new Promise((_, reject) => {
+        watch = setInterval(() => { if (performance.now() - arriving > 20000) reject(new Error('The statue stopped arriving.')); }, 1000);
       });
+      try {
+        await Promise.race([
+          stage.load({
+            statueUrl: ASSETS.statue,
+            textureUrls: { albedo: ASSETS.albedo, normal: ASSETS.normal },
+            onProgress: () => { arriving = performance.now(); },
+          }),
+          stalled,
+        ]);
+      } finally {
+        clearInterval(watch);
+      }
       mark('statue loaded');
     } catch (err) {
       console.error('Stage failed, showing the still picture instead.', err);
@@ -311,4 +326,9 @@ export function destroy() {
 window.addEventListener('pagehide', (e) => { if (!e.persisted) destroy(); });
 window.dramaCollective = { destroy, get stage() { return stage; }, get sky() { return sky; } };
 
-boot();
+boot().catch((err) => {
+  // a start that throws before the curtain is up would leave the loader up for good: the page is shown
+  // as it is without script instead (the failsafe, README); after that, the page is left as it is
+  console.error('The home page could not start.', err);
+  try { if (!performance.getEntriesByName('dc:curtain-up').length) window.dcFailsafe?.(); } catch { /* fine */ }
+});

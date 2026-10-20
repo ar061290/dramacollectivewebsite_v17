@@ -42,6 +42,12 @@
     // them on in this browser, ?flags= turns them off; each is a class, flag-<name>, on <html>
     try { var fm = /[?&]flags=([^&#]*)/.exec(location.search), fl = fm ? decodeURIComponent(fm[1]) : (localStorage.getItem('dc-flags') || ''); if (fm) { if (fl) localStorage.setItem('dc-flags', fl); else localStorage.removeItem('dc-flags'); } fl.split(',').forEach(function (n) { if (/^[a-z0-9-]+$/.test(n)) document.documentElement.classList.add('flag-' + n); }); } catch (e) {}
     document.documentElement.classList.add('has-js');
+    // the failsafe (README): dcFailsafe() shows the page as it is without script (no loader, no closed
+    // curtain, the intro's parts shown, the scroll free), for a page whose own script failed before it was
+    // up; and if that script has not even started 8 s after the page has loaded (a browser without
+    // modules or import maps, a script that did not arrive), it is called then
+    window.dcFailsafe = function () { var c = document.documentElement.classList; if (c.contains('is-failsafe')) return; c.remove('has-js', 'is-loading', 'is-intro', 'is-veiled'); c.add('is-failsafe'); };
+    addEventListener('load', function () { setTimeout(function () { try { if (!performance.getEntriesByName('dc:boot').length) window.dcFailsafe(); } catch (e) {} }, 8000); });
   </script>
   <!-- /site:head -->
 </head>

@@ -29,6 +29,18 @@ CustomEase.create('curtain', '.22,.61,.36,1'); // --ease-curtain from the design
  * @param {(ctx: { reduced: boolean, sky: ConstellationField|null, onTheme: (fn: (theme: string, opts: { instant?: boolean }) => void) => void, opened: Promise<void> }) => (void|(() => void))} [setup]
  */
 export async function bootPage(setup) {
+  try {
+    return await start(setup);
+  } catch (err) {
+    // a start that throws before the curtain has parted would leave a closed curtain (arriving from
+    // another page) or a half-made page: shown as it is without script instead (the failsafe, README)
+    console.error('The page could not start.', err);
+    try { if (!performance.getEntriesByName('dc:parted').length) window.dcFailsafe?.(); } catch { /* fine */ }
+    return null;
+  }
+}
+
+async function start(setup) {
   mark('boot');
   const reduced = reducedMotion();
   const cleanups = [];
