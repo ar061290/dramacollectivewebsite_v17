@@ -850,11 +850,16 @@ export class WriterStatue {
 
   /** The page moved under a still pointer (a scroll): the lamp keeps to the pointer. */
   boxMoved() {
-    // the box's place is read here, in the scroll's own handler where the layout is settled,
-    // rather than inside each drawn frame (where it forced the page's layout every time)
-    this.rect = this.container.getBoundingClientRect();
+    // the box's place is forgotten, and read again only when the lamp is next placed (a read here,
+    // after the opening has written the page's styles, forced a layout every frame of the scroll)
+    this.rect = null;
     // a finger's lamp has gone out once it lifted: then the frame would be the same
-    if (this.pointer.seen && (this.pointer.on > 0.002 || this.pointer.to > 0)) this._wake();
+    if (this._lit()) this._wake();
+  }
+
+  /** The cursor's lamp is lit, or lighting (out, it is not placed: nothing of it would be seen). */
+  _lit() {
+    return this.pointer.seen && (this.pointer.on > 0.002 || this.pointer.to > 0);
   }
 
   /**
@@ -960,7 +965,7 @@ export class WriterStatue {
     this.d0 = Math.hypot(c0.pos[0] - c0.target[0], c0.pos[1] - c0.target[1], c0.pos[2] - c0.target[2]);
     // the cursor's lamp
     const glow = this.lights.glow;
-    if (this.pointer.seen) {
+    if (this._lit()) {
       this._placeGlow(this.reduced);
       glow.position.copy(this.glowAt);
     }
