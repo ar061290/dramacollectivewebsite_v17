@@ -1152,16 +1152,19 @@ export class Stage {
   }
 
   /**
-   * A tick with nothing to draw. Before the morph (no time-driven drift or twinkle yet), with no hand on
-   * the statue and no fling running down, once the frame's signature has held for half a second while
-   * GSAP's ticker stood still too (nothing animating the stage's state, the scroll's scrub caught up),
-   * the loop stops asking for frames: the stage only waits, and what it would draw is on the screen.
-   * wake() starts it again.
+   * A tick with nothing to draw. Where nothing moves with time alone (the logo's drift moves from the
+   * logo phase until the vector has taken over, the star twinkles while it is in the sky), with no hand
+   * on the statue and no fling running down, once the frame's signature has held for half a second
+   * while GSAP's ticker stood still too (nothing animating the stage's state, the scroll's scrub caught
+   * up), the loop stops asking for frames: the stage only waits, and what it would draw is on the
+   * screen. wake() starts it again. (It used to wait only before the morph: from there to the foot of
+   * <main>, half the page, every frame ran the whole rig to find nothing changed.)
    */
   _rest() {
     const t = this.turn, tr = this.tracks;
     const frame = gsap.ticker.frame;
-    const calm = frame === this._gsapFrame && !t.held && !t.vel && !t.drag && !tr.logo && !tr.morph && !this._settling && !this.lost;
+    const timed = !!this.star?.twinkling || (!this.reducedMotion && tr.logo > 0 && !(this.vector && tr.vector >= 1));
+    const calm = frame === this._gsapFrame && !t.held && !t.vel && !t.drag && !timed && !this._settling && !this.lost;
     this._gsapFrame = frame;
     this._quiet = calm ? this._quiet + 1 : 0;
     if (this._quiet > 30) {
