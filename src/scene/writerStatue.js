@@ -619,7 +619,15 @@ export class WriterStatue {
     const measuring = this.measures ? Promise.resolve(this.measures)
       : fetch(this.model.json).then((r) => { if (!r.ok) throw new Error(`The model's measures did not load (${r.status}).`); return r.json(); });
     measuring.catch(() => {});
-    const covering = this.coverUrl ? new THREE.TextureLoader().loadAsync(this.coverUrl) : Promise.resolve(null);
+    // (in Chromium the cover is decoded as an ImageBitmap, off the page's thread, its rows from the top
+    // and its values as they are, as the <img> was uploaded (flipY, the colour space and the alpha left
+    // alone): the same pixels; an <img> is decoded on the page's thread when it is first used, and the
+    // lite tier's smaller copy of it was made there too. Elsewhere an <img>, as before. As About's ring)
+    const bitmaps = typeof createImageBitmap === 'function' && !!navigator.userAgentData?.brands?.some((b) => /Chromium/.test(b.brand));
+    const covering = !this.coverUrl ? Promise.resolve(null)
+      : bitmaps ? new THREE.ImageBitmapLoader().setOptions({ imageOrientation: 'from-image', premultiplyAlpha: 'none', colorSpaceConversion: 'none' })
+        .loadAsync(this.coverUrl).then((bitmap) => new THREE.Texture(bitmap))
+        : new THREE.TextureLoader().loadAsync(this.coverUrl);
     covering.catch(() => {});
     const step = statueMarked ? () => {} : mark; // dc:statue-env, -model, -compiled, -drawn, for the lab
     statueMarked = true;
