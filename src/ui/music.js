@@ -453,6 +453,24 @@ export function setupMusic({ reduced, opened }) {
   };
   window.addEventListener('scroll', onScroll, { passive: true });
 
+  // every tier: the bars hold still while the button is out of sight (the bar slid up out of view as
+  // the page scrolls down; on the publication and its reading pages, tucked above the screen until it
+  // is called down), and go on from where they were as soon as the bar starts back (its slide begins
+  // before the observer can see it). Out of sight, their motion was still a frame of the page's style,
+  // layout and paint each time, most of a reading page's work at rest.
+  const bar = button.closest('.topbar');
+  let unseen = false;
+  const setUnseen = (on) => { if (on !== unseen) { unseen = on; button.classList.toggle('is-unseen', on); } };
+  const sight = new IntersectionObserver(([e]) => setUnseen(!e.isIntersecting));
+  sight.observe(button);
+  const moves = (e) => (e.propertyName === 'transform' && e.target === button.parentElement) || (e.propertyName === 'top' && e.target === bar);
+  const onSlide = (e) => { if (moves(e)) setUnseen(false); };
+  // (looked at again once a slide is over: one turned back half way would leave the observer nothing new to report)
+  const onSlid = (e) => { if (moves(e)) { sight.unobserve(button); sight.observe(button); } };
+  bar?.addEventListener('transitionrun', onSlide);
+  bar?.addEventListener('transitionend', onSlid);
+  bar?.addEventListener('transitioncancel', onSlid);
+
   // on unless the visitor turned it off earlier in this visit (or their browser is set to save data:
   // the playlist is a large file): from a new point. It is asked to play at once, silent (volume 0, but
   // not muted: a browser may let a muted start through, then stop it when it is unmuted), but with no file
@@ -491,6 +509,11 @@ export function setupMusic({ reduced, opened }) {
     window.removeEventListener('scroll', onScroll);
     clearTimeout(heldTimer);
     button.classList.remove('is-held');
+    sight.disconnect();
+    bar?.removeEventListener('transitionrun', onSlide);
+    bar?.removeEventListener('transitionend', onSlid);
+    bar?.removeEventListener('transitioncancel', onSlid);
+    button.classList.remove('is-unseen');
     teardown();
   };
 }
