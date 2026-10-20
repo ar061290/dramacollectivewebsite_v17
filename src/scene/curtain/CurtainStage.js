@@ -18,7 +18,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { frameGate, pixelRatio } from '../../util/env.js';
+import { frameGate, pixelRatio, liteTier } from '../../util/env.js';
 import { stopLoop } from '../loop.js';
 import { onLite } from '../../util/governor.js';
 
@@ -49,6 +49,7 @@ const STILL = { spot: 0.4, bulbs: 0.42 };
 const LIGHT_UP = 1.8;
 const LIGHT_DELAY = 0.3; // after reveal(): the page's fade lands on the still's light first
 const BLOOM = 0.75;
+const LITE_CALM_MS = 1000 / 15; // the lite tier's draws at rest (the gate's 30 a second, every other one)
 
 const DRAPE = /* glsl */ `
 uniform float uTime, uPart, uSide, uPush, uSway, uWidth, uHeight, uPleats;
@@ -190,6 +191,7 @@ export class CurtainStage {
     this._onUp = this._onUp.bind(this);
     this._onLeave = this._onLeave.bind(this);
     this._tick = this._tick.bind(this);
+    this._dozeTurn = this._dozeTurn.bind(this);
     this._gate = frameGate(30); // under the phone tier, at most 60 frames a second; lite, 30
     // the frame governor may put the device in the lite tier while the page is open: its pixel budget from then on
     this.offLite = onLite(() => { if (this.disposed) return; this.renderer.setPixelRatio(pixelRatio(1.75)); this.composer.setPixelRatio?.(this.renderer.getPixelRatio()); this._layout(); });
@@ -636,6 +638,8 @@ export class CurtainStage {
       if (this._pausedAt !== undefined && this.litFrom >= 0) this.litFrom += performance.now() - this._pausedAt;
       this._pausedAt = undefined;
       this.clock.getDelta();
+      this.dozing = false;
+      clearTimeout(this._dozeTimer);
       this.renderer.setAnimationLoop(this._tick);
     } else if (!go && this.running) {
       this.running = false;
@@ -644,7 +648,47 @@ export class CurtainStage {
     }
   }
 
-  _wake() { this.dirty = true; }
+  _wake() { this.dirty = true; this._rouse(); }
+
+  /**
+   * The lite tier at rest: drawn 15 times a second, as before (the gate lets 30 through and every other
+   * one is drawn), but from a timer, on the same beat, with the loop stopped: running, the loop asked for
+   * every frame of the screen, 60 a second, to draw 15 of them, and each of those frames was a frame of
+   * the page's own work. (Drawn from the timer itself, not from a loop started again for it: a loop
+   * started again draws its first frame a frame late as often as not, and each draw moves the sway on by
+   * at most 50 ms, so fewer draws a second would slow it.) Anything that wakes the curtain starts the
+   * loop again at once.
+   */
+  _doze(frameTime) {
+    this.dozing = true;
+    this._due = frameTime + LITE_CALM_MS; // (from the drawn frame's own time: the beat does not drift)
+    stopLoop(this.renderer, () => this.dozing);
+    clearTimeout(this._dozeTimer);
+    this._dozeTimer = setTimeout(this._dozeTurn, Math.max(0, this._due - performance.now()));
+  }
+
+  /** The timer's turn: the next draw, here (and the doze goes on; if the curtain is no longer at rest, the loop again). */
+  _dozeTurn() {
+    this._dozeTimer = 0;
+    if (!this.dozing || !this.running || this.disposed) return;
+    this._timed = true;
+    // on its beat, which a late timer does not move (the next turn comes that much sooner); a turn the
+    // page held up for longer than a beat is drawn now, and the beat taken from there
+    const now = performance.now();
+    const at = now - this._due > LITE_CALM_MS ? now : this._due;
+    this._tick(at);
+    if (this.dozing && !this._dozeTimer) { if (this._calm()) this._doze(at); else this._rouse(); }
+  }
+
+  /** Out of the doze: the loop again. */
+  _rouse() {
+    if (!this.dozing) return;
+    clearTimeout(this._dozeTimer);
+    this._dozeTimer = 0;
+    this.dozing = false;
+    this._timed = false;
+    if (this.running) this.renderer.setAnimationLoop(this._tick);
+  }
 
   /** Nothing but the slow sway is going on: no input easing, no chase or flash, no light or theme cue, no ripple. */
   _calm() {
@@ -657,11 +701,15 @@ export class CurtainStage {
   }
 
   _tick(time) {
-    if (!this._gate(time ?? performance.now())) return; // the frame's own time, not when this callback began
+    const frameTime = time ?? performance.now();
+    if (!this._gate(frameTime)) return; // the frame's own time, not when this callback began
     // at rest, every other frame is enough: the sway (amplitude 0.03, 0.55 rad/s) and the pleats'
     // drift move under one shade between frames, so the skipped frame would look the same, and the
     // GPU does half the work (this page's whole chain: velvet, glow, vignette) while the visitor reads
-    if (this._calm()) { this._skipped = !this._skipped; if (this._skipped) return; } else this._skipped = false;
+    if (this._calm()) {
+      if (this._timed) this._timed = false; // (the lite tier's timer: drawn now, the doze was the skipped frame)
+      else { this._skipped = !this._skipped; if (this._skipped) return; }
+    } else { this._skipped = false; this._timed = false; }
     const dt = Math.min(0.05, this.clock.getDelta());
     const s = this.state, t = this.target;
     const ease = (k) => 1 - Math.exp(-dt * k);
@@ -707,6 +755,7 @@ export class CurtainStage {
     this.behind.uniforms.uGlow.value = 0.12 + (s.part / MAX_PART) * 1.9;
     this._lightBulbs();
     this._render();
+    if (liteTier() && this._calm()) this._doze(frameTime);
   }
 
   _render() { this.composer.render(); }
@@ -763,6 +812,7 @@ export class CurtainStage {
 
   dispose() {
     this.disposed = true;
+    clearTimeout(this._dozeTimer);
     this.offLite?.();
     this.renderer.setAnimationLoop(null);
     this.renderer.domElement.removeEventListener('webglcontextlost', this._onLost);
