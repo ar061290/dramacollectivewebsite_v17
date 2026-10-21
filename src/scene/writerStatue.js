@@ -764,6 +764,10 @@ export class WriterStatue {
   setHidden(hidden) {
     if (hidden === this.hidden) return;
     this.hidden = hidden;
+    // faded out, it keeps no drawing buffer at the book's full density (up to 3 device pixels to the CSS
+    // pixel, about 14-21 MB on a phone, for the rest of the page): its usual one again; a frame shown at
+    // the book again is made sharp again before it is drawn (_adapt, at the head of every frame)
+    if (hidden && (this.res.sharp || this.res.low)) this._setRes({ sharp: false, low: false });
     if (!hidden) this._wake(true);
     this._sync();
   }
