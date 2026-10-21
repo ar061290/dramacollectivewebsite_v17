@@ -15,7 +15,7 @@
 
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { createRing, placeRing } from './ringStone.js';
+import { createRing, placeRing, stoneMatcapsAhead } from './ringStone.js';
 import { loadStatue, prepareStatue, forEachVertex, STATUE_LAYER } from './statue.js';
 import STATUE_MEASURES from '../../assets/models/statue-rig.measures.json';
 import { SilhouetteMask } from './silhouette.js';
@@ -261,6 +261,7 @@ export class Stage {
 
   /** Load textures and the statue through one LoadingManager. onProgress(0..1). */
   async load({ statueUrl, textureUrls, yaw = Math.PI, onProgress = () => {} }) {
+    const matcaps = stoneMatcapsAhead(); // (the ring's, made meanwhile in a worker)
     const manager = new THREE.LoadingManager();
     let bytes = 0, items = 0, itemsTotal = 1;
     const report = () => onProgress(Math.min(0.99, 0.15 * (items / itemsTotal) + 0.85 * bytes));
@@ -329,7 +330,9 @@ export class Stage {
     this.turntable.add(this.statue.root);
     this.scene.add(this.turntable);
 
-    this.ring = createRing({ albedo, normal });
+    const matcapPixels = await matcaps;
+    if (this.disposed) return;
+    this.ring = createRing({ albedo, normal }, { matcapPixels });
     this.camera.add(this.ring.root);
     this.ringTint = this.statue.averageColor ?? new THREE.Color(0xe9e5de);
 
