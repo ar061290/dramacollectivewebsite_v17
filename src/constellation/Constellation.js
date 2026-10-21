@@ -113,11 +113,14 @@ export class ConstellationField {
     this.lite = liteTier();
     this.liteDue = 0; // when the lite tier's calm sky is next drawn
     this.liteTimer = 0;
-    // lite, while no star is lit: the beat the stars were last drawn at, when the next is due, and the
-    // text blocks the canvas was last cleared under (null: the canvas must be drawn whole)
+    // lite, while no star is lit: the beat the stars were last drawn at (on the twinkle's clock), when
+    // the next is due, and the text blocks the canvas was last cleared under (null: drawn whole next)
     this.beatAt = 0;
     this.beatDue = 0;
     this.drawn = null;
+    // lite: the twinkle's clock holds while a finger scrolls the page (_twinkleNow)
+    this.twOff = 0;
+    this.twHeld = null;
     // the frame governor may put the device in the lite tier while the page is open: drawn the lite way from then on
     this.offLite = onLite(() => { this.lite = true; this.w = 0; this._resize(); });
     this.dust = document.createElement('canvas');
@@ -500,11 +503,28 @@ export class ConstellationField {
     this._draw(now, turn === 'calm');
   }
 
+  /**
+   * Lite tier: the twinkle's clock. It holds while the page scrolls (to a quarter second after the
+   * last scroll) and then runs on from where it held, so the stars keep their light through a scroll
+   * (their slowest turn takes 16 s, their quickest 4) and go on twinkling after it without a jump; the
+   * sky is then drawn whole only at rest, and a scroll's frames only patch it.
+   */
+  _twinkleNow(now) {
+    if (now - this.lastScroll <= 250) {
+      this.twHeld ??= now - this.twOff;
+      return this.twHeld;
+    }
+    if (this.twHeld !== null) { this.twOff = now - this.twHeld; this.twHeld = null; }
+    return now - this.twOff;
+  }
+
   _draw(now, calmTurn = false) {
-    // lite, while no star is lit (a page scrolling): between the calm beats the stars keep the last beat's
-    // twinkle, as the calm sky does, and only what the text blocks uncovered since the last frame is drawn
+    const tw = this.lite ? this._twinkleNow(now) : now;
+    // lite, while no star is lit (a page scrolling): between the calm beats, or while the twinkle holds,
+    // the stars keep the last beat's light, and only what the text blocks uncovered since the last frame
+    // is drawn again
     const plain = this.lite && !this.lively && !this.constellations.length;
-    if (plain && !calmTurn && this.drawn && now < this.beatDue) { this._patch(); return; }
+    if (plain && !calmTurn && this.drawn && (now < this.beatDue || tw === this.beatAt)) { this._patch(); return; }
     const ctx = this.ctx;
     const [r, g, b] = this.rgb;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -516,7 +536,7 @@ export class ConstellationField {
     // stars (one that lies wholly under a text block, with its soft edge, is left out: the block's
     // clear below would take it away again, so the picture is the same)
     const glowing = [];
-    this._drawStars(ctx, now, this.maskRects, glowing);
+    this._drawStars(ctx, tw, this.maskRects, glowing);
 
     // glow: one pass, additive on the dark stage so overlapping halos bloom
     if (glowing.length) {
@@ -550,7 +570,7 @@ export class ConstellationField {
 
     // keep the sky clear of text: erase under every text block
     for (const m of this.maskRects) ctx.clearRect(m.x, m.y, m.w, m.h);
-    if (plain) { this.beatAt = now; this.beatDue = now + LITE_CALM_MS - 4; this.drawn = this.maskRects; } else this.drawn = null;
+    if (plain) { this.beatAt = tw; this.beatDue = now + LITE_CALM_MS - 4; this.drawn = this.maskRects; } else this.drawn = null;
   }
 
   /** The stars at their twinkle, boost and light, one wholly inside `masks` left out; the lit ones pushed to `glowing`. */
