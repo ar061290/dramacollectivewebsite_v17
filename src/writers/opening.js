@@ -485,7 +485,11 @@ export function setupOpening({ reduced, sky, onTheme, opened }, { onSwap = () =>
     refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 160);
   });
   ro.observe(section);
-  cleanups.push(() => { ro.disconnect(); clearTimeout(refreshTimer); });
+  // a refresh already under way takes the places again: no second one for the same change (a filter's
+  // own refresh, as its cards settle, came with this one 0.1 s behind it, measuring the same layout)
+  const onRefreshInit = () => clearTimeout(refreshTimer);
+  ScrollTrigger.addEventListener('refreshInit', onRefreshInit);
+  cleanups.push(() => { ro.disconnect(); clearTimeout(refreshTimer); ScrollTrigger.removeEventListener('refreshInit', onRefreshInit); });
 
   if (debug) window.__writersOpen = { L, render: (p) => render(p), get progress() { return progress; }, quadMatrix, get drawn() { return drawn; }, pin };
 
