@@ -115,7 +115,7 @@ A read-only sweep (four readers, one area of the site each, and four skeptics tr
 
 - `src/scene/Stage.js:794` (medium, silhouette-mask-refresh-on-touch): if (now >= this._maskDue) { this._maskDue = now + 140; this.mask.update(this.scene, this.camera, this.width, this.height); } re-renders the statue layer into a 128-px target (the skinned ~183k-triangl.
 - `src/sections/lexicon.js:521` (medium, lexicon-uncapped-at-high-refresh): The site's other WebGL scenes follow the phone-tier rule 'at most 60 frames a second however fast the screen' (frameGate in src/util/env.js, used by Stage.js, CurtainStage.js and Constellation.js).
-- `src/sections/lexicon.js:479` (medium, lexicon-morph-contour-on-main-thread-lite): between() resamples two distance fields into a fresh grid, contours it with marching squares, simplifies the loops and builds the path string on the main thread every frame.
+- ~~`src/sections/lexicon.js:479` (medium, lexicon-morph-contour-on-main-thread-lite)~~ **done** (32cc184): on the lite tier a worker draws the morph (`src/sections/lexiconMorph.worker.js`), the word a frame behind its scroll; through the lexicon 31 → 38 frames a second on the mid-range phone.
 - `src/writers/opening.js:423` (medium, writers-dive-page-reraster): put(paper, 'opacity', (1 - e).toFixed(3)); put(gutter, 'opacity', (1 - e).toFixed(3)); and put(page, 'height', ...) change every frame.
 - `src/scene/Stage.js:614` (low, stage-redundant-matrix-updates): if (this.pose.length) this._applyPose(tr.arm, tr.head); runs every tick.
 - `src/sections/pillars.js:325` (low, pillars-follow-tween-per-scroll): follow() creates a new gsap.to(state, { p: to, duration: 0.3, ease: 'power2.out', overwrite: true, onUpdate: render, onComplete }) on every drive update.
