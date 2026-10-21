@@ -43,6 +43,18 @@ const LITE_CALM_MS = 1000 / 15; // the lite tier's calm cadence
 
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
+/** The parts of rect `a` outside rect `b` (whole device pixels, { x0, y0, x1, y1 }): up to four. */
+function cut(a, b) {
+  if (b.x1 <= b.x0 || b.y1 <= b.y0 || b.x0 >= a.x1 || b.x1 <= a.x0 || b.y0 >= a.y1 || b.y1 <= a.y0) return [a];
+  const out = [];
+  if (b.y0 > a.y0) out.push({ x0: a.x0, y0: a.y0, x1: a.x1, y1: b.y0 });
+  if (b.y1 < a.y1) out.push({ x0: a.x0, y0: b.y1, x1: a.x1, y1: a.y1 });
+  const y0 = Math.max(a.y0, b.y0), y1 = Math.min(a.y1, b.y1);
+  if (b.x0 > a.x0) out.push({ x0: a.x0, y0, x1: b.x0, y1 });
+  if (b.x1 < a.x1) out.push({ x0: b.x1, y0, x1: a.x1, y1 });
+  return out;
+}
+
 function mulberry32(seed) {
   return () => {
     seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
@@ -101,6 +113,11 @@ export class ConstellationField {
     this.lite = liteTier();
     this.liteDue = 0; // when the lite tier's calm sky is next drawn
     this.liteTimer = 0;
+    // lite, while no star is lit: the beat the stars were last drawn at, when the next is due, and the
+    // text blocks the canvas was last cleared under (null: the canvas must be drawn whole)
+    this.beatAt = 0;
+    this.beatDue = 0;
+    this.drawn = null;
     // the frame governor may put the device in the lite tier while the page is open: drawn the lite way from then on
     this.offLite = onLite(() => { this.lite = true; this.w = 0; this._resize(); });
     this.dust = document.createElement('canvas');
@@ -138,6 +155,7 @@ export class ConstellationField {
     this.glow = this._makeGlow();
     this.starSprite = this._makeStar();
     if (this.w) this._paintDust();
+    this.drawn = null;
     // (lite: a sleeping sky takes its new colours in the next frame, not at its next calm turn)
     this.liteDue = 0;
     if (this.raf === 0 && this.liteTimer) this._wake();
@@ -189,6 +207,7 @@ export class ConstellationField {
     this.canvas.height = Math.round(h * this.dpr);
     this._seed();
     this._paintDust();
+    this.drawn = null;
     this.constellations = [];
     this.active = null;
     this.dirty = true;
@@ -427,7 +446,8 @@ export class ConstellationField {
   }
 
   _frame(now) {
-    if (this.lite) { this.raf = 0; const turn = this._liteTurn(now); if (!turn) return; if (turn === 'busy') this.raf = requestAnimationFrame(this._frame); }
+    let turn = null;
+    if (this.lite) { this.raf = 0; turn = this._liteTurn(now); if (!turn) return; if (turn === 'busy') this.raf = requestAnimationFrame(this._frame); }
     else this.raf = requestAnimationFrame(this._frame);
     if (!this.gate(now)) return;
     // calm: nothing but the twinkle is going on, and that is slow enough to draw every other frame
@@ -477,10 +497,14 @@ export class ConstellationField {
     for (const c of this.constellations) for (const s of c.stars) s.lit = Math.max(s.lit, Math.min(1, c.alpha));
     this.lively = lively;
 
-    this._draw(now);
+    this._draw(now, turn === 'calm');
   }
 
-  _draw(now) {
+  _draw(now, calmTurn = false) {
+    // lite, while no star is lit (a page scrolling): between the calm beats the stars keep the last beat's
+    // twinkle, as the calm sky does, and only what the text blocks uncovered since the last frame is drawn
+    const plain = this.lite && !this.lively && !this.constellations.length;
+    if (plain && !calmTurn && this.drawn && now < this.beatDue) { this._patch(); return; }
     const ctx = this.ctx;
     const [r, g, b] = this.rgb;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -491,30 +515,8 @@ export class ConstellationField {
 
     // stars (one that lies wholly under a text block, with its soft edge, is left out: the block's
     // clear below would take it away again, so the picture is the same)
-    const t = now / 1000;
     const glowing = [];
-    const masks = this.maskRects;
-    ctx.fillStyle = `rgb(${r},${g},${b})`;
-    if (this.lite) ctx.imageSmoothingQuality = 'high'; // (the stars' picture, from its mipmaps)
-    const TAU = Math.PI * 2;
-    for (const s of this.stars) {
-      const tw = this.reducedMotion ? 1 : 0.72 + 0.28 * Math.sin(t * s.speed + s.phase);
-      const a = Math.min(1, s.base * tw + s.boost * 0.85 + s.lit * 0.55);
-      const radius = s.r * (1 + 0.9 * s.boost) + s.lit * 0.5;
-      const lit = s.boost > 0.03 || s.lit > 0.03;
-      if (lit) glowing.push(s);
-      if (!lit && this._underMask(s.x, s.y, radius + 1.5, masks)) continue;
-      ctx.globalAlpha = a;
-      if (this.lite) {
-        const R = radius + 0.1;
-        ctx.drawImage(this.starSprite, s.x - R, s.y - R, R * 2, R * 2);
-        continue;
-      }
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, radius, 0, TAU);
-      ctx.fill();
-    }
-    ctx.imageSmoothingQuality = 'low';
+    this._drawStars(ctx, now, this.maskRects, glowing);
 
     // glow: one pass, additive on the dark stage so overlapping halos bloom
     if (glowing.length) {
@@ -548,6 +550,80 @@ export class ConstellationField {
 
     // keep the sky clear of text: erase under every text block
     for (const m of this.maskRects) ctx.clearRect(m.x, m.y, m.w, m.h);
+    if (plain) { this.beatAt = now; this.beatDue = now + LITE_CALM_MS - 4; this.drawn = this.maskRects; } else this.drawn = null;
+  }
+
+  /** The stars at their twinkle, boost and light, one wholly inside `masks` left out; the lit ones pushed to `glowing`. */
+  _drawStars(ctx, now, masks, glowing, stars = this.stars) {
+    const [r, g, b] = this.rgb;
+    const t = now / 1000;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    if (this.lite) ctx.imageSmoothingQuality = 'high'; // (the stars' picture, from its mipmaps)
+    const TAU = Math.PI * 2;
+    for (const s of stars) {
+      const tw = this.reducedMotion ? 1 : 0.72 + 0.28 * Math.sin(t * s.speed + s.phase);
+      const a = Math.min(1, s.base * tw + s.boost * 0.85 + s.lit * 0.55);
+      const radius = s.r * (1 + 0.9 * s.boost) + s.lit * 0.5;
+      const lit = s.boost > 0.03 || s.lit > 0.03;
+      if (lit) glowing.push(s);
+      if (!lit && this._underMask(s.x, s.y, radius + 1.5, masks)) continue;
+      ctx.globalAlpha = a;
+      if (this.lite) {
+        const R = radius + 0.1;
+        ctx.drawImage(this.starSprite, s.x - R, s.y - R, R * 2, R * 2);
+        continue;
+      }
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, radius, 0, TAU);
+      ctx.fill();
+    }
+    ctx.imageSmoothingQuality = 'low';
+  }
+
+  /**
+   * Lite, between beats: the canvas still holds the beat's picture but where the text blocks were last
+   * frame; where they have moved off it is drawn again as at the beat (the dust and the stars there),
+   * then the blocks are cleared where they are now. The same pixels as drawing it whole, for the few
+   * stars a scroll uncovers rather than all of them.
+   */
+  _patch() {
+    const d = this.dpr, W = this.canvas.width, H = this.canvas.height;
+    const masks = this.maskRects;
+    // a block's whole pixels: one it only partly covers is drawn again, then partly cleared as ever
+    const inner = masks.map((m) => ({ x0: Math.ceil(m.x * d), y0: Math.ceil(m.y * d), x1: Math.floor((m.x + m.w) * d), y1: Math.floor((m.y + m.h) * d) }));
+    const parts = [];
+    for (const o of this.drawn) {
+      let left = [{ x0: Math.max(0, Math.floor(o.x * d)), y0: Math.max(0, Math.floor(o.y * d)), x1: Math.min(W, Math.ceil((o.x + o.w) * d)), y1: Math.min(H, Math.ceil((o.y + o.h) * d)) }];
+      for (const n of inner) left = left.flatMap((a) => cut(a, n));
+      for (const a of left) if (a.x1 > a.x0 && a.y1 > a.y0) parts.push(a);
+    }
+    if (parts.length) this._redraw(parts);
+    const ctx = this.ctx;
+    ctx.setTransform(d, 0, 0, d, 0, 0);
+    for (const m of masks) ctx.clearRect(m.x, m.y, m.w, m.h);
+    this.drawn = masks;
+  }
+
+  /** Lite: rects of the canvas (whole device pixels) drawn again as at the last beat, under one clip. */
+  _redraw(parts) {
+    const ctx = this.ctx, d = this.dpr;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.beginPath();
+    for (const a of parts) ctx.rect(a.x0, a.y0, a.x1 - a.x0, a.y1 - a.y0);
+    ctx.clip();
+    for (const a of parts) ctx.clearRect(a.x0, a.y0, a.x1 - a.x0, a.y1 - a.y0);
+    ctx.globalAlpha = 1;
+    ctx.drawImage(this.dust, 0, 0);
+    ctx.setTransform(d, 0, 0, d, 0, 0);
+    const near = new Set();
+    const reach = 4; // past a star's centre its dot reaches (px)
+    for (const a of parts) {
+      const x0 = a.x0 / d - reach, y0 = a.y0 / d - reach, x1 = a.x1 / d + reach, y1 = a.y1 / d + reach;
+      this.grid.query(x0, y0, x1, y1, (s) => { if (s.x > x0 && s.x < x1 && s.y > y0 && s.y < y1) near.add(s); });
+    }
+    this._drawStars(ctx, this.beatAt, [], [], near);
+    ctx.restore();
   }
 
   start() {
