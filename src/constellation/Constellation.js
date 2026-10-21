@@ -136,10 +136,31 @@ export class ConstellationField {
     this.glowRgb = parseColor(glow);
     this.additive = additive;
     this.glow = this._makeGlow();
+    this.starSprite = this._makeStar();
     if (this.w) this._paintDust();
     // (lite: a sleeping sky takes its new colours in the next frame, not at its next calm turn)
     this.liteDue = 0;
     if (this.raf === 0 && this.liteTimer) this._wake();
+  }
+
+  /**
+   * Lite tier: a star, drawn once (a disc in the theme's colour), which each star is then drawn from,
+   * scaled to its size: a filled arc is rasterised in the GPU process as a path, about 2 ms a frame for
+   * the sky's 200 stars on this laptop and five times that on a phone's CPU, where a scaled picture is a
+   * tenth of it. Smoothed from its mipmaps and drawn a tenth of a pixel larger, it gives the arcs' light
+   * (to 2%) in the same places; the pixels of each dot differ a little.
+   */
+  _makeStar() {
+    const s = 64;
+    const c = document.createElement('canvas');
+    c.width = c.height = s;
+    const g = c.getContext('2d');
+    const [r, gg, b] = this.rgb;
+    g.fillStyle = `rgb(${r},${gg},${b})`;
+    g.beginPath();
+    g.arc(s / 2, s / 2, s / 2, 0, Math.PI * 2);
+    g.fill();
+    return c;
   }
 
   _makeGlow() {
@@ -474,6 +495,7 @@ export class ConstellationField {
     const glowing = [];
     const masks = this.maskRects;
     ctx.fillStyle = `rgb(${r},${g},${b})`;
+    if (this.lite) ctx.imageSmoothingQuality = 'high'; // (the stars' picture, from its mipmaps)
     const TAU = Math.PI * 2;
     for (const s of this.stars) {
       const tw = this.reducedMotion ? 1 : 0.72 + 0.28 * Math.sin(t * s.speed + s.phase);
@@ -483,10 +505,16 @@ export class ConstellationField {
       if (lit) glowing.push(s);
       if (!lit && this._underMask(s.x, s.y, radius + 1.5, masks)) continue;
       ctx.globalAlpha = a;
+      if (this.lite) {
+        const R = radius + 0.1;
+        ctx.drawImage(this.starSprite, s.x - R, s.y - R, R * 2, R * 2);
+        continue;
+      }
       ctx.beginPath();
       ctx.arc(s.x, s.y, radius, 0, TAU);
       ctx.fill();
     }
+    ctx.imageSmoothingQuality = 'low';
 
     // glow: one pass, additive on the dark stage so overlapping halos bloom
     if (glowing.length) {
