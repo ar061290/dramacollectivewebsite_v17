@@ -15,8 +15,10 @@ export function followSpot(el, { glow = true, onMove, reduced = false } = {}) {
   let dirty = true;
   let ticking = false;
   // --spot-x / --spot-y are read only by a lit copy of the text (.spot-text__lit, the About
-  // statement); elsewhere writing them restyled every descendant of the block for nothing
-  let reads = null;
+  // statement), through its mask, and are written on that copy alone (it fills the block, so the
+  // place is the same in its space): on the block they restyled the block's every child in every
+  // frame of the spot's walk, the text it does not light and the glow included
+  let lits = null;
   const mark = () => { dirty = true; if (!ticking) { ticking = true; gsap.ticker.add(tick); } };
   const dur = reduced ? 0 : 0.45;
   const qx = gsap.quickTo(spot, 'x', { duration: dur, ease: 'power3.out', onUpdate: mark });
@@ -32,10 +34,10 @@ export function followSpot(el, { glow = true, onMove, reduced = false } = {}) {
   const tick = () => {
     if (!dirty) { gsap.ticker.remove(tick); ticking = false; return; } // nothing moved: off the ticker until something does
     dirty = false;
-    reads ??= !!el.querySelector('.spot-text__lit');
-    if (reads) {
-      el.style.setProperty('--spot-x', `${spot.x}px`);
-      el.style.setProperty('--spot-y', `${spot.y}px`);
+    lits ??= [...el.querySelectorAll('.spot-text__lit')];
+    for (const lit of lits) {
+      lit.style.setProperty('--spot-x', `${spot.x}px`);
+      lit.style.setProperty('--spot-y', `${spot.y}px`);
     }
     if (glowAt) { glowAt.x(r4(spot.x)); glowAt.y(r4(spot.y)); glowAt.a(r4(spot.a)); }
     onMove?.(spot.x, spot.y, spot.a);
