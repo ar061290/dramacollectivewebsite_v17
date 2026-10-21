@@ -4,9 +4,18 @@
 @font-face { font-family: "Lato"; src: url("../../assets/fonts/Lato-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: "Lato"; src: url("../../assets/fonts/Lato-700.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 @font-face { font-family: "Lato"; src: url("../../assets/fonts/Lato-900.woff2") format("woff2"); font-weight: 900; font-style: normal; font-display: swap; }
-@font-face { font-family: "Open Sans"; src: url("../../assets/fonts/OpenSans-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Open Sans"; src: url("../../assets/fonts/OpenSans-400i.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
-@font-face { font-family: "Open Sans"; src: url("../../assets/fonts/OpenSans-600.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+/* Open Sans in two parts: the Latin the site is written in (its outlines, kerning, hinting and
+   layout features kept; a third of the full file), and the whole font, which a page fetches only if
+   it ever shows a character outside that range (Greek, Cyrillic, Vietnamese). A face declared later
+   is tried first for a character, so the full faces come first. */
+@font-face { font-family: "Open Sans"; src: url("../../assets/fonts/OpenSans-400-full.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans"; src: url("../../assets/fonts/OpenSans-400i-full.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans"; src: url("../../assets/fonts/OpenSans-600-full.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans"; src: url("../../assets/fonts/OpenSans-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+0259, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Open Sans"; src: url("../../assets/fonts/OpenSans-400i.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+0259, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Open Sans"; src: url("../../assets/fonts/OpenSans-600.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+0259, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 /* Grand Hotel (SIL Open Font License, Latin subset): a free script close to Instagram's classic
-   wordmark, used for that one word only (.ig-word in components.css), so it is never preloaded. */
-@font-face { font-family: "Grand Hotel"; src: url("../../assets/fonts/GrandHotel-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+   wordmark, used for that one word only (.ig-word in components.css), so it is never preloaded; its
+   Basic Latin first, the rest only if ever wanted, as Open Sans above. */
+@font-face { font-family: "Grand Hotel"; src: url("../../assets/fonts/GrandHotel-400-full.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Grand Hotel"; src: url("../../assets/fonts/GrandHotel-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; unicode-range: U+0020-007E; }
