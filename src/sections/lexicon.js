@@ -19,7 +19,7 @@ import { DrawSVGPlugin } from 'gsap/DrawSVGPlugin.js';
 import TYPE from '../../assets/type/about-words.js';
 import { fields, buildField, takeField } from './lexiconFields.js';
 import { SWELL, MELT, EDGE, smooth, placed, between } from './lexiconMorph.js';
-import { probeWebGL, prefersStatic, readToken, phoneTier } from '../util/env.js';
+import { probeWebGL, prefersStatic, readToken, phoneTier, liteTier } from '../util/env.js';
 import { currentTheme } from '../ui/theme.js';
 
 gsap.registerPlugin(ScrollTrigger, DrawSVGPlugin);
@@ -62,7 +62,6 @@ const EXTENT = WORDS.map((w) => {
 });
 
 // (the morph between two words: src/sections/lexiconMorph.js)
-
 
 /** Work for idle moments (a short timeout keeps it moving on a page that is never idle). */
 const idle = (fn) => (window.requestIdleCallback
@@ -270,6 +269,20 @@ export function setupLexicon(host, { reduced, opened, onTheme }) {
 
   // ---- the word at a point of the scroll ----
   let shownD = '', shownStroke = '';
+  const show = (d, sw) => {
+    if (d !== shownD) { ink.setAttribute('d', d); shownD = d; }
+    if (sw !== shownStroke) { ink.setAttribute('stroke-width', sw); shownStroke = sw; }
+  };
+  // lite tier: the shape between two words comes from a worker (prepare, below), shown when it answers,
+  // a frame after it was asked for: one question at a time, the latest kept while one is out, and an
+  // answer the scroll has since left behind (the word at rest, or swelling) never shown
+  let morph = null, asking = false, wanted = null, gen = 0;
+  const ask = () => { asking = true; morph.postMessage({ gen, ...wanted }); wanted = null; };
+  const answered = ({ data }) => {
+    asking = false;
+    if (data.gen === gen) show(data.d, '0.00'); // its stroke with it: the outline does not swell between
+    if (wanted) ask();
+  };
   const draw = (at) => {
     let d, stroke = 0;
     if (reduced || at.rest) d = restD[at.word];
@@ -279,10 +292,14 @@ export function setupLexicon(host, { reduced, opened, onTheme }) {
       const into = at.m < EDGE;
       d = restD[into ? at.k : at.k + 1];
       stroke = 2 * SWELL * smooth(into ? at.m / EDGE : (1 - at.m) / EDGE);
+    } else if (morph) {
+      wanted = { k: at.k, s: waveAt(at.m), cs: cell };
+      if (!asking) ask();
+      return;
     } else d = between(at.k, waveAt(at.m), cell);
-    if (d !== shownD) { ink.setAttribute('d', d); shownD = d; }
-    const sw = stroke.toFixed(2);
-    if (sw !== shownStroke) { ink.setAttribute('stroke-width', sw); shownStroke = sw; }
+    gen++;
+    wanted = null;
+    show(d, stroke.toFixed(2));
   };
 
   // ---- one place where the scroll position becomes the picture ----
@@ -374,7 +391,25 @@ export function setupLexicon(host, { reduced, opened, onTheme }) {
     // the same data, so the very same numbers (on a slow phone they are a second's work, and slices of
     // it in the page's idle moments ran into the frames of a scroll); else in the idle moments, as before
     let worker = null;
-    const instead = () => { worker?.terminate(); worker = null; if (!gone) idle(work); };
+    const instead = () => {
+      const drew = !!morph; // (the lite worker that drew the morph: the page draws it from now on)
+      worker?.terminate(); worker = morph = null; asking = false;
+      if (gone) return;
+      idle(work);
+      if (drew) apply(progress, true);
+    };
+    // on the lite tier the worker also draws the morph, and keeps the fields (the page never needs them)
+    if (liteTier()) {
+      try {
+        worker = morph = new Worker(new URL('./lexiconMorph.worker.js', import.meta.url), { type: 'module' });
+        worker.onmessage = answered;
+        worker.onerror = (e) => { e.preventDefault?.(); instead(); };
+        cleanups.push(() => { worker?.terminate(); worker = morph = null; });
+        return;
+      } catch {
+        morph = null;
+      }
+    }
     try {
       worker = new Worker(new URL('./lexiconFields.worker.js', import.meta.url), { type: 'module' });
       worker.onmessage = ({ data }) => {
