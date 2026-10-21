@@ -201,7 +201,7 @@ function injectVertex(shader, uniforms, { normals }) {
  * @param {THREE.Object3D} o.space     the turntable: the morph mesh is its child
  * @param {THREE.Vector3} o.center     the turning axis' centre (for the swirl)
  */
-export function assembleMorph(r, { material: statueMaterial, space, center }) {
+export function assembleMorph(r, { material: statueMaterial, space, center, release = false }) {
   const t0 = performance.now();
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(r.aPos, 3));
@@ -211,6 +211,15 @@ export function assembleMorph(r, { material: statueMaterial, space, center }) {
   geo.setAttribute('aNormB', new THREE.BufferAttribute(r.aNormB, 3));
   geo.setAttribute('aParams', new THREE.BufferAttribute(r.aParams, 3));
   geo.setAttribute('aPart', new THREE.BufferAttribute(r.aPart, 1));
+  // `release` (the phone tier): the vertices let go once they are on the GPU, 40 MB the page held twice
+  // over; a context lost and given back needs them again (refill). Its bounds first, which three.js
+  // would otherwise work out from them on the first frame drawn
+  const SOURCE = { position: 'aPos', normal: 'aNor', uv: 'aUv', aPosB: 'aPosB', aNormB: 'aNormB', aParams: 'aParams', aPart: 'aPart' };
+  if (release) {
+    geo.computeBoundingBox();
+    geo.computeBoundingSphere();
+    for (const a of Object.values(geo.attributes)) a.onUpload(function () { this.array = null; });
+  }
 
   const fit = { at: new THREE.Vector3().fromArray(r.fit.at), scale: r.fit.scale, shift: r.fit.shift.map((s) => new THREE.Vector3().fromArray(s)) };
   const closeUp = new THREE.Box3(new THREE.Vector3().fromArray(r.closeUp.min), new THREE.Vector3().fromArray(r.closeUp.max));
@@ -286,6 +295,12 @@ export function assembleMorph(r, { material: statueMaterial, space, center }) {
       // grows, which keeps the shifted parts inside the ring clearance)
       uniforms.uSettle.value = Math.min(1 - window01(MORPH.settle, t), 1 - grow);
       return grow;
+    },
+    /** True once its vertices have gone to the GPU and been let go here (`release`). */
+    get empty() { return geo.attributes.position.array === null; },
+    /** Its vertices again (buildAll's result for the very same job), for a context given back. */
+    refill(again) {
+      for (const [name, a] of Object.entries(geo.attributes)) { a.array = again[SOURCE[name]]; a.needsUpdate = true; }
     },
     dispose() {
       mesh.removeFromParent();

@@ -21,7 +21,7 @@ import { SilhouetteMask } from './silhouette.js';
 import { evaluate, TURN } from './sequence.js';
 import { growAt, MORPH, morphJob, buildInWorker, buildHere, assembleMorph } from './morph.js';
 import { mark } from '../util/perf.js';
-import { pixelRatio, frameGate, antialias, liteTier } from '../util/env.js';
+import { pixelRatio, frameGate, antialias, liteTier, phoneTier } from '../util/env.js';
 import { onLite } from '../util/governor.js';
 import { liteTextures } from './lite.js';
 import { stopLoop } from './loop.js';
@@ -189,6 +189,8 @@ export class Stage {
     e.preventDefault(); // so the browser may give it back
     if (this.lost) return;
     this.lost = true;
+    // a morph that has let its vertices go (the phone tier) must be built again before it is drawn
+    if (this.morph?.empty) this._morphGone = true;
     const was = this.running;
     this.stop();
     this._resume = was;
@@ -205,10 +207,39 @@ export class Stage {
     this._lastSig = '';
     this._maskDue = 0;
     this._vectorKey = null; // the vector's colours are read from the canvas again
-    this.onRestored?.();
+    // a morph being built again, with its act on the screen: the page's still stays up until it is back
+    // (src/main.js shows it while the context is away), rather than the statue standing in mid-act
+    const waiting = this._morphGone && this.tracks.morph > 0;
+    if (!waiting) this.onRestored?.();
     this.renderOnce();
     if (this._resume) this.start();
     this._resume = false;
+    if (this._morphGone) this._refillMorph().then((back) => { if (waiting && back) this.onRestored?.(); });
+  }
+
+  /**
+   * The phone tier's morph, after a context given back: its vertices built again in the worker from the
+   * very same job (the statue holds her pose through the morph's act meanwhile, as before it was first
+   * built), put back into its geometry and warmed as at first.
+   */
+  async _refillMorph() {
+    if (this._refilling || !this._morphJob || !this.morph) return false;
+    this._refilling = true;
+    let r;
+    try {
+      r = await buildInWorker(this._morphJob());
+    } catch {
+      if (this.disposed) { this._refilling = false; return false; }
+      r = buildHere(this._morphJob());
+    }
+    this._refilling = false;
+    if (this.disposed || this.lost || !this.morph) return false; // lost again: the next return builds it again
+    this.morph.refill(r);
+    this._morphGone = false;
+    this._lastSig = '';
+    this.wake();
+    this.warmMorph();
+    return true;
   }
 
   _buildLights() {
@@ -450,7 +481,8 @@ export class Stage {
     this._morphPending = false;
     if (this.disposed || this.morph) return null;
     this.logoWidth = r.logoWidth;
-    this.morph = assembleMorph(r, { material: this.skinned.material, space: this.turntable, center: c });
+    this._morphJob = job;
+    this.morph = assembleMorph(r, { material: this.skinned.material, space: this.turntable, center: c, release: phoneTier() });
     this.wake(); // (the frame's signature counts the morph)
     // the logo is the statue's own stone: its average colour (texture times tint)
     if (this.statue.averageColor) this.morph.uniforms.uStone.value.copy(this.statue.averageColor);
@@ -489,7 +521,7 @@ export class Stage {
    */
   async warmMorph() {
     const m = this.morph;
-    if (!m || this.lost || this.disposed || !this.skinned) return;
+    if (!m || this.lost || this.disposed || !this.skinned || this._morphGone) return;
     const r = this.renderer;
     const star = this.star;
     const was = { mesh: m.mesh.visible, statue: this.skinned.visible, star: star?.mesh.visible, glow: star?.glow.visible };
@@ -627,7 +659,12 @@ export class Stage {
     const statueYaw = 2 * Math.PI * TURN.revolutions * tr.turn + s.arc * tr.morph + LOGO_SWAY * Math.sin(Math.PI * tr.logo) + (drift + t.drag + t.follow) * settle;
     this.turntable.rotation.y = statueYaw;
     // the morph: the logo forms at her head, then grows out to its place in the ring
-    const m = this.morph;
+    const m = this._morphGone ? null : this.morph; // (being built again after a lost context: the statue meanwhile)
+    if (this._morphGone) {
+      // as before it was first built: no logo and no star (and nothing drawn from vertices it has let go)
+      this.morph.mesh.visible = false;
+      if (this.star) { this.star.mesh.visible = false; this.star.glow.visible = false; }
+    }
     const morphing = !!m && tr.morph > 0;
     let grow = 0;
     if (m) {
