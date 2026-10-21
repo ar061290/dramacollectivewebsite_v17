@@ -7,7 +7,8 @@
 // It plays from the site's own MP3 (public/music/the-smell-of-old-books.mp3) in a plain audio
 // element. The file is the whole playlist (some 47 MB), so it is streamed: nothing of it is asked for
 // until the music is wanted, and then only its first few bytes (the length) before playing from the
-// chosen point, which the browser fetches from there on as it goes.
+// chosen point, which is fetched from there on as it goes (in Chromium by the page itself, half a
+// minute ahead, src/ui/musicStream.js; elsewhere by the browser).
 //
 // Each page starts the music somewhere new: a random point in the playlist, never its very start and
 // never where the last page had got to, so every visit (and every page of it) opens on a different
@@ -26,6 +27,7 @@
 // All of them turn it on or off just as the button does (and are remembered as the button is); a
 // pause from outside the page with no media session (a headset unplugged) counts as turning it off.
 import gsap from 'gsap';
+import { canStream, streamInto } from './musicStream.js';
 
 export const TRACK = {
   title: 'the smell of old books, reading, writing and studying (a dark academia playlist)',
@@ -74,6 +76,7 @@ export function setupMusic({ reduced, opened }) {
   let wanted = false; // the visitor's choice; the audio may be briefly paused while the tab is hidden
   let blocked = false; // wanted, but the browser would not let it start on its own: it waits for the visitor
   let audio = null;
+  let stream = null; // Chromium: the page feeding the element (src/ui/musicStream.js)
   let placed = false; // whether this page's random starting point has been set
   let fade = null;
   let waitGesture = null; // while it is blocked: the next tap, click or key starts it
@@ -227,7 +230,18 @@ export function setupMusic({ reduced, opened }) {
   // refuses says so at once, and one that allows it simply waits for the file.
   const load = () => {
     if (!audio) build();
-    if (!audio.getAttribute('src')) audio.src = FILE;
+    if (audio.getAttribute('src')) return;
+    if (!canStream()) { audio.src = FILE; return; }
+    const a = audio;
+    stream = streamInto(a, FILE, {
+      // it could not start (no byte ranges where the site is served, say): the plain file, as elsewhere
+      onFail: () => {
+        stream = null;
+        if (audio !== a) return;
+        a.src = FILE;
+        if (wanted && !document.hidden) play();
+      },
+    });
   };
 
   // Inside the visitor's click: the element is made and set playing there and then, not once its
@@ -246,6 +260,8 @@ export function setupMusic({ reduced, opened }) {
     blocked = false;
     if (!audio) return;
     halt();
+    stream?.dispose();
+    stream = null;
     audio.removeAttribute('src');
     audio.load(); // drop the stream
     audio = null;
