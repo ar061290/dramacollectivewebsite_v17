@@ -67,7 +67,11 @@ export function flipFilter({ container, items, buttons, shows, reduced, onChange
     buttons.forEach((b) => b.setAttribute('aria-pressed', String(b === e.currentTarget)));
     flip?.progress(1);
     const from = container.offsetHeight;
-    const state = Flip.getState(items);
+    // (simple: each item's place from its box, not from the matrix of everything around it, which GSAP
+    // measures by putting an element inside each item and reading it: a forced layout an item, most of
+    // a phone's half second here. The items are never turned or scaled, so the places are the same,
+    // the box's exact where the matrix's was rounded to half a pixel)
+    const state = Flip.getState(items, { simple: true });
     items.forEach((m) => { m.hidden = !shows(m, key); });
     const to = container.offsetHeight;
     onChange();
@@ -80,7 +84,11 @@ export function flipFilter({ container, items, buttons, shows, reduced, onChange
     flip.add(Flip.from(state, {
       duration: 0.55,
       ease: 'curtain',
-      absolute: true,
+      // only the items that leave are lifted out of the layout (to fade where they stood); the others move
+      // by their transforms within it, from their old places to their new ones, as before. Lifting every
+      // item out, Flip measured each one's parent's matrix as it did, the larger part of the tap's work
+      absoluteOnLeave: true,
+      simple: true,
       stagger: 0.02,
       onEnter: (els) => gsap.fromTo(els, { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: 'curtain', delay: 0.1 }),
       onLeave: (els) => gsap.to(els, { autoAlpha: 0, duration: 0.2, ease: 'power1.in' }),
