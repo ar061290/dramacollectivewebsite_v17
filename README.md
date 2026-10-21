@@ -11,6 +11,38 @@ The home page for the CHIREC Drama Collective: one page, a dark theatre before c
 
 The home page has a hero and five acts: the Collective's statement, a countdown to the production, this month's publication, what the Collective does (five cards the scroll turns), and the footer's own columns, which dock into the footer with the logo. The hero's meta description is still placeholder.
 
+## Held for the owner (to come back to)
+
+Three findings of the 21 October sweeps would change something a visitor could see, or are a judgement
+about devices; they are held, as the owner asked on 22 October, until decided. Nothing below is shipped.
+
+1. **Publication's statue scenes** (`src/publication/statue.js:55`). The Publication page can make up to
+   three Thinker statues (the main one, the writers' box, Upcoming), each its own WebGL context of about
+   30 MB of GPU memory, none scaled for the lite tier, and keeps them all for the rest of the visit.
+   - Option A: let a statue that has been off the screen for a while give its context back (as the home
+     stage does after 30 s in a hidden tab), showing its still meanwhile; coming back costs a rebuild
+     (about 0.3-1 s on a mid-range phone, the still standing in).
+   - Option B: on the lite tier only, keep one statue live at a time (the nearest), the others their
+     stills.
+   - Cost of either: a still picture where a live statue was, for a moment.
+2. **iPhones never get the still pictures** (`src/util/env.js:96`). The "2 GB or less: the still
+   pictures" rule reads `navigator.deviceMemory`, which Safari does not provide, so every iPhone, however
+   old, gets the live 3D (the lite tier still applies by cores on some). There is no field evidence yet
+   that iPhones struggle (the field sheet can tell, once read).
+   - Options: leave it; or treat iPhones with few cores, or a small screen at a high pixel ratio, as
+     static; or let the frame governor (src/util/governor.js) switch a struggling iPhone to the stills
+     mid-visit.
+   - Cost: older iPhones that cope today would see stills instead of the live statue.
+3. **The back/forward cache keeps a left page's 3D scenes** (`src/main.js:406`, `src/site/boot.js:63`).
+   The pages do enter the cache (checked in the lab: home, About, the writers, Publication were all
+   restored from it on Back), so after home -> About on a phone the home page's WebGL (about 56-95 MB)
+   stays frozen in memory behind the new page for up to ten minutes. Chrome evicts cache entries first
+   under memory pressure.
+   - Option: release the scenes' contexts on `pagehide` (persisted) and restore them on `pageshow`,
+     perhaps on the lite tier only.
+   - Cost: on Back, the page shows its still picture for a moment (and rebuilds its scenes) instead of
+     coming back live at once.
+
 ## What changed in v19: performance, second round
 
 Nothing on the page looks or behaves differently. Measured back to back against the v18 build on the lab's phone (390×844, the CPU four times slower), with the pixel guardrail at threshold 0 on the pages concerned.
