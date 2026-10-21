@@ -33,6 +33,28 @@ gsap.config({ autoSleep: 30 });
 // look asks for a frame of its own on a still page; today's browsers do not miss scroll events)
 if (liteTier()) ScrollTrigger.config({ syncInterval: 2000 });
 else onLite(() => ScrollTrigger.config({ syncInterval: 2000 })); // (the frame governor's verdict, src/util/governor.js)
+
+// ScrollTrigger measured the whole page again on the window's load, and boot() once more as the curtain
+// parts: a long task each (on a phone 50-150 ms for Publication or the writers), which on most pages
+// gave back the places they already had. Both now run only if something has moved since the last
+// refresh: a trigger's box, the page's height or the window. (Across every page, on a phone and a
+// laptop, no refresh that changed a place found these as the refresh before it left them.) Watched
+// only until both have passed.
+ScrollTrigger.config({ autoRefreshEvents: 'visibilitychange,DOMContentLoaded,resize' });
+let placed = null;
+const places = () => ScrollTrigger.getAll().map((st) => {
+  const r = st.trigger?.getBoundingClientRect();
+  return r ? `${r.top + scrollY},${r.height},${r.left},${r.width}` : '-';
+}).join(';') + `|${document.documentElement.scrollHeight},${innerWidth},${innerHeight}`;
+const onRefreshed = () => { placed = places(); };
+ScrollTrigger.addEventListener('refresh', onRefreshed);
+let unsettled = 2; // the parting and the window's load
+const refreshIfMoved = () => {
+  if (placed === null || places() !== placed) ScrollTrigger.refresh();
+  if (--unsettled === 0) ScrollTrigger.removeEventListener('refresh', onRefreshed);
+};
+if (document.readyState === 'complete') unsettled--;
+else window.addEventListener('load', refreshIfMoved, { once: true });
 CustomEase.create('curtain', '.22,.61,.36,1'); // --ease-curtain from the design system
 
 /**
@@ -122,7 +144,7 @@ async function start(setup) {
   mark('parted');
   window.dcUp = true;
   parted();
-  ScrollTrigger.refresh();
+  refreshIfMoved();
   // only now, with the curtain open, may the bar's buttons fly to their spots on the page
   cleanups.push(setupFlyIn({ reduced }));
   return ctx;
