@@ -223,7 +223,21 @@ export class CurtainStage {
     const frame = () => new Promise((r) => requestAnimationFrame(r));
     const manager = new THREE.LoadingManager();
     const loaded = new Promise((resolve) => { manager.onLoad = resolve; manager.onError = resolve; });
-    this.markTex = new THREE.TextureLoader(manager).load(this.markUrl, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; });
+    // In Chromium the mark is decoded as an ImageBitmap already turned the way the upload would turn it
+    // (flipY) and not premultiplied (as the upload wants it), so the upload is a straight copy, as the
+    // home and About rings' maps are: an <img> was turned and converted on the page's thread there, just
+    // after the parting. The same pixels either way. Elsewhere, as before.
+    const bitmaps = typeof createImageBitmap === 'function' && !!navigator.userAgentData?.brands?.some((b) => /Chromium/.test(b.brand));
+    if (bitmaps) {
+      const tex = (this.markTex = new THREE.Texture());
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 4;
+      tex.flipY = false; // (turned already)
+      new THREE.ImageBitmapLoader(manager).setOptions({ imageOrientation: 'flipY', premultiplyAlpha: 'none' })
+        .load(this.markUrl, (bitmap) => { tex.image = bitmap; tex.needsUpdate = true; });
+    } else {
+      this.markTex = new THREE.TextureLoader(manager).load(this.markUrl, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; });
+    }
     await Promise.all([loaded, document.fonts.load('900 200px Lato').catch(() => {})]);
     if (this.disposed) return;
     const r = this.renderer;
