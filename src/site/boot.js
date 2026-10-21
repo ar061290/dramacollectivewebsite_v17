@@ -135,7 +135,7 @@ async function start(setup) {
   } catch (err) {
     console.error('Page setup failed.', err);
   }
-  setupBrandMark({ reduced }).then((c) => cleanups.push(c));
+  setupBrandMark({ reduced, when: opened }).then((c) => cleanups.push(c));
   mark('setup');
 
   // one frame for the page to settle, then the curtain parts
