@@ -52,13 +52,34 @@ export async function loadStatue(url, { manager, onBytes, dracoPath = DRACO_PATH
  * x = z = 0, which the stage turns the statue about. `center` and `radius` describe a sphere centred
  * on that axis that contains every vertex at any turn (used to keep the statue clear of the ring).
  */
-export function prepareStatue(object, { kind, height = 2, yaw = Math.PI, roughness = 0.45 } = {}) {
+/**
+ * What the measures below depend on: the model's meshes (their vertex counts and first positions, its
+ * bones), the height and the turn. Measures saved for one key (statue-rig.measures.json, made by
+ * tools/models/statue-measures.mjs with the site's own code) are used only for that key.
+ */
+export function measureKey(object, { height = 2, yaw = Math.PI } = {}) {
+  const parts = [`h${height}`, `y${yaw}`];
+  object.traverse((o) => {
+    if (!o.isMesh) return;
+    const p = o.geometry.attributes.position;
+    const head = Array.from({ length: Math.min(12, p.array.length) }, (_, i) => p.array[i]);
+    parts.push(`${o.name}:${p.count}:${o.isSkinnedMesh ? o.skeleton.bones.length : 0}:${head.join(',')}`);
+  });
+  return parts.join('|');
+}
+
+export function prepareStatue(object, { kind, height = 2, yaw = Math.PI, roughness = 0.45, measures = null } = {}) {
   const spin = new THREE.Group();
   spin.rotation.y = yaw;
   spin.add(object);
   const root = new THREE.Group();
   root.name = 'Statue';
   root.add(spin);
+  // the model's measures, saved: the very numbers the passes below would give (they walk every vertex,
+  // skinned, five times: on a phone the longest stretch of the page's thread before the statue's first
+  // frame). Used only for the model they were made from; else measured here, as before.
+  const key = measureKey(object, { height, yaw });
+  const saved = measures && measures.key === key ? measures : null;
 
   // Every measure below walks every vertex as drawn (skinned), pass after pass, exactly as three's
   // Box3.setFromObject(root, true) and getVertexPosition do; only each pass's skinning reads each
@@ -66,27 +87,36 @@ export function prepareStatue(object, { kind, height = 2, yaw = Math.PI, roughne
   // longest stretch of the page's thread between the model's decode and its first frame. (Skinning
   // once and re-using the vertices across the passes gave the same measures mathematically but not
   // to the last bit, and moved the statue's framing by a fraction of a pixel.)
-  root.updateMatrixWorld(true);
-  const box = boxOf(root);
-  root.scale.setScalar(height / (box.max.y - box.min.y));
-  root.updateMatrixWorld(true);
-  boxOf(root, box);
+  let center, radius;
+  if (saved) {
+    root.scale.setScalar(saved.scale);
+    root.position.fromArray(saved.position);
+    root.updateMatrixWorld(true);
+    center = new THREE.Vector3().fromArray(saved.center);
+    radius = saved.radius;
+  } else {
+    root.updateMatrixWorld(true);
+    const box = boxOf(root);
+    root.scale.setScalar(height / (box.max.y - box.min.y));
+    root.updateMatrixWorld(true);
+    boxOf(root, box);
 
-  // centre on the plinth's footprint (lowest 4% of the model), not on the whole box
-  const cut = box.min.y + 0.04 * (box.max.y - box.min.y);
-  const base = new THREE.Box3();
-  const v = new THREE.Vector3();
-  forEachVertex(root, (p) => { if (p.y <= cut) base.expandByPoint(p); }, v);
-  const foot = (base.isEmpty() ? box : base).getCenter(new THREE.Vector3());
-  root.position.set(-foot.x, -box.min.y, -foot.z);
-  root.updateMatrixWorld(true);
+    // centre on the plinth's footprint (lowest 4% of the model), not on the whole box
+    const cut = box.min.y + 0.04 * (box.max.y - box.min.y);
+    const base = new THREE.Box3();
+    const v = new THREE.Vector3();
+    forEachVertex(root, (p) => { if (p.y <= cut) base.expandByPoint(p); }, v);
+    const foot = (base.isEmpty() ? box : base).getCenter(new THREE.Vector3());
+    root.position.set(-foot.x, -box.min.y, -foot.z);
+    root.updateMatrixWorld(true);
 
-  // bounding sphere on the turning axis, at mid-height: turning about y keeps x² + z² per vertex,
-  // so this sphere contains every vertex at any turn
-  boxOf(root, box);
-  const center = new THREE.Vector3(0, box.getCenter(v).y, 0);
-  let radius = 0;
-  forEachVertex(root, (p) => { radius = Math.max(radius, p.distanceTo(center)); }, v);
+    // bounding sphere on the turning axis, at mid-height: turning about y keeps x² + z² per vertex,
+    // so this sphere contains every vertex at any turn
+    boxOf(root, box);
+    center = new THREE.Vector3(0, box.getCenter(v).y, 0);
+    radius = 0;
+    forEachVertex(root, (p) => { radius = Math.max(radius, p.distanceTo(center)); }, v);
+  }
 
   root.traverse((o) => {
     if (!o.isMesh) return;
@@ -103,7 +133,9 @@ export function prepareStatue(object, { kind, height = 2, yaw = Math.PI, roughne
     }
   });
 
-  return { root, center, radius, height, averageColor: averageStoneColor(root) };
+  // (what was measured, for tools/models/statue-measures.mjs to save)
+  const measured = { key, scale: root.scale.x, position: root.position.toArray(), center: center.toArray(), radius, saved: !!saved };
+  return { root, center, radius, height, averageColor: averageStoneColor(root), measured };
 }
 
 /**

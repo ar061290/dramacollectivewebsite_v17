@@ -17,6 +17,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createRing, placeRing } from './ringStone.js';
 import { loadStatue, prepareStatue, forEachVertex, STATUE_LAYER } from './statue.js';
+import STATUE_MEASURES from '../../assets/models/statue-rig.measures.json';
 import { SilhouetteMask } from './silhouette.js';
 import { evaluate, TURN } from './sequence.js';
 import { growAt, MORPH, morphJob, buildInWorker, buildHere, assembleMorph } from './morph.js';
@@ -301,18 +302,26 @@ export class Stage {
     mark('statue decoded');
     if (this.disposed) return;
 
-    this.statue = prepareStatue(statue.object, { kind: statue.kind, yaw });
+    // (the model's measures, saved by tools/models/statue-measures.mjs: ?measure measures afresh)
+    const measures = /[?&]measure\b/.test(location.search) ? null : STATUE_MEASURES;
+    this.statue = prepareStatue(statue.object, { kind: statue.kind, yaw, measures });
     this.skinned = null;
     this.statue.root.traverse((o) => { if (o.isSkinnedMesh && !this.skinned) this.skinned = o; });
     this._readPose(statue.animations);
     if (this.pose.length) {
       // the ring clearance must hold at the end pose too (the arm moves outward)
-      this._applyPose(1, 1);
       let r = this.statue.radius;
-      forEachVertex(this.statue.root, (p) => { r = Math.max(r, p.distanceTo(this.statue.center)); });
+      if (measures?.key === this.statue.measured.key && typeof measures.radiusEnd === 'number') {
+        r = measures.radiusEnd; // (saved, as above; the bones left at the start pose, as the measuring leaves them)
+        this._applyPose(0, 0);
+      } else {
+        this._applyPose(1, 1);
+        forEachVertex(this.statue.root, (p) => { r = Math.max(r, p.distanceTo(this.statue.center)); });
+        this._applyPose(0, 0);
+      }
       this.statue.radiusRest = this.statue.radius;
       this.statue.radius = r;
-      this._applyPose(0, 0);
+      this.statue.measured.radiusEnd = r;
     }
     // the turntable turns about the statue's vertical axis (x = z = 0, through the plinth)
     this.turntable = new THREE.Group();

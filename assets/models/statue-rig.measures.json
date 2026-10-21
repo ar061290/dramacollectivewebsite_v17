@@ -1,0 +1,17 @@
+{
+  "about": "The home statue (statue-rig.glb, and statue-rig-lite.glb: the same meshes) as src/scene/statue.js measures it: its scale, its place, its turning sphere, and its radius at the end pose. Made by tools/models/statue-measures.mjs; used only for the model of this key.",
+  "key": "h2|y3.141592653589793|Statue:96811:10:0.4428582191467285,1.8401172161102295,0.10104319453239441,0.44444525241851807,1.8434133529663086,0.10128733515739441,0.44700896739959717,1.841093897819519,0.10409519076347351,0.4484739303588867,1.8470758199691772,0.10275229811668396",
+  "scale": 0.9999790934228199,
+  "position": [
+    0.009411853473437426,
+    -6.664519605074274e-7,
+    -0.0027860714646225915
+  ],
+  "center": [
+    0,
+    1,
+    0
+  ],
+  "radius": 1.0939517828204552,
+  "radiusEnd": 1.0939517828204552
+}
