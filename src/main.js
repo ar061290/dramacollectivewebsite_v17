@@ -39,8 +39,12 @@ if (liteTier()) ScrollTrigger.config({ syncInterval: 2000 });
 else onLite(() => ScrollTrigger.config({ syncInterval: 2000 })); // (the frame governor's verdict, src/util/governor.js)
 CustomEase.create('curtain', '.22,.61,.36,1'); // --ease-curtain from the design system
 
+// the statue: on the lite tier the same model with its pictures at 1024 pixels (tools/models/lite-maps.py),
+// which lite.js would otherwise shrink to on the phone after downloading them at 2048
+const STATUE = new URL('../assets/models/statue-rig.glb', import.meta.url).href;
+const STATUE_LITE = new URL('../assets/models/statue-rig-lite.glb', import.meta.url).href;
 const ASSETS = {
-  statue: new URL('../assets/models/statue-rig.glb', import.meta.url).href,
+  statue: liteTier() ? STATUE_LITE : STATUE,
   logo: new URL('../assets/brand/mark.svg', import.meta.url).href,
   logoParts: new URL('../assets/brand/mark-regions.json', import.meta.url).href,
   albedo: new URL('../assets/textures/ring-albedo.webp', import.meta.url).href,

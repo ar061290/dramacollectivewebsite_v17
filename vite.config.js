@@ -43,17 +43,25 @@ function finishHead() {
             ...draco.map((d) => link({ rel: 'preload', href: d, as: 'fetch', crossOrigin: 'anonymous' })),
             ...[...chunks].map((c) => link({ rel: 'modulepreload', href: dir + c, crossOrigin: '' })),
           ];
+          // (the lite tier's own model, its pictures at 1024 pixels: the tier is on <html> by now)
+          const lite = byName(/^assets\/statue-rig-lite-[^/]+\.glb$/);
+          const model = (h) => JSON.stringify({ rel: 'preload', href: h, as: 'fetch', type: 'model/gltf-binary', crossOrigin: 'anonymous' });
           const lines = [
-            link({ rel: 'preload', href, as: 'fetch', type: 'model/gltf-binary', crossOrigin: 'anonymous' }),
+            lite
+              ? `document.head.appendChild(Object.assign(document.createElement('link'), document.documentElement.classList.contains('tier-lite') ? ${model(dir + lite)} : ${model(href)}));`
+              : link({ rel: 'preload', href, as: 'fetch', type: 'model/gltf-binary', crossOrigin: 'anonymous' }),
             `requestAnimationFrame(function () { setTimeout(function () { ${later.join(' ')} }, 0); });`,
           ];
           top = `<script>/* the statue, its decoder and the stage's code start now, for the devices that will draw them (the rest get the still picture: src/util/env.js) */\n  if (${GATE}) { ${lines.join(' ')} }</script>`;
           return '';
         });
-        // right after the title: within the first bytes of the page, as early as the preload scanner would
-        // have seen a plain link (further down it ran only after the stylesheet and the other preloads), but
-        // after the charset and viewport metas, which the browser must find first
-        if (top) html = html.replace(/<\/title>\s*/, (m) => `${m}${top}\n  `);
+        // in the first bytes of the page, as early as the preload scanner would have seen a plain link (further
+        // down it ran only after the stylesheet and the other preloads): right after the head's inline script
+        // that puts the device's tier on <html> (tools/pages/build.mjs), which it reads; else after the title
+        if (top) {
+          const tiered = /hc\.add\('tier-lite'\)[\s\S]*?<\/script>/;
+          html = tiered.test(html) ? html.replace(tiered, (m) => `${m}\n  ${top}`) : html.replace(/<\/title>\s*/, (m) => `${m}${top}\n  `);
+        }
         // 2. the publication's still, for the theme in use
         if (/publication\.html$/.test(ctx.path)) html = html.replace(/<link rel="preload" as="image" href="([^"]+)"([^>]*)>/, (m, dark, rest) => {
           const light = byName(/^assets\/thinker-light-[^/]+\.webp$/);

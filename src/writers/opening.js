@@ -32,10 +32,11 @@
 // it, and the writers follow. Without scripts: the statue's picture and the words, then the writers.
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
-import { probeWebGL, prefersStatic } from '../util/env.js';
+import { probeWebGL, prefersStatic, liteTier } from '../util/env.js';
 import { rig, project } from './rig.js';
 
-const MODEL = new URL('../../assets/models/writer-statue.glb', import.meta.url).href;
+// (the lite tier: its pictures at 1024 pixels, tools/models/lite-maps.py)
+const MODEL = liteTier() ? new URL('../../assets/models/writer-statue-lite.glb', import.meta.url).href : new URL('../../assets/models/writer-statue.glb', import.meta.url).href;
 const MEASURES = new URL('../../assets/models/writer-statue.json', import.meta.url).href;
 const debug = new URLSearchParams(location.search).has('debug');
 

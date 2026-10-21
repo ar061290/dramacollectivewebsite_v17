@@ -28,7 +28,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import gsap from 'gsap';
-import { readToken, antialias } from '../util/env.js';
+import { readToken, antialias, liteTier } from '../util/env.js';
 import { liteTexture, liteTextures } from './lite.js';
 import { stopLoop } from './loop.js';
 import { rig } from '../writers/rig.js';
@@ -41,7 +41,8 @@ const DRACO_PATH = import.meta.env ? new URL('draco/', document.baseURI).href : 
 
 /** The writer statue's model and its measures (the `model` option's default). */
 export const WRITER_MODEL = {
-  glb: new URL('../../assets/models/writer-statue.glb', import.meta.url).href,
+  // (the lite tier: its pictures at 1024 pixels, tools/models/lite-maps.py)
+  glb: liteTier() ? new URL('../../assets/models/writer-statue-lite.glb', import.meta.url).href : new URL('../../assets/models/writer-statue.glb', import.meta.url).href,
   json: new URL('../../assets/models/writer-statue.json', import.meta.url).href,
 };
 // the cover on its book (the `cover` option's default): the October issue's, as the page's own

@@ -1,9 +1,10 @@
 // The marble masks either side of a piece (src/scene/masks.js), on the piece pages only (body
 // .page--piece-*), and only where there is room beside the text column (a wide screen) and WebGL
 // runs well; elsewhere the page is as it was. Made once the page's curtain has opened.
-import { probeWebGL, prefersStatic } from '../util/env.js';
+import { probeWebGL, prefersStatic, liteTier } from '../util/env.js';
 
-const MODEL = new URL('../../assets/models/masks.glb', import.meta.url).href;
+// (the lite tier: its picture at 1024 pixels, tools/models/lite-maps.py)
+const MODEL = liteTier() ? new URL('../../assets/models/masks-lite.glb', import.meta.url).href : new URL('../../assets/models/masks.glb', import.meta.url).href;
 const WIDE = '(min-width: 1180px)';
 const pageTheme = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
 

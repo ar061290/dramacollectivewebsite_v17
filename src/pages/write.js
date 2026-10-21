@@ -15,10 +15,11 @@
 import { bootPage } from '../site/boot.js';
 import { embedFillout } from '../site/fillout.js';
 import { setupTicker } from '../publication/ticker.js';
-import { probeWebGL, prefersStatic } from '../util/env.js';
+import { probeWebGL, prefersStatic, liteTier } from '../util/env.js';
 
 const MODEL = {
-  glb: new URL('../../assets/models/writer-statue-pen.glb', import.meta.url).href,
+  // (the lite tier: its pictures at 1024 pixels, tools/models/lite-maps.py)
+  glb: liteTier() ? new URL('../../assets/models/writer-statue-pen-lite.glb', import.meta.url).href : new URL('../../assets/models/writer-statue-pen.glb', import.meta.url).href,
   json: new URL('../../assets/models/writer-statue-pen.json', import.meta.url).href,
 };
 const debug = new URLSearchParams(location.search).has('debug');
