@@ -35,7 +35,8 @@ export const TRACK = {
 };
 const VOLUME = 0.6; // of full volume: background music, under the page
 // the mark, shown with the track by the system's media controls
-const ARTWORK = new URL('../../assets/brand/mark-gold.png', import.meta.url).href;
+// (lossless WebP: the mark's very pixels in 31 KB, against the page's 81 KB PNG; only the system's media card shows it)
+const ARTWORK = new URL('../../assets/brand/mark-gold-art.webp', import.meta.url).href;
 // the site's own recording: under Vite, public/ is the site's root; run without a build, it is the folder
 const FILE = import.meta.env
   ? new URL('music/the-smell-of-old-books.mp3', document.baseURI).href
@@ -404,7 +405,7 @@ export function setupMusic({ reduced, opened }) {
           title: TRACK.title,
           artist: TRACK.by,
           album: 'The Drama Collective',
-          artwork: [{ src: ARTWORK, sizes: '615x615', type: 'image/png' }],
+          artwork: [{ src: ARTWORK, sizes: '615x615', type: 'image/webp' }],
         });
       }
     } catch { /* no metadata: the controls still work */ }
