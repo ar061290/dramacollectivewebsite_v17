@@ -166,9 +166,9 @@ async function boot() {
     }
   }
   const still = document.querySelector('.stage__fallback');
-  // the still picture is fetched only when it is needed (it is most of a megabyte): no live stage,
-  // or the stage's WebGL context taken away later
-  const loadStill = () => { if (!still.getAttribute('src')) still.src = new URL('../assets/fallback/hero.png', import.meta.url).href; };
+  // the still picture is fetched only when it is needed: no live stage, or the stage's WebGL context
+  // taken away later (lossless WebP: the PNG's very pixels in 374 KB rather than 927)
+  const loadStill = () => { if (!still.getAttribute('src')) still.src = new URL('../assets/fallback/hero.webp', import.meta.url).href; };
   if (!stage) {
     loadStill();
     still.hidden = false;
