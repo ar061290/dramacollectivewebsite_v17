@@ -70,11 +70,23 @@ function setupLamps(act, reduced) {
   };
   lamps.forEach((l) => l.addEventListener('click', onPress));
 
-  // aim: each beam turns a little toward the pointer, the nearer lamps more
-  const aims = lamps.map((l) => ({ l, v: 0, q: null }));
+  // aim: each beam turns a little toward the pointer, the nearer lamps more (the head 0.7 of the beam's
+  // turn). Written on the two that turn: as a custom property on the lamp it restyled the whole lamp,
+  // button, word and all, every frame of the scroll's walk (half the page's style work there)
+  const aims = lamps.map((l) => ({ l, head: l.querySelector('.lamp__head'), beam: l.querySelector('.lamp__beam'), v: 0, s: '0.00', q: null }));
   if (!reduced) {
     for (const a of aims) {
-      a.q = gsap.quickTo(a, 'v', { duration: 0.6, ease: 'power3.out', onUpdate: () => a.l.style.setProperty('--aim', `${a.v.toFixed(2)}deg`) });
+      a.q = gsap.quickTo(a, 'v', {
+        duration: 0.6,
+        ease: 'power3.out',
+        onUpdate: () => {
+          const s = a.v.toFixed(2);
+          if (s === a.s) return;
+          a.s = s;
+          if (a.head) a.head.style.rotate = `calc(${s}deg * .7)`;
+          if (a.beam) a.beam.style.rotate = `${s}deg`;
+        },
+      });
     }
   }
   const aimAt = (x, y) => {

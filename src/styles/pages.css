@@ -414,7 +414,7 @@
   border-radius: 6px 6px 16px 16px;
   box-shadow: inset 0 -2px 0 rgb(0 0 0 / .35);
   transform-origin: 50% -10px;
-  rotate: calc(var(--aim, 0deg) * .7);
+  rotate: 0deg; /* turned toward the pointer by production.js, 0.7 of its beam's turn */
 }
 .lamp__head::before { content: ""; position: absolute; left: 50%; top: -10px; width: 2px; height: 10px; margin-left: -1px; background: var(--slate-500); }
 .lamp__head::after {
@@ -437,7 +437,7 @@
   transform-origin: 50% 0;
   opacity: 0;
   /* the aim (set by production.js) and the throw are separate properties, so they never fight */
-  rotate: var(--aim, 0deg);
+  rotate: 0deg;
   scale: 1 .92;
   transition: opacity var(--dur-slow) var(--ease-curtain), scale var(--dur-slow) var(--ease-out);
 }
