@@ -265,7 +265,23 @@ export class Stage {
     const report = () => onProgress(Math.min(0.99, 0.15 * (items / itemsTotal) + 0.85 * bytes));
     manager.onProgress = (_url, loaded, total) => { items = loaded; itemsTotal = total; report(); };
     const texLoader = new THREE.TextureLoader(manager);
-    const loadTex = (url, srgb) => texLoader.loadAsync(url).then((t) => {
+    // In Chromium each ring map is decoded as an ImageBitmap already turned the way the upload would turn
+    // it (flipY), so the upload before the curtain is a straight copy, as About's ring does
+    // (src/scene/aboutRing.js): an <img> flipped at upload is turned on the CPU there, on the page's
+    // thread while the loader plays. The same pixels either way. Elsewhere, as before. (A loader each:
+    // ImageBitmapLoader reads its options only once the file is in.)
+    const bitmaps = typeof createImageBitmap === 'function' && !!navigator.userAgentData?.brands?.some((b) => /Chromium/.test(b.brand));
+    const fetchTex = async (url, srgb) => {
+      if (!bitmaps) return texLoader.loadAsync(url);
+      const bitmap = await new THREE.ImageBitmapLoader(manager)
+        .setOptions({ imageOrientation: 'flipY', premultiplyAlpha: 'none', colorSpaceConversion: srgb ? 'default' : 'none' })
+        .loadAsync(url);
+      const t = new THREE.Texture(bitmap);
+      t.flipY = false; // (turned already)
+      t.needsUpdate = true;
+      return t;
+    };
+    const loadTex = (url, srgb) => fetchTex(url, srgb).then((t) => {
       t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
       t.wrapS = t.wrapT = THREE.RepeatWrapping;
       t.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
