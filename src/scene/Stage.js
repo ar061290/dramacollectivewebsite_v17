@@ -127,7 +127,7 @@ export class Stage {
     this.camera = new THREE.PerspectiveCamera(14, 1, 0.1, 400);
     this.scene.add(this.camera); // the ring is the camera's child
 
-    this._makeEnv();
+    this._envReady = this._makeEnvSoon(); // (preWarm, load and warm wait for it)
     this.scene.environmentIntensity = 0;
 
     this._buildLights();
@@ -176,6 +176,51 @@ export class Stage {
     this.scene.environment = this.envTarget.texture;
     room.dispose();
     pmrem.dispose();
+  }
+
+  /**
+   * The same room, made at the start without holding the page: making it compiled its programs on the
+   * spot (the room's two stone materials and its lamps, the backdrop, the blur), and the page's thread
+   * waited for each to link, about half a second on a mid-range phone as the loader played. They are
+   * compiled first where the browser compiles in parallel (compileAsync, as warm() does), each by a
+   * stand-in that three.js keys as the real draw (drawn into a target, so linear and untouched by tone
+   * mapping; the room's own light; the backdrop's back faces, its blur's own material); then the room is
+   * made exactly as before and finds them ready. A context lost meanwhile, or a compile that does not end,
+   * leaves it to be made as before (_onRestored makes it on a context given back).
+   */
+  async _makeEnvSoon() {
+    const r = this.renderer;
+    const pmrem = new THREE.PMREMGenerator(r);
+    const room = new RoomEnvironment();
+    const made = [];
+    try {
+      const target = new THREE.WebGLRenderTarget(1, 1);
+      made.push(target);
+      const eye = new THREE.PerspectiveCamera(90, 1, 0.1, 100);
+      const backdrop = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial({ side: THREE.BackSide, depthWrite: false, depthTest: false }));
+      made.push(backdrop.geometry, backdrop.material);
+      const compiling = [];
+      r.setRenderTarget(target);
+      compiling.push(r.compileAsync(room, eye), r.compileAsync(backdrop, eye));
+      // the blur's material, as fromScene makes it (three.js 0.170's PMREMGenerator: where that differs, the
+      // blur compiles in fromScene, as before)
+      if (typeof pmrem._setSize === 'function' && typeof pmrem._allocateTargets === 'function') {
+        pmrem._setSize(256);
+        made.push(pmrem._allocateTargets());
+        if (pmrem._blurMaterial && pmrem._lodPlanes?.[0]) compiling.push(r.compileAsync(new THREE.Mesh(pmrem._lodPlanes[0], pmrem._blurMaterial), new THREE.OrthographicCamera()));
+      }
+      r.setRenderTarget(null);
+      await Promise.race([Promise.all(compiling), new Promise((res) => setTimeout(res, 5000))]);
+    } catch { /* made as before, its programs compiled on the spot */ }
+    try {
+      if (this.disposed || this.lost || this.envTarget) return;
+      this.envTarget = pmrem.fromScene(room, 0.04);
+      this.scene.environment = this.envTarget.texture;
+    } finally {
+      for (const m of made) m.dispose();
+      room.dispose();
+      pmrem.dispose();
+    }
   }
 
   // ---- a lost WebGL context ----
@@ -889,6 +934,7 @@ export class Stage {
    * opaque program has no other holder until its reveal has ended.
    */
   async preWarm() {
+    await this._envReady; // (the stage's programs depend on the room: compiled against it)
     if (this._standIns || this.disposed || this.lost) return;
     const r = this.renderer;
     const made = { materials: [], textures: [], geometries: [], meshes: [] };
@@ -979,6 +1025,7 @@ export class Stage {
    * so the first frame the visitor sees is not the one that stalls on compiling.
    */
   async warm() {
+    await this._envReady;
     if (!this.statue) return;
     this._updateRig(0);
     this._updateLights();
@@ -1344,7 +1391,7 @@ export class Stage {
     this.ring?.matcap.dispose();
     this.ring?.dayMatcap.dispose();
     this.scene.environment = null;
-    this.envTarget.dispose();
+    this.envTarget?.dispose();
     this.scene.clear();
     this.renderer.dispose();
     this.renderer.forceContextLoss();
