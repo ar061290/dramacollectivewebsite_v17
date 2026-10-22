@@ -40,7 +40,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { makeRoom, makeRoomSoon } from './room.js';
 import { readToken, antialias } from '../util/env.js';
 import { Spring } from '../ui/spring.js';
 
@@ -743,7 +743,9 @@ export class Earrings {
     try {
       const loader = new GLTFLoader().setDRACOLoader(draco);
       const gltf = typeof source === 'string' ? await loader.loadAsync(source) : await loader.parseAsync(source, '');
-      return new Earrings(gltf, o);
+      const made = new Earrings(gltf, o);
+      await made._envReady; // (nothing is drawn without the room)
+      return made;
     } finally {
       draco.dispose();
     }
@@ -773,9 +775,14 @@ export class Earrings {
     // the room the metal and the stones reflect (three's RoomEnvironment), pre-filtered once, and
     // again if the browser drops the WebGL context and gives it back (three restores the model's
     // textures itself, but not what was drawn into a render target: without the room the metal
-    // would come back black). While the context is lost the canvas is out of sight.
-    this._makeEnv();
+    // would come back black). While the context is lost the canvas is out of sight. Made without holding
+    // the page (src/scene/room.js: the pointer is on its way to the switch); create() waits for it.
     this.lost = false;
+    this._envReady = makeRoomSoon(r, () => this.disposed || this.lost || !!this.envTarget).then((target) => {
+      if (!target) return;
+      this.envTarget = target;
+      this.scene.environment = target.texture;
+    });
     this._onLost = () => { this.lost = true; this.canvas.style.opacity = '0'; };
     this._onRestored = () => {
       this.lost = false;
@@ -889,13 +896,9 @@ export class Earrings {
 
   /** The room the metal reflects, pre-filtered (small: 0.04 blur). */
   _makeEnv() {
-    const pmrem = new THREE.PMREMGenerator(this.renderer);
-    const room = new RoomEnvironment();
     this.envTarget?.dispose();
-    this.envTarget = pmrem.fromScene(room, 0.04);
+    this.envTarget = makeRoom(this.renderer);
     this.scene.environment = this.envTarget.texture;
-    room.dispose();
-    pmrem.dispose();
   }
 
   _owns(geometry) {
@@ -1351,7 +1354,8 @@ export class Earrings {
     }
     this.canvas.removeEventListener('webglcontextlost', this._onLost);
     this.canvas.removeEventListener('webglcontextrestored', this._onRestored);
-    this.envTarget.dispose();
+    this.disposed = true;
+    this.envTarget?.dispose();
     this.renderer.dispose();
     this.canvas.remove();
   }
