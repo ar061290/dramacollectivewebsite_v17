@@ -17,14 +17,17 @@ try {
   const page = await browser.newPage();
   await page.emulate({ device: 'laptop', network: 'none' });
   await page.goto(`${srv.url}index.html?live&measure`, { timeout: 60000 });
-  await page.waitForMark('stage-built', { timeout: 120000 });
+  // (the bounds are worked out at the statue's first frame)
+  await page.waitForMark('curtain-up', { timeout: 120000 });
   await sleep(500);
   const m = JSON.parse(await page.evaluate('JSON.stringify(window.dramaCollective.stage.statue.measured)'));
   if (!m || m.saved) throw new Error('the statue was not measured afresh');
+  if (!m.bounds || m.bounds.saved) throw new Error('its bounds were not worked out afresh');
   const saved = {
-    about: 'The home statue (statue-rig.glb, and statue-rig-lite.glb: the same meshes) as src/scene/statue.js measures it: its scale, its place, its turning sphere, and its radius at the end pose. Made by tools/models/statue-measures.mjs; used only for the model of this key.',
+    about: 'The home statue (statue-rig.glb, and statue-rig-lite.glb: the same meshes) as src/scene/statue.js measures it: its scale, its place, its turning sphere, and its radius at the end pose; and its bounds as three.js works them out at its first frame (with a hash of what they were worked out from). Made by tools/models/statue-measures.mjs; used only for the model of this key (the bounds, only for those inputs).',
     key: m.key, scale: m.scale, position: m.position, center: m.center, radius: m.radius, radiusEnd: m.radiusEnd,
+    bounds: { inputs: m.bounds.inputs, center: m.bounds.center, radius: m.bounds.radius },
   };
   writeFileSync(out, JSON.stringify(saved, null, 2) + '\n');
-  console.log(`saved: scale ${m.scale}, position ${m.position}, centre ${m.center}, radius ${m.radius}, at the end pose ${m.radiusEnd}`);
+  console.log(`saved: scale ${m.scale}, position ${m.position}, centre ${m.center}, radius ${m.radius}, at the end pose ${m.radiusEnd}; bounds ${m.bounds.center} r ${m.bounds.radius} (${m.bounds.inputs})`);
 } finally { await browser.close(); await srv.close(); }

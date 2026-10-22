@@ -194,6 +194,42 @@ function boxOf(root, box = new THREE.Box3()) {
   return box;
 }
 
+/**
+ * What a skinned mesh's bounds are worked out from, beyond its geometry: its bind, its bones and where it
+ * stands (the exact numbers, hashed). The same inputs give the same bounds.
+ */
+function boundsInputs(mesh) {
+  const ms = [mesh.bindMatrix, mesh.bindMatrixInverse, ...mesh.skeleton.bones.map((b) => b.matrixWorld), ...mesh.skeleton.boneInverses];
+  const morphs = mesh.morphTargetInfluences ?? [];
+  const f = new Float64Array(ms.length * 16 + morphs.length);
+  ms.forEach((m, i) => f.set(m.elements, i * 16));
+  f.set(morphs, ms.length * 16);
+  const u = new Uint32Array(f.buffer);
+  let a = 0xdeadbeef, b = 0x41c6ce57;
+  for (let i = 0; i < u.length; i++) { a = Math.imul(a ^ u[i], 2654435761); b = Math.imul(b ^ u[i], 1597334677); }
+  a = Math.imul(a ^ (a >>> 16), 2246822507) ^ Math.imul(b ^ (b >>> 13), 3266489909);
+  b = Math.imul(b ^ (b >>> 16), 2246822507) ^ Math.imul(a ^ (a >>> 13), 3266489909);
+  return `${u.length}:${(b >>> 0).toString(16).padStart(8, '0')}${(a >>> 0).toString(16).padStart(8, '0')}`;
+}
+
+/**
+ * three.js works out a skinned mesh's bounds the first time it needs them (the renderer orders its draws
+ * by their centre), by skinning every vertex: about a third of a second on a phone, inside the statue's
+ * first frame. Bounds saved with the measures (tools/models/statue-measures.mjs) are used instead when
+ * what they are worked out from is exactly what they were saved for (boundsInputs); else three.js works
+ * them out, as before. `onBounds` hears them (for the tool that saves them).
+ */
+export function useSavedBounds(mesh, saved, onBounds = () => {}) {
+  const own = mesh.computeBoundingSphere;
+  mesh.computeBoundingSphere = function () {
+    const inputs = boundsInputs(this);
+    const use = !!saved && saved.inputs === inputs;
+    if (use) this.boundingSphere = new THREE.Sphere(new THREE.Vector3().fromArray(saved.center), saved.radius);
+    else own.call(this);
+    onBounds({ inputs, center: this.boundingSphere.center.toArray(), radius: this.boundingSphere.radius, saved: use });
+  };
+}
+
 /** Every vertex in world space, as drawn (skinning applied for a skinned mesh). */
 export function forEachVertex(root, fn, v = new THREE.Vector3()) {
   root.updateMatrixWorld(true);

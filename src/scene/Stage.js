@@ -16,7 +16,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createRing, placeRing, stoneMatcapsAhead } from './ringStone.js';
-import { loadStatue, prepareStatue, forEachVertex, STATUE_LAYER } from './statue.js';
+import { loadStatue, prepareStatue, forEachVertex, useSavedBounds, STATUE_LAYER } from './statue.js';
 import STATUE_MEASURES from '../../assets/models/statue-rig.measures.json';
 import { SilhouetteMask } from './silhouette.js';
 import { evaluate, TURN } from './sequence.js';
@@ -308,6 +308,8 @@ export class Stage {
     this.statue = prepareStatue(statue.object, { kind: statue.kind, yaw, measures });
     this.skinned = null;
     this.statue.root.traverse((o) => { if (o.isSkinnedMesh && !this.skinned) this.skinned = o; });
+    // (and its bounds as three.js first works them out, saved with them: see useSavedBounds)
+    if (this.skinned) useSavedBounds(this.skinned, measures?.key === this.statue.measured.key ? measures.bounds : null, (b) => { this.statue.measured.bounds = b; });
     this._readPose(statue.animations);
     if (this.pose.length) {
       // the ring clearance must hold at the end pose too (the arm moves outward)
