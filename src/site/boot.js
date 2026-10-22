@@ -75,6 +75,11 @@ export async function bootPage(setup) {
 async function start(setup) {
   window.dcBooted = true; // for the failsafe in the head (tools/pages/build.mjs)
   mark('boot');
+  // a countdown's digits (the production page's event card) are set in Lato's black weight, which
+  // nothing else uses: fetched only once they were made, after the reveals had split, its arrival had
+  // them all split again (SplitText's autoSplit, on every font that arrives). Asked for now, it is part of
+  // the type waited for below (src/main.js does the same on the home page).
+  if (document.querySelector('[data-countdown]')) document.fonts.load('900 1em Lato').catch(() => {});
   const reduced = reducedMotion();
   const cleanups = [];
   cleanups.push(setupField());
