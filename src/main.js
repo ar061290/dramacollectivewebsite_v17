@@ -62,6 +62,12 @@ let sky = null;
 async function boot() {
   window.dcBooted = true; // for the failsafe in the head (tools/pages/build.mjs)
   mark('boot');
+  // the countdown's digits (act two) are the only type on the page in Lato's black weight: the browser
+  // fetched it once they were made, after the curtain, and its arrival had every line reveal split itself
+  // again (SplitText's autoSplit splits again whenever a font arrives) and the scroll's measures taken
+  // again, in the middle of the intro. Asked for now, it arrives with the rest of the type, which the
+  // curtain waits for as before.
+  const blackType = document.querySelector('[data-countdown]') ? document.fonts.load('900 1em Lato').catch(() => {}) : null;
   cleanups.push(setupField());
   // arriving through the curtain from another page: part it now, onto the loader
   const transitions = setupTransitions({ reduced });
@@ -182,7 +188,7 @@ async function boot() {
   }
 
   // the type, and the stage's shaders, are ready before the curtain goes up
-  await Promise.all([document.fonts.ready, stage?.warm()]);
+  await Promise.all([document.fonts.ready, blackType, stage?.warm()]);
   mark('fonts and shaders');
 
   // curtain: loader out
