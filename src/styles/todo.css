@@ -1,0 +1,343 @@
+/* ==== To do (todo.html, src/pages/todo.js): the owner's own list, linked from nowhere ====
+   A field and Add, with Finish by and Takes under them; All / Open / Done (the gold rule under the
+   one shown); the tasks in one card, in columns (the box and the words, Finish by, Takes, Remove); and
+   under it how many are open and Clear completed. Softer than the rest of the site, at the owner's
+   asking: rounded corners, gentler lines and colours, a cherry blossom tree beside it on laptops.
+   Both registers from the theme roles. */
+.page--todo {
+  --todo-r: 14px;                                  /* the card's and the field's corners */
+  --todo-hair: rgba(243, 231, 233, .10);           /* lines on the dark stage */
+  --todo-edge: rgba(243, 231, 233, .14);
+  --todo-shadow: 0 16px 40px rgba(0, 0, 0, .26);
+  --todo-add-bg: var(--gold-300); --todo-add-fg: var(--plum-900); --todo-add-hover: var(--gold-500);
+  --todo-box: var(--plum-300);                     /* an empty box's edge */
+  --todo-done: var(--gold-300); --todo-tick: var(--plum-900);
+  --todo-late: #f0a8b4;                            /* a soft rose: late, on the dark stage */
+  /* the tree */
+  --tree-bark: var(--plum-600); --tree-cloud: var(--plum-700);
+  --tree-p1: var(--plum-400); --tree-p2: var(--plum-300); --tree-p3: var(--plum-200); --tree-p4: var(--plum-100);
+  --tree-heart: var(--gold-500);
+}
+:root[data-theme="light"] .page--todo {
+  --todo-hair: rgba(134, 52, 105, .12);
+  --todo-edge: rgba(134, 52, 105, .18);
+  --todo-shadow: 0 14px 36px rgba(64, 20, 42, .08);
+  --todo-add-bg: var(--plum-500); --todo-add-fg: var(--plum-50); --todo-add-hover: var(--plum-600);
+  --todo-box: var(--plum-300);
+  --todo-done: var(--plum-500); --todo-tick: var(--gold-300);
+  --todo-late: var(--danger);
+  --tree-bark: var(--plum-700); --tree-cloud: var(--plum-200);
+  --tree-p1: var(--plum-400); --tree-p2: var(--plum-300); --tree-p3: #ecd0de; --tree-p4: var(--white);
+  --tree-heart: var(--gold-600);
+}
+
+/* the gold rule under the title, its ends rounded too */
+.page--todo .act-head .rule { border-radius: 3px; }
+/* the text grounds keep to the list's column, so the tree beside it is not dimmed */
+.page--todo .ground::before { right: max(calc(-1 * var(--ground-x)), calc(100% - 860px)); }
+
+/* the list keeps a readable width; the heading above keeps the page's */
+.todo { margin-top: var(--space-7); }
+.todo > * { max-width: 860px; }
+
+/* ---- adding: the field and Add, then Finish by and Takes ---- */
+.todo__add-row { display: flex; gap: 10px; }
+.todo__input, .todo__mini {
+  min-width: 0;
+  font: inherit;
+  color: var(--fg-strong);
+  background: var(--card-bg);
+  border: 1px solid var(--todo-edge);
+  border-radius: var(--todo-r);
+  transition: border-color var(--dur-base) var(--ease-curtain), box-shadow var(--dur-base) var(--ease-curtain);
+}
+.todo__input { flex: 1; height: 58px; padding: 0 20px; font-size: 18px; box-shadow: var(--todo-shadow); }
+.todo__input::placeholder, .todo__mini::placeholder { color: var(--fg-muted); opacity: .85; }
+.todo__input:focus, .todo__mini:focus { outline: none; border-color: var(--gold-500); box-shadow: 0 0 0 3px rgba(235, 216, 140, .45); }
+.todo__add-btn {
+  min-height: 58px;
+  padding-inline: 28px;
+  font-size: 15px;
+  letter-spacing: .08em;
+  border-radius: var(--todo-r);
+  background: var(--todo-add-bg);
+  color: var(--todo-add-fg);
+  box-shadow: var(--todo-shadow);
+}
+.todo__add-btn:hover { background: var(--todo-add-hover); color: var(--todo-add-fg); }
+
+.todo__add-meta { display: flex; flex-wrap: wrap; gap: 12px 28px; margin-top: 14px; }
+.todo__field { display: flex; align-items: center; gap: 8px; }
+.todo__field-label { font-size: 14px; color: var(--fg-muted); margin-right: 2px; }
+.todo__mini { height: 40px; padding: 0 12px; font-size: 15px; border-radius: 10px; color-scheme: dark; }
+:root[data-theme="light"] .todo__mini { color-scheme: light; }
+.todo__mini--takes { width: 150px; }
+.todo__mini--time { width: 100px; font-variant-numeric: tabular-nums; }
+.todo__mini:invalid:not(:placeholder-shown):not(:focus) { border-color: var(--todo-late); }
+
+/* ---- All / Open / Done ---- */
+.todo__bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; margin-top: var(--space-6); }
+.todo__filters { display: flex; flex-wrap: wrap; }
+.todo__filter {
+  position: relative;
+  padding: 12px 18px 14px;
+  background: none;
+  border: 0;
+  border-radius: 10px 10px 0 0;
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: 13px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: color var(--dur-base) var(--ease-curtain);
+}
+.todo__filter::after {
+  content: "";
+  position: absolute;
+  left: 12px; right: 12px; bottom: 0;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--rule-color);
+  transform: scaleX(0);
+  transition: transform var(--dur-base) var(--ease-curtain);
+}
+.todo__filter:hover, .todo__filter[aria-pressed="true"] { color: var(--fg-strong); }
+.todo__filter[aria-pressed="true"]::after { transform: scaleX(1); }
+.todo__filter:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+
+/* ---- the card: column heads, then the rows ---- */
+.todo__card {
+  margin-top: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--todo-edge);
+  border-radius: calc(var(--todo-r) + 4px);
+  box-shadow: var(--todo-shadow);
+  overflow: clip;
+}
+.todo__cols, .todo__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 104px 116px 84px;
+  align-items: center;
+  column-gap: 12px;
+  padding: 0 14px 0 22px;
+}
+.todo__cols {
+  padding-block: 12px 10px;
+  border-bottom: 1px solid var(--todo-hair);
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.todo__cols > span:first-child { padding-left: 44px; }
+.todo__cols[hidden], .todo__list[hidden], .todo__empty[hidden] { display: none; }
+.todo__list { list-style: none; margin: 0; padding: 0; }
+.todo__empty { margin: 0; padding: 26px 22px; color: var(--fg-muted); }
+.todo__item { min-height: 66px; }
+.todo__item + .todo__item { border-top: 1px solid var(--todo-hair); }
+.todo__item.is-new { animation: todo-in .5s var(--ease-curtain) both; }
+@keyframes todo-in { from { opacity: 0; transform: translateY(-6px); } }
+
+.todo__check { display: flex; align-items: center; gap: 18px; min-width: 0; padding-block: 14px; cursor: pointer; }
+/* the real checkbox, unseen but there for the keyboard and screen readers; the rounded box stands in */
+.todo__tick { position: absolute; width: 1px; height: 1px; margin: 0; opacity: 0; }
+.todo__box {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--todo-box);
+  border-radius: 8px;
+  color: var(--todo-tick);
+  transition: background-color var(--dur-base) var(--ease-curtain), border-color var(--dur-base) var(--ease-curtain), transform var(--dur-base) var(--ease-curtain);
+}
+.todo__check:hover .todo__box { border-color: var(--todo-done); }
+.todo__box svg { width: 17px; height: 17px; opacity: 0; transform: scale(.7); transition: opacity var(--dur-base) var(--ease-curtain), transform var(--dur-base) var(--ease-curtain); }
+.todo__tick:checked + .todo__box { background: var(--todo-done); border-color: var(--todo-done); }
+.todo__tick:checked + .todo__box svg { opacity: 1; transform: none; }
+.todo__tick:focus-visible + .todo__box { outline: 2px solid var(--focus); outline-offset: 3px; }
+.todo__text { font-size: 18px; line-height: var(--lh-tight); color: var(--fg); overflow-wrap: anywhere; }
+.todo__item.is-done .todo__text { color: var(--fg-muted); text-decoration: line-through 1.5px; }
+
+/* Finish by and Takes: the value itself is the button that changes it */
+.todo__cell { min-width: 0; }
+.todo__meta {
+  max-width: 100%;
+  padding: 6px 10px;
+  margin-left: -10px;
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--fg);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease-curtain), color var(--dur-base) var(--ease-curtain);
+}
+.todo__meta:hover { background: var(--tag-bg); color: var(--fg-strong); }
+.todo__meta:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.todo__meta.is-unset { color: var(--fg-muted); opacity: .6; }
+.todo__meta.is-late { color: var(--todo-late); }
+.todo__item.is-done .todo__meta { color: var(--fg-muted); }
+.todo__edit { display: flex; gap: 6px; margin-left: -10px; }
+.todo__edit .todo__mini { height: 36px; padding: 0 8px; font-size: 14px; }
+.todo__cell--due .todo__mini--time { width: 92px; }
+.todo__cell--takes .todo__mini--takes { width: 104px; }
+.todo__cell--due .todo__meta { font-variant-numeric: tabular-nums; }
+
+.todo__remove {
+  justify-self: end;
+  padding: 7px 12px;
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease-curtain), color var(--dur-base) var(--ease-curtain);
+}
+.todo__remove:hover { background: var(--tag-bg); color: var(--fg-strong); }
+.todo__remove:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ---- under the list ---- */
+.todo__foot { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-top: 16px; padding-inline: 4px; }
+.todo__count { margin: 0; font-size: 15px; color: var(--fg-muted); }
+.todo__clear { padding: 4px 0; background: none; border: 0; font: inherit; font-size: 15px; color: var(--accent); cursor: pointer; }
+.todo__clear[hidden] { display: none; }
+.todo__clear:hover { color: var(--accent-hover); text-decoration: underline 1px; text-underline-offset: 3px; }
+
+/* ---- narrower: Finish by and Takes go under the words, side by side ---- */
+@media (max-width: 760px) {
+  .todo__cols { display: none; }
+  .todo__item {
+    grid-template-columns: max-content max-content minmax(0, 1fr) auto;
+    grid-template-areas: "check check check remove" "due takes . .";
+    row-gap: 0;
+    padding: 2px 8px 10px 14px;
+  }
+  .todo__check { grid-area: check; padding-block: 12px 4px; }
+  .todo__cell--due { grid-area: due; padding-left: 44px; }
+  .todo__cell--takes { grid-area: takes; }
+  .todo__remove { grid-area: remove; }
+  .todo__meta { font-size: 14px; overflow: visible; }
+  /* no column heads here: the time says what it is */
+  .todo__cell--due .todo__meta:not(.is-unset)::before { content: "By "; }
+}
+@media (max-width: 640px) {
+  .page--todo { --todo-r: 12px; }
+  .todo__input { height: 52px; padding: 0 16px; font-size: 16px; }
+  .todo__add-btn { min-height: 52px; padding-inline: 20px; }
+  .todo__add-meta { gap: 10px 18px; }
+  .todo__mini { height: 38px; }
+  .todo__mini--takes { width: 130px; }
+  .todo__filter { padding: 10px 14px 12px; }
+  .todo__check { gap: 14px; }
+  .todo__text { font-size: 17px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .todo__item.is-new { animation: none; }
+}
+
+/* ---- No top bar on this page but the logo (home) and the light/dark switch, which stay where they
+   are as the page scrolls (nav.js's slide away has no say here) with nothing behind them: the links,
+   Apply now, Become a sponsor, the Menu, Instagram and the music's button are not shown. The music
+   still plays (on by default, from the visitor's first tap, click or key), and K or a three-finger tap
+   turns it on and off (src/ui/music.js) ---- */
+.page--todo .topbar { pointer-events: none; }
+.page--todo .topbar > :not(.topbar__brand, .topbar__tools) { display: none; }
+.page--todo .topbar__tools > :not(.theme-toggle) { display: none; }
+.page--todo .topbar > .topbar__brand { margin-right: auto; }
+.page--todo .topbar > :is(.topbar__brand, .topbar__tools),
+.page--todo .topbar.is-hidden > :is(.topbar__brand, .topbar__tools) { transform: none; pointer-events: auto; }
+/* once the page has scrolled (nav.js: .is-scrolled), a soft rounded ground of the page's colour under
+   each, so what scrolls beneath never runs into the logo or the switch; at the top, none */
+.page--todo .topbar > .topbar__brand { position: relative; isolation: isolate; }
+.page--todo .topbar > .topbar__brand::before {
+  content: "";
+  position: absolute;
+  inset: -4px -18px -4px -8px;
+  z-index: -1;
+  border-radius: 999px;
+  background: rgb(var(--scrim-rgb) / .82);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--todo-shadow);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-curtain);
+}
+.page--todo .topbar .theme-toggle { border-radius: 999px; transition: color var(--dur-fast) var(--ease-curtain), border-color var(--dur-fast) var(--ease-curtain), background-color var(--dur-base) var(--ease-curtain), box-shadow var(--dur-base) var(--ease-curtain); }
+.page--todo .topbar.is-scrolled > .topbar__brand::before { opacity: 1; }
+.page--todo .topbar.is-scrolled .theme-toggle {
+  background: rgb(var(--scrim-rgb) / .82);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--todo-shadow);
+}
+
+/* ---- the shower of blossom as the theme is switched (todo.js): over the page, under the top bar ---- */
+.todo-shower { position: fixed; inset: 0; z-index: calc(var(--z-topbar) - 1); pointer-events: none; overflow: hidden; }
+.todo-shower__bit { position: absolute; left: 0; top: 0; display: block; will-change: transform, opacity; }
+.todo-shower__bit svg { display: block; width: 100%; height: 100%; }
+.todo-shower__bit--p1 { fill: var(--tree-p1); }
+.todo-shower__bit--p2 { fill: var(--tree-p2); }
+.todo-shower__bit--p3 { fill: var(--tree-p3); }
+.todo-shower__bit--p4 { fill: var(--tree-p4); }
+.todo-shower__heart { fill: var(--tree-heart); }
+
+/* ---- the cherry blossom tree: laptops only (src/pages/todo.js puts it in), at the screen's right edge,
+   behind the page (the stage's layer) and under the footer, which covers it as it rises ---- */
+.todo-tree { display: none; }
+@media (min-width: 1100px) {
+  :root:not(.tier-phone) .todo-tree.is-in {
+    display: block;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-stage);
+    height: min(84vh, 720px);
+    aspect-ratio: 520 / 700;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1.4s var(--ease-curtain);
+  }
+  :root:not(.tier-phone) .todo-tree.is-shown { opacity: 1; }
+}
+.todo-tree svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.todo-tree .ct-bark { fill: var(--tree-bark); }
+.todo-tree .ct-cloud { fill: var(--tree-cloud); opacity: .55; }
+.todo-tree .ct-p1, .todo-tree .ct-bud { fill: var(--tree-p1); }
+.todo-tree .ct-p2 { fill: var(--tree-p2); }
+.todo-tree .ct-p3 { fill: var(--tree-p3); }
+.todo-tree .ct-p4 { fill: var(--tree-p4); }
+.todo-tree use { color: var(--tree-heart); }
+.todo-tree__petal {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: 10px;
+  height: 7px;
+  border-radius: 90% 10% 90% 10%;
+  background: var(--tree-p2);
+  opacity: 0;
+  scale: var(--s);
+  animation: todo-petal var(--t) linear var(--d) infinite;
+}
+@keyframes todo-petal {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg); }
+  8% { opacity: .9; }
+  80% { opacity: .75; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--r)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .todo-tree__petal { display: none; }
+}

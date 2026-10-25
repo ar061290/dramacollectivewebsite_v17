@@ -107,6 +107,9 @@ export const PAGES = [
   // the stage planner, opened from The production: a full-screen app with its own top bar (no
   // shared parts are written into it; it is listed here so Vite builds it)
   { file: 'stage-planner.html', key: 'planner' },
+  // the owner's own to-do list: built and given the shared parts like any page, but linked from
+  // nowhere (no menu, footer or page points at it) and marked noindex; opened by its address alone
+  { file: 'todo.html', key: 'todo' },
 ];
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

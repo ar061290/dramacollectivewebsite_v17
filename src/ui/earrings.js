@@ -68,6 +68,8 @@ const noop = { drop() {}, cleanup() {} };
 export function setupEarrings({ reduced, opened }) {
   const button = document.querySelector('[data-theme-toggle]');
   if (!button) return noop;
+  // a page with a flourish of its own on the switch has none (To do: a shower of blossom, todo.js)
+  if (document.body.hasAttribute('data-no-earrings')) return noop;
   const root = document.documentElement;
   const wide = matchMedia(WIDE);
   const debug = new URLSearchParams(location.search).has('debug');
