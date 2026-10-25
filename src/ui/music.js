@@ -506,10 +506,25 @@ export function setupMusic({ reduced, opened }) {
     });
   }
 
+  // a jump to somewhere new in the playlist, asked for by a page (To do, as a task is ticked done:
+  // the event dc:music-jump): only while it is playing, a quick fade down, a new point well away from
+  // where it was (pickStart), and up again once it is there (the stream follows the seek by itself)
+  const jump = () => {
+    if (!audio || !wanted || blocked || audio.paused || !placed || !Number.isFinite(audio.duration)) return;
+    const a = audio;
+    fadeTo(0, 0.25, () => {
+      if (audio !== a || !wanted || a.paused) return;
+      a.addEventListener('seeked', () => { if (audio === a && wanted) rise(); }, { once: true });
+      try { a.currentTime = pickStart(a.duration, a.currentTime); } catch { rise(); }
+    });
+  };
+  document.addEventListener('dc:music-jump', jump);
+
   return () => {
     disposed = true;
     clearInterval(timer);
     if (wanted) remember();
+    document.removeEventListener('dc:music-jump', jump);
     button.removeEventListener('click', toggle);
     document.removeEventListener('keydown', onKey);
     document.removeEventListener('touchstart', onTouchStart);

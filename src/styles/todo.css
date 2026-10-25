@@ -284,6 +284,35 @@
   box-shadow: var(--todo-shadow);
 }
 
+/* ---- the firecracker as a task is ticked done (todo.js): over the page; its blossom are the shower's ---- */
+.page--todo { --spark-1: var(--gold-500); --spark-2: var(--gold-300); --spark-3: var(--plum-200); }
+:root[data-theme="light"] .page--todo { --spark-1: var(--gold-600); --spark-2: var(--plum-400); --spark-3: var(--gold-700); }
+.todo-burst { position: fixed; inset: 0; z-index: var(--z-topbar); pointer-events: none; overflow: hidden; } /* over the kind word too */
+.todo-burst > * { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
+.todo-burst__ring { width: 34px; height: 34px; border: 2px solid var(--spark-1); border-radius: 50%; }
+.todo-burst__spark { width: 3px; height: 16px; margin: -8px 0 0 -1.5px; border-radius: 3px; }
+.todo-burst__pop { width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+.todo-burst__spark--1 { background: var(--spark-1); color: var(--spark-1); }
+.todo-burst__spark--2 { background: var(--spark-2); color: var(--spark-2); }
+.todo-burst__spark--3 { background: var(--spark-3); color: var(--spark-3); }
+/* the kind word: a soft pill just above the box */
+.todo-cheer {
+  position: fixed;
+  z-index: calc(var(--z-topbar) - 1);
+  margin: 0;
+  max-width: min(420px, calc(100vw - 24px));
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--card-bg);
+  border: 1px solid var(--todo-edge);
+  box-shadow: var(--todo-shadow);
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--fg-strong);
+  text-align: center;
+  pointer-events: none;
+}
+
 /* ---- the shower of blossom as the theme is switched (todo.js): over the page, under the top bar ---- */
 .todo-shower { position: fixed; inset: 0; z-index: calc(var(--z-topbar) - 1); pointer-events: none; overflow: hidden; }
 .todo-shower__bit { position: absolute; left: 0; top: 0; display: block; will-change: transform, opacity; }

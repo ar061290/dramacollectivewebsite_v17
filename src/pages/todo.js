@@ -10,7 +10,10 @@
 // Times are on the 24-hour clock (17:30), which needs no am or pm.
 // No top bar here but the logo and the light/dark switch, which stay where they are (todo.css); the
 // music plays without its button, K and a three-finger tap turning it on and off (src/ui/music.js).
-// The switch brings down a quick shower of cherry blossom rather than the earrings. On laptops a cherry blossom tree stands
+// The switch brings down a quick shower of cherry blossom rather than the earrings.
+// Ticking a task done sets off a firecracker from its box (sparks, a crackle, blossom thrown up that
+// falls back down), moves the music to a new point in the playlist, and a kind word pops up by it,
+// chosen at random (half the time with one or two hearts, or the like, after it). On laptops a cherry blossom tree stands
 // at the screen's right edge
 // (assets/todo/cherry-tree.svg, fetched only there), petals drifting from it (none with reduced
 // motion or on the lite tier).
@@ -71,6 +74,33 @@ function parseClock(s) {
   return h > 23 || min > 59 ? NaN : `${pad(h)}:${pad(min)}`;
 }
 const formatClock = (due) => due || '';
+// ---- a kind word as a task is ticked done ----
+const CHEERS = [
+  'You’re perfect.', 'You are worthy of love.', 'You are loved.', 'You are amazing.', 'That was an amazing job.',
+  'Proud of you.', 'Look at you go.', 'You did that!', 'One more done. You’re on a roll.',
+  'You’re doing better than you think.', 'Seriously impressive.', 'You make hard things look easy.',
+  'Keep shining.', 'You’re unstoppable.', 'Small step, big win.', 'The world is lucky to have you.',
+  'You’re a star.', 'Brilliant work.', 'You should be so proud.', 'You’ve got this.',
+  'You’re stronger than you know.', 'That’s the spirit.', 'You’re one of a kind.', 'Your hard work shows.',
+  'You’re glowing.', 'Nailed it.', 'Another one down. Legend.', 'You are enough, exactly as you are.',
+  'You deserve good things.', 'You’re making it happen.', 'Beautifully done.', 'You light up every room.',
+  'You’re a natural.', 'Way to go!', 'Bravo!', 'Pure magic.', 'You inspire people.', 'Today’s hero: you.',
+  'Your future self says thank you.', 'Rest when you need to. You’ve earned it.', 'Gold star for you.',
+  'You’re so capable.', 'Look how far you’ve come.', 'You’re doing wonderfully.', 'Absolutely smashed it.',
+];
+// (♥, ❤ and ❣ with the emoji selector, so they show as emoji, not as text)
+const HEARTS = ['♥️', '💖', '💗', '💓', '💙', '💚', '💛', '💜', '🧡', '💞', '💝', '💟', '🖤', '❤️', '❣️', '😻', '🥰', '😍', '🤎', '🤍', '💕', '😘', '🍉', '✨'];
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+let lastCheer = '';
+function cheerLine() {
+  let line = pick(CHEERS);
+  for (let i = 0; i < 5 && line === lastCheer; i++) line = pick(CHEERS); // never the same twice running
+  lastCheer = line;
+  // half the time nothing after it; otherwise one of the hearts, once or twice
+  if (Math.random() < 0.5) return line;
+  return `${line} ${pick(HEARTS).repeat(1 + Math.floor(Math.random() * 2))}`;
+}
+
 const isLate = (t, now = new Date()) => {
   if (t.done || !t.due) return false;
   const [h, m] = t.due.split(':').map(Number);
@@ -183,6 +213,7 @@ bootPage(({ reduced }) => {
   });
 
   // ---- ticking ----
+  const cheerLive = root.querySelector('[data-todo-cheer-live]');
   on(list, 'change', (e) => {
     const box = e.target.closest('.todo__tick');
     if (!box) return;
@@ -190,6 +221,16 @@ bootPage(({ reduced }) => {
     if (!t) return;
     t.done = box.checked;
     save();
+    // ticked done: a firecracker from its box, the music somewhere new, and a kind word
+    if (t.done) {
+      const r = box.closest('.todo__item').querySelector('.todo__box').getBoundingClientRect();
+      const x = r.left + r.width / 2, y = r.top + r.height / 2;
+      if (!reduced) burst(x, y);
+      document.dispatchEvent(new CustomEvent('dc:music-jump'));
+      const line = cheerLine();
+      showCheer(line, x, r.top, reduced);
+      cheerLive.textContent = line;
+    }
     // in All the row stays (struck through); in Open or Done it leaves the view
     if (view === 'all') {
       redrawRow(t);
@@ -284,6 +325,115 @@ bootPage(({ reduced }) => {
   cleanups.push(setupTree({ reduced }), setupShower({ reduced }));
   return () => cleanups.forEach((c) => c());
 });
+
+/**
+ * A firecracker from a ticked box (x, y on the screen): a flash, sparks flung out in every direction
+ * and slowing as they go, a crackle of points of light just after round where they went, and blossom
+ * thrown up out of it that arcs over and falls back, tumbling, fading as it goes. About a second and a
+ * half, transforms and opacity only (the Web Animations API), over the page; fewer on the lite tier.
+ */
+function burst(x, y) {
+  const lite = document.documentElement.classList.contains('tier-lite');
+  const layer = document.createElement('div');
+  layer.className = 'todo-burst';
+  layer.setAttribute('aria-hidden', 'true');
+  const anims = [];
+  const add = (el, frames, opts) => { layer.append(el); anims.push([el, frames, opts]); };
+  const at = (dx, dy, extra = '') => `translate3d(${(x + dx).toFixed(1)}px, ${(y + dy).toFixed(1)}px, 0) ${extra}`;
+
+  // the flash: a ring that opens and fades
+  const ring = document.createElement('span');
+  ring.className = 'todo-burst__ring';
+  add(ring, [{ transform: at(0, 0, 'translate(-50%, -50%) scale(.2)'), opacity: 0.9 }, { transform: at(0, 0, 'translate(-50%, -50%) scale(2.4)'), opacity: 0 }],
+    { duration: 480, easing: 'cubic-bezier(.2, .7, .3, 1)', fill: 'both' });
+
+  // the sparks: thin streaks along the way they fly, flung out fast and slowing, a little gravity
+  const sparks = lite ? 14 : 34;
+  for (let i = 0; i < sparks; i++) {
+    const s = document.createElement('span');
+    s.className = `todo-burst__spark todo-burst__spark--${1 + (i % 3)}`;
+    const a = (i / sparks) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+    const d = 70 + Math.random() * 120;
+    const turn = `rotate(${((a * 180) / Math.PI + 90).toFixed(1)}deg)`;
+    add(s, [
+      { transform: at(0, 0, `${turn} scale(1, 1.2)`), opacity: 1 },
+      { transform: at(Math.cos(a) * d, Math.sin(a) * d + 14, `${turn} scale(.3, .2)`), opacity: 0 },
+    ], { duration: 520 + Math.random() * 300, easing: 'cubic-bezier(.08, .75, .3, 1)', fill: 'both' });
+  }
+
+  // the crackle: points of light that pop just after, round where the sparks went
+  const pops = lite ? 6 : 14;
+  for (let i = 0; i < pops; i++) {
+    const p = document.createElement('span');
+    p.className = `todo-burst__pop todo-burst__spark--${1 + (i % 3)}`;
+    const a = Math.random() * Math.PI * 2, d = 60 + Math.random() * 120;
+    const dx = Math.cos(a) * d, dy = Math.sin(a) * d;
+    add(p, [
+      { transform: at(dx, dy, 'translate(-50%, -50%) scale(0)'), opacity: 1 },
+      { transform: at(dx, dy, 'translate(-50%, -50%) scale(1.3)'), opacity: 1, offset: 0.35 },
+      { transform: at(dx, dy + 6, 'translate(-50%, -50%) scale(0)'), opacity: 0 },
+    ], { duration: 360, delay: 220 + Math.random() * 260, easing: 'ease-out', fill: 'both' });
+  }
+
+  // the blossom: thrown up, fanned out (leaning toward the middle of the screen, so a box near an
+  // edge does not throw it straight off), arcing over and falling back past where it began, tumbling
+  // (points along the throw, so it truly arcs: x = vx t, y = vy t + g t² / 2)
+  const flowers = lite ? 9 : 22;
+  const g = 1500;
+  const lean = Math.max(-1, Math.min(1, (innerWidth / 2 - x) / (innerWidth / 2))) * 30; // degrees
+  for (let i = 0; i < flowers; i++) {
+    const el = document.createElement('span');
+    const whole = Math.random() < 0.65;
+    el.className = `todo-shower__bit todo-shower__bit--p${1 + Math.floor(Math.random() * 4)}`;
+    el.innerHTML = whole ? FLOWER : PETAL;
+    const size = whole ? 13 + Math.random() * 9 : 9 + Math.random() * 7;
+    el.style.width = el.style.height = `${size.toFixed(1)}px`;
+    const a = (-90 + lean + (Math.random() - 0.5) * 100) * (Math.PI / 180); // up, fanned
+    const v = 480 + Math.random() * 380;
+    const vx = Math.cos(a) * v, vy = Math.sin(a) * v;
+    const T = 1.45 + Math.random() * 0.55;
+    const spin = (Math.random() < 0.5 ? -1 : 1) * (240 + Math.random() * 480);
+    const frames = [];
+    for (let k = 0; k <= 8; k++) {
+      const f = k / 8, t = f * T;
+      frames.push({
+        transform: at(vx * t - size / 2, vy * t + (g * t * t) / 2 - size / 2, `rotate(${(spin * f).toFixed(1)}deg) scale(${k === 0 ? 0.4 : 1})`),
+        opacity: f < 0.7 ? 1 : 1 - (f - 0.7) / 0.3,
+        offset: f,
+      });
+    }
+    add(el, frames, { duration: T * 1000, delay: Math.random() * 60, easing: 'linear', fill: 'both' });
+  }
+
+  document.body.append(layer);
+  Promise.all(anims.map(([el, frames, opts]) => el.animate(frames, opts).finished.catch(() => {}))).then(() => layer.remove());
+}
+
+/** The kind word, popping up just above the ticked box, and gone after a few seconds (one at a time). */
+let cheerEl = null;
+function showCheer(text, x, top, reduced) {
+  cheerEl?.remove();
+  const el = document.createElement('p');
+  el.className = 'todo-cheer';
+  el.setAttribute('aria-hidden', 'true'); // read out by the list's own live line instead
+  el.textContent = text;
+  document.body.append(el);
+  cheerEl = el;
+  // kept on the screen: centred over the box where there is room, else against the nearer edge
+  const w = el.offsetWidth, m = 12;
+  const left = Math.max(m, Math.min(innerWidth - w - m, x - w / 2));
+  const y = Math.max(m, top - el.offsetHeight - 14);
+  el.style.left = `${left}px`;
+  el.style.top = `${y}px`;
+  const rise = reduced ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: 'translateY(10px) scale(.92)' }, { opacity: 1, transform: 'none' }];
+  // a beat after the firecracker, so it is seen first
+  el.animate(rise, { duration: reduced ? 200 : 320, delay: reduced ? 0 : 260, easing: 'cubic-bezier(.2, .8, .3, 1)', fill: 'both' });
+  setTimeout(() => {
+    if (cheerEl !== el) return;
+    const go = el.animate(reduced ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-12px)' }], { duration: 420, easing: 'ease-in', fill: 'both' });
+    go.finished.then(() => { if (cheerEl === el) { el.remove(); cheerEl = null; } }).catch(() => {});
+  }, 2800);
+}
 
 /**
  * A shower of cherry blossom as the theme is switched, in place of the earrings (src/ui/earrings.js
