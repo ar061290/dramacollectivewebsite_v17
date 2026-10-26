@@ -59,6 +59,10 @@
       "name": "Physics",
       "steps": [
         {
+          "label": "Prelab",
+          "done": true
+        },
+        {
           "label": "Data collection",
           "done": false
         },
@@ -88,6 +92,10 @@
       "key": "chemistry",
       "name": "Chemistry",
       "steps": [
+        {
+          "label": "Prelab",
+          "done": true
+        },
         {
           "label": "Data collection",
           "done": false
