@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Aadi’s IAs · The Drama Collective</title>
+  <!-- Aadi's IA tracker, for the team: linked from nowhere on the site, and kept out of search engines -->
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#2a0d1c">
+  <!-- site:head -->
+  <link rel="icon" href="./assets/brand/mark-gold-144.png">
+  <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/Lato-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/Lato-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/OpenSans-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./src/styles/main.css">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin data-dc-live>
+  <!-- the page a link points at is fetched when the pointer settles on it or presses it (prefetch,
+       never prerender: a prerendered page would miss the curtain's hand-off), so the velvet closes
+       onto a page that is already here -->
+  <script type="speculationrules">
+  { "prefetch": [{ "source": "document", "where": { "and": [{ "href_matches": "/*" }, { "not": { "selector_matches": "[target], [download], [href^='#']" } }] }, "eagerness": "moderate" }] }
+  </script>
+  <!-- Bare-module map for running without a build step (any static server). Vite resolves the same
+       specifiers from node_modules and ignores this map. Keep the versions in step with package.json. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/index.js",
+      "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/",
+      "lottie-web/build/player/lottie_light.js": "https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.js/+esm"
+    }
+  }
+  </script>
+  <script>
+    // theme before first paint: the saved choice, else the dark theatre
+    try { var t = localStorage.getItem('dc-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+    // arriving through the curtain (src/site/transition.js): it starts closed and opens on this page
+    try { if (sessionStorage.getItem('dc-veil') === '1') { sessionStorage.removeItem('dc-veil'); document.documentElement.classList.add('is-veiled'); } } catch (e) {}
+    // the owner's trial switches for changes that would show (README: Trial switches): ?flags=a,b turns
+    // them on in this browser, ?flags= turns them off; each is a class, flag-<name>, on <html>
+    try { var fm = /[?&]flags=([^&#]*)/.exec(location.search), fl = fm ? decodeURIComponent(fm[1]) : (localStorage.getItem('dc-flags') || ''); if (fm) { if (fl) localStorage.setItem('dc-flags', fl); else localStorage.removeItem('dc-flags'); } fl.split(',').forEach(function (n) { if (/^[a-z0-9-]+$/.test(n)) document.documentElement.classList.add('flag-' + n); }); } catch (e) {}
+    document.documentElement.classList.add('has-js');
+    // the device's tier (README: Tiers), on <html> before the first paint so that styles can follow it too:
+    // tier-phone on every touch screen (no hover, a coarse pointer); tier-lite as well on a device short of
+    // memory or cores: a touch screen reading 4 GB or less (Chrome rounds down to a power of two: a 4-6 GB
+    // phone reads 4) or 4 cores or fewer, or another device reading 4 GB and 4 cores or less, or 2 GB or
+    // less. ?flags=full turns both off (the full experience anywhere), ?flags=lite forces lite.
+    try {
+      var hc = document.documentElement.classList, mm = function (q) { return !!(window.matchMedia && matchMedia(q).matches); };
+      if (!hc.contains('flag-full')) {
+        var touch = mm('(hover: none) and (pointer: coarse)'), mem = navigator.deviceMemory || 0, cores = navigator.hardwareConcurrency || 0;
+        if (touch) hc.add('tier-phone');
+        if (hc.contains('flag-lite') || (touch ? (mem && mem <= 4) || (cores && cores <= 4) : (mem && mem <= 2) || (mem && mem <= 4 && cores && cores <= 4))) hc.add('tier-lite');
+        // or the frame governor found this device's frames slow earlier in the visit (src/util/governor.js)
+        try { if (sessionStorage.getItem('dc-lite') === '1') hc.add('tier-lite'); } catch (e) {}
+      }
+    } catch (e) {}
+    // the failsafe (README): dcFailsafe() shows the page as it is without script (no loader, no closed
+    // curtain, the intro's parts shown, the scroll free), for a page whose own script failed before it was
+    // up; and if that script has not even started 8 s after the page has loaded (a browser without
+    // modules or import maps, a script that did not arrive), it is called then
+    // (the page's script sets window.dcBooted as it starts and window.dcUp once the page is up: flags, not
+    // performance marks, which some privacy settings hide from scripts)
+    window.dcFailsafe = function () {
+      var c = document.documentElement.classList; if (c.contains('is-failsafe')) return;
+      c.remove('has-js', 'is-loading', 'is-intro', 'is-veiled'); c.add('is-failsafe');
+      try { if (window.dcLoader) window.dcLoader.stop(); } catch (e) {}
+      // the curtain, taken over by the page's script with inline styles on arrival: back to its open place
+      document.querySelectorAll('.veil, .veil__half').forEach(function (v) { v.style.transform = ''; v.style.pointerEvents = ''; });
+    };
+    addEventListener('load', function () { setTimeout(function () { if (!window.dcBooted) window.dcFailsafe(); }, 8000); });
+  </script>
+  <!-- /site:head -->
+</head>
+<body class="page page--ia page--bare">
+  <!-- site:header -->
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="veil" aria-hidden="true">
+    <div class="veil__half veil__half--l"></div>
+    <div class="veil__half veil__half--r"></div>
+  </div>
+
+  <header class="topbar" data-topbar>
+    <span class="topbar__ground" aria-hidden="true"></span>
+    <a class="topbar__brand" href="./index.html" aria-label="The Drama Collective, home">
+      <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold-144.png" alt="" width="48" height="48"></span>
+      <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
+    </a>
+    <a class="btn btn--inverse btn--sm topbar__apply" href="./apply.html" data-topbar-keep>Apply now</a>
+    <nav class="topbar__nav" aria-label="Main">
+      <ul class="topbar__links">
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li class="topbar__group" data-dropdown>
+          <button class="topbar__group-toggle" type="button" aria-expanded="false" aria-controls="outputs-menu">Our outputs<svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <ul class="topbar__dropdown" id="outputs-menu" data-dropdown-menu>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+          </ul>
+        </li>
+        <li><a href="./contact.html">Contact us</a></li>
+      </ul>
+      <span class="topbar__glint" aria-hidden="true"></span>
+    </nav>
+    <div class="topbar__tools">
+      <a class="icon-btn" href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="The Drama Collective on Instagram" title="Instagram"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg></a>
+      <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Music" aria-keyshortcuts="K" title="Play music (K)" data-music-toggle>
+        <span class="music-bars" aria-hidden="true"><svg class="bar" viewBox="0 0 20 20"><rect x="2.5" y="8" width="2.2" height="9"/></svg><svg class="bar" viewBox="0 0 20 20"><rect x="6.9" y="3" width="2.2" height="14"/></svg><svg class="bar" viewBox="0 0 20 20"><rect x="11.3" y="6" width="2.2" height="11"/></svg><svg class="bar" viewBox="0 0 20 20"><rect x="15.7" y="9" width="2.2" height="8"/></svg></span>
+      </button>
+      <button class="icon-btn theme-toggle" type="button" aria-pressed="false" aria-label="Light mode" title="House lights" data-theme-toggle>
+        <svg class="theme-toggle__sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 1.8v2.1M10 16.1v2.1M1.8 10h2.1M16.1 10h2.1M4.2 4.2l1.5 1.5M14.3 14.3l1.5 1.5M4.2 15.8l1.5-1.5M14.3 5.7l1.5-1.5"/></g></svg>
+        <svg class="theme-toggle__moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.9 12.6A6.6 6.6 0 0 1 7.4 4.1a6.6 6.6 0 1 0 8.5 8.5Z" fill="currentColor"/></svg>
+      </button>
+    </div>
+    <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu-sheet" data-menu-toggle>Menu</button>
+    <a class="btn btn--inverse btn--sm topbar__cta" href="./sponsor.html" data-topbar-keep>Become a sponsor</a>
+    <div class="topbar__sheet" id="menu-sheet" data-menu-sheet>
+      <ul>
+        <li><a href="./index.html">Home</a></li>
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li class="topbar__sheet-group"><span class="eyebrow">Our outputs</span>
+          <ul>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+          </ul>
+        </li>
+        <li><a href="./contact.html">Contact us</a></li>
+        <li><a href="./apply.html">Apply now</a></li>
+        <li><a href="./sponsor.html">Become a sponsor</a></li>
+        <li><a href="https://www.instagram.com/" target="_blank" rel="noopener"><span class="ig-word">Instagram</span></a></li>
+      </ul>
+    </div>
+  </header>
+  <!-- /site:header -->
+
+  <!-- site:stage -->
+  <div class="stage" aria-hidden="true">
+    <canvas class="stage__stars"></canvas>
+  </div>
+
+  <div class="cursor" aria-hidden="true">
+    <span class="cursor__glow"></span>
+    <svg class="cursor__star" viewBox="-12 -17 24 34" focusable="false"><path class="cursor__star-plain" d="M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z"/><path class="cursor__star-text" d="M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z"/></svg>
+  </div>
+  <!-- /site:stage -->
+
+
+  <main id="main" class="page__main">
+    <header class="act-head ground" data-mask>
+      <p class="eyebrow">For the Collective</p>
+      <h1 class="act-head__title" data-reveal>Aadi’s IAs</h1>
+      <span class="rule" aria-hidden="true"></span>
+      <p class="lead">Aadi has stepped back from the Collective until his IAs are done. This is how far he has got: each tick is set in the site’s own source as he finishes a step, and nothing on this page can change one.</p>
+    </header>
+
+    <!-- the tracker, written by tools/pages/build.mjs from content/ia.json: edit that file, not this -->
+    <section class="act ia ground" aria-label="IA progress, subject by subject" data-mask>
+      <!-- site:ia -->
+      <div class="ia-overall" data-ia-done="0" data-ia-total="30">
+        <p class="ia-overall__count"><span class="ia-overall__n">0</span> of 30 steps done</p>
+        <p class="ia-overall__updated">Updated 27 October 2026</p>
+      </div>
+      <div class="ia-bar ia-overall__bar" role="progressbar" aria-label="All the IAs: steps done" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0" aria-valuetext="0 of 30 steps done"><span style="--p: 0"></span></div>
+      <ul class="ia-grid">
+      <li class="ia-col" data-subject="math">
+        <header class="ia-col__head">
+          <h2 class="ia-col__name">Mathematics</h2>
+          <p class="ia-col__count"><span class="ia-col__done">0</span> / 11</p>
+        </header>
+        <div class="ia-bar ia-col__bar" role="progressbar" aria-label="Mathematics: steps done" aria-valuemin="0" aria-valuemax="11" aria-valuenow="0" aria-valuetext="0 of 11 steps done"><span style="--p: 0"></span></div>
+        <ol class="ia-steps">
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Idea</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Personal story</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Background</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Math</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Conclusion</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step ia-step--scrapped"><span class="ia-tick"></span><span class="ia-step__label">Idea scrapped</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">New idea research</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Personal story</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Background</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Math</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Conclusion</span><span class="sr-only">: not done yet</span></li>
+        </ol>
+      </li>
+      <li class="ia-col" data-subject="physics">
+        <header class="ia-col__head">
+          <h2 class="ia-col__name">Physics</h2>
+          <p class="ia-col__count"><span class="ia-col__done">0</span> / 6</p>
+        </header>
+        <div class="ia-bar ia-col__bar" role="progressbar" aria-label="Physics: steps done" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" aria-valuetext="0 of 6 steps done"><span style="--p: 0"></span></div>
+        <ol class="ia-steps">
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Data collection</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Background</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Personal story</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Data analysis</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Conclusion</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Evaluation</span><span class="sr-only">: not done yet</span></li>
+        </ol>
+      </li>
+      <li class="ia-col" data-subject="chemistry">
+        <header class="ia-col__head">
+          <h2 class="ia-col__name">Chemistry</h2>
+          <p class="ia-col__count"><span class="ia-col__done">0</span> / 6</p>
+        </header>
+        <div class="ia-bar ia-col__bar" role="progressbar" aria-label="Chemistry: steps done" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" aria-valuetext="0 of 6 steps done"><span style="--p: 0"></span></div>
+        <ol class="ia-steps">
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Data collection</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Background</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Personal story</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Data analysis</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Conclusion</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Evaluation</span><span class="sr-only">: not done yet</span></li>
+        </ol>
+      </li>
+      <li class="ia-col" data-subject="business">
+        <header class="ia-col__head">
+          <h2 class="ia-col__name">Business Management</h2>
+          <p class="ia-col__count"><span class="ia-col__done">0</span> / 6</p>
+        </header>
+        <div class="ia-bar ia-col__bar" role="progressbar" aria-label="Business Management: steps done" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" aria-valuetext="0 of 6 steps done"><span style="--p: 0"></span></div>
+        <ol class="ia-steps">
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Intro</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Tool 1</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Tool 2</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Tool 3</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Conclusion</span><span class="sr-only">: not done yet</span></li>
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Evaluation</span><span class="sr-only">: not done yet</span></li>
+        </ol>
+      </li>
+      <li class="ia-col" data-subject="ee">
+        <header class="ia-col__head">
+          <h2 class="ia-col__name">Extended Essay</h2>
+          <p class="ia-col__count"><span class="ia-col__done">0</span> / 1</p>
+        </header>
+        <div class="ia-bar ia-col__bar" role="progressbar" aria-label="Extended Essay: steps done" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0" aria-valuetext="0 of 1 step done"><span style="--p: 0"></span></div>
+        <ol class="ia-steps">
+          <li class="ia-step"><span class="ia-tick"></span><span class="ia-step__label">Finish the Physics IA first</span><span class="sr-only">: not done yet</span></li>
+        </ol>
+      </li>
+      </ul>
+      <!-- /site:ia -->
+    </section>
+
+    <!-- Remind Aadi (src/pages/ia.js): a reminder to his phone with your name on it (tools/ia/README.md) -->
+    <section class="act ia-remind ground" aria-labelledby="ia-remind-title" data-mask>
+      <h2 class="act__title" id="ia-remind-title" data-reveal>Give him a nudge</h2>
+      <span class="rule" aria-hidden="true"></span>
+      <p class="ia-remind__text">Tap the button and add your name: Aadi gets a reminder from you.</p>
+      <!-- site:ia-remind -->
+      <div class="ia-remind__box" data-ia-remind data-ntfy-topic="dc-ia-aadi-oiw2e0vjqb8fztd4" data-email="aadir6405@students.chirec.ac.in" data-person="Aadi" hidden>
+        <button class="btn btn--inverse btn--lg ia-remind__open" type="button" data-ia-remind-open>Remind Aadi</button>
+        <form class="ia-remind__form" data-ia-remind-form hidden>
+          <label class="ia-remind__label" for="ia-remind-name">Your name, so Aadi knows who it’s from</label>
+          <div class="ia-remind__row">
+            <input class="ia-remind__input" id="ia-remind-name" name="name" type="text" autocomplete="name" maxlength="40" required>
+            <button class="btn btn--inverse ia-remind__send" type="submit" data-ia-remind-send>Send the reminder</button>
+          </div>
+          <p class="ia-remind__fine">Your name goes to Aadi’s phone through ntfy.sh, a free notification service.</p>
+        </form>
+        <p class="ia-remind__status" role="status" aria-live="polite" data-ia-remind-status></p>
+      </div>
+      <noscript><p class="ia-remind__text"><a class="btn btn--inverse" href="mailto:aadir6405@students.chirec.ac.in?subject=IA%20reminder&amp;body=Hi%20Aadi%2C%20this%20is%20a%20reminder%20to%20work%20on%20your%20IAs.">Email Aadi a reminder</a></p></noscript>
+      <!-- /site:ia-remind -->
+    </section>
+  </main>
+
+  <!-- site:footer -->
+  <footer class="curtain" id="contact" aria-label="Pages and contacts">
+    <div class="curtain__grid">
+      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>
+      <nav class="curtain__links" aria-label="All pages">
+        <div class="curtain__col">
+          <p class="eyebrow">The Collective</p>
+          <ul>
+            <li><a href="./index.html">Home</a></li>
+            <li><a href="./about.html">About us</a></li>
+            <li><a href="./team.html">Core team</a></li>
+            <li><a href="./contact.html">Contact us</a></li>
+            <li><a href="./apply.html">Apply now</a></li>
+            <li><a href="./sponsor.html">Become a sponsor</a></li>
+          </ul>
+        </div>
+        <div class="curtain__col">
+          <p class="eyebrow">Our outputs</p>
+          <ul>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+            <li><a href="./stage-planner.html">Stage planner</a></li>
+          </ul>
+        </div>
+        <div class="curtain__col curtain__col--contact">
+          <p class="eyebrow">Write to us</p>
+          <ul>
+            <li><span class="curtain__who">Aadi Ramnani, President</span><a href="mailto:aadir6405@students.chirec.ac.in">aadir6405@students.chirec.ac.in</a></li>
+            <li><span class="curtain__who">Aripra Sharma, Executive President</span><a href="mailto:aripras111460@students.chirec.ac.in">aripras111460@students.chirec.ac.in</a></li>
+            <li><a class="curtain__social" href="https://www.instagram.com/" target="_blank" rel="noopener"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg><span class="ig-word">Instagram</span></a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+    <div class="curtain__base">
+      <div class="curtain__legal">
+        <p class="legal">© 2026 The Drama Collective · CHIREC International School</p>
+        <p class="credits">Music: “the smell of old books, reading, writing and studying (a dark academia playlist)”, <a href="https://www.youtube.com/@DarkEnigmatic68" rel="noopener">Dark Enigmatic</a>.</p>
+      </div>
+      <a class="endorsement" href="https://www.chirec.ac.in" rel="noopener">
+        <img class="endorsement__logo" src="./assets/brand/chirec.webp" alt="CHIREC International School" width="475" height="140">
+        <span>CHIREC International School: the No.&nbsp;1 school in Hyderabad and Telangana</span>
+      </a>
+    </div>
+  </footer>
+  <!-- /site:footer -->
+
+  <script type="module" src="./src/pages/ia.js"></script>
+</body>
+</html>

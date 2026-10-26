@@ -1,0 +1,163 @@
+{
+  "_readme": "Aadi's IA tracker (ia.html, unlisted: linked from nowhere). To tick a step, set its \"done\" to true (no quotes) and \"updated\" to today's date, written YYYY-MM-DD, then push: the Pages deploy writes the page again (`npm run pages` does it locally). Nothing on the page can change a tick, and the build stops with the reason if something here would not show. Mathematics lists Personal story, Background, Math and Conclusion twice on purpose: once for the first idea, once for the new one after \"Idea scrapped\".",
+  "person": "Aadi",
+  "updated": "2026-10-27",
+  "subjects": [
+    {
+      "key": "math",
+      "name": "Mathematics",
+      "steps": [
+        {
+          "label": "Idea",
+          "done": false
+        },
+        {
+          "label": "Personal story",
+          "done": false
+        },
+        {
+          "label": "Background",
+          "done": false
+        },
+        {
+          "label": "Math",
+          "done": false
+        },
+        {
+          "label": "Conclusion",
+          "done": false
+        },
+        {
+          "label": "Idea scrapped",
+          "done": false,
+          "kind": "scrapped"
+        },
+        {
+          "label": "New idea research",
+          "done": false
+        },
+        {
+          "label": "Personal story",
+          "done": false
+        },
+        {
+          "label": "Background",
+          "done": false
+        },
+        {
+          "label": "Math",
+          "done": false
+        },
+        {
+          "label": "Conclusion",
+          "done": false
+        }
+      ]
+    },
+    {
+      "key": "physics",
+      "name": "Physics",
+      "steps": [
+        {
+          "label": "Data collection",
+          "done": false
+        },
+        {
+          "label": "Background",
+          "done": false
+        },
+        {
+          "label": "Personal story",
+          "done": false
+        },
+        {
+          "label": "Data analysis",
+          "done": false
+        },
+        {
+          "label": "Conclusion",
+          "done": false
+        },
+        {
+          "label": "Evaluation",
+          "done": false
+        }
+      ]
+    },
+    {
+      "key": "chemistry",
+      "name": "Chemistry",
+      "steps": [
+        {
+          "label": "Data collection",
+          "done": false
+        },
+        {
+          "label": "Background",
+          "done": false
+        },
+        {
+          "label": "Personal story",
+          "done": false
+        },
+        {
+          "label": "Data analysis",
+          "done": false
+        },
+        {
+          "label": "Conclusion",
+          "done": false
+        },
+        {
+          "label": "Evaluation",
+          "done": false
+        }
+      ]
+    },
+    {
+      "key": "business",
+      "name": "Business Management",
+      "steps": [
+        {
+          "label": "Intro",
+          "done": false
+        },
+        {
+          "label": "Tool 1",
+          "done": false
+        },
+        {
+          "label": "Tool 2",
+          "done": false
+        },
+        {
+          "label": "Tool 3",
+          "done": false
+        },
+        {
+          "label": "Conclusion",
+          "done": false
+        },
+        {
+          "label": "Evaluation",
+          "done": false
+        }
+      ]
+    },
+    {
+      "key": "ee",
+      "name": "Extended Essay",
+      "steps": [
+        {
+          "label": "Finish the Physics IA first",
+          "done": false
+        }
+      ]
+    }
+  ],
+  "remind": {
+    "_readme": "Remind Aadi (tools/ia/README.md). Now: one push notification through ntfy.sh to \"ntfyTopic\", which Aadi subscribes to in the ntfy app. The topic is the only key and it is in the public page, so anyone who opens the page could read the reminders or send their own: if that happens, put a new random topic here, push, and resubscribe his phone. No email copy this way (ntfy.sh stopped forwarding email for anonymous senders). For an email copy and a topic nobody sees, set up the relay in tools/ia/, put its Web app URL in \"relayUrl\" and delete \"ntfyTopic\". \"email\" is for the email link the page offers when a reminder cannot be sent.",
+    "ntfyTopic": "dc-ia-aadi-oiw2e0vjqb8fztd4",
+    "email": "aadir6405@students.chirec.ac.in"
+  }
+}

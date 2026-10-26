@@ -248,41 +248,9 @@
   .todo__item.is-new { animation: none; }
 }
 
-/* ---- No top bar on this page but the logo (home) and the light/dark switch, which stay where they
-   are as the page scrolls (nav.js's slide away has no say here) with nothing behind them: the links,
-   Apply now, Become a sponsor, the Menu, Instagram and the music's button are not shown. The music
-   still plays (on by default, from the visitor's first tap, click or key), and K or a three-finger tap
-   turns it on and off (src/ui/music.js) ---- */
-.page--todo .topbar { pointer-events: none; }
-.page--todo .topbar > :not(.topbar__brand, .topbar__tools) { display: none; }
-.page--todo .topbar__tools > :not(.theme-toggle) { display: none; }
-.page--todo .topbar > .topbar__brand { margin-right: auto; }
-.page--todo .topbar > :is(.topbar__brand, .topbar__tools),
-.page--todo .topbar.is-hidden > :is(.topbar__brand, .topbar__tools) { transform: none; pointer-events: auto; }
-/* once the page has scrolled (nav.js: .is-scrolled), a soft rounded ground of the page's colour under
-   each, so what scrolls beneath never runs into the logo or the switch; at the top, none */
-.page--todo .topbar > .topbar__brand { position: relative; isolation: isolate; }
-.page--todo .topbar > .topbar__brand::before {
-  content: "";
-  position: absolute;
-  inset: -4px -18px -4px -8px;
-  z-index: -1;
-  border-radius: 999px;
-  background: rgb(var(--scrim-rgb) / .82);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  box-shadow: var(--todo-shadow);
-  opacity: 0;
-  transition: opacity var(--dur-base) var(--ease-curtain);
-}
-.page--todo .topbar .theme-toggle { border-radius: 999px; transition: color var(--dur-fast) var(--ease-curtain), border-color var(--dur-fast) var(--ease-curtain), background-color var(--dur-base) var(--ease-curtain), box-shadow var(--dur-base) var(--ease-curtain); }
-.page--todo .topbar.is-scrolled > .topbar__brand::before { opacity: 1; }
-.page--todo .topbar.is-scrolled .theme-toggle {
-  background: rgb(var(--scrim-rgb) / .82);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  box-shadow: var(--todo-shadow);
-}
+/* ---- The top bar: none but the logo and the light/dark switch, music without its button (the shared
+   page--bare rules, bare.css); its scrolled ground takes this page's soft shadow ---- */
+.page--todo, :root[data-theme="light"] .page--todo { --bare-shadow: var(--todo-shadow); }
 
 /* ---- the firecracker as a task is ticked done (todo.js): over the page; its blossom are the shower's ---- */
 .page--todo { --spark-1: var(--gold-500); --spark-2: var(--gold-300); --spark-3: var(--plum-200); }

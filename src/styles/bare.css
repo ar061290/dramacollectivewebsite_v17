@@ -1,0 +1,40 @@
+/* ==== Bare pages (body.page--bare: To do, todo.html, and Aadi's IA tracker, ia.html): pages of the
+   site's own that sit apart from it, linked from nowhere ==== */
+.page--bare { --bare-shadow: 0 14px 36px rgba(0, 0, 0, .26); }
+:root[data-theme="light"] .page--bare { --bare-shadow: 0 12px 30px rgba(64, 20, 42, .10); }
+
+/* ---- No top bar but the logo (home) and the light/dark switch, which stay where they
+   are as the page scrolls (nav.js's slide away has no say here) with nothing behind them: the links,
+   Apply now, Become a sponsor, the Menu, Instagram and the music's button are not shown. The music
+   still plays (on by default, from the visitor's first tap, click or key), and K or a three-finger tap
+   turns it on and off (src/ui/music.js) ---- */
+.page--bare .topbar { pointer-events: none; }
+.page--bare .topbar > :not(.topbar__brand, .topbar__tools) { display: none; }
+.page--bare .topbar__tools > :not(.theme-toggle) { display: none; }
+.page--bare .topbar > .topbar__brand { margin-right: auto; }
+.page--bare .topbar > :is(.topbar__brand, .topbar__tools),
+.page--bare .topbar.is-hidden > :is(.topbar__brand, .topbar__tools) { transform: none; pointer-events: auto; }
+/* once the page has scrolled (nav.js: .is-scrolled), a soft rounded ground of the page's colour under
+   each, so what scrolls beneath never runs into the logo or the switch; at the top, none */
+.page--bare .topbar > .topbar__brand { position: relative; isolation: isolate; }
+.page--bare .topbar > .topbar__brand::before {
+  content: "";
+  position: absolute;
+  inset: -4px -18px -4px -8px;
+  z-index: -1;
+  border-radius: 999px;
+  background: rgb(var(--scrim-rgb) / .82);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--bare-shadow);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-curtain);
+}
+.page--bare .topbar .theme-toggle { border-radius: 999px; transition: color var(--dur-fast) var(--ease-curtain), border-color var(--dur-fast) var(--ease-curtain), background-color var(--dur-base) var(--ease-curtain), box-shadow var(--dur-base) var(--ease-curtain); }
+.page--bare .topbar.is-scrolled > .topbar__brand::before { opacity: 1; }
+.page--bare .topbar.is-scrolled .theme-toggle {
+  background: rgb(var(--scrim-rgb) / .82);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--bare-shadow);
+}

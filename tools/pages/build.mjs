@@ -110,6 +110,8 @@ export const PAGES = [
   // the owner's own to-do list: built and given the shared parts like any page, but linked from
   // nowhere (no menu, footer or page points at it) and marked noindex; opened by its address alone
   { file: 'todo.html', key: 'todo' },
+  // Aadi's IA tracker, for the team: unlisted and noindex in the same way, its ticks from content/ia.json
+  { file: 'ia.html', key: 'ia' },
 ];
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -818,6 +820,99 @@ function fill(src, name, html, indent = '  ') {
   return src.replace(re, () => `<!-- site:${name} -->\n${indent}${html}\n${indent}<!-- /site:${name} -->`);
 }
 
+// Aadi's IA tracker (ia.html, unlisted like To do): one column a subject, its steps from
+// content/ia.json, each ticked or not. The ticks are only ever set there (and the page written again);
+// nothing on the page can change one. A step marked "scrapped" (Math's first idea) is a turn in the
+// road: once it is ticked, the steps before it are shown as the idea left behind.
+// The file is checked first, and the build stops with the reason if something in it would not show
+// (a date not written YYYY-MM-DD, a "done" that is not true or false, no way to send a reminder).
+function readIA() {
+  const ia = readJSON('content/ia.json');
+  const bad = (why) => { throw new Error(`content/ia.json: ${why}`); };
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ia.updated ?? ''));
+  const day = ymd && new Date(Date.UTC(+ymd[1], +ymd[2] - 1, +ymd[3]));
+  if (!day || day.getUTCMonth() !== +ymd[2] - 1 || day.getUTCDate() !== +ymd[3]) bad(`"updated" should be a date written YYYY-MM-DD, not ${JSON.stringify(ia.updated)}`);
+  if (typeof ia.person !== 'string' || !ia.person.trim()) bad('"person" is missing');
+  if (!Array.isArray(ia.subjects) || !ia.subjects.length) bad('"subjects" is missing');
+  for (const s of ia.subjects) {
+    if (!s.key || !s.name || !Array.isArray(s.steps) || !s.steps.length) bad(`a subject needs a "key", a "name" and its "steps" (${JSON.stringify(s.name ?? s.key)})`);
+    for (const st of s.steps) {
+      if (typeof st.label !== 'string' || !st.label.trim()) bad(`a step in ${s.name} has no "label"`);
+      if (typeof st.done !== 'boolean') bad(`${s.name}, "${st.label}": "done" should be true or false (no quotes), not ${JSON.stringify(st.done)}`);
+    }
+  }
+  const r = ia.remind ?? {};
+  if (r.relayUrl != null && !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(r.relayUrl)) bad(`"remind.relayUrl" should be the relay's Web app URL (https://script.google.com/macros/s/…/exec), not ${JSON.stringify(r.relayUrl)}`);
+  if (r.relayUrl == null && !/^[\w-]{1,64}$/.test(r.ntfyTopic ?? '')) bad('"remind" needs an "ntfyTopic" (letters, digits, - and _) or a "relayUrl"');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(r.email ?? '')) bad('"remind.email" is missing (the email link the page falls back to)');
+  return ia;
+}
+const TICK = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.4 8.4l3 3 6.2-6.6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="square"/></svg>';
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function iaTracker(pad) {
+  const ia = readIA();
+  const count = (steps) => [steps.filter((s) => s.done).length, steps.length];
+  const all = ia.subjects.flatMap((s) => s.steps);
+  const [done, total] = count(all);
+  const [y, m, d] = ia.updated.split('-').map(Number);
+  const updated = `${d} ${MONTH_NAMES[m - 1]} ${y}`;
+  const bar = (n, of, label, cls) => `<div class="${cls}" role="progressbar" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="${of}" aria-valuenow="${n}" aria-valuetext="${n} of ${of} ${of === 1 ? 'step' : 'steps'} done"><span style="--p: ${of ? n / of : 0}"></span></div>`;
+  const col = (s) => {
+    const [n, of] = count(s.steps);
+    const turn = s.steps.findIndex((st) => st.kind === 'scrapped' && st.done);
+    const steps = s.steps.map((st, i) => {
+      const cls = ['ia-step', st.done ? 'is-done' : '', st.kind === 'scrapped' ? 'ia-step--scrapped' : '', turn > i ? 'is-left-behind' : ''].filter(Boolean).join(' ');
+      return `    <li class="${cls}"><span class="ia-tick">${st.done ? TICK : ''}</span><span class="ia-step__label">${esc(st.label)}</span><span class="sr-only">: ${st.done ? 'done' : 'not done yet'}</span></li>`;
+    });
+    return `<li class="ia-col${n === of ? ' is-complete' : ''}" data-subject="${esc(s.key)}">
+  <header class="ia-col__head">
+    <h2 class="ia-col__name">${esc(s.name)}</h2>
+    <p class="ia-col__count"><span class="ia-col__done">${n}</span> / ${of}</p>
+  </header>
+  ${bar(n, of, `${s.name}: steps done`, 'ia-bar ia-col__bar')}
+  <ol class="ia-steps">
+${steps.join('\n')}
+  </ol>
+</li>`;
+  };
+  const html = `<div class="ia-overall" data-ia-done="${done}" data-ia-total="${total}">
+  <p class="ia-overall__count"><span class="ia-overall__n">${done}</span> of ${total} steps done</p>
+  <p class="ia-overall__updated">Updated ${esc(updated)}</p>
+</div>
+${bar(done, total, 'All the IAs: steps done', 'ia-bar ia-overall__bar')}
+<ul class="ia-grid">
+${ia.subjects.map(col).join('\n')}
+</ul>`;
+  return html.split('\n').map((l, i) => (i && l ? pad + l : l)).join('\n');
+}
+
+// Remind Aadi (ia.html): the button, then the visitor's name, sent by src/pages/ia.js as one push
+// notification through ntfy.sh to the topic Aadi's phone subscribes to (content/ia.json, remind), or,
+// once there is one, through the relay that sends the push and an email (tools/ia/README.md); without
+// scripts, an email link instead.
+function iaRemind(pad) {
+  const { person, remind } = readIA();
+  const mail = `mailto:${remind.email}?subject=${encodeURIComponent('IA reminder')}&body=${encodeURIComponent(`Hi ${person}, this is a reminder to work on your IAs.`)}`;
+  const via = remind.relayUrl ? `data-relay="${esc(remind.relayUrl)}"` : `data-ntfy-topic="${esc(remind.ntfyTopic)}"`;
+  const fine = remind.relayUrl
+    ? `Your name goes to ${esc(person)}’s phone (through ntfy.sh, a free notification service) and to his email.`
+    : `Your name goes to ${esc(person)}’s phone through ntfy.sh, a free notification service.`;
+  const html = `<div class="ia-remind__box" data-ia-remind ${via} data-email="${esc(remind.email)}" data-person="${esc(person)}" hidden>
+  <button class="btn btn--inverse btn--lg ia-remind__open" type="button" data-ia-remind-open>Remind ${esc(person)}</button>
+  <form class="ia-remind__form" data-ia-remind-form hidden>
+    <label class="ia-remind__label" for="ia-remind-name">Your name, so ${esc(person)} knows who it’s from</label>
+    <div class="ia-remind__row">
+      <input class="ia-remind__input" id="ia-remind-name" name="name" type="text" autocomplete="name" maxlength="40" required>
+      <button class="btn btn--inverse ia-remind__send" type="submit" data-ia-remind-send>Send the reminder</button>
+    </div>
+    <p class="ia-remind__fine">${fine}</p>
+  </form>
+  <p class="ia-remind__status" role="status" aria-live="polite" data-ia-remind-status></p>
+</div>
+<noscript><p class="ia-remind__text"><a class="btn btn--inverse" href="${esc(mail)}">Email ${esc(person)} a reminder</a></p></noscript>`;
+  return html.split('\n').map((l, i) => (i && l ? pad + l : l)).join('\n');
+}
+
 /** @param {string[]} [only]  page keys or files to write (none: every page) */
 export async function build(only = []) {
   // the grid's card is the publication's own (src/publication/cards.js: plain strings, no DOM),
@@ -857,6 +952,8 @@ export async function build(only = []) {
     if (key === 'writers') out = fill(out, 'writers', writersMonths(), '      ');
     if (key === 'contact') out = fill(out, 'contacts', contacts('      '), '      ');
     if (key === 'sponsor') out = fill(out, 'contacts', contacts('        '), '        ');
+    if (key === 'ia') out = fill(out, 'ia', iaTracker('      '), '      ');
+    if (key === 'ia') out = fill(out, 'ia-remind', iaRemind('      '), '      ');
     out = out.replace(/(<a [^>]*data-instagram[^>]*href=")[^"]*(")/g, `$1${INSTAGRAM.href}$2`);
     if (crlf) out = out.replace(/\n/g, '\r\n');
     if (out !== src) { writeFileSync(path, out); console.log(`wrote ${file}`); }

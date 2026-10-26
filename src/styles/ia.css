@@ -1,0 +1,84 @@
+/* ==== Aadi's IA tracker (ia.html, src/pages/ia.js; data in content/ia.json) ====
+   How far he has got overall, then one column a subject (Mathematics, Physics, Chemistry, Business
+   Management, the Extended Essay), each step with its tick, read-only. Then Remind Aadi. The site's own
+   look: plum and gold, Raung for names, Lato for the small print, sharp corners. Its top bar is the
+   bare pages' (bare.css). */
+.ia { margin-top: var(--space-7); }
+
+/* ---- overall ---- */
+.ia-overall { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+.ia-overall__count { margin: 0; font-family: var(--font-display); font-size: clamp(32px, 3.4vw, 48px); line-height: 1.1; color: var(--fg-strong); }
+.ia-overall__n { color: var(--accent); }
+.ia-overall__updated { margin: 0; font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--fg-muted); }
+.ia-bar { position: relative; height: 6px; background: var(--line); overflow: hidden; }
+.ia-bar > span { position: absolute; inset: 0 auto 0 0; width: calc(var(--p) * 100%); background: var(--rule-color); }
+.ia-overall__bar { margin: 18px 0 var(--space-7); height: 8px; }
+
+/* ---- the subjects ---- */
+.ia-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.ia-col { padding: 24px 22px 26px; background: var(--card-bg); border: 1px solid var(--line); border-top: 3px solid var(--line); }
+.ia-col.is-complete { border-top-color: var(--rule-color); }
+.ia-col__head { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.ia-col__name { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 28px; line-height: 1.1; color: var(--fg-strong); }
+.ia-col__count { margin: 0; flex: none; font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: 15px; letter-spacing: .06em; color: var(--fg-muted); }
+.ia-col__done { color: var(--accent); }
+.ia-col__bar { margin: 14px 0 18px; }
+
+.ia-steps { list-style: none; margin: 0; padding: 0; counter-reset: ia-step; }
+.ia-step { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 16px; line-height: 1.35; color: var(--fg); }
+.ia-step:first-child { border-top: 0; }
+.ia-tick {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border: 1.5px solid var(--fg-muted);
+  color: var(--btn-fg);
+}
+.ia-tick svg { width: 15px; height: 15px; }
+.ia-step.is-done .ia-tick { background: var(--btn-bg); border-color: var(--btn-bg); }
+.ia-step.is-done .ia-step__label { color: var(--fg-strong); }
+/* Math's turn in the road: the step that says the first idea was dropped, set apart; once it is ticked,
+   the steps before it read as the idea left behind */
+.ia-step--scrapped { margin: 6px 0; padding: 10px 0; border-top: 1px dashed var(--fg-muted); border-bottom: 1px dashed var(--fg-muted); }
+.ia-step--scrapped .ia-step__label { font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); padding-top: 3px; }
+.ia-step--scrapped + .ia-step { border-top: 0; }
+.ia-step.is-left-behind .ia-step__label { text-decoration: line-through 1px; color: var(--fg-muted); }
+.ia-step.is-left-behind .ia-tick { opacity: .6; }
+
+/* ---- Remind Aadi ---- */
+.ia-remind { margin-top: var(--space-9); }
+.ia-remind__text { max-width: 40em; }
+.ia-remind__box { margin-top: var(--space-5); max-width: 720px; }
+.ia-remind__box[hidden], .ia-remind__form[hidden], .ia-remind__open[hidden] { display: none; }
+.ia-remind__label { display: block; margin-bottom: 10px; font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-muted); }
+.ia-remind__row { display: flex; flex-wrap: wrap; gap: 10px; }
+.ia-remind__input {
+  flex: 1 1 260px;
+  min-width: 0;
+  height: 52px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 18px;
+  color: var(--fg-strong);
+  background: var(--card-bg);
+  border: 1px solid var(--fg-muted);
+  border-radius: 0;
+}
+.ia-remind__input:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ia-remind__send { min-height: 52px; }
+.ia-remind__send:disabled { opacity: .55; cursor: not-allowed; }
+.ia-remind__fine { margin: 12px 0 0; font-size: 14px; color: var(--fg-muted); }
+.ia-remind__status { min-height: 1.5em; margin: 16px 0 0; font-size: 17px; color: var(--fg-strong); }
+.ia-remind__status a { color: var(--accent); }
+
+/* ---- narrower: fewer columns ---- */
+@media (max-width: 1279px) { .ia-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 899px) { .ia-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 599px) {
+  .ia-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .ia-col { padding: 20px 18px 22px; }
+  .ia-col__name { font-size: 26px; }
+}
