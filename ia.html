@@ -157,12 +157,7 @@
 
 
   <main id="main" class="page__main">
-    <header class="act-head ground" data-mask>
-      <p class="eyebrow">For the Collective</p>
-      <h1 class="act-head__title" data-reveal>Aadi’s IAs</h1>
-      <span class="rule" aria-hidden="true"></span>
-      <p class="lead">Aadi has stepped back from the Collective until his IAs are done. This is how far he has got: each tick is set in the site’s own source as he finishes a step, and nothing on this page can change one.</p>
-    </header>
+    <h1 class="sr-only">Aadi’s IAs</h1>
 
     <!-- the tracker, written by tools/pages/build.mjs from content/ia.json: edit that file, not this -->
     <section class="act ia ground" aria-label="IA progress, subject by subject" data-mask>
@@ -176,7 +171,10 @@
       <li class="ia-col" data-subject="math">
         <header class="ia-col__head">
           <h2 class="ia-col__name">Mathematics</h2>
-          <p class="ia-col__count"><span class="ia-col__done">0</span> / 11</p>
+          <div class="ia-col__meta">
+            <p class="ia-col__count"><span class="ia-col__done">0</span> / 11</p>
+            <button class="ia-col__remind" type="button" data-ia-remind data-what="Mathematics IA" data-done="0" data-total="11" aria-label="Remind Aadi about Mathematics" hidden>Remind him</button>
+          </div>
         </header>
         <div class="ia-bar ia-col__bar" role="progressbar" aria-label="Mathematics: steps done" aria-valuemin="0" aria-valuemax="11" aria-valuenow="0" aria-valuetext="0 of 11 steps done"><span style="--p: 0"></span></div>
         <ol class="ia-steps">
@@ -196,7 +194,10 @@
       <li class="ia-col" data-subject="physics">
         <header class="ia-col__head">
           <h2 class="ia-col__name">Physics</h2>
-          <p class="ia-col__count"><span class="ia-col__done">0</span> / 6</p>
+          <div class="ia-col__meta">
+            <p class="ia-col__count"><span class="ia-col__done">0</span> / 6</p>
+            <button class="ia-col__remind" type="button" data-ia-remind data-what="Physics IA" data-done="0" data-total="6" aria-label="Remind Aadi about Physics" hidden>Remind him</button>
+          </div>
         </header>
         <div class="ia-bar ia-col__bar" role="progressbar" aria-label="Physics: steps done" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" aria-valuetext="0 of 6 steps done"><span style="--p: 0"></span></div>
         <ol class="ia-steps">
@@ -211,7 +212,10 @@
       <li class="ia-col" data-subject="chemistry">
         <header class="ia-col__head">
           <h2 class="ia-col__name">Chemistry</h2>
-          <p class="ia-col__count"><span class="ia-col__done">0</span> / 6</p>
+          <div class="ia-col__meta">
+            <p class="ia-col__count"><span class="ia-col__done">0</span> / 6</p>
+            <button class="ia-col__remind" type="button" data-ia-remind data-what="Chemistry IA" data-done="0" data-total="6" aria-label="Remind Aadi about Chemistry" hidden>Remind him</button>
+          </div>
         </header>
         <div class="ia-bar ia-col__bar" role="progressbar" aria-label="Chemistry: steps done" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" aria-valuetext="0 of 6 steps done"><span style="--p: 0"></span></div>
         <ol class="ia-steps">
@@ -226,7 +230,10 @@
       <li class="ia-col" data-subject="business">
         <header class="ia-col__head">
           <h2 class="ia-col__name">Business Management</h2>
-          <p class="ia-col__count"><span class="ia-col__done">0</span> / 6</p>
+          <div class="ia-col__meta">
+            <p class="ia-col__count"><span class="ia-col__done">0</span> / 6</p>
+            <button class="ia-col__remind" type="button" data-ia-remind data-what="Business Management IA" data-done="0" data-total="6" aria-label="Remind Aadi about Business Management" hidden>Remind him</button>
+          </div>
         </header>
         <div class="ia-bar ia-col__bar" role="progressbar" aria-label="Business Management: steps done" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" aria-valuetext="0 of 6 steps done"><span style="--p: 0"></span></div>
         <ol class="ia-steps">
@@ -241,7 +248,10 @@
       <li class="ia-col" data-subject="ee">
         <header class="ia-col__head">
           <h2 class="ia-col__name">Extended Essay</h2>
-          <p class="ia-col__count"><span class="ia-col__done">0</span> / 1</p>
+          <div class="ia-col__meta">
+            <p class="ia-col__count"><span class="ia-col__done">0</span> / 1</p>
+            <button class="ia-col__remind" type="button" data-ia-remind data-what="Extended Essay" data-done="0" data-total="1" aria-label="Remind Aadi about Extended Essay" hidden>Remind him</button>
+          </div>
         </header>
         <div class="ia-bar ia-col__bar" role="progressbar" aria-label="Extended Essay: steps done" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0" aria-valuetext="0 of 1 step done"><span style="--p: 0"></span></div>
         <ol class="ia-steps">
@@ -252,27 +262,22 @@
       <!-- /site:ia -->
     </section>
 
-    <!-- Remind Aadi (src/pages/ia.js): a reminder to his phone with your name on it (tools/ia/README.md) -->
-    <section class="act ia-remind ground" aria-labelledby="ia-remind-title" data-mask>
-      <h2 class="act__title" id="ia-remind-title" data-reveal>Give him a nudge</h2>
-      <span class="rule" aria-hidden="true"></span>
-      <p class="ia-remind__text">Tap the button and add your name: Aadi gets a reminder from you.</p>
-      <!-- site:ia-remind -->
-      <div class="ia-remind__box" data-ia-remind data-ntfy-topic="dc-ia-aadi-oiw2e0vjqb8fztd4" data-email="aadir6405@students.chirec.ac.in" data-person="Aadi" hidden>
-        <button class="btn btn--inverse btn--lg ia-remind__open" type="button" data-ia-remind-open>Remind Aadi</button>
-        <form class="ia-remind__form" data-ia-remind-form hidden>
-          <label class="ia-remind__label" for="ia-remind-name">Your name, so Aadi knows who it’s from</label>
-          <div class="ia-remind__row">
-            <input class="ia-remind__input" id="ia-remind-name" name="name" type="text" autocomplete="name" maxlength="40" required>
-            <button class="btn btn--inverse ia-remind__send" type="submit" data-ia-remind-send>Send the reminder</button>
-          </div>
-          <p class="ia-remind__fine">Your name goes to Aadi’s phone through ntfy.sh, a free notification service.</p>
-        </form>
-        <p class="ia-remind__status" role="status" aria-live="polite" data-ia-remind-status></p>
-      </div>
-      <noscript><p class="ia-remind__text"><a class="btn btn--inverse" href="mailto:aadir6405@students.chirec.ac.in?subject=IA%20reminder&amp;body=Hi%20Aadi%2C%20this%20is%20a%20reminder%20to%20work%20on%20your%20IAs.">Email Aadi a reminder</a></p></noscript>
-      <!-- /site:ia-remind -->
-    </section>
+    <!-- Remind him (src/pages/ia.js): the popup that asks a visitor’s name, and the note that says where the reminder went -->
+    <!-- site:ia-remind -->
+    <dialog class="ia-ask" data-ia-ask data-person="Aadi" data-ntfy-topic="dc-ia-aadi-oiw2e0vjqb8fztd4" data-email="aadir6405@students.chirec.ac.in" data-whatsapp="919950610990" data-callmebot="" aria-labelledby="ia-ask-title">
+      <form class="ia-ask__inner" method="dialog" data-ia-ask-form>
+        <h2 class="ia-ask__title" id="ia-ask-title" data-ia-ask-title>Remind Aadi</h2>
+        <label class="ia-ask__label" for="ia-ask-name">Your name, so Aadi knows who it’s from</label>
+        <input class="ia-ask__input" id="ia-ask-name" name="name" type="text" autocomplete="name" maxlength="40" required>
+        <p class="ia-ask__fine">Asked once: this browser remembers it for your next reminders. Each one goes to Aadi’s phone (through ntfy.sh) and his email.</p>
+        <div class="ia-ask__actions">
+          <button class="btn btn--inverse" type="submit" data-ia-ask-send>Send the reminder</button>
+          <button class="btn btn--ghost" type="button" data-ia-ask-cancel>Cancel</button>
+        </div>
+      </form>
+    </dialog>
+    <div class="ia-toast" role="status" aria-live="polite" data-ia-toast></div>
+    <!-- /site:ia-remind -->
   </main>
 
   <!-- site:footer -->

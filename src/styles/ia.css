@@ -1,9 +1,10 @@
 /* ==== Aadi's IA tracker (ia.html, src/pages/ia.js; data in content/ia.json) ====
    How far he has got overall, then one column a subject (Mathematics, Physics, Chemistry, Business
-   Management, the Extended Essay), each step with its tick, read-only. Then Remind Aadi. The site's own
-   look: plum and gold, Raung for names, Lato for the small print, sharp corners. Its top bar is the
-   bare pages' (bare.css). */
-.ia { margin-top: var(--space-7); }
+   Management, the Extended Essay), each step with its tick, read-only, and a Remind him button in
+   each unfinished subject's head (its popup and note below). The site's own look: plum and gold, Raung
+   for names, Lato for the small print, sharp corners. Its top bar is the bare pages' (bare.css); its
+   heading is for screen readers only. */
+.ia { margin-top: 0; }
 
 /* ---- overall ---- */
 .ia-overall { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
@@ -18,7 +19,8 @@
 .ia-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px; align-items: start; }
 .ia-col { padding: 24px 22px 26px; background: var(--card-bg); border: 1px solid var(--line); border-top: 3px solid var(--line); }
 .ia-col.is-complete { border-top-color: var(--rule-color); }
-.ia-col__head { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.ia-col__head { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.ia-col__meta { align-self: stretch; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .ia-col__name { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 28px; line-height: 1.1; color: var(--fg-strong); }
 .ia-col__count { margin: 0; flex: none; font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: 15px; letter-spacing: .06em; color: var(--fg-muted); }
 .ia-col__done { color: var(--accent); }
@@ -48,31 +50,86 @@
 .ia-step.is-left-behind .ia-step__label { text-decoration: line-through 1px; color: var(--fg-muted); }
 .ia-step.is-left-behind .ia-tick { opacity: .6; }
 
-/* ---- Remind Aadi ---- */
-.ia-remind { margin-top: var(--space-9); }
-.ia-remind__text { max-width: 40em; }
-.ia-remind__box { margin-top: var(--space-5); max-width: 720px; }
-.ia-remind__box[hidden], .ia-remind__form[hidden], .ia-remind__open[hidden] { display: none; }
-.ia-remind__label { display: block; margin-bottom: 10px; font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-muted); }
-.ia-remind__row { display: flex; flex-wrap: wrap; gap: 10px; }
-.ia-remind__input {
-  flex: 1 1 260px;
-  min-width: 0;
-  height: 52px;
-  padding: 0 16px;
-  font: inherit;
-  font-size: 18px;
-  color: var(--fg-strong);
-  background: var(--card-bg);
-  border: 1px solid var(--fg-muted);
+/* ---- Remind him: a button in each unfinished subject's head ---- */
+.ia-col__remind {
+  flex: none;
+  min-height: 34px;
+  padding: 0 10px;
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid currentColor;
   border-radius: 0;
+  cursor: pointer;
+  transition: var(--transition-ui);
 }
-.ia-remind__input:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
-.ia-remind__send { min-height: 52px; }
-.ia-remind__send:disabled { opacity: .55; cursor: not-allowed; }
-.ia-remind__fine { margin: 12px 0 0; font-size: 14px; color: var(--fg-muted); }
-.ia-remind__status { min-height: 1.5em; margin: 16px 0 0; font-size: 17px; color: var(--fg-strong); }
-.ia-remind__status a { color: var(--accent); }
+.ia-col__remind[hidden] { display: none; }
+.ia-col__remind:hover { color: var(--btn-fg); background: var(--btn-bg); border-color: var(--btn-bg); }
+.ia-col__remind:active { background: var(--btn-bg-active); border-color: var(--btn-bg-active); }
+.ia-col__remind:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ia-col__remind[aria-busy="true"] { opacity: .6; cursor: progress; }
+
+/* the popup that asks a visitor's name, the first time: the spotlight's panel, small */
+.ia-ask { width: min(520px, calc(100vw - 32px)); max-width: none; padding: 0; border: 0; background: transparent; color: var(--fg); overflow: visible; }
+.ia-ask::backdrop { background: rgb(21 4 8 / .82); }
+.ia-ask__inner { position: relative; padding: 36px 32px 28px; background: var(--card-bg); border: 1px solid var(--line); box-shadow: var(--shadow-lg); }
+.ia-ask__inner::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: 5px; background: var(--rule-color); }
+.ia-ask__title { margin: 0 0 22px; font-family: var(--font-display); font-weight: 400; font-size: clamp(26px, 3vw, 32px); line-height: 1.15; color: var(--fg-strong); }
+.ia-ask__label { display: block; margin-bottom: 10px; font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-muted); }
+.ia-ask__input { display: block; width: 100%; height: 52px; padding: 0 16px; font: inherit; font-size: 18px; color: var(--fg-strong); background: transparent; border: 1px solid var(--fg-muted); border-radius: 0; }
+.ia-ask__input:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ia-ask__fine { margin: 12px 0 0; font-size: 14px; line-height: 1.45; color: var(--fg-muted); }
+.ia-ask__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: 24px; }
+@media (prefers-reduced-motion: no-preference) {
+  .ia-ask[open] .ia-ask__inner { animation: ia-ask-in .32s var(--ease-curtain, cubic-bezier(.2, .7, .2, 1)) both; }
+  .ia-ask[open]::backdrop { animation: ia-fade .2s ease-out both; }
+}
+@keyframes ia-ask-in { from { opacity: 0; transform: translateY(14px); } }
+@keyframes ia-fade { from { opacity: 0; } }
+
+/* the note at the foot of the screen: where the reminder went, and what else to do */
+.ia-toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 12;
+  width: max-content;
+  max-width: min(620px, calc(100vw - 32px));
+  padding: 16px 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--rule-color);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 12px);
+  transition: opacity .25s ease, transform .25s ease;
+}
+.ia-toast.is-shown { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+.ia-toast:empty { padding: 0; border: 0; }
+.ia-toast__text { margin: 0; font-size: 16px; line-height: 1.4; color: var(--fg-strong); }
+.ia-toast__actions { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 10px 0 0; }
+.ia-toast__action {
+  padding: 4px 0;
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: 13px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+.ia-toast__action:hover { color: var(--accent-hover); text-decoration: underline 1px; text-underline-offset: 4px; }
+.ia-toast__action:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .ia-toast { transition: opacity .2s ease; transform: translate(-50%, 0); } }
 
 /* ---- narrower: fewer columns ---- */
 @media (max-width: 1279px) { .ia-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

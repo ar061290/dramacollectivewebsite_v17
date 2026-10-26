@@ -836,15 +836,17 @@ function readIA() {
   if (!Array.isArray(ia.subjects) || !ia.subjects.length) bad('"subjects" is missing');
   for (const s of ia.subjects) {
     if (!s.key || !s.name || !Array.isArray(s.steps) || !s.steps.length) bad(`a subject needs a "key", a "name" and its "steps" (${JSON.stringify(s.name ?? s.key)})`);
+    if (s.what != null && (typeof s.what !== 'string' || !s.what.trim())) bad(`${s.name}: "what" should be the words the reminder uses, like "Physics IA"`);
     for (const st of s.steps) {
       if (typeof st.label !== 'string' || !st.label.trim()) bad(`a step in ${s.name} has no "label"`);
       if (typeof st.done !== 'boolean') bad(`${s.name}, "${st.label}": "done" should be true or false (no quotes), not ${JSON.stringify(st.done)}`);
     }
   }
   const r = ia.remind ?? {};
-  if (r.relayUrl != null && !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(r.relayUrl)) bad(`"remind.relayUrl" should be the relay's Web app URL (https://script.google.com/macros/s/…/exec), not ${JSON.stringify(r.relayUrl)}`);
-  if (r.relayUrl == null && !/^[\w-]{1,64}$/.test(r.ntfyTopic ?? '')) bad('"remind" needs an "ntfyTopic" (letters, digits, - and _) or a "relayUrl"');
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(r.email ?? '')) bad('"remind.email" is missing (the email link the page falls back to)');
+  if (!/^[\w-]{1,64}$/.test(r.ntfyTopic ?? '')) bad('"remind.ntfyTopic" should be letters, digits, - and _ only');
+  if (!/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(r.email ?? '')) bad('"remind.email" should be the address the email copy goes to');
+  if (r.whatsapp != null && !/^\+\d{8,15}$/.test(r.whatsapp)) bad(`"remind.whatsapp" should be the number with its country code and no spaces, like "+919876543210", not ${JSON.stringify(r.whatsapp)}`);
+  if (r.callmebotKey != null && !/^[\w-]*$/.test(r.callmebotKey)) bad('"remind.callmebotKey" should be the key CallMeBot sent on WhatsApp, or "" for none');
   return ia;
 }
 const TICK = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.4 8.4l3 3 6.2-6.6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="square"/></svg>';
@@ -864,10 +866,16 @@ function iaTracker(pad) {
       const cls = ['ia-step', st.done ? 'is-done' : '', st.kind === 'scrapped' ? 'ia-step--scrapped' : '', turn > i ? 'is-left-behind' : ''].filter(Boolean).join(' ');
       return `    <li class="${cls}"><span class="ia-tick">${st.done ? TICK : ''}</span><span class="ia-step__label">${esc(st.label)}</span><span class="sr-only">: ${st.done ? 'done' : 'not done yet'}</span></li>`;
     });
+    // Remind him (src/pages/ia.js), until the subject is done; shown once scripts run
+    const remind = n < of
+      ? `\n      <button class="ia-col__remind" type="button" data-ia-remind data-what="${esc(s.what ?? `${s.name} IA`)}" data-done="${n}" data-total="${of}" aria-label="Remind ${esc(ia.person)} about ${esc(s.name)}" hidden>Remind him</button>`
+      : '';
     return `<li class="ia-col${n === of ? ' is-complete' : ''}" data-subject="${esc(s.key)}">
   <header class="ia-col__head">
     <h2 class="ia-col__name">${esc(s.name)}</h2>
-    <p class="ia-col__count"><span class="ia-col__done">${n}</span> / ${of}</p>
+    <div class="ia-col__meta">
+      <p class="ia-col__count"><span class="ia-col__done">${n}</span> / ${of}</p>${remind}
+    </div>
   </header>
   ${bar(n, of, `${s.name}: steps done`, 'ia-bar ia-col__bar')}
   <ol class="ia-steps">
@@ -886,30 +894,26 @@ ${ia.subjects.map(col).join('\n')}
   return html.split('\n').map((l, i) => (i && l ? pad + l : l)).join('\n');
 }
 
-// Remind Aadi (ia.html): the button, then the visitor's name, sent by src/pages/ia.js as one push
-// notification through ntfy.sh to the topic Aadi's phone subscribes to (content/ia.json, remind), or,
-// once there is one, through the relay that sends the push and an email (tools/ia/README.md); without
-// scripts, an email link instead.
+// Remind him (ia.html): the popup that asks a visitor's name the first time (src/pages/ia.js then
+// remembers it), and the note that says where the reminder went. Where it goes is set here, from
+// content/ia.json: a push to Aadi's phone (ntfy.sh), an email (FormSubmit), and WhatsApp (sent
+// automatically once there is a CallMeBot key; until then, a button that opens WhatsApp written out).
 function iaRemind(pad) {
   const { person, remind } = readIA();
-  const mail = `mailto:${remind.email}?subject=${encodeURIComponent('IA reminder')}&body=${encodeURIComponent(`Hi ${person}, this is a reminder to work on your IAs.`)}`;
-  const via = remind.relayUrl ? `data-relay="${esc(remind.relayUrl)}"` : `data-ntfy-topic="${esc(remind.ntfyTopic)}"`;
-  const fine = remind.relayUrl
-    ? `Your name goes to ${esc(person)}’s phone (through ntfy.sh, a free notification service) and to his email.`
-    : `Your name goes to ${esc(person)}’s phone through ntfy.sh, a free notification service.`;
-  const html = `<div class="ia-remind__box" data-ia-remind ${via} data-email="${esc(remind.email)}" data-person="${esc(person)}" hidden>
-  <button class="btn btn--inverse btn--lg ia-remind__open" type="button" data-ia-remind-open>Remind ${esc(person)}</button>
-  <form class="ia-remind__form" data-ia-remind-form hidden>
-    <label class="ia-remind__label" for="ia-remind-name">Your name, so ${esc(person)} knows who it’s from</label>
-    <div class="ia-remind__row">
-      <input class="ia-remind__input" id="ia-remind-name" name="name" type="text" autocomplete="name" maxlength="40" required>
-      <button class="btn btn--inverse ia-remind__send" type="submit" data-ia-remind-send>Send the reminder</button>
+  const p = esc(person);
+  const html = `<dialog class="ia-ask" data-ia-ask data-person="${p}" data-ntfy-topic="${esc(remind.ntfyTopic)}" data-email="${esc(remind.email)}" data-whatsapp="${esc((remind.whatsapp ?? '').replace('+', ''))}" data-callmebot="${esc(remind.callmebotKey ?? '')}" aria-labelledby="ia-ask-title">
+  <form class="ia-ask__inner" method="dialog" data-ia-ask-form>
+    <h2 class="ia-ask__title" id="ia-ask-title" data-ia-ask-title>Remind ${p}</h2>
+    <label class="ia-ask__label" for="ia-ask-name">Your name, so ${p} knows who it’s from</label>
+    <input class="ia-ask__input" id="ia-ask-name" name="name" type="text" autocomplete="name" maxlength="40" required>
+    <p class="ia-ask__fine">Asked once: this browser remembers it for your next reminders. Each one goes to ${p}’s phone (through ntfy.sh)${remind.callmebotKey ? ', his email and his WhatsApp' : ' and his email'}.</p>
+    <div class="ia-ask__actions">
+      <button class="btn btn--inverse" type="submit" data-ia-ask-send>Send the reminder</button>
+      <button class="btn btn--ghost" type="button" data-ia-ask-cancel>Cancel</button>
     </div>
-    <p class="ia-remind__fine">${fine}</p>
   </form>
-  <p class="ia-remind__status" role="status" aria-live="polite" data-ia-remind-status></p>
-</div>
-<noscript><p class="ia-remind__text"><a class="btn btn--inverse" href="${esc(mail)}">Email ${esc(person)} a reminder</a></p></noscript>`;
+</dialog>
+<div class="ia-toast" role="status" aria-live="polite" data-ia-toast></div>`;
   return html.split('\n').map((l, i) => (i && l ? pad + l : l)).join('\n');
 }
 
@@ -953,7 +957,7 @@ export async function build(only = []) {
     if (key === 'contact') out = fill(out, 'contacts', contacts('      '), '      ');
     if (key === 'sponsor') out = fill(out, 'contacts', contacts('        '), '        ');
     if (key === 'ia') out = fill(out, 'ia', iaTracker('      '), '      ');
-    if (key === 'ia') out = fill(out, 'ia-remind', iaRemind('      '), '      ');
+    if (key === 'ia') out = fill(out, 'ia-remind', iaRemind('    '), '    ');
     out = out.replace(/(<a [^>]*data-instagram[^>]*href=")[^"]*(")/g, `$1${INSTAGRAM.href}$2`);
     if (crlf) out = out.replace(/\n/g, '\r\n');
     if (out !== src) { writeFileSync(path, out); console.log(`wrote ${file}`); }

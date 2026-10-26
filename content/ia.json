@@ -1,5 +1,5 @@
 {
-  "_readme": "Aadi's IA tracker (ia.html, unlisted: linked from nowhere). To tick a step, set its \"done\" to true (no quotes) and \"updated\" to today's date, written YYYY-MM-DD, then push: the Pages deploy writes the page again (`npm run pages` does it locally). Nothing on the page can change a tick, and the build stops with the reason if something here would not show. Mathematics lists Personal story, Background, Math and Conclusion twice on purpose: once for the first idea, once for the new one after \"Idea scrapped\".",
+  "_readme": "Aadi's IA tracker (ia.html, unlisted: linked from nowhere). To tick a step, set its \"done\" to true (no quotes) and \"updated\" to today's date, written YYYY-MM-DD, then push: the Pages deploy writes the page again (`npm run pages` does it locally). Nothing on the page can change a tick, and the build stops with the reason if something here would not show. A subject's reminder speaks of its \"name\" plus \" IA\" unless it has a \"what\" (the Extended Essay). Mathematics lists Personal story, Background, Math and Conclusion twice on purpose: once for the first idea, once for the new one after \"Idea scrapped\".",
   "person": "Aadi",
   "updated": "2026-10-27",
   "subjects": [
@@ -147,6 +147,7 @@
     {
       "key": "ee",
       "name": "Extended Essay",
+      "what": "Extended Essay",
       "steps": [
         {
           "label": "Finish the Physics IA first",
@@ -156,8 +157,10 @@
     }
   ],
   "remind": {
-    "_readme": "Remind Aadi (tools/ia/README.md). Now: one push notification through ntfy.sh to \"ntfyTopic\", which Aadi subscribes to in the ntfy app. The topic is the only key and it is in the public page, so anyone who opens the page could read the reminders or send their own: if that happens, put a new random topic here, push, and resubscribe his phone. No email copy this way (ntfy.sh stopped forwarding email for anonymous senders). For an email copy and a topic nobody sees, set up the relay in tools/ia/, put its Web app URL in \"relayUrl\" and delete \"ntfyTopic\". \"email\" is for the email link the page offers when a reminder cannot be sent.",
+    "_readme": "Remind him (tools/ia/README.md): each unfinished subject has a button that sends Aadi one reminder with the visitor's name (asked once, then remembered by their browser). It goes three ways: a push notification through ntfy.sh to \"ntfyTopic\" (Aadi subscribes to it in the ntfy app); an email through FormSubmit to \"email\" (the very first one is held back while FormSubmit asks Aadi, by email, to activate: one click); and WhatsApp to \"whatsapp\", sent automatically once \"callmebotKey\" holds the key CallMeBot sends on WhatsApp, and until then a button that opens WhatsApp with the reminder written out. Everything here is public in the page. The site sets no limits of its own: only the services' (ntfy.sh: 250 a day from each visitor; FormSubmit: none stated).",
     "ntfyTopic": "dc-ia-aadi-oiw2e0vjqb8fztd4",
-    "email": "aadir6405@students.chirec.ac.in"
+    "email": "aadir6405@students.chirec.ac.in",
+    "whatsapp": "+919950610990",
+    "callmebotKey": ""
   }
 }
