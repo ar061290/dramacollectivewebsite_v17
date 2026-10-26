@@ -8,6 +8,8 @@
 // the browser has view transitions, the page is pictured as it was and as it now is, and the new
 // picture is uncovered through the circle (CSS in components.css); elsewhere the colours cross-fade
 // as before while the ring passes over. With reduced motion the theme simply changes.
+// A page whose body has data-theme-fade (Aadi's IAs) keeps the first switch the site had: the colours
+// cross-fade for one beat and the canvases ease into their new look, with no circle and no ring.
 //
 // A switch made by the visitor (a click on the button, or a key on it) also brings the new theme's
 // earring down out of the button (`onSwitch`: src/ui/earrings.js); the first sync of the page does
@@ -77,19 +79,25 @@ export function setupTheme({ reduced, onChange, onSwitch }) {
     try { onSwitch?.(theme); } catch (err) { console.warn(err); }
   };
 
+  // colours cross-fade for one beat, then normal transitions resume
+  const fade = () => {
+    root.classList.add('theme-fade');
+    clearTimeout(fadeTimer);
+    fadeTimer = setTimeout(() => root.classList.remove('theme-fade'), 700);
+  };
+
   const set = (theme) => {
     ring?.stop();
     ring = null;
     if (reduced) { apply(theme, true); switched(theme); return; }
+    if (document.body.hasAttribute('data-theme-fade')) { fade(); apply(theme, false); switched(theme); return; }
     const { x, y, radius } = circle();
     const from = ringColours();
 
     if (typeof document.startViewTransition !== 'function') {
-      // no view transitions: colours cross-fade for one beat, then normal transitions resume; the
-      // ring still spreads over the page, timed by an animation of its own with the same curve
-      root.classList.add('theme-fade');
-      clearTimeout(fadeTimer);
-      fadeTimer = setTimeout(() => root.classList.remove('theme-fade'), 700);
+      // no view transitions: the colours cross-fade (above); the ring still spreads over the page,
+      // timed by an animation of its own with the same curve
+      fade();
       apply(theme, false);
       switched(theme);
       const made = themeRing({ x, y, radius, from, to: ringColours() });
