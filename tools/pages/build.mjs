@@ -846,7 +846,17 @@ function readIA() {
   if (!/^[\w-]{1,64}$/.test(r.ntfyTopic ?? '')) bad('"remind.ntfyTopic" should be letters, digits, - and _ only');
   if (!/^[\w.+-]+@[\w-]+(\.[\w-]+)+$/.test(r.email ?? '')) bad('"remind.email" should be the address the email copy goes to');
   if (r.whatsapp != null && !/^\+\d{8,15}$/.test(r.whatsapp)) bad(`"remind.whatsapp" should be the number with its country code and no spaces, like "+919876543210", not ${JSON.stringify(r.whatsapp)}`);
-  if (r.callmebotKey != null && !/^[\w-]*$/.test(r.callmebotKey)) bad('"remind.callmebotKey" should be the key CallMeBot sent on WhatsApp, or "" for none');
+  // the automatic WhatsApp: each service's key left "" until it is set up (tools/ia/README.md)
+  const g = r.greenApi ?? {};
+  if (g.apiUrl || g.idInstance || g.apiToken) {
+    if (!/^https:\/\/[\w.-]+(:\d+)?\/?$/.test(g.apiUrl ?? '')) bad(`"remind.greenApi.apiUrl" should be the apiUrl the GREEN-API console shows, like "https://7105.api.greenapi.com", not ${JSON.stringify(g.apiUrl)}`);
+    if (!/^\d{4,}$/.test(g.idInstance ?? '')) bad(`"remind.greenApi.idInstance" should be the instance's number from the console, not ${JSON.stringify(g.idInstance)}`);
+    if (!/^\w{16,}$/.test(g.apiToken ?? '')) bad('"remind.greenApi.apiToken" should be the apiTokenInstance from the console');
+  }
+  for (const k of ['inoutKey', 'callmebotKey']) {
+    if (r[k] != null && !/^[\w-]*$/.test(r[k])) bad(`"remind.${k}" should be the key the bot sent on WhatsApp, or "" for none`);
+  }
+  if ((g.apiToken || r.callmebotKey) && !r.whatsapp) bad('"remind.whatsapp" is needed: GREEN-API and CallMeBot send to that number');
   return ia;
 }
 const TICK = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.4 8.4l3 3 6.2-6.6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="square"/></svg>';
@@ -897,11 +907,21 @@ ${ia.subjects.map(col).join('\n')}
 // Remind him (ia.html): the popup that asks a visitor's name the first time (src/pages/ia.js then
 // remembers it), and the note that says where the reminder went. Where it goes is set here, from
 // content/ia.json: a push to Aadi's phone (ntfy.sh), an email (FormSubmit), and WhatsApp (sent
-// automatically once there is a CallMeBot key; until then, a button that opens WhatsApp written out).
+// automatically by the first service with a key: GREEN-API, then InOut.bot, then CallMeBot; until
+// then, a button that opens WhatsApp written out).
+function waRoute(remind) {
+  const g = remind.greenApi ?? {};
+  if (g.apiToken) return { service: 'green-api', url: g.apiUrl.replace(/\/$/, ''), id: g.idInstance, key: g.apiToken };
+  if (remind.inoutKey) return { service: 'inout', key: remind.inoutKey };
+  if (remind.callmebotKey) return { service: 'callmebot', key: remind.callmebotKey };
+  return null;
+}
 function iaRemind(pad) {
   const { person, remind } = readIA();
   const p = esc(person);
-  const html = `<dialog class="ia-ask" data-ia-ask data-person="${p}" data-ntfy-topic="${esc(remind.ntfyTopic)}" data-email="${esc(remind.email)}" data-whatsapp="${esc((remind.whatsapp ?? '').replace('+', ''))}" data-callmebot="${esc(remind.callmebotKey ?? '')}" aria-labelledby="ia-ask-title">
+  const wa = waRoute(remind);
+  const waData = wa ? ` data-wa-service="${wa.service}"${wa.url ? ` data-wa-url="${esc(wa.url)}" data-wa-id="${esc(wa.id)}"` : ''} data-wa-key="${esc(wa.key)}"` : '';
+  const html = `<dialog class="ia-ask" data-ia-ask data-person="${p}" data-ntfy-topic="${esc(remind.ntfyTopic)}" data-email="${esc(remind.email)}" data-whatsapp="${esc((remind.whatsapp ?? '').replace('+', ''))}"${waData} aria-labelledby="ia-ask-title">
   <form class="ia-ask__inner" method="dialog" data-ia-ask-form>
     <h2 class="ia-ask__title" id="ia-ask-title" data-ia-ask-title>Remind ${p}</h2>
     <label class="sr-only" for="ia-ask-name">Your name</label>

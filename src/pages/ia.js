@@ -6,14 +6,17 @@
 // - a push to Aadi's phone through ntfy.sh, a free open-source push service: one JSON message posted
 //   to its root, as text/plain so the browser makes a simple request (no preflight);
 // - an email through FormSubmit (formsubmit.co), which forwards it to his inbox;
-// - WhatsApp: sent automatically through CallMeBot once content/ia.json has a key for it, and until
-//   then a link in the note that opens WhatsApp with the reminder written out, for the visitor to send.
+// - WhatsApp, sent automatically once content/ia.json has the key of one of three services: GREEN-API
+//   (a second WhatsApp number of the owner's, linked to it, writes to Aadi's), InOut.bot or CallMeBot
+//   (their bot writes to the number that asked for the key). Until then, or if it fails, a link in the
+//   note opens WhatsApp with the reminder written out, for the visitor to send.
 // No limits of the site's own: a press while one is still going is ignored, nothing more.
 // The top bar is the bare pages' (bare.css): the logo and the light/dark switch, music by K.
 import { bootPage } from '../site/boot.js';
 
 const NTFY = 'https://ntfy.sh/';
 const FORMSUBMIT = 'https://formsubmit.co/ajax/';
+const INOUT = 'https://api.inout.bot/send';
 const CALLMEBOT = 'https://api.callmebot.com/whatsapp.php';
 const KEY_NAME = 'dc-ia-name';
 const TOAST_MS = 9000;
@@ -35,7 +38,7 @@ function setupRemind() {
   const sendBtn = dialog.querySelector('[data-ia-ask-send]');
   const cancelBtn = dialog.querySelector('[data-ia-ask-cancel]');
   const toast = document.querySelector('[data-ia-toast]');
-  const { person, ntfyTopic: topic, email, whatsapp, callmebot } = dialog.dataset;
+  const { person, ntfyTopic: topic, email, whatsapp, waService, waUrl, waId, waKey } = dialog.dataset;
   const pageUrl = `${location.origin}${location.pathname}`;
   const sending = new Set();
   let pending = null; // the subject's button the popup is asking for (null: only changing the name)
@@ -113,10 +116,28 @@ function setupRemind() {
     if (!res.ok || String(out?.success) !== 'true') throw new Error(`FormSubmit said ${out?.message ?? res.status}`);
     return true;
   };
-  const wa = async (name, a, signal) => {
-    // CallMeBot answers without CORS headers: the request goes, its answer cannot be read
-    const url = `${CALLMEBOT}?phone=%2B${whatsapp}&text=${encodeURIComponent(waText(name, a))}&apikey=${encodeURIComponent(callmebot)}`;
-    await fetch(url, { mode: 'no-cors', credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', signal });
+  // WhatsApp, by whichever service has a key (the builder picks one: data-wa-service)
+  const wa = async (name, { what, steps }, signal) => {
+    const text = `*IA reminder from ${name}*\n${name} is reminding you to work on your ${what} (${steps}).\n${pageUrl}`;
+    const quiet = { credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', signal };
+    if (waService === 'green-api') {
+      // from the second number linked to the instance, to Aadi's; it answers with the message's id
+      const res = await fetch(`${waUrl}/waInstance${waId}/sendMessage/${waKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId: `${whatsapp}@c.us`, message: text }),
+        mode: 'cors', ...quiet,
+      });
+      const out = await res.json().catch(() => null);
+      if (!res.ok || !out?.idMessage) throw new Error(`GREEN-API answered ${res.status}`);
+      return true;
+    }
+    // InOut.bot and CallMeBot: a GET their bot acts on, to the number that asked for the key; neither
+    // is known to answer with CORS headers, so the request goes and its answer cannot be read
+    const url = waService === 'inout'
+      ? `${INOUT}?apikey=${encodeURIComponent(waKey)}&message=${encodeURIComponent(text)}`
+      : `${CALLMEBOT}?phone=%2B${whatsapp}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(waKey)}`;
+    await fetch(url, { mode: 'no-cors', ...quiet });
     return true;
   };
 
@@ -128,7 +149,7 @@ function setupRemind() {
     showToast(`Sending your reminder about his ${a.what}…`, [], true);
     const abort = new AbortController();
     const giveUp = setTimeout(() => abort.abort(), 12_000);
-    const autoWa = Boolean(whatsapp && callmebot);
+    const autoWa = Boolean(whatsapp && waService);
     const ways = [push(name, a, abort.signal), mail(name, a, abort.signal), autoWa ? wa(name, a, abort.signal) : Promise.resolve(false)];
     const [p, m, w] = (await Promise.allSettled(ways)).map((r) => {
       if (r.status === 'rejected') console.warn('Remind him: one way did not go through', r.reason);
