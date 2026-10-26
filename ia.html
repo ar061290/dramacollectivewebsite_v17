@@ -267,9 +267,8 @@
     <dialog class="ia-ask" data-ia-ask data-person="Aadi" data-ntfy-topic="dc-ia-aadi-oiw2e0vjqb8fztd4" data-email="aadir6405@students.chirec.ac.in" data-whatsapp="919950610990" data-callmebot="" aria-labelledby="ia-ask-title">
       <form class="ia-ask__inner" method="dialog" data-ia-ask-form>
         <h2 class="ia-ask__title" id="ia-ask-title" data-ia-ask-title>Remind Aadi</h2>
-        <label class="ia-ask__label" for="ia-ask-name">Your name, so Aadi knows who it’s from</label>
-        <input class="ia-ask__input" id="ia-ask-name" name="name" type="text" autocomplete="name" maxlength="40" required>
-        <p class="ia-ask__fine">Asked once: this browser remembers it for your next reminders. Each one goes to Aadi’s phone (through ntfy.sh) and his email.</p>
+        <label class="sr-only" for="ia-ask-name">Your name</label>
+        <input class="ia-ask__input" id="ia-ask-name" name="name" type="text" autocomplete="name" maxlength="40" placeholder="Your Name" required>
         <div class="ia-ask__actions">
           <button class="btn btn--inverse" type="submit" data-ia-ask-send>Send the reminder</button>
           <button class="btn btn--ghost" type="button" data-ia-ask-cancel>Cancel</button>
