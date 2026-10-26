@@ -9,27 +9,27 @@
       "steps": [
         {
           "label": "Idea",
-          "done": false
+          "done": true
         },
         {
           "label": "Personal story",
-          "done": false
+          "done": true
         },
         {
           "label": "Background",
-          "done": false
+          "done": true
         },
         {
           "label": "Math",
-          "done": false
+          "done": true
         },
         {
           "label": "Conclusion",
-          "done": false
+          "done": true
         },
         {
           "label": "Idea scrapped",
-          "done": false,
+          "done": true,
           "kind": "scrapped"
         },
         {
@@ -68,7 +68,7 @@
         },
         {
           "label": "Personal story",
-          "done": false
+          "done": true
         },
         {
           "label": "Data analysis",
@@ -120,11 +120,11 @@
       "steps": [
         {
           "label": "Intro",
-          "done": false
+          "done": true
         },
         {
           "label": "Tool 1",
-          "done": false
+          "done": true
         },
         {
           "label": "Tool 2",
