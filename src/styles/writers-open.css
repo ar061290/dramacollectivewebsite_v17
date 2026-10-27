@@ -68,12 +68,24 @@
   justify-content: center;
 }
 .writers-open__words .lead { max-width: 30em; }
+/* the way in, under the line: the publication's button a size up, filled with the ink; on hover it
+   takes the stage light, as Apply to be a writer does on the publication */
+.writers-open__apply {
+  width: fit-content;
+  margin-top: var(--space-6);
+  background: var(--pub-btn-ink, var(--fg-strong));
+  color: var(--pub-btn-paper, var(--bg));
+}
+.writers-open__apply:hover { background: var(--gold-500); border-color: var(--gold-500); color: var(--plum-900); }
 
 /* ---- stacked: phones, and tablets held upright: the statue above, the words under it ---- */
 @media (max-width: 767px), (max-width: 1023px) and (orientation: portrait) {
   .writers-open {
     --open-gutter: max(16px, var(--stage-gutter));
-    --box-h: min(calc((100svh - var(--open-top)) * .56), calc((100vw - 2 * var(--open-gutter)) / .82));
+    /* (and on a short phone, smaller still, so the words and Apply to be a writer stay above the
+       banner: 330px is the words' height there with the banner's 48px under them; never under .4
+       of the height, for a phone on its side) */
+    --box-h: min(calc((100svh - var(--open-top)) * .56), max(calc(100svh - var(--open-top) - 330px), calc((100svh - var(--open-top)) * .4)), calc((100vw - 2 * var(--open-gutter)) / .82));
     --box-w: calc(var(--box-h) * .82);
   }
   .writers-open__statue { right: auto; left: calc(50% - var(--box-w) / 2); top: var(--open-top); }
@@ -88,6 +100,7 @@
   .writers-open__words .act-head__title { font-size: clamp(34px, min(9.4vw, 5.6svh), 60px); }
   .writers-open__words .rule { margin-block: 12px; }
   .writers-open__words .lead { font-size: clamp(15px, min(4.2vw, 2.2svh), 19px); }
+  .writers-open__apply { margin-top: clamp(12px, 2svh, 24px); }
 }
 
 /* ---- the book ---- */
