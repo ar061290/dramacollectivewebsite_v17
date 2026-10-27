@@ -46,8 +46,8 @@ From the Collective's Drive folder: CAScade (the flash play), the ISSO fundraise
 pictures), the first meeting, and from the production's auditions only the offline auditions: their
 photo and their film. The film is 67 minutes and 4 GB, too large to keep in the site, so it plays from
 Drive (`film.drive` in `content/gallery.json`: Drive's own player, put in only when Play is pressed).
-Clips and stills from it are still to come: Drive stopped serving its download for the day ("quota
-exceeded"). Once it is downloaded, `node tools/gallery/make.mjs auditions --film <file> --stills …
---clips …` makes them (the film itself stays on Drive). The other audition videos, each filed under a
+Its eight stills and four clips were made from Aadi's download of it:
+`node tools/gallery/make.mjs auditions --film <file> --stills 20,500,980,1220,1940,2540,3020,3740
+--clips 975:5,2055:5,2535:5,3615:5` (the film itself stays on Drive). The other audition videos, each filed under a
 student's name and class, are not on the site; the folder's other videos and the audition brief are
 not either.

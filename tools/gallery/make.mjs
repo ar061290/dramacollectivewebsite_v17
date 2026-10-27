@@ -81,7 +81,7 @@ if (!film) {
   for (const f of readdirSync(out)) if (/^clip-\d+\.(mp4|webp)$/.test(f)) rmSync(join(out, f));
   event.clips = clips.map(([start, len], i) => {
     const name = `clip-${i + 1}`;
-    ff('-ss', String(start), '-t', String(len), '-i', film, '-an', '-vf', "scale=-2:'min(480,ih)'", '-c:v', 'libx264', '-preset', 'slow', '-crf', '30',
+    ff('-ss', String(start), '-t', String(len), '-i', film, '-an', '-r', '30', '-vf', "scale=-2:'min(480,ih)'", '-c:v', 'libx264', '-preset', 'slow', '-crf', '30',
       '-pix_fmt', 'yuv420p', '-movflags', '+faststart', join(out, `${name}.mp4`));
     ff('-i', join(out, `${name}.mp4`), '-frames:v', '1', '-c:v', 'libwebp', '-quality', '66', join(out, `${name}.webp`));
     return { src: rel(name), ...size(join(out, `${name}.mp4`)) };

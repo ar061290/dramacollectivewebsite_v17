@@ -1595,6 +1595,70 @@
           "h": 720,
           "tw": 782,
           "th": 440
+        },
+        {
+          "src": "assets/gallery/auditions/film-1",
+          "w": 1280,
+          "h": 720,
+          "tw": 782,
+          "th": 440,
+          "from": "film"
+        },
+        {
+          "src": "assets/gallery/auditions/film-2",
+          "w": 1280,
+          "h": 720,
+          "tw": 782,
+          "th": 440,
+          "from": "film"
+        },
+        {
+          "src": "assets/gallery/auditions/film-3",
+          "w": 1280,
+          "h": 720,
+          "tw": 782,
+          "th": 440,
+          "from": "film"
+        },
+        {
+          "src": "assets/gallery/auditions/film-4",
+          "w": 1280,
+          "h": 720,
+          "tw": 782,
+          "th": 440,
+          "from": "film"
+        },
+        {
+          "src": "assets/gallery/auditions/film-5",
+          "w": 1280,
+          "h": 720,
+          "tw": 782,
+          "th": 440,
+          "from": "film"
+        },
+        {
+          "src": "assets/gallery/auditions/film-6",
+          "w": 1280,
+          "h": 720,
+          "tw": 782,
+          "th": 440,
+          "from": "film"
+        },
+        {
+          "src": "assets/gallery/auditions/film-7",
+          "w": 1280,
+          "h": 720,
+          "tw": 782,
+          "th": 440,
+          "from": "film"
+        },
+        {
+          "src": "assets/gallery/auditions/film-8",
+          "w": 1280,
+          "h": 720,
+          "tw": 782,
+          "th": 440,
+          "from": "film"
         }
       ],
       "film": {
@@ -1602,7 +1666,29 @@
         "poster": "assets/gallery/auditions/001",
         "caption": "The offline auditions, the whole of them",
         "length": "1 hr 7 min"
-      }
+      },
+      "clips": [
+        {
+          "src": "assets/gallery/auditions/clip-1",
+          "w": 854,
+          "h": 480
+        },
+        {
+          "src": "assets/gallery/auditions/clip-2",
+          "w": 854,
+          "h": 480
+        },
+        {
+          "src": "assets/gallery/auditions/clip-3",
+          "w": 854,
+          "h": 480
+        },
+        {
+          "src": "assets/gallery/auditions/clip-4",
+          "w": 854,
+          "h": 480
+        }
+      ]
     }
   ]
 }
