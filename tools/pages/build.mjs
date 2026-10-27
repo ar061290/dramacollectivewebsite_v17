@@ -23,7 +23,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
-import { PIECES, PUBLISHED, pieceHref, FIRST_OF_ISSUE } from '../../src/publication/pieces-data.js';
+import { PIECES, PUBLISHED, pieceHref, FIRST_OF_ISSUE, EDITORS_NOTE } from '../../src/publication/pieces-data.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const readJSON = (path) => JSON.parse(readFileSync(join(ROOT, path), 'utf8'));
@@ -37,7 +37,8 @@ const TEAM_PEOPLE = readJSON('content/team.json').people;
 export const WRITERS = readJSON('content/writers.json').writers.map((w) => {
   const t = w.team ? TEAM_PEOPLE.find((p) => p.id === w.team) : null;
   if (w.team && !t) throw new Error(`content/writers.json: ${w.name}: no "${w.team}" in content/team.json`);
-  const pieces = PIECES.filter((p) => p.author === w.name);
+  // (the editor's note is one of its writer's pieces here, though not one of the issue's)
+  const pieces = [...PIECES, EDITORS_NOTE].filter((p) => p.author === w.name);
   return {
     ...w,
     first: w.first ?? w.name.split(/\s+/)[0],
@@ -70,6 +71,9 @@ const HOME = { key: 'home', href: './index.html', label: 'Home' };
 const CTA = { key: 'sponsor', href: './sponsor.html', label: 'Become a sponsor' };
 // Apply now: the roles and the Collective's application form (a Fillout form)
 const APPLY = { key: 'apply', href: './apply.html', label: 'Apply now' };
+// the Gallery: the events in pictures (content/gallery.json); in the bar beside the light switch on a
+// laptop, under Instagram in the Menu, and in the footer with the Collective's pages
+const GALLERY = { key: 'gallery', href: './gallery.html', label: 'Gallery' };
 export const NAV = [ABOUT, TEAM, ...OUTPUTS, CONTACT];
 
 // The Collective's Instagram. TODO: the handle (it was not given; this opens Instagram itself).
@@ -94,6 +98,7 @@ export const PAGES = [
   ...NAV.map((n) => ({ file: n.href.slice(2), key: n.key })),
   { file: 'sponsor.html', key: 'sponsor' },
   { file: APPLY.href.slice(2), key: APPLY.key },
+  { file: GALLERY.href.slice(2), key: GALLERY.key },
   // the publication's own pages, reached from it and not from the menu: its reading pages (each
   // piece, the editor's note, all the pieces; written whole by this file, READING below), Meet our
   // writers and each writer's own page (written whole, writerPage below), Apply to be a writer (with
@@ -240,6 +245,7 @@ ${OUTPUTS.map((o) => `            <li>${link(o, page)}</li>`).join('\n')}
         <svg class="theme-toggle__sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 1.8v2.1M10 16.1v2.1M1.8 10h2.1M16.1 10h2.1M4.2 4.2l1.5 1.5M14.3 14.3l1.5 1.5M4.2 15.8l1.5-1.5M14.3 5.7l1.5-1.5"/></g></svg>
         <svg class="theme-toggle__moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.9 12.6A6.6 6.6 0 0 1 7.4 4.1a6.6 6.6 0 1 0 8.5 8.5Z" fill="currentColor"/></svg>
       </button>
+      <a class="btn btn--secondary btn--sm topbar__gallery" href="${GALLERY.href}"${current(GALLERY.key, page)}>${GALLERY.label}</a>
     </div>
     <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu-sheet" data-menu-toggle>Menu</button>
     <a class="btn btn--inverse btn--sm topbar__cta" href="${CTA.href}"${current(CTA.key, page)} data-topbar-keep>${CTA.label}</a>
@@ -253,6 +259,7 @@ ${OUTPUTS.map((o) => `            <li>${link(o, page)}</li>`).join('\n')}
         </li>
 ${[CONTACT, APPLY, CTA].map((n) => `        <li>${link(n, page)}</li>`).join('\n')}
         <li><a href="${INSTAGRAM.href}" target="_blank" rel="noopener"><span class="ig-word">${INSTAGRAM.label}</span></a></li>
+        <li>${link(GALLERY, page)}</li>
       </ul>
     </div>
   </header>`;
@@ -280,7 +287,7 @@ const pageLinks = (page, pad = '      ', cls = '', dock = false) => {
 ${i(1)}<div class="curtain__col"${col('collective')}>
 ${i(2)}<p class="eyebrow">The Collective</p>
 ${i(2)}<ul>
-${[HOME, ABOUT, TEAM, CONTACT, APPLY, CTA].map((n) => `${i(3)}<li>${link(n, page)}</li>`).join('\n')}
+${[HOME, ABOUT, TEAM, GALLERY, CONTACT, APPLY, CTA].map((n) => `${i(3)}<li>${link(n, page)}</li>`).join('\n')}
 ${i(2)}</ul>
 ${i(1)}</div>
 ${i(1)}<div class="curtain__col"${col('outputs')}>
@@ -820,6 +827,88 @@ function fill(src, name, html, indent = '  ') {
   return src.replace(re, () => `<!-- site:${name} -->\n${indent}${html}\n${indent}<!-- /site:${name} -->`);
 }
 
+// The Gallery (gallery.html): a section an event, newest first, from content/gallery.json: its date,
+// its name, how many pictures, its film where it has one (played only when asked: preload="none"),
+// then its pictures as tiles, each a link to the picture whole (src/pages/gallery.js opens it in a
+// lightbox instead, and steps through the event's pictures), and its clips (short, silent, played
+// while on screen). The pictures and films are made by tools/gallery/make.mjs, which also writes their
+// sizes here. The file is checked first, as content/ia.json is.
+function readGallery() {
+  const g = readJSON('content/gallery.json');
+  const bad = (why) => { throw new Error(`content/gallery.json: ${why}`); };
+  if (!Array.isArray(g.events) || !g.events.length) bad('"events" is missing');
+  const keys = new Set();
+  for (const e of g.events) {
+    if (!/^[a-z0-9-]+$/.test(e.key ?? '') || keys.has(e.key)) bad(`each event needs its own "key", in small letters, digits and - (${JSON.stringify(e.key)})`);
+    keys.add(e.key);
+    if (typeof e.title !== 'string' || !e.title.trim()) bad(`${e.key}: "title" is missing`);
+    if (!/^\d{4}-\d{2}(-\d{2})?$/.test(e.date ?? '')) bad(`${e.key}: "date" should be written YYYY-MM-DD (or YYYY-MM), not ${JSON.stringify(e.date)}`);
+    if (typeof e.when !== 'string' || !e.when.trim()) bad(`${e.key}: "when" (the date as shown, like "8 and 9 October 2026") is missing`);
+    if (e.film?.drive != null && !/^[\w-]{20,}$/.test(e.film.drive)) bad(`${e.key}: "film.drive" should be the film's Google Drive file id`);
+    for (const m of [...(e.photos ?? []), ...(e.clips ?? []), ...(e.film && !e.film.drive ? [e.film] : [])]) {
+      if (typeof m.src !== 'string' || !(m.w > 0) || !(m.h > 0)) bad(`${e.key}: a picture or film needs "src", "w" and "h" (run tools/gallery/make.mjs)`);
+    }
+    if (!e.photos?.length && !e.film) bad(`${e.key}: no pictures yet (run tools/gallery/make.mjs)`);
+  }
+  return g;
+}
+function gallery(pad) {
+  const { events } = readGallery();
+  const plural = (n, one) => `${n} ${one}${n === 1 ? '' : 's'}`;
+  const section = (e) => {
+    const photos = e.photos ?? [];
+    const clips = e.clips ?? [];
+    const count = [photos.length && plural(photos.length, 'picture'), clips.length && plural(clips.length, 'clip'), e.film && 'the film'].filter(Boolean).join(', ');
+    const tile = (m, i) => `    <li class="gal-tile${i === 0 ? ' gal-tile--lead' : ''}"><a class="gal-tile__link" href="./${m.src}.webp" data-gal-photo data-w="${m.w}" data-h="${m.h}"><img src="./${m.src}-s.webp" alt="${esc(e.title)}: picture ${i + 1} of ${photos.length}${m.from === 'film' ? ', from the film' : ''}" width="${m.tw ?? m.w}" height="${m.th ?? m.h}" loading="lazy" decoding="async"></a></li>`;
+    const clip = (m, i) => `    <li class="gal-tile gal-tile--clip"><video class="gal-tile__clip" src="./${m.src}.mp4" poster="./${m.src}.webp" width="${m.w}" height="${m.h}" muted loop playsinline preload="none" aria-label="${esc(e.title)}: clip ${i + 1} of ${clips.length}, without sound" data-gal-clip></video><span class="gal-tile__badge" aria-hidden="true">Clip</span></li>`;
+    // the film: ours (made by make.mjs), or, too long to keep in the site, played from Google Drive in
+    // its own player, which loads only once Play is pressed (src/pages/gallery.js; without scripts the
+    // link opens it on Drive)
+    const caption = e.film ? `<figcaption class="gal-film__caption">${esc(e.film.caption ?? `${e.title}: the film`)}${e.film.length ? ` <span class="gal-film__len">${esc(e.film.length)}</span>` : ''}</figcaption>` : '';
+    const film = !e.film ? '' : e.film.drive ? `
+  <figure class="gal-film">
+    <div class="gal-film__frame" data-gal-drive="${esc(e.film.drive)}">
+      ${e.film.poster ? `<img class="gal-film__poster" src="./${e.film.poster}.webp" alt="" loading="lazy" decoding="async">` : ''}
+      <a class="gal-film__play" href="https://drive.google.com/file/d/${esc(e.film.drive)}/view" target="_blank" rel="noopener" data-gal-play><span class="gal-film__play-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M6 4l10 6-10 6z" fill="currentColor"/></svg></span><span>Play the film</span></a>
+    </div>
+    ${caption}
+  </figure>` : `
+  <figure class="gal-film">
+    <video class="gal-film__video" src="./${e.film.src}.mp4" poster="./${e.film.src}.webp" width="${e.film.w}" height="${e.film.h}" controls playsinline preload="none"></video>
+    ${caption}
+  </figure>`;
+    return `<section class="act gal-event" id="${e.key}" aria-labelledby="${e.key}-title" data-gal-event>
+  <header class="gal-event__head ground" data-mask>
+    <p class="eyebrow"><time datetime="${e.date}">${esc(e.when)}</time></p>
+    <h2 class="act__title" id="${e.key}-title">${esc(e.title)}</h2>
+    <p class="gal-event__count">${count}</p>
+  </header>${film}
+  <ul class="gal-grid">
+${[...photos.map(tile), ...clips.map(clip)].join('\n')}
+  </ul>
+</section>`;
+  };
+  const html = `<nav class="gal-jump" aria-label="The events">
+  <ul>
+${events.map((e) => `    <li><a class="gal-jump__link" href="#${e.key}">${esc(e.title)}</a></li>`).join('\n')}
+  </ul>
+</nav>
+
+${events.map(section).join('\n\n')}
+
+<!-- a picture whole (src/pages/gallery.js) -->
+<dialog class="gal-box" aria-label="Picture" tabindex="-1" data-gal-box>
+  <figure class="gal-box__figure">
+    <img class="gal-box__img" alt="" data-gal-box-img>
+    <figcaption class="gal-box__caption" data-gal-box-caption></figcaption>
+  </figure>
+  <button class="icon-btn gal-box__btn gal-box__btn--prev" type="button" aria-label="Previous picture" data-gal-prev><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4 6.5 10l6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button class="icon-btn gal-box__btn gal-box__btn--next" type="button" aria-label="Next picture" data-gal-next><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <button class="icon-btn gal-box__btn gal-box__close" type="button" aria-label="Close" data-gal-close><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+</dialog>`;
+  return html.split('\n').map((l, i) => (i && l ? pad + l : l)).join('\n');
+}
+
 // Aadi's IA tracker (ia.html, unlisted like To do): one column a subject, its steps from
 // content/ia.json, each ticked or not. The ticks are only ever set there (and the page written again);
 // nothing on the page can change one. A step marked "scrapped" (Math's first idea) is a turn in the
@@ -952,6 +1041,7 @@ export async function build(only = []) {
     if (key === 'writers') out = fill(out, 'writers', writersMonths(), '      ');
     if (key === 'contact') out = fill(out, 'contacts', contacts('      '), '      ');
     if (key === 'sponsor') out = fill(out, 'contacts', contacts('        '), '        ');
+    if (key === 'gallery') out = fill(out, 'gallery', gallery('    '), '    ');
     if (key === 'ia') out = fill(out, 'ia', iaTracker('      '), '      ');
     if (key === 'ia') out = fill(out, 'ia-remind', iaRemind('    '), '    ');
     out = out.replace(/(<a [^>]*data-instagram[^>]*href=")[^"]*(")/g, `$1${INSTAGRAM.href}$2`);

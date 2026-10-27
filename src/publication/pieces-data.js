@@ -129,8 +129,22 @@ export const PUBLISHED = PIECES.filter((p) => p.status === 'latest').sort(
   (a, b) => ISSUE_ORDER.indexOf(a.issue) - ISSUE_ORDER.indexOf(b.issue) || a.order - b.order,
 );
 
+/** The editor's note (editors-note.html), as a piece on its writer's own page only: it is not one
+ * of the issue's pieces, so the grid, the list and the page of all the pieces leave it out. */
+export const EDITORS_NOTE = {
+  slug: 'editors-note',
+  href: './editors-note.html',
+  title: 'Editor’s note',
+  author: 'Kodela Gautam',
+  form: 'Editorial',
+  issue: 'Oct 2026',
+  status: 'latest',
+  order: 0,
+  tone: 3,
+};
+
 /** A piece's own page (relative to the site's root, where every page lives). */
-export const pieceHref = (p) => `./piece-${p.slug}.html`;
+export const pieceHref = (p) => p.href ?? `./piece-${p.slug}.html`;
 
 /** How many of the latest pieces the publication's grid shows; the rest are on pieces.html. */
 export const LATEST_SHOWN = 6;

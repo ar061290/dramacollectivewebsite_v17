@@ -353,8 +353,11 @@ html.has-banner-sponsor .topbar > .topbar__cta.btn.btn--inverse:not(.is-away) { 
 /* until the script runs, the rule is a plain underline */
 html:not(.has-glint) .topbar__links a:hover, html:not(.has-glint) .topbar__links a[aria-current="page"] { box-shadow: inset 0 calc(-1 * var(--rule-thick)) 0 var(--rule-color); }
 
-/* Icon controls: music and the theme */
+/* Icon controls: music and the theme; then the Gallery, the small outlined button (in the Menu on
+   screens without the pages along the bar) */
 .topbar__tools { display: flex; align-items: center; }
+.topbar__gallery { margin-left: var(--space-2); white-space: nowrap; }
+.topbar__gallery[aria-current="page"] { border-color: var(--accent); color: var(--accent); }
 .icon-btn {
   width: 44px; height: 44px;
   display: inline-grid;
@@ -454,11 +457,20 @@ html.tier-lite .music-toggle.is-held .bar rect { animation-play-state: paused; }
   .topbar__word > span { display: block; }
   .topbar__links { gap: 16px; }
 }
+/* the narrowest laptops with the pages along the bar: its gaps close up a step, so the Gallery fits
+   beside the light switch with Become a sponsor still whole */
+@media (min-width: 1100px) and (max-width: 1199px) {
+  .topbar { gap: var(--space-3); }
+  .topbar__links { gap: 10px; }
+  .topbar__tools > .icon-btn { width: 40px; }
+  .topbar__gallery { margin-left: 0; padding-inline: 12px; }
+}
 /* below this (where the two buttons no longer fit beside the links) the pages move into the Menu: a
    full-screen sheet that drops like a curtain, the pages in Raung, rising in one after another (the
    outputs indented under their heading) */
 @media (max-width: 1099px) {
   .topbar nav { display: none; }
+  .topbar__gallery { display: none; }
   .topbar__menu { display: inline-flex; align-items: center; }
   .topbar__word { font-size: 24px; }
   .topbar__word > span { display: inline; }

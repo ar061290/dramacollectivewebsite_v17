@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Gallery · The Drama Collective</title>
+  <meta name="description" content="The CHIREC Drama Collective’s events in pictures: our meetings, auditions, flash plays and fundraisers.">
+  <meta name="theme-color" content="#2a0d1c">
+  <!-- site:head -->
+  <link rel="icon" href="./assets/brand/mark-gold-144.png">
+  <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/Lato-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/Lato-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/OpenSans-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./src/styles/main.css">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin data-dc-live>
+  <!-- the page a link points at is fetched when the pointer settles on it or presses it (prefetch,
+       never prerender: a prerendered page would miss the curtain's hand-off), so the velvet closes
+       onto a page that is already here -->
+  <script type="speculationrules">
+  { "prefetch": [{ "source": "document", "where": { "and": [{ "href_matches": "/*" }, { "not": { "selector_matches": "[target], [download], [href^='#']" } }] }, "eagerness": "moderate" }] }
+  </script>
+  <!-- Bare-module map for running without a build step (any static server). Vite resolves the same
+       specifiers from node_modules and ignores this map. Keep the versions in step with package.json. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/index.js",
+      "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/",
+      "lottie-web/build/player/lottie_light.js": "https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.js/+esm"
+    }
+  }
+  </script>
+  <script>
+    // theme before first paint: the saved choice, else the dark theatre
+    try { var t = localStorage.getItem('dc-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+    // arriving through the curtain (src/site/transition.js): it starts closed and opens on this page
+    try { if (sessionStorage.getItem('dc-veil') === '1') { sessionStorage.removeItem('dc-veil'); document.documentElement.classList.add('is-veiled'); } } catch (e) {}
+    // the owner's trial switches for changes that would show (README: Trial switches): ?flags=a,b turns
+    // them on in this browser, ?flags= turns them off; each is a class, flag-<name>, on <html>
+    try { var fm = /[?&]flags=([^&#]*)/.exec(location.search), fl = fm ? decodeURIComponent(fm[1]) : (localStorage.getItem('dc-flags') || ''); if (fm) { if (fl) localStorage.setItem('dc-flags', fl); else localStorage.removeItem('dc-flags'); } fl.split(',').forEach(function (n) { if (/^[a-z0-9-]+$/.test(n)) document.documentElement.classList.add('flag-' + n); }); } catch (e) {}
+    document.documentElement.classList.add('has-js');
+    // the device's tier (README: Tiers), on <html> before the first paint so that styles can follow it too:
+    // tier-phone on every touch screen (no hover, a coarse pointer); tier-lite as well on a device short of
+    // memory or cores: a touch screen reading 4 GB or less (Chrome rounds down to a power of two: a 4-6 GB
+    // phone reads 4) or 4 cores or fewer, or another device reading 4 GB and 4 cores or less, or 2 GB or
+    // less. ?flags=full turns both off (the full experience anywhere), ?flags=lite forces lite.
+    try {
+      var hc = document.documentElement.classList, mm = function (q) { return !!(window.matchMedia && matchMedia(q).matches); };
+      if (!hc.contains('flag-full')) {
+        var touch = mm('(hover: none) and (pointer: coarse)'), mem = navigator.deviceMemory || 0, cores = navigator.hardwareConcurrency || 0;
+        if (touch) hc.add('tier-phone');
+        if (hc.contains('flag-lite') || (touch ? (mem && mem <= 4) || (cores && cores <= 4) : (mem && mem <= 2) || (mem && mem <= 4 && cores && cores <= 4))) hc.add('tier-lite');
+        // or the frame governor found this device's frames slow earlier in the visit (src/util/governor.js)
+        try { if (sessionStorage.getItem('dc-lite') === '1') hc.add('tier-lite'); } catch (e) {}
+      }
+    } catch (e) {}
+    // the failsafe (README): dcFailsafe() shows the page as it is without script (no loader, no closed
+    // curtain, the intro's parts shown, the scroll free), for a page whose own script failed before it was
+    // up; and if that script has not even started 8 s after the page has loaded (a browser without
+    // modules or import maps, a script that did not arrive), it is called then
+    // (the page's script sets window.dcBooted as it starts and window.dcUp once the page is up: flags, not
+    // performance marks, which some privacy settings hide from scripts)
+    window.dcFailsafe = function () {
+      var c = document.documentElement.classList; if (c.contains('is-failsafe')) return;
+      c.remove('has-js', 'is-loading', 'is-intro', 'is-veiled'); c.add('is-failsafe');
+      try { if (window.dcLoader) window.dcLoader.stop(); } catch (e) {}
+      // the curtain, taken over by the page's script with inline styles on arrival: back to its open place
+      document.querySelectorAll('.veil, .veil__half').forEach(function (v) { v.style.transform = ''; v.style.pointerEvents = ''; });
+    };
+    addEventListener('load', function () { setTimeout(function () { if (!window.dcBooted) window.dcFailsafe(); }, 8000); });
+  </script>
+  <!-- /site:head -->
+</head>
+<body class="page page--gallery">
+  <!-- site:header -->
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="veil" aria-hidden="true">
+    <div class="veil__half veil__half--l"></div>
+    <div class="veil__half veil__half--r"></div>
+  </div>
+
+  <header class="topbar" data-topbar>
+    <span class="topbar__ground" aria-hidden="true"></span>
+    <a class="topbar__brand" href="./index.html" aria-label="The Drama Collective, home">
+      <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold-144.png" alt="" width="48" height="48"></span>
+      <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
+    </a>
+    <a class="btn btn--inverse btn--sm topbar__apply" href="./apply.html" data-topbar-keep>Apply now</a>
+    <nav class="topbar__nav" aria-label="Main">
+      <ul class="topbar__links">
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li class="topbar__group" data-dropdown>
+          <button class="topbar__group-toggle" type="button" aria-expanded="false" aria-controls="outputs-menu">Our outputs<svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <ul class="topbar__dropdown" id="outputs-menu" data-dropdown-menu>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+          </ul>
+        </li>
+        <li><a href="./contact.html">Contact us</a></li>
+      </ul>
+      <span class="topbar__glint" aria-hidden="true"></span>
+    </nav>
+    <div class="topbar__tools">
+      <a class="icon-btn" href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="The Drama Collective on Instagram" title="Instagram"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg></a>
+      <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Music" aria-keyshortcuts="K" title="Play music (K)" data-music-toggle>
+        <span class="music-bars" aria-hidden="true"><svg class="bar" viewBox="0 0 20 20"><rect x="2.5" y="8" width="2.2" height="9"/></svg><svg class="bar" viewBox="0 0 20 20"><rect x="6.9" y="3" width="2.2" height="14"/></svg><svg class="bar" viewBox="0 0 20 20"><rect x="11.3" y="6" width="2.2" height="11"/></svg><svg class="bar" viewBox="0 0 20 20"><rect x="15.7" y="9" width="2.2" height="8"/></svg></span>
+      </button>
+      <button class="icon-btn theme-toggle" type="button" aria-pressed="false" aria-label="Light mode" title="House lights" data-theme-toggle>
+        <svg class="theme-toggle__sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 1.8v2.1M10 16.1v2.1M1.8 10h2.1M16.1 10h2.1M4.2 4.2l1.5 1.5M14.3 14.3l1.5 1.5M4.2 15.8l1.5-1.5M14.3 5.7l1.5-1.5"/></g></svg>
+        <svg class="theme-toggle__moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.9 12.6A6.6 6.6 0 0 1 7.4 4.1a6.6 6.6 0 1 0 8.5 8.5Z" fill="currentColor"/></svg>
+      </button>
+      <a class="btn btn--secondary btn--sm topbar__gallery" href="./gallery.html" aria-current="page">Gallery</a>
+    </div>
+    <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu-sheet" data-menu-toggle>Menu</button>
+    <a class="btn btn--inverse btn--sm topbar__cta" href="./sponsor.html" data-topbar-keep>Become a sponsor</a>
+    <div class="topbar__sheet" id="menu-sheet" data-menu-sheet>
+      <ul>
+        <li><a href="./index.html">Home</a></li>
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li class="topbar__sheet-group"><span class="eyebrow">Our outputs</span>
+          <ul>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+          </ul>
+        </li>
+        <li><a href="./contact.html">Contact us</a></li>
+        <li><a href="./apply.html">Apply now</a></li>
+        <li><a href="./sponsor.html">Become a sponsor</a></li>
+        <li><a href="https://www.instagram.com/" target="_blank" rel="noopener"><span class="ig-word">Instagram</span></a></li>
+        <li><a href="./gallery.html" aria-current="page">Gallery</a></li>
+      </ul>
+    </div>
+  </header>
+  <!-- /site:header -->
+
+  <!-- site:stage -->
+  <div class="stage" aria-hidden="true">
+    <canvas class="stage__stars"></canvas>
+  </div>
+
+  <div class="cursor" aria-hidden="true">
+    <span class="cursor__glow"></span>
+    <svg class="cursor__star" viewBox="-12 -17 24 34" focusable="false"><path class="cursor__star-plain" d="M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z"/><path class="cursor__star-text" d="M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z"/></svg>
+  </div>
+  <!-- /site:stage -->
+
+  <main id="main" class="page__main">
+    <header class="act-head ground" data-mask>
+      <p class="eyebrow">The Collective</p>
+      <h1 class="act-head__title" data-reveal>Gallery</h1>
+      <span class="rule" aria-hidden="true"></span>
+      <p class="lead">Our events in pictures, the newest first: choose any picture to see it whole.</p>
+    </header>
+
+    <!-- the events, newest first, each with its pictures (and a film where there is one): written by
+         tools/pages/build.mjs (npm run pages) from content/gallery.json; the pictures are made by
+         tools/gallery/make.mjs (tools/gallery/README.md) -->
+    <!-- site:gallery -->
+    <nav class="gal-jump" aria-label="The events">
+      <ul>
+        <li><a class="gal-jump__link" href="#cascade">CAScade: Flash Play</a></li>
+        <li><a class="gal-jump__link" href="#isso">ISSO Fundraising</a></li>
+        <li><a class="gal-jump__link" href="#first-meeting">First Meeting</a></li>
+        <li><a class="gal-jump__link" href="#auditions">Production Auditions</a></li>
+      </ul>
+    </nav>
+
+    <section class="act gal-event" id="cascade" aria-labelledby="cascade-title" data-gal-event>
+      <header class="gal-event__head ground" data-mask>
+        <p class="eyebrow"><time datetime="2026-10-27">27 October 2026</time></p>
+        <h2 class="act__title" id="cascade-title">CAScade: Flash Play</h2>
+        <p class="gal-event__count">36 pictures</p>
+      </header>
+      <ul class="gal-grid">
+        <li class="gal-tile gal-tile--lead"><a class="gal-tile__link" href="./assets/gallery/cascade/001.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/001-s.webp" alt="CAScade: Flash Play: picture 1 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/002.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/002-s.webp" alt="CAScade: Flash Play: picture 2 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/003.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/003-s.webp" alt="CAScade: Flash Play: picture 3 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/004.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/004-s.webp" alt="CAScade: Flash Play: picture 4 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/005.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/005-s.webp" alt="CAScade: Flash Play: picture 5 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/006.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/006-s.webp" alt="CAScade: Flash Play: picture 6 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/007.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/007-s.webp" alt="CAScade: Flash Play: picture 7 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/008.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/008-s.webp" alt="CAScade: Flash Play: picture 8 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/009.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/009-s.webp" alt="CAScade: Flash Play: picture 9 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/010.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/010-s.webp" alt="CAScade: Flash Play: picture 10 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/011.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/011-s.webp" alt="CAScade: Flash Play: picture 11 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/012.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/012-s.webp" alt="CAScade: Flash Play: picture 12 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/013.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/013-s.webp" alt="CAScade: Flash Play: picture 13 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/014.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/014-s.webp" alt="CAScade: Flash Play: picture 14 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/015.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/015-s.webp" alt="CAScade: Flash Play: picture 15 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/016.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/016-s.webp" alt="CAScade: Flash Play: picture 16 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/017.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/017-s.webp" alt="CAScade: Flash Play: picture 17 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/018.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/018-s.webp" alt="CAScade: Flash Play: picture 18 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/019.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/019-s.webp" alt="CAScade: Flash Play: picture 19 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/020.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/020-s.webp" alt="CAScade: Flash Play: picture 20 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/021.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/021-s.webp" alt="CAScade: Flash Play: picture 21 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/022.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/022-s.webp" alt="CAScade: Flash Play: picture 22 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/023.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/023-s.webp" alt="CAScade: Flash Play: picture 23 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/024.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/024-s.webp" alt="CAScade: Flash Play: picture 24 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/025.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/025-s.webp" alt="CAScade: Flash Play: picture 25 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/026.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/026-s.webp" alt="CAScade: Flash Play: picture 26 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/027.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/027-s.webp" alt="CAScade: Flash Play: picture 27 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/028.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/028-s.webp" alt="CAScade: Flash Play: picture 28 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/029.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/029-s.webp" alt="CAScade: Flash Play: picture 29 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/030.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/030-s.webp" alt="CAScade: Flash Play: picture 30 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/031.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/031-s.webp" alt="CAScade: Flash Play: picture 31 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/032.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/032-s.webp" alt="CAScade: Flash Play: picture 32 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/033.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/033-s.webp" alt="CAScade: Flash Play: picture 33 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/034.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/034-s.webp" alt="CAScade: Flash Play: picture 34 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/035.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/035-s.webp" alt="CAScade: Flash Play: picture 35 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/036.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/036-s.webp" alt="CAScade: Flash Play: picture 36 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+      </ul>
+    </section>
+
+    <section class="act gal-event" id="isso" aria-labelledby="isso-title" data-gal-event>
+      <header class="gal-event__head ground" data-mask>
+        <p class="eyebrow"><time datetime="2026-10-08">8 and 9 October 2026</time></p>
+        <h2 class="act__title" id="isso-title">ISSO Fundraising</h2>
+        <p class="gal-event__count">157 pictures</p>
+      </header>
+      <ul class="gal-grid">
+        <li class="gal-tile gal-tile--lead"><a class="gal-tile__link" href="./assets/gallery/isso/001.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/001-s.webp" alt="ISSO Fundraising: picture 1 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/002.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/002-s.webp" alt="ISSO Fundraising: picture 2 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/003.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/003-s.webp" alt="ISSO Fundraising: picture 3 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/004.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/004-s.webp" alt="ISSO Fundraising: picture 4 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/005.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/005-s.webp" alt="ISSO Fundraising: picture 5 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/006.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/006-s.webp" alt="ISSO Fundraising: picture 6 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/007.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/007-s.webp" alt="ISSO Fundraising: picture 7 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/008.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/008-s.webp" alt="ISSO Fundraising: picture 8 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/009.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/009-s.webp" alt="ISSO Fundraising: picture 9 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/010.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/010-s.webp" alt="ISSO Fundraising: picture 10 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/011.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/011-s.webp" alt="ISSO Fundraising: picture 11 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/012.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/012-s.webp" alt="ISSO Fundraising: picture 12 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/013.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/013-s.webp" alt="ISSO Fundraising: picture 13 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/014.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/014-s.webp" alt="ISSO Fundraising: picture 14 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/015.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/015-s.webp" alt="ISSO Fundraising: picture 15 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/016.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/016-s.webp" alt="ISSO Fundraising: picture 16 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/017.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/017-s.webp" alt="ISSO Fundraising: picture 17 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/018.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/018-s.webp" alt="ISSO Fundraising: picture 18 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/019.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/019-s.webp" alt="ISSO Fundraising: picture 19 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/020.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/020-s.webp" alt="ISSO Fundraising: picture 20 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/021.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/021-s.webp" alt="ISSO Fundraising: picture 21 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/022.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/022-s.webp" alt="ISSO Fundraising: picture 22 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/023.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/023-s.webp" alt="ISSO Fundraising: picture 23 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/024.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/024-s.webp" alt="ISSO Fundraising: picture 24 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/025.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/025-s.webp" alt="ISSO Fundraising: picture 25 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/026.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/026-s.webp" alt="ISSO Fundraising: picture 26 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/027.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/027-s.webp" alt="ISSO Fundraising: picture 27 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/028.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/028-s.webp" alt="ISSO Fundraising: picture 28 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/029.webp" data-gal-photo data-w="1200" data-h="1600"><img src="./assets/gallery/isso/029-s.webp" alt="ISSO Fundraising: picture 29 of 157" width="440" height="586" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/030.webp" data-gal-photo data-w="1200" data-h="1600"><img src="./assets/gallery/isso/030-s.webp" alt="ISSO Fundraising: picture 30 of 157" width="440" height="586" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/031.webp" data-gal-photo data-w="1200" data-h="1600"><img src="./assets/gallery/isso/031-s.webp" alt="ISSO Fundraising: picture 31 of 157" width="440" height="586" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/032.webp" data-gal-photo data-w="1600" data-h="1200"><img src="./assets/gallery/isso/032-s.webp" alt="ISSO Fundraising: picture 32 of 157" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/033.webp" data-gal-photo data-w="1600" data-h="1200"><img src="./assets/gallery/isso/033-s.webp" alt="ISSO Fundraising: picture 33 of 157" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/034.webp" data-gal-photo data-w="1600" data-h="1200"><img src="./assets/gallery/isso/034-s.webp" alt="ISSO Fundraising: picture 34 of 157" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/035.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/035-s.webp" alt="ISSO Fundraising: picture 35 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/036.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/036-s.webp" alt="ISSO Fundraising: picture 36 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/037.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/037-s.webp" alt="ISSO Fundraising: picture 37 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/038.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/038-s.webp" alt="ISSO Fundraising: picture 38 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/039.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/039-s.webp" alt="ISSO Fundraising: picture 39 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/040.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/040-s.webp" alt="ISSO Fundraising: picture 40 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/041.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/041-s.webp" alt="ISSO Fundraising: picture 41 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/042.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/042-s.webp" alt="ISSO Fundraising: picture 42 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/043.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/043-s.webp" alt="ISSO Fundraising: picture 43 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/044.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/044-s.webp" alt="ISSO Fundraising: picture 44 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/045.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/045-s.webp" alt="ISSO Fundraising: picture 45 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/046.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/046-s.webp" alt="ISSO Fundraising: picture 46 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/047.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/047-s.webp" alt="ISSO Fundraising: picture 47 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/048.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/048-s.webp" alt="ISSO Fundraising: picture 48 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/049.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/049-s.webp" alt="ISSO Fundraising: picture 49 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/050.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/050-s.webp" alt="ISSO Fundraising: picture 50 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/051.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/051-s.webp" alt="ISSO Fundraising: picture 51 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/052.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/052-s.webp" alt="ISSO Fundraising: picture 52 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/053.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/053-s.webp" alt="ISSO Fundraising: picture 53 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/054.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/054-s.webp" alt="ISSO Fundraising: picture 54 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/055.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/055-s.webp" alt="ISSO Fundraising: picture 55 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/056.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/056-s.webp" alt="ISSO Fundraising: picture 56 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/057.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/057-s.webp" alt="ISSO Fundraising: picture 57 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/058.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/058-s.webp" alt="ISSO Fundraising: picture 58 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/059.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/059-s.webp" alt="ISSO Fundraising: picture 59 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/060.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/060-s.webp" alt="ISSO Fundraising: picture 60 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/061.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/061-s.webp" alt="ISSO Fundraising: picture 61 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/062.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/062-s.webp" alt="ISSO Fundraising: picture 62 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/063.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/063-s.webp" alt="ISSO Fundraising: picture 63 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/064.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/064-s.webp" alt="ISSO Fundraising: picture 64 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/065.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/065-s.webp" alt="ISSO Fundraising: picture 65 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/066.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/066-s.webp" alt="ISSO Fundraising: picture 66 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/067.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/067-s.webp" alt="ISSO Fundraising: picture 67 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/068.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/068-s.webp" alt="ISSO Fundraising: picture 68 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/069.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/069-s.webp" alt="ISSO Fundraising: picture 69 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/070.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/070-s.webp" alt="ISSO Fundraising: picture 70 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/071.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/071-s.webp" alt="ISSO Fundraising: picture 71 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/072.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/072-s.webp" alt="ISSO Fundraising: picture 72 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/073.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/073-s.webp" alt="ISSO Fundraising: picture 73 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/074.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/074-s.webp" alt="ISSO Fundraising: picture 74 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/075.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/075-s.webp" alt="ISSO Fundraising: picture 75 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/076.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/076-s.webp" alt="ISSO Fundraising: picture 76 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/077.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/077-s.webp" alt="ISSO Fundraising: picture 77 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/078.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/078-s.webp" alt="ISSO Fundraising: picture 78 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/079.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/079-s.webp" alt="ISSO Fundraising: picture 79 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/080.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/080-s.webp" alt="ISSO Fundraising: picture 80 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/081.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/081-s.webp" alt="ISSO Fundraising: picture 81 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/082.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/082-s.webp" alt="ISSO Fundraising: picture 82 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/083.webp" data-gal-photo data-w="1067" data-h="1600"><img src="./assets/gallery/isso/083-s.webp" alt="ISSO Fundraising: picture 83 of 157" width="440" height="660" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/084.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/084-s.webp" alt="ISSO Fundraising: picture 84 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/085.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/085-s.webp" alt="ISSO Fundraising: picture 85 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/086.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/086-s.webp" alt="ISSO Fundraising: picture 86 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/087.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/087-s.webp" alt="ISSO Fundraising: picture 87 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/088.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/088-s.webp" alt="ISSO Fundraising: picture 88 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/089.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/089-s.webp" alt="ISSO Fundraising: picture 89 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/090.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/090-s.webp" alt="ISSO Fundraising: picture 90 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/091.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/091-s.webp" alt="ISSO Fundraising: picture 91 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/092.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/092-s.webp" alt="ISSO Fundraising: picture 92 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/093.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/093-s.webp" alt="ISSO Fundraising: picture 93 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/094.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/094-s.webp" alt="ISSO Fundraising: picture 94 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/095.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/095-s.webp" alt="ISSO Fundraising: picture 95 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/096.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/096-s.webp" alt="ISSO Fundraising: picture 96 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/097.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/097-s.webp" alt="ISSO Fundraising: picture 97 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/098.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/098-s.webp" alt="ISSO Fundraising: picture 98 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/099.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/099-s.webp" alt="ISSO Fundraising: picture 99 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/100.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/100-s.webp" alt="ISSO Fundraising: picture 100 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/101.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/101-s.webp" alt="ISSO Fundraising: picture 101 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/102.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/102-s.webp" alt="ISSO Fundraising: picture 102 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/103.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/103-s.webp" alt="ISSO Fundraising: picture 103 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/104.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/104-s.webp" alt="ISSO Fundraising: picture 104 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/105.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/105-s.webp" alt="ISSO Fundraising: picture 105 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/106.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/106-s.webp" alt="ISSO Fundraising: picture 106 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/107.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/107-s.webp" alt="ISSO Fundraising: picture 107 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/108.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/108-s.webp" alt="ISSO Fundraising: picture 108 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/109.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/109-s.webp" alt="ISSO Fundraising: picture 109 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/110.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/110-s.webp" alt="ISSO Fundraising: picture 110 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/111.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/111-s.webp" alt="ISSO Fundraising: picture 111 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/112.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/112-s.webp" alt="ISSO Fundraising: picture 112 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/113.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/113-s.webp" alt="ISSO Fundraising: picture 113 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/114.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/114-s.webp" alt="ISSO Fundraising: picture 114 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/115.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/115-s.webp" alt="ISSO Fundraising: picture 115 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/116.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/116-s.webp" alt="ISSO Fundraising: picture 116 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/117.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/117-s.webp" alt="ISSO Fundraising: picture 117 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/118.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/118-s.webp" alt="ISSO Fundraising: picture 118 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/119.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/119-s.webp" alt="ISSO Fundraising: picture 119 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/120.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/isso/120-s.webp" alt="ISSO Fundraising: picture 120 of 157" width="660" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/121.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/121-s.webp" alt="ISSO Fundraising: picture 121 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/122.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/122-s.webp" alt="ISSO Fundraising: picture 122 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/123.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/123-s.webp" alt="ISSO Fundraising: picture 123 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/124.webp" data-gal-photo data-w="1280" data-h="905"><img src="./assets/gallery/isso/124-s.webp" alt="ISSO Fundraising: picture 124 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/125.webp" data-gal-photo data-w="1280" data-h="905"><img src="./assets/gallery/isso/125-s.webp" alt="ISSO Fundraising: picture 125 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/126.webp" data-gal-photo data-w="1280" data-h="905"><img src="./assets/gallery/isso/126-s.webp" alt="ISSO Fundraising: picture 126 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/127.webp" data-gal-photo data-w="1280" data-h="905"><img src="./assets/gallery/isso/127-s.webp" alt="ISSO Fundraising: picture 127 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/128.webp" data-gal-photo data-w="1280" data-h="905"><img src="./assets/gallery/isso/128-s.webp" alt="ISSO Fundraising: picture 128 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/129.webp" data-gal-photo data-w="1280" data-h="904"><img src="./assets/gallery/isso/129-s.webp" alt="ISSO Fundraising: picture 129 of 157" width="624" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/130.webp" data-gal-photo data-w="1280" data-h="905"><img src="./assets/gallery/isso/130-s.webp" alt="ISSO Fundraising: picture 130 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/131.webp" data-gal-photo data-w="1280" data-h="905"><img src="./assets/gallery/isso/131-s.webp" alt="ISSO Fundraising: picture 131 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/132.webp" data-gal-photo data-w="1280" data-h="904"><img src="./assets/gallery/isso/132-s.webp" alt="ISSO Fundraising: picture 132 of 157" width="624" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/133.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/133-s.webp" alt="ISSO Fundraising: picture 133 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/134.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/134-s.webp" alt="ISSO Fundraising: picture 134 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/135.webp" data-gal-photo data-w="1280" data-h="905"><img src="./assets/gallery/isso/135-s.webp" alt="ISSO Fundraising: picture 135 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/136.webp" data-gal-photo data-w="1600" data-h="1600"><img src="./assets/gallery/isso/136-s.webp" alt="ISSO Fundraising: picture 136 of 157" width="440" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/137.webp" data-gal-photo data-w="1280" data-h="1012"><img src="./assets/gallery/isso/137-s.webp" alt="ISSO Fundraising: picture 137 of 157" width="556" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/138.webp" data-gal-photo data-w="1600" data-h="1600"><img src="./assets/gallery/isso/138-s.webp" alt="ISSO Fundraising: picture 138 of 157" width="440" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/139.webp" data-gal-photo data-w="1280" data-h="905"><img src="./assets/gallery/isso/139-s.webp" alt="ISSO Fundraising: picture 139 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/140.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/140-s.webp" alt="ISSO Fundraising: picture 140 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/141.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/141-s.webp" alt="ISSO Fundraising: picture 141 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/142.webp" data-gal-photo data-w="1280" data-h="904"><img src="./assets/gallery/isso/142-s.webp" alt="ISSO Fundraising: picture 142 of 157" width="624" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/143.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/143-s.webp" alt="ISSO Fundraising: picture 143 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/144.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/144-s.webp" alt="ISSO Fundraising: picture 144 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/145.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/145-s.webp" alt="ISSO Fundraising: picture 145 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/146.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/146-s.webp" alt="ISSO Fundraising: picture 146 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/147.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/147-s.webp" alt="ISSO Fundraising: picture 147 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/148.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/148-s.webp" alt="ISSO Fundraising: picture 148 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/149.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/149-s.webp" alt="ISSO Fundraising: picture 149 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/150.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/150-s.webp" alt="ISSO Fundraising: picture 150 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/151.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/151-s.webp" alt="ISSO Fundraising: picture 151 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/152.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/152-s.webp" alt="ISSO Fundraising: picture 152 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/153.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/153-s.webp" alt="ISSO Fundraising: picture 153 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/154.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/154-s.webp" alt="ISSO Fundraising: picture 154 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/155.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/155-s.webp" alt="ISSO Fundraising: picture 155 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/156.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/156-s.webp" alt="ISSO Fundraising: picture 156 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/isso/157.webp" data-gal-photo data-w="1600" data-h="1131"><img src="./assets/gallery/isso/157-s.webp" alt="ISSO Fundraising: picture 157 of 157" width="622" height="440" loading="lazy" decoding="async"></a></li>
+      </ul>
+    </section>
+
+    <section class="act gal-event" id="first-meeting" aria-labelledby="first-meeting-title" data-gal-event>
+      <header class="gal-event__head ground" data-mask>
+        <p class="eyebrow"><time datetime="2026-09-19">19 September 2026</time></p>
+        <h2 class="act__title" id="first-meeting-title">First Meeting</h2>
+        <p class="gal-event__count">29 pictures</p>
+      </header>
+      <ul class="gal-grid">
+        <li class="gal-tile gal-tile--lead"><a class="gal-tile__link" href="./assets/gallery/first-meeting/001.webp" data-gal-photo data-w="1600" data-h="900"><img src="./assets/gallery/first-meeting/001-s.webp" alt="First Meeting: picture 1 of 29" width="782" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/002.webp" data-gal-photo data-w="1280" data-h="960"><img src="./assets/gallery/first-meeting/002-s.webp" alt="First Meeting: picture 2 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/003.webp" data-gal-photo data-w="1600" data-h="900"><img src="./assets/gallery/first-meeting/003-s.webp" alt="First Meeting: picture 3 of 29" width="782" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/004.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/004-s.webp" alt="First Meeting: picture 4 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/005.webp" data-gal-photo data-w="1280" data-h="960"><img src="./assets/gallery/first-meeting/005-s.webp" alt="First Meeting: picture 5 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/006.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/006-s.webp" alt="First Meeting: picture 6 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/007.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/007-s.webp" alt="First Meeting: picture 7 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/008.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/008-s.webp" alt="First Meeting: picture 8 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/009.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/009-s.webp" alt="First Meeting: picture 9 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/010.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/010-s.webp" alt="First Meeting: picture 10 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/011.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/011-s.webp" alt="First Meeting: picture 11 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/012.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/012-s.webp" alt="First Meeting: picture 12 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/013.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/013-s.webp" alt="First Meeting: picture 13 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/014.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/014-s.webp" alt="First Meeting: picture 14 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/015.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/015-s.webp" alt="First Meeting: picture 15 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/016.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/016-s.webp" alt="First Meeting: picture 16 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/017.webp" data-gal-photo data-w="1182" data-h="886"><img src="./assets/gallery/first-meeting/017-s.webp" alt="First Meeting: picture 17 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/018.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/018-s.webp" alt="First Meeting: picture 18 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/019.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/019-s.webp" alt="First Meeting: picture 19 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/020.webp" data-gal-photo data-w="1182" data-h="886"><img src="./assets/gallery/first-meeting/020-s.webp" alt="First Meeting: picture 20 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/021.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/021-s.webp" alt="First Meeting: picture 21 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/022.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/022-s.webp" alt="First Meeting: picture 22 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/023.webp" data-gal-photo data-w="1182" data-h="886"><img src="./assets/gallery/first-meeting/023-s.webp" alt="First Meeting: picture 23 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/024.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/024-s.webp" alt="First Meeting: picture 24 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/025.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/025-s.webp" alt="First Meeting: picture 25 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/026.webp" data-gal-photo data-w="1182" data-h="886"><img src="./assets/gallery/first-meeting/026-s.webp" alt="First Meeting: picture 26 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/027.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/027-s.webp" alt="First Meeting: picture 27 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/028.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/028-s.webp" alt="First Meeting: picture 28 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/029.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/029-s.webp" alt="First Meeting: picture 29 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+      </ul>
+    </section>
+
+    <section class="act gal-event" id="auditions" aria-labelledby="auditions-title" data-gal-event>
+      <header class="gal-event__head ground" data-mask>
+        <p class="eyebrow"><time datetime="2026-09-02">2 September 2026</time></p>
+        <h2 class="act__title" id="auditions-title">Production Auditions</h2>
+        <p class="gal-event__count">1 picture, the film</p>
+      </header>
+      <figure class="gal-film">
+        <div class="gal-film__frame" data-gal-drive="1UVdQZR7SPVAaZd66phgBtdtscIh9mRTn">
+          <img class="gal-film__poster" src="./assets/gallery/auditions/001.webp" alt="" loading="lazy" decoding="async">
+          <a class="gal-film__play" href="https://drive.google.com/file/d/1UVdQZR7SPVAaZd66phgBtdtscIh9mRTn/view" target="_blank" rel="noopener" data-gal-play><span class="gal-film__play-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M6 4l10 6-10 6z" fill="currentColor"/></svg></span><span>Play the film</span></a>
+        </div>
+        <figcaption class="gal-film__caption">The offline auditions, the whole of them <span class="gal-film__len">1 hr 7 min</span></figcaption>
+      </figure>
+      <ul class="gal-grid">
+        <li class="gal-tile gal-tile--lead"><a class="gal-tile__link" href="./assets/gallery/auditions/001.webp" data-gal-photo data-w="1280" data-h="720"><img src="./assets/gallery/auditions/001-s.webp" alt="Production Auditions: picture 1 of 1" width="782" height="440" loading="lazy" decoding="async"></a></li>
+      </ul>
+    </section>
+
+    <!-- a picture whole (src/pages/gallery.js) -->
+    <dialog class="gal-box" aria-label="Picture" tabindex="-1" data-gal-box>
+      <figure class="gal-box__figure">
+        <img class="gal-box__img" alt="" data-gal-box-img>
+        <figcaption class="gal-box__caption" data-gal-box-caption></figcaption>
+      </figure>
+      <button class="icon-btn gal-box__btn gal-box__btn--prev" type="button" aria-label="Previous picture" data-gal-prev><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4 6.5 10l6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="icon-btn gal-box__btn gal-box__btn--next" type="button" aria-label="Next picture" data-gal-next><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="icon-btn gal-box__btn gal-box__close" type="button" aria-label="Close" data-gal-close><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    </dialog>
+    <!-- /site:gallery -->
+  </main>
+
+  <!-- site:footer -->
+  <footer class="curtain" id="contact" aria-label="Pages and contacts">
+    <div class="curtain__grid">
+      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>
+      <nav class="curtain__links" aria-label="All pages">
+        <div class="curtain__col">
+          <p class="eyebrow">The Collective</p>
+          <ul>
+            <li><a href="./index.html">Home</a></li>
+            <li><a href="./about.html">About us</a></li>
+            <li><a href="./team.html">Core team</a></li>
+            <li><a href="./gallery.html" aria-current="page">Gallery</a></li>
+            <li><a href="./contact.html">Contact us</a></li>
+            <li><a href="./apply.html">Apply now</a></li>
+            <li><a href="./sponsor.html">Become a sponsor</a></li>
+          </ul>
+        </div>
+        <div class="curtain__col">
+          <p class="eyebrow">Our outputs</p>
+          <ul>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+            <li><a href="./stage-planner.html">Stage planner</a></li>
+          </ul>
+        </div>
+        <div class="curtain__col curtain__col--contact">
+          <p class="eyebrow">Write to us</p>
+          <ul>
+            <li><span class="curtain__who">Aadi Ramnani, President</span><a href="mailto:aadir6405@students.chirec.ac.in">aadir6405@students.chirec.ac.in</a></li>
+            <li><span class="curtain__who">Aripra Sharma, Executive President</span><a href="mailto:aripras111460@students.chirec.ac.in">aripras111460@students.chirec.ac.in</a></li>
+            <li><a class="curtain__social" href="https://www.instagram.com/" target="_blank" rel="noopener"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg><span class="ig-word">Instagram</span></a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+    <div class="curtain__base">
+      <div class="curtain__legal">
+        <p class="legal">© 2026 The Drama Collective · CHIREC International School</p>
+        <p class="credits">Music: “the smell of old books, reading, writing and studying (a dark academia playlist)”, <a href="https://www.youtube.com/@DarkEnigmatic68" rel="noopener">Dark Enigmatic</a>.</p>
+      </div>
+      <a class="endorsement" href="https://www.chirec.ac.in" rel="noopener">
+        <img class="endorsement__logo" src="./assets/brand/chirec.webp" alt="CHIREC International School" width="475" height="140">
+        <span>CHIREC International School: the No.&nbsp;1 school in Hyderabad and Telangana</span>
+      </a>
+    </div>
+  </footer>
+  <!-- /site:footer -->
+
+  <script type="module" src="./src/pages/gallery.js"></script>
+</body>
+</html>

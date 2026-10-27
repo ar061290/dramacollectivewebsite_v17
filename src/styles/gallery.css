@@ -1,0 +1,142 @@
+/* The Gallery (gallery.html, src/pages/gallery.js): the events, newest first, each its pictures as a
+   grid of square-cornered tiles (the first one larger), its clips among them, and its film above
+   them where it has one; a picture opens whole in the lightbox. */
+
+/* the way to each event: a row of small outlined links under the heading */
+.gal-jump { margin-top: var(--space-7); }
+.gal-jump ul { display: flex; flex-wrap: wrap; gap: var(--space-2); list-style: none; }
+.gal-jump__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 14px;
+  border: var(--border-width) solid var(--line);
+  color: var(--fg-strong);
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: border-color var(--dur-fast) var(--ease-curtain), color var(--dur-fast) var(--ease-curtain);
+}
+.gal-jump__link:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+
+/* an event (its tiles' pictures load only as they come near the screen: loading="lazy") */
+.gal-event { scroll-margin-top: calc(var(--topbar-h) + var(--space-5)); }
+.gal-event__head .act__title { margin-top: var(--space-2); }
+.gal-event__count { margin-top: var(--space-2); color: var(--fg-muted); font-size: var(--size-body-s, 14px); }
+
+.gal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-auto-flow: dense;
+  gap: 6px;
+  margin-top: var(--space-6);
+  list-style: none;
+}
+@media (min-width: 768px) { .gal-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; } }
+.gal-tile { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: var(--card-bg); }
+.gal-tile--lead { grid-column: span 2; grid-row: span 2; }
+.gal-tile__link { display: block; width: 100%; height: 100%; }
+.gal-tile__link:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.gal-tile img, .gal-tile__clip { display: block; width: 100%; height: 100%; object-fit: cover; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .gal-tile img { transition: transform .6s var(--ease-out), filter .6s var(--ease-out); }
+  .gal-tile__link:hover img { transform: scale(1.04); filter: brightness(1.06); }
+}
+.gal-tile__badge {
+  position: absolute;
+  left: 8px; top: 8px;
+  padding: 4px 8px;
+  background: rgb(21 4 8 / .72);
+  color: var(--plum-100);
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* the film: the whole of it, played only when asked */
+.gal-film { margin-top: var(--space-6); max-width: 960px; }
+.gal-film__video { display: block; width: 100%; height: auto; background: #000; }
+/* a film kept on Google Drive: a picture of the event and Play, until the player is put in */
+.gal-film__frame { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--plum-900); }
+.gal-film__poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .62; }
+.gal-film__play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  color: var(--plum-100);
+  font-family: var(--font-ui);
+  font-weight: var(--weight-bold);
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  background: linear-gradient(to top, rgb(21 4 8 / .55), rgb(21 4 8 / .1));
+}
+.gal-film__play-icon { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid currentColor; border-radius: 50%; background: rgb(21 4 8 / .45); transition: background-color var(--dur-fast) var(--ease-curtain), color var(--dur-fast) var(--ease-curtain); }
+.gal-film__play-icon svg { width: 22px; height: 22px; margin-left: 3px; }
+.gal-film__play:hover { color: var(--gold-500); text-decoration: none; }
+.gal-film__play:hover .gal-film__play-icon { background: rgb(21 4 8 / .7); }
+.gal-film__play:focus-visible { outline: 2px solid var(--focus); outline-offset: -4px; }
+.gal-film__player { display: block; width: 100%; height: 100%; border: 0; }
+.gal-film__caption { margin-top: var(--space-2); color: var(--fg-muted); font-size: var(--size-body-s, 14px); }
+.gal-film__len { margin-left: var(--space-2); font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: 11px; letter-spacing: .12em; }
+
+/* the lightbox: the picture whole on the dark of the stage, whatever the theme; the arrows at its
+   sides (under it on a phone), Close in the corner */
+.gal-box {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgb(21 4 8 / .94);
+  color: var(--plum-100);
+  overscroll-behavior: contain;
+}
+.gal-box::backdrop { background: transparent; }
+.gal-box:focus { outline: none; }
+.gal-box[open] { display: grid; place-items: center; }
+.gal-box__figure { display: grid; justify-items: center; gap: var(--space-3); width: 100%; height: 100%; align-content: center; padding: 64px 72px 24px; }
+.gal-box__img {
+  max-width: 100%;
+  max-height: calc(100dvh - 140px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  box-shadow: 0 20px 60px rgb(0 0 0 / .5);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.gal-box__caption { font-family: var(--font-ui); font-size: 12px; font-weight: var(--weight-bold); letter-spacing: .12em; text-transform: uppercase; color: var(--plum-200); text-align: center; }
+.gal-box__btn { position: absolute; color: var(--plum-100); background: rgb(21 4 8 / .5); }
+.gal-box__btn:hover { color: var(--gold-500); border-color: rgb(243 231 233 / .3); }
+.gal-box__btn svg { width: 22px; height: 22px; }
+.gal-box__btn--prev { left: 16px; top: 50%; translate: 0 -50%; }
+.gal-box__btn--next { right: 16px; top: 50%; translate: 0 -50%; }
+.gal-box__close { right: 12px; top: 12px; }
+@media (max-width: 640px) {
+  .gal-box__figure { padding: 60px 12px 84px; }
+  .gal-box__img { max-height: calc(100dvh - 180px); }
+  .gal-box__btn--prev, .gal-box__btn--next { top: auto; bottom: 20px; translate: none; }
+  .gal-box__btn--prev { left: calc(50% - 56px); }
+  .gal-box__btn--next { right: calc(50% - 56px); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .gal-box[open] .gal-box__figure { animation: gal-box-in .32s var(--ease-out); }
+}
+@keyframes gal-box-in { from { opacity: 0; transform: scale(.97); } }

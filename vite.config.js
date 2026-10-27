@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import { PAGES } from './tools/pages/build.mjs';
+import { cpSync } from 'node:fs';
 
 /**
  * The head of the built pages, finished by hand (tools/pages/build.mjs writes the source head):
@@ -103,6 +104,25 @@ function quietScrollTrigger() {
 }
 
 /**
+ * The Gallery's pictures whole (assets/gallery/<event>/001.webp, …): each tile links to its own, for
+ * the lightbox (src/pages/gallery.js) to open, and Vite does not follow a link's href, so they are
+ * copied into the built site at the same paths. (The tiles, the films and their posters are in <img>
+ * and <video>, which Vite does follow: they are built as hashed assets like any picture.)
+ */
+function galleryWhole() {
+  return {
+    name: 'dc-gallery-whole',
+    apply: 'build',
+    closeBundle() {
+      cpSync('assets/gallery', 'dist/assets/gallery', {
+        recursive: true,
+        filter: (src) => !/\.\w+$/.test(src) || /[\\/](\d{3}|film-\d+)\.webp$/.test(src),
+      });
+    },
+  };
+}
+
+/**
  * The home page paints its first text only after the curtain, seconds in: its text faces' preloads (kept on
  * the inner pages, whose reveals split on the real type as the curtain parts) only competed with the
  * stylesheet for a slow link there (the loader's first paint ~70 ms later on 4G). Done before Vite reads
@@ -127,7 +147,7 @@ export default defineConfig({
   base: './',
   // statue-rig.glb is referenced with new URL(..., import.meta.url) and copied as a hashed asset
   assetsInclude: ['**/*.glb'],
-  plugins: [homeFonts(), finishHead(), quietScrollTrigger()],
+  plugins: [homeFonts(), finishHead(), quietScrollTrigger(), galleryWhole()],
   build: {
     target: 'es2022',
     assetsInlineLimit: 0, // keep the GLB, fonts and Lottie JSON as separate cacheable files
