@@ -165,16 +165,8 @@
     }
   ],
   "remind": {
-    "_readme": "Remind him (tools/ia/README.md): each unfinished subject has a button that sends Aadi one reminder with the visitor's name (asked once, then remembered by their browser). It goes three ways: a push notification through ntfy.sh to \"ntfyTopic\" (Aadi subscribes to it in the ntfy app); an email through FormSubmit to \"email\" (the very first one is held back while FormSubmit asks Aadi, by email, to activate: one click); and WhatsApp to \"whatsapp\", sent automatically by the first of these that has a key: \"greenApi\" (free, no limit: a second WhatsApp number linked to GREEN-API writes to Aadi; copy apiUrl, idInstance and apiTokenInstance from its console), \"inoutKey\" (InOut.bot's bot writes to the number that asked for the key: 20 free, then from $1 a month) or \"callmebotKey\" (free, when its bot has room). With none, the visitor gets a button that opens WhatsApp with the reminder written out. Everything here is public in the page. The site sets no limits of its own: only the services'.",
+    "_readme": "Remind him (tools/ia/README.md): each unfinished subject has a button that sends Aadi one reminder with the visitor's name (asked once, then remembered by their browser). It goes two ways: a push notification through ntfy.sh to \"ntfyTopic\" (Aadi subscribes to it in the ntfy app), and an email through FormSubmit to \"email\" (the very first one is held back while FormSubmit asks Aadi, by email, to activate: one click). If neither goes through, the visitor is offered an email link. Everything here is public in the page. The site sets no limits of its own: only the services' (ntfy.sh: 250 a day from each visitor; FormSubmit: none stated).",
     "ntfyTopic": "dc-ia-aadi-oiw2e0vjqb8fztd4",
-    "email": "aadir6405@students.chirec.ac.in",
-    "whatsapp": "+919950610990",
-    "greenApi": {
-      "apiUrl": "",
-      "idInstance": "",
-      "apiToken": ""
-    },
-    "inoutKey": "",
-    "callmebotKey": ""
+    "email": "aadir6405@students.chirec.ac.in"
   }
 }
