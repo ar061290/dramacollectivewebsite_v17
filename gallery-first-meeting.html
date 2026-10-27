@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>First Meeting · Gallery · The Drama Collective</title>
+  <meta name="description" content="First Meeting, 19 September 2026: the CHIREC Drama Collective in pictures (29 pictures).">
+  <meta name="theme-color" content="#2a0d1c">
+  <!-- site:head -->
+  <link rel="icon" href="./assets/brand/mark-gold-144.png">
+  <link rel="preload" href="./assets/fonts/Raung-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/Lato-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/Lato-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./assets/fonts/OpenSans-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./src/styles/main.css">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin data-dc-live>
+  <!-- the page a link points at is fetched when the pointer settles on it or presses it (prefetch,
+       never prerender: a prerendered page would miss the curtain's hand-off), so the velvet closes
+       onto a page that is already here -->
+  <script type="speculationrules">
+  { "prefetch": [{ "source": "document", "where": { "and": [{ "href_matches": "/*" }, { "not": { "selector_matches": "[target], [download], [href^='#']" } }] }, "eagerness": "moderate" }] }
+  </script>
+  <!-- Bare-module map for running without a build step (any static server). Vite resolves the same
+       specifiers from node_modules and ignores this map. Keep the versions in step with package.json. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+      "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/index.js",
+      "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.13.0/",
+      "lottie-web/build/player/lottie_light.js": "https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie_light.js/+esm"
+    }
+  }
+  </script>
+  <script>
+    // theme before first paint: the saved choice, else the dark theatre
+    try { var t = localStorage.getItem('dc-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+    // arriving through the curtain (src/site/transition.js): it starts closed and opens on this page
+    try { if (sessionStorage.getItem('dc-veil') === '1') { sessionStorage.removeItem('dc-veil'); document.documentElement.classList.add('is-veiled'); } } catch (e) {}
+    // the owner's trial switches for changes that would show (README: Trial switches): ?flags=a,b turns
+    // them on in this browser, ?flags= turns them off; each is a class, flag-<name>, on <html>
+    try { var fm = /[?&]flags=([^&#]*)/.exec(location.search), fl = fm ? decodeURIComponent(fm[1]) : (localStorage.getItem('dc-flags') || ''); if (fm) { if (fl) localStorage.setItem('dc-flags', fl); else localStorage.removeItem('dc-flags'); } fl.split(',').forEach(function (n) { if (/^[a-z0-9-]+$/.test(n)) document.documentElement.classList.add('flag-' + n); }); } catch (e) {}
+    document.documentElement.classList.add('has-js');
+    // the device's tier (README: Tiers), on <html> before the first paint so that styles can follow it too:
+    // tier-phone on every touch screen (no hover, a coarse pointer); tier-lite as well on a device short of
+    // memory or cores: a touch screen reading 4 GB or less (Chrome rounds down to a power of two: a 4-6 GB
+    // phone reads 4) or 4 cores or fewer, or another device reading 4 GB and 4 cores or less, or 2 GB or
+    // less. ?flags=full turns both off (the full experience anywhere), ?flags=lite forces lite.
+    try {
+      var hc = document.documentElement.classList, mm = function (q) { return !!(window.matchMedia && matchMedia(q).matches); };
+      if (!hc.contains('flag-full')) {
+        var touch = mm('(hover: none) and (pointer: coarse)'), mem = navigator.deviceMemory || 0, cores = navigator.hardwareConcurrency || 0;
+        if (touch) hc.add('tier-phone');
+        if (hc.contains('flag-lite') || (touch ? (mem && mem <= 4) || (cores && cores <= 4) : (mem && mem <= 2) || (mem && mem <= 4 && cores && cores <= 4))) hc.add('tier-lite');
+        // or the frame governor found this device's frames slow earlier in the visit (src/util/governor.js)
+        try { if (sessionStorage.getItem('dc-lite') === '1') hc.add('tier-lite'); } catch (e) {}
+      }
+    } catch (e) {}
+    // the failsafe (README): dcFailsafe() shows the page as it is without script (no loader, no closed
+    // curtain, the intro's parts shown, the scroll free), for a page whose own script failed before it was
+    // up; and if that script has not even started 8 s after the page has loaded (a browser without
+    // modules or import maps, a script that did not arrive), it is called then
+    // (the page's script sets window.dcBooted as it starts and window.dcUp once the page is up: flags, not
+    // performance marks, which some privacy settings hide from scripts)
+    window.dcFailsafe = function () {
+      var c = document.documentElement.classList; if (c.contains('is-failsafe')) return;
+      c.remove('has-js', 'is-loading', 'is-intro', 'is-veiled'); c.add('is-failsafe');
+      try { if (window.dcLoader) window.dcLoader.stop(); } catch (e) {}
+      // the curtain, taken over by the page's script with inline styles on arrival: back to its open place
+      document.querySelectorAll('.veil, .veil__half').forEach(function (v) { v.style.transform = ''; v.style.pointerEvents = ''; });
+    };
+    addEventListener('load', function () { setTimeout(function () { if (!window.dcBooted) window.dcFailsafe(); }, 8000); });
+  </script>
+  <!-- /site:head -->
+</head>
+<body class="page page--gallery page--gallery-event">
+  <!-- Written by tools/pages/build.mjs (npm run pages) from content/gallery.json: edit that, not this file. -->
+  <!-- site:header -->
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="veil" aria-hidden="true">
+    <div class="veil__half veil__half--l"></div>
+    <div class="veil__half veil__half--r"></div>
+  </div>
+
+  <header class="topbar" data-topbar>
+    <span class="topbar__ground" aria-hidden="true"></span>
+    <a class="topbar__brand" href="./index.html" aria-label="The Drama Collective, home">
+      <span class="topbar__mark" data-lottie="mask-mark"><img src="./assets/brand/mark-gold-144.png" alt="" width="48" height="48"></span>
+      <span class="topbar__word"><span>The Drama</span> <span>Collective</span></span>
+    </a>
+    <a class="btn btn--inverse btn--sm topbar__apply" href="./apply.html" data-topbar-keep>Apply now</a>
+    <nav class="topbar__nav" aria-label="Main">
+      <ul class="topbar__links">
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li class="topbar__group" data-dropdown>
+          <button class="topbar__group-toggle" type="button" aria-expanded="false" aria-controls="outputs-menu">Our outputs<svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <ul class="topbar__dropdown" id="outputs-menu" data-dropdown-menu>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+          </ul>
+        </li>
+        <li><a href="./contact.html">Contact us</a></li>
+      </ul>
+      <span class="topbar__glint" aria-hidden="true"></span>
+    </nav>
+    <div class="topbar__tools">
+      <a class="icon-btn" href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="The Drama Collective on Instagram" title="Instagram"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg></a>
+      <button class="icon-btn music-toggle" type="button" aria-pressed="false" aria-label="Music" aria-keyshortcuts="K" title="Play music (K)" data-music-toggle>
+        <span class="music-bars" aria-hidden="true"><svg class="bar" viewBox="0 0 20 20"><rect x="2.5" y="8" width="2.2" height="9"/></svg><svg class="bar" viewBox="0 0 20 20"><rect x="6.9" y="3" width="2.2" height="14"/></svg><svg class="bar" viewBox="0 0 20 20"><rect x="11.3" y="6" width="2.2" height="11"/></svg><svg class="bar" viewBox="0 0 20 20"><rect x="15.7" y="9" width="2.2" height="8"/></svg></span>
+      </button>
+      <button class="icon-btn theme-toggle" type="button" aria-pressed="false" aria-label="Light mode" title="House lights" data-theme-toggle>
+        <svg class="theme-toggle__sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 1.8v2.1M10 16.1v2.1M1.8 10h2.1M16.1 10h2.1M4.2 4.2l1.5 1.5M14.3 14.3l1.5 1.5M4.2 15.8l1.5-1.5M14.3 5.7l1.5-1.5"/></g></svg>
+        <svg class="theme-toggle__moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M15.9 12.6A6.6 6.6 0 0 1 7.4 4.1a6.6 6.6 0 1 0 8.5 8.5Z" fill="currentColor"/></svg>
+      </button>
+      <a class="btn btn--secondary btn--sm topbar__gallery" href="./gallery.html">Gallery</a>
+    </div>
+    <button class="topbar__menu" type="button" aria-expanded="false" aria-controls="menu-sheet" data-menu-toggle>Menu</button>
+    <a class="btn btn--inverse btn--sm topbar__cta" href="./sponsor.html" data-topbar-keep>Become a sponsor</a>
+    <div class="topbar__sheet" id="menu-sheet" data-menu-sheet>
+      <ul>
+        <li><a href="./index.html">Home</a></li>
+        <li><a href="./about.html">About us</a></li>
+        <li><a href="./team.html">Core team</a></li>
+        <li class="topbar__sheet-group"><span class="eyebrow">Our outputs</span>
+          <ul>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+          </ul>
+        </li>
+        <li><a href="./contact.html">Contact us</a></li>
+        <li><a href="./apply.html">Apply now</a></li>
+        <li><a href="./sponsor.html">Become a sponsor</a></li>
+        <li><a href="https://www.instagram.com/" target="_blank" rel="noopener"><span class="ig-word">Instagram</span></a></li>
+        <li><a href="./gallery.html">Gallery</a></li>
+      </ul>
+    </div>
+  </header>
+  <!-- /site:header -->
+
+  <!-- site:stage -->
+  <div class="stage" aria-hidden="true">
+    <canvas class="stage__stars"></canvas>
+  </div>
+
+  <div class="cursor" aria-hidden="true">
+    <span class="cursor__glow"></span>
+    <svg class="cursor__star" viewBox="-12 -17 24 34" focusable="false"><path class="cursor__star-plain" d="M0 -10C1 -2 2 -1 10 0 2 1 1 2 0 10 -1 2 -2 1 -10 0 -2 -1 -1 -2 0 -10Z"/><path class="cursor__star-text" d="M0 -15C0.66 -3 1.32 -1.5 6.6 0 1.32 1.5 0.66 3 0 15 -0.66 3 -1.32 1.5 -6.6 0 -1.32 -1.5 -0.66 -3 0 -15Z"/></svg>
+  </div>
+  <!-- /site:stage -->
+
+  <main id="main" class="page__main">
+    <header class="act-head ground" data-mask>
+      <a class="pub-btn back-btn" href="./gallery.html"><svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M13 5H1.5M5 1 1 5l4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Back to the gallery</span></a>
+      <p class="eyebrow"><time datetime="2026-09-19">19 September 2026</time></p>
+      <h1 class="act-head__title" data-reveal>First Meeting</h1>
+      <span class="rule" aria-hidden="true"></span>
+      <p class="lead">29 pictures: choose any picture to see it whole.</p>
+    </header>
+
+    <section class="act gal-event gal-event--all" aria-label="First Meeting: the pictures" data-gal-event>
+      <ul class="gal-grid">
+        <li class="gal-tile gal-tile--lead"><a class="gal-tile__link" href="./assets/gallery/first-meeting/001.webp" data-gal-photo data-w="1600" data-h="900"><img src="./assets/gallery/first-meeting/001-s.webp" alt="First Meeting: picture 1 of 29" width="782" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/002.webp" data-gal-photo data-w="1280" data-h="960"><img src="./assets/gallery/first-meeting/002-s.webp" alt="First Meeting: picture 2 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/003.webp" data-gal-photo data-w="1600" data-h="900"><img src="./assets/gallery/first-meeting/003-s.webp" alt="First Meeting: picture 3 of 29" width="782" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/004.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/004-s.webp" alt="First Meeting: picture 4 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/005.webp" data-gal-photo data-w="1280" data-h="960"><img src="./assets/gallery/first-meeting/005-s.webp" alt="First Meeting: picture 5 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/006.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/006-s.webp" alt="First Meeting: picture 6 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/007.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/007-s.webp" alt="First Meeting: picture 7 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/008.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/008-s.webp" alt="First Meeting: picture 8 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/009.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/009-s.webp" alt="First Meeting: picture 9 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/010.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/010-s.webp" alt="First Meeting: picture 10 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/011.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/011-s.webp" alt="First Meeting: picture 11 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/012.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/012-s.webp" alt="First Meeting: picture 12 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/013.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/013-s.webp" alt="First Meeting: picture 13 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/014.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/014-s.webp" alt="First Meeting: picture 14 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/015.webp" data-gal-photo data-w="1024" data-h="768"><img src="./assets/gallery/first-meeting/015-s.webp" alt="First Meeting: picture 15 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/016.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/016-s.webp" alt="First Meeting: picture 16 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/017.webp" data-gal-photo data-w="1182" data-h="886"><img src="./assets/gallery/first-meeting/017-s.webp" alt="First Meeting: picture 17 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/018.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/018-s.webp" alt="First Meeting: picture 18 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/019.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/019-s.webp" alt="First Meeting: picture 19 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/020.webp" data-gal-photo data-w="1182" data-h="886"><img src="./assets/gallery/first-meeting/020-s.webp" alt="First Meeting: picture 20 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/021.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/021-s.webp" alt="First Meeting: picture 21 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/022.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/022-s.webp" alt="First Meeting: picture 22 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/023.webp" data-gal-photo data-w="1182" data-h="886"><img src="./assets/gallery/first-meeting/023-s.webp" alt="First Meeting: picture 23 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/024.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/024-s.webp" alt="First Meeting: picture 24 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/025.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/025-s.webp" alt="First Meeting: picture 25 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/026.webp" data-gal-photo data-w="1182" data-h="886"><img src="./assets/gallery/first-meeting/026-s.webp" alt="First Meeting: picture 26 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/027.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/027-s.webp" alt="First Meeting: picture 27 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/028.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/028-s.webp" alt="First Meeting: picture 28 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+        <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/first-meeting/029.webp" data-gal-photo data-w="1179" data-h="884"><img src="./assets/gallery/first-meeting/029-s.webp" alt="First Meeting: picture 29 of 29" width="586" height="440" loading="lazy" decoding="async"></a></li>
+      </ul>
+    </section>
+
+    <nav class="act gal-others ground" aria-labelledby="others-title" data-mask>
+      <h2 class="eyebrow" id="others-title">More from the gallery</h2>
+      <ul class="gal-jump__list">
+        <li><a class="gal-jump__link" href="./gallery-cascade.html">CAScade: Flash Play</a></li>
+        <li><a class="gal-jump__link" href="./gallery-isso.html">ISSO Fundraising</a></li>
+        <li><a class="gal-jump__link" href="./gallery-auditions.html">Production Auditions</a></li>
+      </ul>
+    </nav>
+
+    <!-- a picture whole (src/pages/gallery.js) -->
+    <dialog class="gal-box" aria-label="Picture" tabindex="-1" data-gal-box>
+      <figure class="gal-box__figure">
+        <img class="gal-box__img" alt="" data-gal-box-img>
+        <figcaption class="gal-box__caption" data-gal-box-caption></figcaption>
+      </figure>
+      <button class="icon-btn gal-box__btn gal-box__btn--prev" type="button" aria-label="Previous picture" data-gal-prev><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4 6.5 10l6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="icon-btn gal-box__btn gal-box__btn--next" type="button" aria-label="Next picture" data-gal-next><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="icon-btn gal-box__btn gal-box__close" type="button" aria-label="Close" data-gal-close><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    </dialog>
+  </main>
+
+  <!-- site:footer -->
+  <footer class="curtain" id="contact" aria-label="Pages and contacts">
+    <div class="curtain__grid">
+      <div class="curtain__mark" aria-hidden="true"><span class="curtain__emblem" data-tilt></span></div>
+      <nav class="curtain__links" aria-label="All pages">
+        <div class="curtain__col">
+          <p class="eyebrow">The Collective</p>
+          <ul>
+            <li><a href="./index.html">Home</a></li>
+            <li><a href="./about.html">About us</a></li>
+            <li><a href="./team.html">Core team</a></li>
+            <li><a href="./gallery.html">Gallery</a></li>
+            <li><a href="./contact.html">Contact us</a></li>
+            <li><a href="./apply.html">Apply now</a></li>
+            <li><a href="./sponsor.html">Become a sponsor</a></li>
+          </ul>
+        </div>
+        <div class="curtain__col">
+          <p class="eyebrow">Our outputs</p>
+          <ul>
+            <li><a href="./publication.html">The publication</a></li>
+            <li><a href="./production.html">The production</a></li>
+            <li><a href="./flash-plays.html">Flash plays</a></li>
+            <li><a href="./workshops.html">Workshops</a></li>
+            <li><a href="./outreach.html">Social outreach</a></li>
+            <li><a href="./stage-planner.html">Stage planner</a></li>
+          </ul>
+        </div>
+        <div class="curtain__col curtain__col--contact">
+          <p class="eyebrow">Write to us</p>
+          <ul>
+            <li><span class="curtain__who">Aadi Ramnani, President</span><a href="mailto:aadir6405@students.chirec.ac.in">aadir6405@students.chirec.ac.in</a></li>
+            <li><span class="curtain__who">Aripra Sharma, Executive President</span><a href="mailto:aripras111460@students.chirec.ac.in">aripras111460@students.chirec.ac.in</a></li>
+            <li><a class="curtain__social" href="https://www.instagram.com/" target="_blank" rel="noopener"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="4.3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.6" cy="5.4" r="1" fill="currentColor"/></svg><span class="ig-word">Instagram</span></a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+    <div class="curtain__base">
+      <div class="curtain__legal">
+        <p class="legal">© 2026 The Drama Collective · CHIREC International School</p>
+        <p class="credits">Music: “the smell of old books, reading, writing and studying (a dark academia playlist)”, <a href="https://www.youtube.com/@DarkEnigmatic68" rel="noopener">Dark Enigmatic</a>.</p>
+      </div>
+      <a class="endorsement" href="https://www.chirec.ac.in" rel="noopener">
+        <img class="endorsement__logo" src="./assets/brand/chirec.webp" alt="CHIREC International School" width="475" height="140">
+        <span>CHIREC International School: the No.&nbsp;1 school in Hyderabad and Telangana</span>
+      </a>
+    </div>
+  </footer>
+  <!-- /site:footer -->
+
+  <script type="module" src="./src/pages/gallery.js"></script>
+</body>
+</html>

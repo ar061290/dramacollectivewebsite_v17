@@ -1,9 +1,10 @@
 # The Gallery: adding an event's pictures
 
-The Gallery (`gallery.html`) shows the Collective's events, newest first, one section each: the date,
-the name, the pictures as tiles (any one opens whole, and the arrows or a swipe go through the rest),
-the clips among them, and the film above them where there is one. Everything on it comes from
-`content/gallery.json`, written into the page by `npm run pages`.
+The Gallery (`gallery.html`) shows the Collective's events, newest first, one row each: the date, the
+name, as many pictures as fit the width, and View all over the last tile, which goes to the event's
+own page (`gallery-<event>.html`): every picture (any one opens whole, and the arrows or a swipe go
+through the rest), the clips among them, and the film above them where there is one. Everything comes
+from `content/gallery.json`; `npm run pages` writes the Gallery's rows and each event's page whole.
 
 The pictures live in the site itself (`assets/gallery/<event>/`), made small: a picture is about
 150–250 KB whole and 25–40 KB as a tile, against 4–6 MB for a camera's original, so the page stays
@@ -25,7 +26,7 @@ quick on a cheap phone. A tile loads only when it comes near the screen.
    It makes `assets/gallery/<key>/001.webp` and `001-s.webp` (the tile) for each, and writes their
    sizes into the event. Running it again replaces the event's pictures.
 4. `npm run pages`, look at it (`npm run dev`), then commit `assets/gallery/<key>/`,
-   `content/gallery.json` and `gallery.html`.
+   `content/gallery.json`, `gallery.html` and the new `gallery-<key>.html`.
 
 ## A film, pictures from it, and clips
 

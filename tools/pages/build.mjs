@@ -93,12 +93,18 @@ const READING = [
   { file: 'pieces.html', key: 'pieces' },
 ];
 
+// the Gallery's events (content/gallery.json, checked by readGallery below), each with its own page
+const GALLERY_EVENTS = readGallery().events;
+const galleryHref = (e) => `./gallery-${e.key}.html`;
+
 export const PAGES = [
   { file: 'index.html', key: 'home' },
   ...NAV.map((n) => ({ file: n.href.slice(2), key: n.key })),
   { file: 'sponsor.html', key: 'sponsor' },
   { file: APPLY.href.slice(2), key: APPLY.key },
   { file: GALLERY.href.slice(2), key: GALLERY.key },
+  // each event's own page (written whole from content/gallery.json, galleryEventPage below)
+  ...GALLERY_EVENTS.map((e) => ({ file: galleryHref(e).slice(2), key: `gallery-${e.key}`, galleryEvent: e })),
   // the publication's own pages, reached from it and not from the menu: its reading pages (each
   // piece, the editor's note, all the pieces; written whole by this file, READING below), Meet our
   // writers and each writer's own page (written whole, writerPage below), Apply to be a writer (with
@@ -827,12 +833,13 @@ function fill(src, name, html, indent = '  ') {
   return src.replace(re, () => `<!-- site:${name} -->\n${indent}${html}\n${indent}<!-- /site:${name} -->`);
 }
 
-// The Gallery (gallery.html): a section an event, newest first, from content/gallery.json: its date,
-// its name, how many pictures, its film where it has one (played only when asked: preload="none"),
-// then its pictures as tiles, each a link to the picture whole (src/pages/gallery.js opens it in a
-// lightbox instead, and steps through the event's pictures), and its clips (short, silent, played
-// while on screen). The pictures and films are made by tools/gallery/make.mjs, which also writes their
-// sizes here. The file is checked first, as content/ia.json is.
+// The Gallery, from content/gallery.json (the file is checked first, as content/ia.json is): on
+// gallery.html one row an event, newest first (its date, its name, how many pictures, then as many of
+// its pictures as fit the row, the last tile under the plum with "View all" going to the event's own
+// page); on that page (gallery-<key>.html, written whole) every picture, its clips (short, silent,
+// played while on screen) and its film. A picture's tile is a link to the picture whole, which
+// src/pages/gallery.js opens in a lightbox instead, stepping through the pictures there. The pictures
+// and films are made by tools/gallery/make.mjs, which also writes their sizes into the file.
 function readGallery() {
   const g = readJSON('content/gallery.json');
   const bad = (why) => { throw new Error(`content/gallery.json: ${why}`); };
@@ -848,55 +855,15 @@ function readGallery() {
     for (const m of [...(e.photos ?? []), ...(e.clips ?? []), ...(e.film && !e.film.drive ? [e.film] : [])]) {
       if (typeof m.src !== 'string' || !(m.w > 0) || !(m.h > 0)) bad(`${e.key}: a picture or film needs "src", "w" and "h" (run tools/gallery/make.mjs)`);
     }
-    if (!e.photos?.length && !e.film) bad(`${e.key}: no pictures yet (run tools/gallery/make.mjs)`);
+    if (!e.photos?.length) bad(`${e.key}: no pictures yet (run tools/gallery/make.mjs)`);
   }
   return g;
 }
-function gallery(pad) {
-  const { events } = readGallery();
-  const plural = (n, one) => `${n} ${one}${n === 1 ? '' : 's'}`;
-  const section = (e) => {
-    const photos = e.photos ?? [];
-    const clips = e.clips ?? [];
-    const count = [photos.length && plural(photos.length, 'picture'), clips.length && plural(clips.length, 'clip'), e.film && 'the film'].filter(Boolean).join(', ');
-    const tile = (m, i) => `    <li class="gal-tile${i === 0 ? ' gal-tile--lead' : ''}"><a class="gal-tile__link" href="./${m.src}.webp" data-gal-photo data-w="${m.w}" data-h="${m.h}"><img src="./${m.src}-s.webp" alt="${esc(e.title)}: picture ${i + 1} of ${photos.length}${m.from === 'film' ? ', from the film' : ''}" width="${m.tw ?? m.w}" height="${m.th ?? m.h}" loading="lazy" decoding="async"></a></li>`;
-    const clip = (m, i) => `    <li class="gal-tile gal-tile--clip"><video class="gal-tile__clip" src="./${m.src}.mp4" poster="./${m.src}.webp" width="${m.w}" height="${m.h}" muted loop playsinline preload="none" aria-label="${esc(e.title)}: clip ${i + 1} of ${clips.length}, without sound" data-gal-clip></video><span class="gal-tile__badge" aria-hidden="true">Clip</span></li>`;
-    // the film: ours (made by make.mjs), or, too long to keep in the site, played from Google Drive in
-    // its own player, which loads only once Play is pressed (src/pages/gallery.js; without scripts the
-    // link opens it on Drive)
-    const caption = e.film ? `<figcaption class="gal-film__caption">${esc(e.film.caption ?? `${e.title}: the film`)}${e.film.length ? ` <span class="gal-film__len">${esc(e.film.length)}</span>` : ''}</figcaption>` : '';
-    const film = !e.film ? '' : e.film.drive ? `
-  <figure class="gal-film">
-    <div class="gal-film__frame" data-gal-drive="${esc(e.film.drive)}">
-      ${e.film.poster ? `<img class="gal-film__poster" src="./${e.film.poster}.webp" alt="" loading="lazy" decoding="async">` : ''}
-      <a class="gal-film__play" href="https://drive.google.com/file/d/${esc(e.film.drive)}/view" target="_blank" rel="noopener" data-gal-play><span class="gal-film__play-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M6 4l10 6-10 6z" fill="currentColor"/></svg></span><span>Play the film</span></a>
-    </div>
-    ${caption}
-  </figure>` : `
-  <figure class="gal-film">
-    <video class="gal-film__video" src="./${e.film.src}.mp4" poster="./${e.film.src}.webp" width="${e.film.w}" height="${e.film.h}" controls playsinline preload="none"></video>
-    ${caption}
-  </figure>`;
-    return `<section class="act gal-event" id="${e.key}" aria-labelledby="${e.key}-title" data-gal-event>
-  <header class="gal-event__head ground" data-mask>
-    <p class="eyebrow"><time datetime="${e.date}">${esc(e.when)}</time></p>
-    <h2 class="act__title" id="${e.key}-title">${esc(e.title)}</h2>
-    <p class="gal-event__count">${count}</p>
-  </header>${film}
-  <ul class="gal-grid">
-${[...photos.map(tile), ...clips.map(clip)].join('\n')}
-  </ul>
-</section>`;
-  };
-  const html = `<nav class="gal-jump" aria-label="The events">
-  <ul>
-${events.map((e) => `    <li><a class="gal-jump__link" href="#${e.key}">${esc(e.title)}</a></li>`).join('\n')}
-  </ul>
-</nav>
-
-${events.map(section).join('\n\n')}
-
-<!-- a picture whole (src/pages/gallery.js) -->
+const plural = (n, one) => `${n} ${one}${n === 1 ? '' : 's'}`;
+const galleryCount = (e) => [plural(e.photos.length, 'picture'), e.clips?.length && plural(e.clips.length, 'clip'), e.film && 'the film'].filter(Boolean).join(', ');
+/** A picture's tile: a link to it whole, its small picture loaded as it comes near. */
+const galleryTile = (e, m, i, cls = '') => `<li class="gal-tile${cls}"><a class="gal-tile__link" href="./${m.src}.webp" data-gal-photo data-w="${m.w}" data-h="${m.h}"><img src="./${m.src}-s.webp" alt="${esc(e.title)}: picture ${i + 1} of ${e.photos.length}${m.from === 'film' ? ', from the film' : ''}" width="${m.tw ?? m.w}" height="${m.th ?? m.h}" loading="lazy" decoding="async"></a></li>`;
+const galleryBox = `<!-- a picture whole (src/pages/gallery.js) -->
 <dialog class="gal-box" aria-label="Picture" tabindex="-1" data-gal-box>
   <figure class="gal-box__figure">
     <img class="gal-box__img" alt="" data-gal-box-img>
@@ -906,7 +873,112 @@ ${events.map(section).join('\n\n')}
   <button class="icon-btn gal-box__btn gal-box__btn--next" type="button" aria-label="Next picture" data-gal-next><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <button class="icon-btn gal-box__btn gal-box__close" type="button" aria-label="Close" data-gal-close><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
 </dialog>`;
+
+// gallery.html: an event a row. The row holds four pictures and View all; src/styles/gallery.css shows
+// as many of the four as the width allows (two on a phone, three on a tablet, all four on a laptop),
+// View all always last, over a fifth picture under the plum.
+const ROW = 4;
+function gallery(pad) {
+  const row = (e) => {
+    const more = e.photos[Math.min(ROW, e.photos.length - 1)];
+    return `<section class="act gal-event" id="${e.key}" aria-labelledby="${e.key}-title" data-gal-event>
+  <header class="gal-event__head ground" data-mask>
+    <p class="eyebrow"><time datetime="${e.date}">${esc(e.when)}</time></p>
+    <h2 class="act__title" id="${e.key}-title"><a class="gal-event__link" href="${galleryHref(e)}">${esc(e.title)}</a></h2>
+    <p class="gal-event__count">${galleryCount(e)}</p>
+  </header>
+  <ul class="gal-grid gal-grid--row">
+${e.photos.slice(0, ROW).map((m, i) => `    ${galleryTile(e, m, i)}`).join('\n')}
+    <li class="gal-tile gal-tile--more"><a class="gal-more" href="${galleryHref(e)}" aria-label="View all of ${esc(e.title)}: ${galleryCount(e)}"><img src="./${more.src}-s.webp" alt="" width="${more.tw ?? more.w}" height="${more.th ?? more.h}" loading="lazy" decoding="async"><span class="gal-more__veil" aria-hidden="true"><span class="gal-more__label">View all</span><span class="gal-more__count">${e.photos.length + (e.clips?.length ?? 0)}</span><span class="gal-more__arrow">${ARROW_R}</span></span></a></li>
+  </ul>
+</section>`;
+  };
+  const html = `<nav class="gal-jump" aria-label="The events">
+  <ul>
+${GALLERY_EVENTS.map((e) => `    <li><a class="gal-jump__link" href="#${e.key}">${esc(e.title)}</a></li>`).join('\n')}
+  </ul>
+</nav>
+
+${GALLERY_EVENTS.map(row).join('\n\n')}
+
+${galleryBox}`;
   return html.split('\n').map((l, i) => (i && l ? pad + l : l)).join('\n');
+}
+
+// An event's own page (gallery-<key>.html, written whole): the way back to the Gallery, its date, name
+// and count, its film (ours, made by make.mjs; or, too long to keep in the site, played from Google
+// Drive in Drive's own player, put in only once Play is pressed: src/pages/gallery.js; without scripts
+// the link opens it on Drive), then every picture (the first larger) and its clips, and the other
+// events to go on to.
+function galleryEventPage(e) {
+  const caption = e.film ? `<figcaption class="gal-film__caption">${esc(e.film.caption ?? `${e.title}: the film`)}${e.film.length ? ` <span class="gal-film__len">${esc(e.film.length)}</span>` : ''}</figcaption>` : '';
+  const film = !e.film ? '' : e.film.drive ? `
+      <figure class="gal-film">
+        <div class="gal-film__frame" data-gal-drive="${esc(e.film.drive)}">
+          ${e.film.poster ? `<img class="gal-film__poster" src="./${e.film.poster}.webp" alt="" loading="lazy" decoding="async">` : ''}
+          <a class="gal-film__play" href="https://drive.google.com/file/d/${esc(e.film.drive)}/view" target="_blank" rel="noopener" data-gal-play><span class="gal-film__play-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M6 4l10 6-10 6z" fill="currentColor"/></svg></span><span>Play the film</span></a>
+        </div>
+        ${caption}
+      </figure>` : `
+      <figure class="gal-film">
+        <video class="gal-film__video" src="./${e.film.src}.mp4" poster="./${e.film.src}.webp" width="${e.film.w}" height="${e.film.h}" controls playsinline preload="none"></video>
+        ${caption}
+      </figure>`;
+  const clips = e.clips ?? [];
+  const clip = (m, i) => `<li class="gal-tile gal-tile--clip"><video class="gal-tile__clip" src="./${m.src}.mp4" poster="./${m.src}.webp" width="${m.w}" height="${m.h}" muted loop playsinline preload="none" aria-label="${esc(e.title)}: clip ${i + 1} of ${clips.length}, without sound" data-gal-clip></video><span class="gal-tile__badge" aria-hidden="true">Clip</span></li>`;
+  const others = GALLERY_EVENTS.filter((o) => o !== e);
+  const html = `<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>${esc(e.title)} · Gallery · The Drama Collective</title>
+  <meta name="description" content="${esc(`${e.title}, ${e.when}: the CHIREC Drama Collective in pictures (${galleryCount(e)}).`)}">
+  <meta name="theme-color" content="#2a0d1c">
+  <!-- site:head -->
+  <!-- /site:head -->
+</head>
+<body class="page page--gallery page--gallery-event">
+  <!-- Written by tools/pages/build.mjs (npm run pages) from content/gallery.json: edit that, not this file. -->
+  <!-- site:header -->
+  <!-- /site:header -->
+
+  <!-- site:stage -->
+  <!-- /site:stage -->
+
+  <main id="main" class="page__main">
+    <header class="act-head ground" data-mask>
+      <a class="pub-btn back-btn" href="./gallery.html">${ARROW_L}<span>Back to the gallery</span></a>
+      <p class="eyebrow"><time datetime="${e.date}">${esc(e.when)}</time></p>
+      <h1 class="act-head__title" data-reveal>${esc(e.title)}</h1>
+      <span class="rule" aria-hidden="true"></span>
+      <p class="lead">${galleryCount(e)[0].toUpperCase()}${galleryCount(e).slice(1)}: choose any picture to see it whole.</p>
+    </header>
+
+    <section class="act gal-event gal-event--all" aria-label="${esc(e.title)}: the pictures" data-gal-event>${film}
+      <ul class="gal-grid">
+${[...e.photos.map((m, i) => galleryTile(e, m, i, i === 0 ? ' gal-tile--lead' : '')), ...clips.map(clip)].map((l) => `        ${l}`).join('\n')}
+      </ul>
+    </section>
+${others.length ? `
+    <nav class="act gal-others ground" aria-labelledby="others-title" data-mask>
+      <h2 class="eyebrow" id="others-title">More from the gallery</h2>
+      <ul class="gal-jump__list">
+${others.map((o) => `        <li><a class="gal-jump__link" href="${galleryHref(o)}">${esc(o.title)}</a></li>`).join('\n')}
+      </ul>
+    </nav>
+` : ''}
+    ${galleryBox.split('\n').join('\n    ')}
+  </main>
+
+  <!-- site:footer -->
+  <!-- /site:footer -->
+
+  <script type="module" src="./src/pages/gallery.js"></script>
+</body>
+</html>
+`;
+  return html;
 }
 
 // Aadi's IA tracker (ia.html, unlisted like To do): one column a subject, its steps from
@@ -1014,7 +1086,7 @@ export async function build(only = []) {
       if (!writerNamed(name)) console.warn(`${name} writes for the publication but is not in content/writers.json`);
     }
   }
-  for (const { file, key, reading, writer } of PAGES) {
+  for (const { file, key, reading, writer, galleryEvent } of PAGES) {
     if (only.length && !only.includes(key) && !only.includes(file)) continue;
     const path = join(ROOT, file);
     let src;
@@ -1026,6 +1098,7 @@ export async function build(only = []) {
       const r = READING.find((p) => p.key === key);
       out = readingPage(key, r.piece ? piecePage(r.piece) : key === 'pieces' ? piecesPage(pieceCard) : editorsNotePage());
     } else if (writer) out = readingPage(key, writerPage(writer, { pieceCard, pieceRow }));
+    else if (galleryEvent) out = galleryEventPage(galleryEvent);
     else if (src === null) { console.warn(`skip ${file}: not found`); continue; }
     else out = src;
     const crlf = !!src?.includes('\r\n');

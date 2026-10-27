@@ -1,5 +1,5 @@
-// The Gallery (gallery.html, written by tools/pages/build.mjs from content/gallery.json): a section an
-// event, each with its pictures as tiles. A tile is a link to the picture whole; here it opens in a
+// The Gallery (gallery.html, an event a row) and each event's own page (gallery-<key>.html, every
+// picture), both written by tools/pages/build.mjs from content/gallery.json: the pictures as tiles. A tile is a link to the picture whole; here it opens in a
 // lightbox instead (a native <dialog>: Escape or a click beside the picture closes it, and the focus
 // goes back to the tile), which steps through that event's pictures with the arrows, the arrow keys
 // or a swipe, fetching the next one ahead. Clips are short and silent: each plays while it is on
@@ -71,7 +71,8 @@ function setupBox() {
     const a = e.target.closest?.('[data-gal-photo]');
     if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
-    links = [...a.closest('[data-gal-event]').querySelectorAll('[data-gal-photo]')];
+    // (the pictures of the event that are on the page: the Gallery's row hides some on a narrow screen)
+    links = [...a.closest('[data-gal-event]').querySelectorAll('[data-gal-photo]')].filter((l) => l.offsetParent);
     opener = a;
     show(links.indexOf(a));
     box.showModal();

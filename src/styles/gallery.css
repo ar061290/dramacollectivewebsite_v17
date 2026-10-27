@@ -22,9 +22,50 @@
 }
 .gal-jump__link:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
 
+/* the other events, at the foot of an event's own page: the same small outlined links */
+.gal-others .eyebrow { margin-bottom: var(--space-3); }
+.gal-jump__list { display: flex; flex-wrap: wrap; gap: var(--space-2); list-style: none; }
+
 /* an event (its tiles' pictures load only as they come near the screen: loading="lazy") */
 .gal-event { scroll-margin-top: calc(var(--topbar-h) + var(--space-5)); }
 .gal-event__head .act__title { margin-top: var(--space-2); }
+.gal-event__link { color: inherit; text-decoration: none; }
+.gal-event__link:hover { color: var(--accent); text-decoration: none; }
+.gal-event--all { margin-top: var(--space-8); }
+
+/* the Gallery's row: as many of an event's pictures as fit beside View all (two on a phone, three
+   on a tablet, four on a laptop), View all always last */
+.gal-grid.gal-grid--row { grid-template-columns: repeat(3, 1fr); grid-auto-flow: row; }
+.gal-grid--row > .gal-tile:not(.gal-tile--more):nth-child(n + 3) { display: none; }
+@media (min-width: 640px) {
+  .gal-grid.gal-grid--row { grid-template-columns: repeat(4, 1fr); }
+  .gal-grid--row > .gal-tile:not(.gal-tile--more):nth-child(3) { display: block; }
+}
+@media (min-width: 1024px) {
+  .gal-grid.gal-grid--row { grid-template-columns: repeat(5, 1fr); }
+  .gal-grid--row > .gal-tile:not(.gal-tile--more):nth-child(4) { display: block; }
+}
+/* View all: the next picture under the plum, see-through, the words and the arrow on it */
+.gal-more { position: relative; display: block; width: 100%; height: 100%; color: var(--plum-100); text-decoration: none; }
+.gal-more img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.gal-more__veil {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgb(64 20 42 / .78);
+  transition: background-color var(--dur-base) var(--ease-curtain);
+}
+.gal-more__label { font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; }
+.gal-more__count { font-family: var(--font-display); font-size: clamp(26px, 3vw, 38px); line-height: 1; color: var(--gold-500); }
+.gal-more__arrow svg { width: 22px; height: 16px; transition: transform var(--dur-base) var(--ease-out); }
+.gal-more:hover { color: var(--plum-100); text-decoration: none; }
+.gal-more:hover .gal-more__veil { background: rgb(64 20 42 / .9); }
+.gal-more:hover .gal-more__arrow svg, .gal-more:focus-visible .gal-more__arrow svg { transform: translateX(4px); }
+.gal-more:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .gal-event__count { margin-top: var(--space-2); color: var(--fg-muted); font-size: var(--size-body-s, 14px); }
 
 .gal-grid {
@@ -60,7 +101,7 @@
 }
 
 /* the film: the whole of it, played only when asked */
-.gal-film { margin-top: var(--space-6); max-width: 960px; }
+.gal-film { margin: var(--space-6) 0 0; max-width: 960px; }
 .gal-film__video { display: block; width: 100%; height: auto; background: #000; }
 /* a film kept on Google Drive: a picture of the event and Play, until the player is put in */
 .gal-film__frame { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--plum-900); }
@@ -89,7 +130,7 @@
 .gal-film__play:focus-visible { outline: 2px solid var(--focus); outline-offset: -4px; }
 .gal-film__player { display: block; width: 100%; height: 100%; border: 0; }
 .gal-film__caption { margin-top: var(--space-2); color: var(--fg-muted); font-size: var(--size-body-s, 14px); }
-.gal-film__len { margin-left: var(--space-2); font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: 11px; letter-spacing: .12em; }
+.gal-film__len { margin-left: var(--space-2); white-space: nowrap; font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: 11px; letter-spacing: .12em; }
 
 /* the lightbox: the picture whole on the dark of the stage, whatever the theme; the arrows at its
    sides (under it on a phone), Close in the corner */
@@ -110,7 +151,7 @@
 .gal-box::backdrop { background: transparent; }
 .gal-box:focus { outline: none; }
 .gal-box[open] { display: grid; place-items: center; }
-.gal-box__figure { display: grid; justify-items: center; gap: var(--space-3); width: 100%; height: 100%; align-content: center; padding: 64px 72px 24px; }
+.gal-box__figure { margin: 0; display: grid; justify-items: center; gap: var(--space-3); width: 100%; height: 100%; align-content: center; padding: 64px 72px 24px; }
 .gal-box__img {
   max-width: 100%;
   max-height: calc(100dvh - 140px);
