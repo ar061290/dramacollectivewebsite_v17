@@ -117,79 +117,34 @@ async function boot() {
     covers: (x, y) => (stage ? stage.covers(x, y) : false),
   });
 
-  // live scene or the still picture
-  const gl = probeWebGL();
-  if (gl.ok && !prefersStatic(gl.renderer)) {
-    try {
-      const [{ Stage }, { setupStatueInteraction }] = await Promise.all([
-        import('./scene/Stage.js'),
-        import('./scene/interaction.js'),
-      ]);
-      app.setupStatueInteraction = setupStatueInteraction;
-      mark('stage code');
-      stage = new Stage({
-        container: document.querySelector('.stage__gl'),
-        reducedMotion: reduced,
-        colors: {
-          warm: readToken('--gold-300'),
-          cool: readToken('--slate-200'),
-          rim: readToken('--slate-300'),
-          floor: readToken('--plum-800'),
-        },
-      });
-      stage.state.daylight = currentTheme() === 'light' ? 1 : 0;
-      stage.preWarm(); // the shaders compile while the statue downloads (Stage.preWarm)
-      // a statue that stops arriving (no bytes for 20 s: a stalled connection, not a slow one) gives way to
-      // the still picture, as a statue that fails does (the failsafe, README)
-      let arriving = performance.now();
-      let watch = 0;
-      const stalled = new Promise((_, reject) => {
-        watch = setInterval(() => {
-          // time the page spends hidden or frozen (a phone's screen off, the browser in the background) is
-          // not a stall: the clock starts again when it is back
-          if (document.hidden) { arriving = performance.now(); return; }
-          if (performance.now() - arriving > 20000) reject(new Error('The statue stopped arriving.'));
-        }, 1000);
-      });
-      const awake = () => { arriving = performance.now(); };
-      document.addEventListener('visibilitychange', awake);
-      document.addEventListener('resume', awake);
-      try {
-        await Promise.race([
-          stage.load({
-            statueUrl: ASSETS.statue,
-            textureUrls: { albedo: ASSETS.albedo, normal: ASSETS.normal },
-            onProgress: () => { arriving = performance.now(); },
-          }),
-          stalled,
-        ]);
-      } finally {
-        clearInterval(watch);
-        document.removeEventListener('visibilitychange', awake);
-        document.removeEventListener('resume', awake);
-      }
-      mark('statue loaded');
-    } catch (err) {
-      console.error('Stage failed, showing the still picture instead.', err);
-      stage?.dispose();
-      stage = null;
-    }
-  }
   const still = document.querySelector('.stage__fallback');
   // the still picture is fetched only when it is needed: no live stage, or the stage's WebGL context
   // taken away later (lossless WebP: the PNG's very pixels in 374 KB rather than 927)
   const loadStill = () => { if (!still.getAttribute('src')) still.src = new URL('../assets/fallback/hero.webp', import.meta.url).href; };
-  if (!stage) {
+
+  // live scene or the still picture. The live stage loads behind the loader and goes on loading after it:
+  // the curtain no longer waits for the statue (1.8 MB, then its shaders), only for the rays to go round
+  // once; a statue that arrives later lights up then (attachStage, below).
+  const gl = probeWebGL();
+  const live = gl.ok && !prefersStatic(gl.renderer);
+  const stageReady = live ? loadStage() : Promise.resolve(null);
+  let stillShown = null;
+  if (!live) {
     loadStill();
     still.hidden = false;
     mark('still shown');
     // never let a stalled decode hold the curtain
-    await Promise.race([still.decode().catch(() => {}), new Promise((r) => setTimeout(r, 1500))]);
+    stillShown = Promise.race([still.decode().catch(() => {}), new Promise((r) => setTimeout(r, 1500))]);
   }
 
-  // the type, and the stage's shaders, are ready before the curtain goes up
-  await Promise.all([document.fonts.ready, blackType, stage?.warm()]);
-  mark('fonts and shaders');
+  // the type ready, and the loader's rays round once (by the clock as well, 2.3 s from the start: in a
+  // background tab its timer beats once a second)
+  const cycle = Promise.race([window.dcLoader?.cycle ?? Promise.resolve(), new Promise((r) => setTimeout(r, Math.max(0, 2300 - performance.now())))]);
+  await Promise.all([document.fonts.ready, blackType, cycle, stillShown]);
+  mark('fonts and loader cycle');
+  // a statue already in (a visit with it in the cache): the curtain goes up on it, as it always did
+  const PENDING = {};
+  const early = await Promise.race([stageReady, Promise.resolve(PENDING)]);
 
   // curtain: loader out
   await gsap.to(loader, { autoAlpha: 0, duration: reduced ? 0 : 0.45, ease: 'curtain' });
@@ -203,7 +158,10 @@ async function boot() {
   curtainUp();
   if (new URLSearchParams(location.search).has('debug')) console.info('start:', marks.map(([n, t]) => `${n} ${t} ms`).join(' · '));
 
-  if (stage) {
+  /** The live stage, once it is in: drawn, its scroll scenes, the pointer, the morph. */
+  const attachStage = (s) => {
+    stage = s;
+    stage.state.daylight = currentTheme() === 'light' ? 1 : 0; // (the theme may have changed meanwhile)
     stage.setOccluder(document.querySelector('.curtain'));
     document.querySelector('.curtain')?.classList.add('has-stage-logo');
     stage.start();
@@ -235,7 +193,16 @@ async function boot() {
     };
     window.addEventListener('pointermove', onPointer, { passive: true });
     cleanups.push(() => window.removeEventListener('pointermove', onPointer));
-  }
+    // the phone tier (README): the morph (a large mesh, built in a worker, then put on the GPU) is made
+    // once the visitor has begun to scroll toward it, rather than as soon as the intro ends; and the
+    // stage's GPU memory is given back after half a minute in a hidden tab
+    if (phoneTier()) {
+      whenScrolled(0.5).then(() => { if (stage) prepareMorph(); });
+      releaseWhenHidden();
+    } else prepareMorph();
+    if (new URLSearchParams(location.search).has('debug')) import('./ui/debug.js').then(({ setupDebug }) => cleanups.push(setupDebug({ stage })));
+  };
+  if (early !== PENDING && early) attachStage(early);
   sky.start();
 
   cleanups.push(setupNav({ reduced }));
@@ -253,17 +220,19 @@ async function boot() {
   // the Lotties load alongside the intro, never ahead of it (the hero's words must not wait on them)
   const lotties = setupLotties();
 
-  // what the intro animates: the live lights, or the still picture's opacity
-  const light = stage
-    ? {
-        set: (s, r) => { Object.assign(stage.state, { stageLight: s, ringReveal: r }); stage.wake(); },
-        tween: (vars) => gsap.to(stage.state, vars),
-      }
-    : {
-        set: () => gsap.set(still, { autoAlpha: 1 }),
-        tween: (vars) => gsap.fromTo(still, { autoAlpha: 0 }, { autoAlpha: 1, duration: vars.duration, ease: vars.ease }),
-      };
-  if (!stage && !reduced) gsap.set(still, { autoAlpha: 0 });
+  // what the intro animates: the live lights; the still picture's opacity; or, while the statue is still
+  // on its way, nothing (it lights up the same way once it is in)
+  const stageLight = (s) => ({
+    set: (l, r) => { Object.assign(s.state, { stageLight: l, ringReveal: r }); s.wake(); },
+    tween: (vars) => gsap.to(s.state, vars),
+  });
+  const stillLight = {
+    set: () => gsap.set(still, { autoAlpha: 1 }),
+    tween: (vars) => gsap.fromTo(still, { autoAlpha: 0 }, { autoAlpha: 1, duration: vars.duration, ease: vars.ease }),
+  };
+  const waiting = { set: () => {}, tween: (vars) => gsap.to({}, { duration: vars.duration }) };
+  const light = stage ? stageLight(stage) : live ? waiting : stillLight;
+  if (!live && !reduced) gsap.set(still, { autoAlpha: 0 });
   playIntro({
     hero: document.querySelector('.hero'),
     light,
@@ -271,22 +240,95 @@ async function boot() {
     reduced,
     onComplete: () => { mark('intro done'); ScrollTrigger.refresh(); },
   });
+  // the statue that arrives after the curtain: its lights come up as in the intro, and its scenes join
+  // the scroll; one that fails gives way to the still picture, faded up
+  if (live && !stage) {
+    stageReady.then((s) => {
+      if (!s) {
+        loadStill();
+        still.hidden = false;
+        gsap.fromTo(still, { autoAlpha: 0 }, { autoAlpha: 1, duration: reduced ? 0 : 0.9, ease: 'curtain' });
+        return;
+      }
+      attachStage(s);
+      mark('statue lit');
+      const l = stageLight(s);
+      if (reduced) l.set(1, 1);
+      else {
+        l.tween({ stageLight: 1, duration: 0.9, ease: 'power2.out' });
+        l.tween({ ringReveal: 1, duration: 0.6, ease: 'power1.out', delay: 0.45 });
+      }
+      reapply?.();
+      ScrollTrigger.refresh();
+    });
+  }
   // the footer's mark leans toward the pointer, as on the other pages
   for (const el of document.querySelectorAll('[data-tilt]')) cleanups.push(tilt(el, { reduced, max: 10 }));
 
   watchVisibility();
-  if (stage) {
-    // the phone tier (README): the morph (a large mesh, built in a worker, then put on the GPU) is made
-    // once the visitor has begun to scroll toward it, rather than as soon as the intro ends; and the
-    // stage's GPU memory is given back after half a minute in a hidden tab
-    if (phoneTier()) {
-      whenScrolled(0.5).then(() => { if (stage) prepareMorph(); });
-      releaseWhenHidden();
-    } else prepareMorph();
-  }
-  if (new URLSearchParams(location.search).has('debug') && stage) {
-    const { setupDebug } = await import('./ui/debug.js');
-    cleanups.push(setupDebug({ stage }));
+}
+
+/** The live stage: the code, the statue and its pictures, then its shaders. Resolves with the stage
+ * ready to draw, or null where it failed (the still picture then; the failsafe, README). */
+async function loadStage() {
+  let s = null;
+  try {
+    const [{ Stage }, { setupStatueInteraction }] = await Promise.all([
+      import('./scene/Stage.js'),
+      import('./scene/interaction.js'),
+    ]);
+    app.setupStatueInteraction = setupStatueInteraction;
+    mark('stage code');
+    s = new Stage({
+      container: document.querySelector('.stage__gl'),
+      reducedMotion: reduced,
+      colors: {
+        warm: readToken('--gold-300'),
+        cool: readToken('--slate-200'),
+        rim: readToken('--slate-300'),
+        floor: readToken('--plum-800'),
+      },
+    });
+    s.state.daylight = currentTheme() === 'light' ? 1 : 0;
+    s.preWarm(); // the shaders compile while the statue downloads (Stage.preWarm)
+    // a statue that stops arriving (no bytes for 20 s: a stalled connection, not a slow one) gives way to
+    // the still picture, as a statue that fails does (the failsafe, README)
+    let arriving = performance.now();
+    let watch = 0;
+    const stalled = new Promise((_, reject) => {
+      watch = setInterval(() => {
+        // time the page spends hidden or frozen (a phone's screen off, the browser in the background) is
+        // not a stall: the clock starts again when it is back
+        if (document.hidden) { arriving = performance.now(); return; }
+        if (performance.now() - arriving > 20000) reject(new Error('The statue stopped arriving.'));
+      }, 1000);
+    });
+    const awake = () => { arriving = performance.now(); };
+    document.addEventListener('visibilitychange', awake);
+    document.addEventListener('resume', awake);
+    try {
+      await Promise.race([
+        s.load({
+          statueUrl: ASSETS.statue,
+          textureUrls: { albedo: ASSETS.albedo, normal: ASSETS.normal },
+          onProgress: () => { arriving = performance.now(); },
+        }),
+        stalled,
+      ]);
+    } finally {
+      clearInterval(watch);
+      document.removeEventListener('visibilitychange', awake);
+      document.removeEventListener('resume', awake);
+    }
+    mark('statue loaded');
+    // its shaders ready, so its first frames on the screen are smooth
+    await s.warm();
+    mark('shaders');
+    return s;
+  } catch (err) {
+    console.error('Stage failed, showing the still picture instead.', err);
+    s?.dispose();
+    return null;
   }
 }
 

@@ -125,7 +125,7 @@ export const BENCHES = {
       const net = page.network();
       return {
         loadEventMs: loadMs, curtainUpMs: ready, introDoneMs: intro ?? -1, morphReadyMs: morph ?? -1,
-        bootMs: marks.boot, stageCodeMs: marks['stage-code'] ?? -1, statueLoadedMs: marks['statue-loaded'] ?? -1, fontsShadersMs: marks['fonts-and-shaders'] ?? -1, stillShownMs: marks['still-shown'] ?? -1,
+        bootMs: marks.boot, stageCodeMs: marks['stage-code'] ?? -1, statueLoadedMs: marks['statue-loaded'] ?? -1, fontsShadersMs: marks['fonts-and-loader-cycle'] ?? marks['fonts-and-shaders'] ?? -1, statueLitMs: marks['statue-lit'] ?? -1, stillShownMs: marks['still-shown'] ?? -1,
         fcpMs: timing?.fcp ?? -1, lcpMs: timing?.lcp ?? -1, cls: timing?.cls ?? 0,
         ...diff(m0, m1, COUNTERS), ...longTaskStats(probe), mutations: probe.mutations, contexts: probe.contexts.length,
         ...netStats(net), network: net.list, longTaskList: probe.longTasks, marks,

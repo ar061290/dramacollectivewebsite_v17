@@ -201,19 +201,22 @@
   </div>
   <script>
     // the loader runs before anything else loads: the rays (a timer) and the satin (raw WebGL; a
-    // still gradient without it). main.js calls dcLoader.stop() as the curtain goes up.
+    // still gradient without it). dcLoader.cycle resolves once the rays have gone round once (all lit,
+    // the rest, then out: 2.2 s), which main.js waits for at the least; it calls dcLoader.stop() as the
+    // curtain goes up.
     (function () {
       var root = document.querySelector('.loader');
       var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
       var rays = root.querySelectorAll('.loader__ray');
       var n = 0, timer = 0, raf = 0, gl = null;
+      var cycled, cycle = new Promise(function (r) { cycled = r; });
       function step() {
         // one ray more each beat; a beat's rest with all of them lit; then out, and round again
-        if (n > rays.length + 4) n = 0;
+        if (n > rays.length + 4) { n = 0; cycled(); }
         for (var i = 0; i < rays.length; i++) rays[i].classList.toggle('is-on', i < n);
         n++;
       }
-      if (reduced) { for (var i = 0; i < rays.length; i++) rays[i].classList.add('is-on'); }
+      if (reduced) { for (var i = 0; i < rays.length; i++) rays[i].classList.add('is-on'); cycled(); }
       else { step(); timer = setInterval(step, 75); }
 
       // The satin is set up on the first animation frame, not while the page is still being parsed:
@@ -304,6 +307,7 @@
       var stopped = false;
       raf = requestAnimationFrame(function () { setTimeout(function () { if (!stopped) { setup(); wait(); } }, 0); });
       window.dcLoader = {
+        cycle: cycle,
         stop: function () {
           stopped = true;
           clearInterval(timer);
