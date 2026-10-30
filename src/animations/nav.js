@@ -46,8 +46,9 @@ export function setupNav({ reduced }) {
   const onKey = (e) => { if (e.key === 'Escape' && menuOpen) { setMenu(false); toggle.focus(); } };
   toggle.addEventListener('click', onToggle);
   window.addEventListener('keydown', onKey);
-  // the sheet only exists below the wide layout: close it if the window grows past it
-  const wide = matchMedia('(min-width: 1100px)');
+  // the sheet only exists below the wide layout: close it if the window grows past it (the CSS's own
+  // query, negated, so a window between 1149 and 1150 px, as at 125%, is on one side or the other)
+  const wide = matchMedia('not all and (max-width: 1149px)');
   const onWide = () => { if (wide.matches) setMenu(false); };
   wide.addEventListener('change', onWide);
 

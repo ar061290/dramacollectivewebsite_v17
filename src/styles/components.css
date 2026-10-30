@@ -450,30 +450,38 @@ html.tier-lite .music-toggle.is-held .bar rect { animation-play-state: paused; }
 .topbar__sheet { display: none; }
 
 /* the wordmark: on one line on wide screens, stacked in two lines below that, where the bar's
-   own margins and gaps also come in a step */
-@media (max-width: 1279px) {
-  .topbar { padding-inline: var(--space-6); gap: var(--space-4); }
+   own gaps also come in a step (and below 1280 px its margins). With the wordmark on one line the
+   bar is 1393 px wide, so it stacks below 1440 px */
+@media (max-width: 1439px) {
+  .topbar { gap: var(--space-4); }
   .topbar__word { font-size: 21px; line-height: .98; }
   .topbar__word > span { display: block; }
   .topbar__links { gap: 16px; }
 }
-/* the narrowest laptops with the pages along the bar: its gaps close up a step, so the Gallery fits
-   beside the light switch with Become a sponsor still whole */
+/* (the bare pages, the logo and two switches alone, keep it on one line down to 1280 px: wherever
+   the next query is not, so that a window between 1279 and 1280 px, as at 125%, is one or the other) */
+@media not all and (max-width: 1279px) {
+  .page--bare .topbar__word { font-size: 25px; line-height: 1; }
+  .page--bare .topbar__word > span { display: inline; }
+}
+@media (max-width: 1279px) {
+  .topbar { padding-inline: var(--space-6); }
+}
+/* the narrowest laptops: the bar's gaps close up a step, so from 1150 px, with the pages along the
+   bar, the Gallery fits beside the light switch with Become a sponsor still whole (the bar 1112 px) */
 @media (min-width: 1100px) and (max-width: 1199px) {
   .topbar { gap: var(--space-3); }
   .topbar__links { gap: 10px; }
   .topbar__tools > .icon-btn { width: 40px; }
   .topbar__gallery { margin-left: 0; padding-inline: 12px; }
 }
-/* below this (where the two buttons no longer fit beside the links) the pages move into the Menu: a
-   full-screen sheet that drops like a curtain, the pages in Raung, rising in one after another (the
-   outputs indented under their heading) */
-@media (max-width: 1099px) {
+/* below this (where the two buttons no longer fit beside the links and the Gallery) the pages move
+   into the Menu: a full-screen sheet that drops like a curtain, the pages in Raung, rising in one
+   after another (the outputs indented under their heading). nav.js closes it above this width */
+@media (max-width: 1149px) {
   .topbar nav { display: none; }
   .topbar__gallery { display: none; }
   .topbar__menu { display: inline-flex; align-items: center; }
-  .topbar__word { font-size: 24px; }
-  .topbar__word > span { display: inline; }
   .topbar__sheet {
     position: fixed;
     inset: var(--topbar-h) 0 0 0;
@@ -504,6 +512,12 @@ html.tier-lite .music-toggle.is-held .bar rect { animation-play-state: paused; }
   .topbar__sheet-group > .eyebrow { display: block; margin: var(--space-3) 0 var(--space-1); }
   .topbar__sheet-group ul { list-style: none; display: grid; gap: 0; padding-left: var(--space-5); border-left: 2px solid var(--rule-color); }
   .topbar__sheet-group a { font-size: clamp(22px, 4.8vw, 34px); }
+}
+/* below 1100 px, the pages in the Menu, the wordmark has room on one line again (stacked down to
+   there, as it is on the bare pages) */
+@media (max-width: 1099px) {
+  .topbar__word { font-size: 24px; }
+  .topbar__word > span { display: inline; }
 }
 /* narrower, the bar makes room for its two buttons: the wordmark stacks again and Instagram is left
    to the Menu and the footer; below 760 px Apply now moves into the Menu too */
