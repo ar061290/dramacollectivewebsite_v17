@@ -66,6 +66,9 @@
 .gal-more:hover .gal-more__veil { background: rgb(64 20 42 / .9); }
 .gal-more:hover .gal-more__arrow svg, .gal-more:focus-visible .gal-more__arrow svg { transform: translateX(4px); }
 .gal-more:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+/* (the veil is drawn over the link's own outline: the ring on the veil, in gold, which the plum veil
+   carries in both themes) */
+.gal-more:focus-visible .gal-more__veil { box-shadow: inset 0 0 0 2px var(--gold-500); }
 .gal-event__count { margin-top: var(--space-2); color: var(--fg-muted); font-size: var(--size-body-s, 14px); }
 
 .gal-grid {

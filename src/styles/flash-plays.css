@@ -1,0 +1,233 @@
+/* Flash plays (flash-plays.html, src/pages/flash-plays.js). Beside the opening, on a laptop (under
+   its heading, elsewhere): the year's calendar a month at a time, each day with a play lit as a marquee
+   bulb (a link to it on the bill), the arrows on either side of the month's name; the countdown to a
+   play (the production page's, src/sections/countdown.js); the most recent play's pictures as the
+   Gallery's row. Then the bill, a play a ticket with its date on the stub. Today is ringed, the days
+   gone by are quieter and the next play is outlined in the accent (all set from the school's date). */
+
+.fp-about .ground p:last-child { margin-bottom: 0; }
+
+/* ---- the opening: its heading and what a flash play is on the left, the season on the right ---- */
+/* (no wider than its column: the month strip's whole width is not its own) */
+.fp-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); align-content: start; min-width: 0; margin-top: var(--space-8); max-width: 520px; }
+@media (min-width: 1024px) {
+  .fp-top:has(> .fp-side) { display: grid; grid-template-columns: minmax(0, 1fr) clamp(360px, 38%, 440px); grid-template-rows: auto 1fr; column-gap: var(--space-8); }
+  .fp-top > .act-head { grid-column: 1; grid-row: 1; }
+  .fp-top > .fp-about { grid-column: 1; grid-row: 2; align-self: start; }
+  .fp-top > .fp-side { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; max-width: none; }
+}
+.fp-side__title { margin: 0 0 var(--space-3); }
+.fp-note { margin: var(--space-3) 0 0; font-size: var(--size-caption); color: var(--fg-muted); }
+
+/* ---- the calendar: a card, a month at a time (a strip to scroll or swipe; the script adds the arrows,
+   steps by a month, and opens on this month) ---- */
+.fp-cal__card { position: relative; background: var(--card-bg); border: var(--border-width) solid var(--line); }
+.fp-cal__months {
+  display: flex;
+  align-items: flex-start;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+}
+.fp-cal.is-paged .fp-cal__months { scrollbar-width: none; }
+.fp-cal.is-paged .fp-cal__months::-webkit-scrollbar { display: none; }
+.fp-cal__months:focus-visible { outline-offset: -2px; }
+.fp-month { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; padding: 0 4px var(--space-2); } /* (room for a bulb's focus ring at the edges) */
+.fp-month__grid { width: 100%; border-collapse: collapse; table-layout: fixed; font-family: var(--font-ui); }
+/* the month's name: the card's top bar, the arrows at its ends */
+.fp-month__name {
+  height: 52px;
+  padding: 0 52px;
+  margin: 0 -4px var(--space-2);
+  border-bottom: var(--border-width) solid var(--line);
+  line-height: 52px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(20px, 6.4vw, 24px); /* (the longest, November 2026, between the arrows on the smallest phones) */
+  color: var(--fg-strong);
+  white-space: nowrap;
+}
+.fp-month__year { color: var(--fg-muted); }
+.fp-cal__step {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-strong);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-curtain), opacity var(--dur-fast) var(--ease-curtain);
+}
+.fp-cal__step[hidden] { display: none; }
+.fp-cal__step svg { width: 16px; height: 16px; }
+.fp-cal__step--prev { left: 0; }
+.fp-cal__step--next { right: 0; }
+.fp-cal__step:hover { color: var(--accent); }
+.fp-cal__step:focus-visible { outline-offset: -6px; }
+.fp-cal__step[aria-disabled="true"] { cursor: default; }
+.fp-cal__step[aria-disabled="true"] svg { opacity: .3; }
+.fp-cal__step[aria-disabled="true"]:hover { color: var(--fg-strong); }
+.fp-month__grid th {
+  padding: 0 0 var(--space-2);
+  font-size: var(--size-micro);
+  font-weight: var(--weight-bold);
+  letter-spacing: .1em;
+  text-align: center;
+  color: var(--fg-muted);
+}
+.fp-day {
+  height: 40px;
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+  font-size: var(--size-body-s);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+/* the weekend's days and the days gone by, quieter (in the muted ink, still legible); a play gone by,
+   its bulb out */
+.fp-month__grid td:nth-child(n + 6), .fp-day.is-past { color: var(--fg-muted); }
+/* today: a ring, square like the site's tiles */
+.fp-day.is-today { box-shadow: inset 0 0 0 1.5px var(--fg-strong); font-weight: var(--weight-bold); color: var(--fg-strong); }
+/* a day with a play: a lit bulb */
+.fp-day__link {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-weight: var(--weight-black);
+  text-decoration: none;
+  box-shadow: 0 0 0 3px rgb(var(--spot-rgb) / .16), 0 0 14px rgb(var(--spot-rgb) / .55);
+  transition: box-shadow var(--dur-fast) var(--ease-curtain), background-color var(--dur-fast) var(--ease-curtain);
+}
+.fp-day__link:hover { background: var(--btn-bg-hover); color: var(--btn-fg); text-decoration: none; box-shadow: 0 0 0 4px rgb(var(--spot-rgb) / .28), 0 0 20px rgb(var(--spot-rgb) / .8); }
+.fp-day.is-past .fp-day__link { background: none; color: var(--fg-muted); box-shadow: inset 0 0 0 1.5px currentColor; }
+.fp-day.is-past .fp-day__link:hover { color: var(--fg-strong); }
+/* two plays on the day */
+.fp-day__n {
+  position: absolute;
+  top: -5px;
+  right: -7px;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--fg-strong);
+  color: var(--bg);
+  font-size: 10px;
+  line-height: 1;
+}
+.fp-month__grid td:last-child .fp-day__n { right: auto; left: -7px; }
+.fp-key { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); max-width: none; margin: 0; padding: var(--space-3) var(--space-4); border-top: var(--border-width) solid var(--line); font-family: var(--font-ui); font-size: var(--size-caption); color: var(--fg-muted); }
+.fp-key__item { display: inline-flex; align-items: center; gap: 8px; }
+.fp-key__on { width: 14px; height: 14px; border-radius: 50%; background: var(--btn-bg); box-shadow: 0 0 8px rgb(var(--spot-rgb) / .6); }
+.fp-key__today { width: 14px; height: 14px; box-shadow: inset 0 0 0 1.5px var(--fg-strong); }
+.fp-key__past { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--fg-muted); }
+
+/* ---- the countdown: the production page's digits, smaller, four to a row ---- */
+.fp-count { container-type: inline-size; padding: var(--space-5); background: var(--card-bg); border: var(--border-width) solid var(--line); }
+.fp-count[hidden], .fp-count [hidden] { display: none; }
+.fp-count__title { margin: 0; }
+.fp-count__play { margin: var(--space-3) 0 0; font-family: var(--font-display); font-size: var(--size-heading); line-height: var(--lh-title); color: var(--fg-strong); }
+.fp-count__play a { color: inherit; text-decoration: none; }
+.fp-count__play a:hover { color: var(--accent); text-decoration: none; }
+.fp-count__when { margin: var(--space-1) 0 0; font-size: var(--size-body-s); color: var(--fg-muted); }
+.fp-count .count:not([hidden]) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); margin-top: var(--space-5); }
+.fp-count .count__digit { font-size: clamp(34px, 3.4vw, 44px); }
+.fp-count .count__unit dd { min-height: clamp(34px, 3.4vw, 44px); } /* (the digits' height before they come: no shift) */
+.fp-count .count__unit dt { font-size: var(--size-micro); letter-spacing: .08em; }
+/* (two and two where the four would not fit their names: the smallest phones) */
+@container (max-width: 267px) { .fp-count .count { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: var(--space-4); } }
+.fp-count__today { margin: var(--space-5) 0 0; font-family: var(--font-ui); font-weight: var(--weight-black); font-size: 28px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+
+/* ---- the most recent play's pictures: the Gallery's row, as many as fit its column beside View all ---- */
+.fp-recent { container-type: inline-size; }
+.fp-recent__title { margin: 0; }
+.fp-recent__play { margin: var(--space-2) 0 0; font-size: var(--size-body-s); color: var(--fg-muted); }
+.fp-recent__play a { color: var(--fg-strong); font-weight: var(--weight-bold); }
+.fp-recent__play a:hover { color: var(--accent); }
+.fp-recent .gal-grid.gal-grid--row { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: var(--space-3); }
+.fp-recent .gal-grid--row > .gal-tile:not(.gal-tile--more):nth-child(-n + 2) { display: block; }
+.fp-recent .gal-grid--row > .gal-tile:not(.gal-tile--more):nth-child(n + 3) { display: none; }
+@container (min-width: 380px) {
+  .fp-recent .gal-grid.gal-grid--row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .fp-recent .gal-grid--row > .gal-tile:not(.gal-tile--more):nth-child(3) { display: block; }
+}
+
+/* ---- the bill: a month a block (its name beside its plays on a laptop), a play a ticket ---- */
+.fp-bill__title { margin: 0; }
+.fp-bill__month { margin-top: var(--space-6); max-width: 1080px; }
+.fp-bill__month-name { margin: 0 0 var(--space-3); }
+.fp-list { display: grid; gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
+.fp-play {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  background: var(--card-bg);
+  border: var(--border-width) solid var(--line);
+  scroll-margin-top: calc(var(--topbar-h) + var(--space-5));
+  transition: border-color var(--dur-base) var(--ease-curtain), box-shadow var(--dur-base) var(--ease-curtain);
+}
+/* the next play; and the play a bulb or a date was followed to (the site's same-page links move the
+   focus there, and write the address without making it the :target) */
+.fp-play.is-next, .fp-play:target, .fp-play:focus { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.fp-play:focus { outline: none; }
+/* the stub: the date, torn off along the dashes */
+.fp-play__stub {
+  display: grid;
+  place-content: center;
+  margin: 0;
+  max-width: none;
+  padding: var(--space-4) var(--space-2);
+  border-right: 2px dashed var(--line);
+  text-align: center;
+  font-family: var(--font-ui);
+}
+.fp-play__stub time { display: grid; justify-items: center; gap: 4px; }
+.fp-play__wd, .fp-play__m { font-size: var(--size-micro); font-weight: var(--weight-bold); letter-spacing: .14em; text-transform: uppercase; color: var(--fg-muted); }
+.fp-play__d { font-family: var(--font-display); font-size: 44px; line-height: 1; color: var(--accent); }
+.fp-play__d--tba { font-family: var(--font-ui); font-size: var(--size-body-s); font-weight: var(--weight-black); letter-spacing: .14em; }
+.fp-play__body { min-width: 0; padding: var(--space-4) var(--space-5) var(--space-5); }
+.fp-play__tags { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0 0 var(--space-3); }
+.fp-play__next[hidden] { display: none; }
+.fp-play__title { margin: 0; font-family: var(--font-display); font-size: var(--size-heading); font-weight: var(--weight-regular); line-height: var(--lh-title); color: var(--fg-strong); }
+.fp-play__sub { display: block; margin-top: 4px; font-family: var(--font-ui); font-size: var(--size-body-s); font-weight: var(--weight-bold); letter-spacing: .04em; color: var(--fg-muted); }
+.fp-play__at { margin: var(--space-2) 0 0; color: var(--fg-strong); }
+.fp-play__with { margin: var(--space-1) 0 0; color: var(--fg); }
+.fp-play__also { margin: var(--space-2) 0 0; font-size: var(--size-body-s); color: var(--fg-muted); }
+.fp-play__also a { color: var(--accent); }
+/* a play's pictures: the way to its event in the Gallery */
+.fp-play__pics { margin: var(--space-3) 0 0; font-family: var(--font-ui); font-size: var(--size-caption); font-weight: var(--weight-bold); letter-spacing: .1em; text-transform: uppercase; }
+.fp-play__pics a { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); text-decoration: none; }
+.fp-play__pics a:hover { color: var(--accent-hover); text-decoration: none; }
+.fp-play__pics svg { width: 14px; height: 10px; transition: transform var(--dur-fast) var(--ease-curtain); }
+.fp-play__pics a:hover svg { transform: translateX(3px); }
+
+@media (max-width: 339px) {
+  .fp-month__name { font-size: clamp(16px, 6.4vw, 24px); padding: 0 44px; }
+  .fp-cal__step { width: 44px; }
+}
+@container (max-width: 230px) {
+  .fp-recent .gal-more__label { font-size: 11px; letter-spacing: .06em; white-space: nowrap; }
+}
+@media (max-width: 639px) {
+  .fp-count { padding: var(--space-4); }
+  .fp-play { grid-template-columns: 72px minmax(0, 1fr); }
+  .fp-play__d { font-size: 34px; }
+  .fp-play__body { padding: var(--space-4) var(--space-4) var(--space-5); }
+}
+@media (min-width: 1024px) {
+  .fp-bill__month { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: var(--space-6); align-items: start; }
+  .fp-bill__month-name { position: sticky; top: calc(var(--topbar-h) + var(--space-5)); margin: var(--space-4) 0 0; }
+  .fp-bill--tba .fp-list { grid-column: 2; }
+}

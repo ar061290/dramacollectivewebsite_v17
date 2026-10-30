@@ -16,6 +16,8 @@ import { cpSync } from 'node:fs';
  * - the publication's still (71 KB, preloaded at high priority) is the one the saved theme needs,
  *   not always the dark one.
  * - the jsDelivr preconnect is for the source-served site only (the build has no CDN): dropped.
+ * - the page not found (404.html), built on the deploy (GITHUB_REPOSITORY is set there), is given the
+ *   site's root as a <base> in its markup, so a missing address however deep fetches its files once.
  */
 function finishHead() {
   const GATE = "(function(){try{var q=location.search;if(/[?&]static\\b/.test(q))return false;if(/[?&]live\\b/.test(q))return true;var c=navigator.connection;if(c&&c.saveData)return false;if((navigator.hardwareConcurrency||4)<=2||(navigator.deviceMemory||4)<=2)return false;return 'WebGL2RenderingContext' in window;}catch(e){return true;}})()";
@@ -73,6 +75,13 @@ function finishHead() {
         });
         // 3. no CDN in the build
         html = html.replace(/\s*<link rel="preconnect"[^>]*data-dc-live[^>]*>/, '');
+        // 4. the page not found, on the deploy: GitHub Pages serves it at any missing address, however deep, and
+        // the preload scanner would fetch its files from that address's folder (each answered with this page) before
+        // its script could set the site's root; a <base> in the markup is read first (404.html keeps the script)
+        const repo = process.env.GITHUB_REPOSITORY?.split('/')[1];
+        if (repo && /(^|[\\/])404\.html$/.test(ctx.path)) {
+          html = html.replace(/(<meta name="viewport"[^>]*>)/, `$1\n  <base href="${/\.github\.io$/i.test(repo) ? '/' : `/${repo}/`}">`);
+        }
         return html;
       },
     },

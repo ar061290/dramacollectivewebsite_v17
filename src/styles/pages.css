@@ -592,8 +592,19 @@
   text-shadow: 0 2px 24px rgb(21 4 8 / .8);
 }
 .soon__copy .rule { background: var(--gold-500); }
+/* the page not found (404.html), under its title: a word of sorry, then the ways on. The copy lets a
+   drag through to the curtain, the buttons take their own clicks, each as wide as its words, on as many
+   rows as they need beside the hint */
+.soon--notfound { min-height: 720px; } /* the buttons make the copy taller: room for it under the board */
+.soon--notfound .soon__copy { right: calc(var(--stage-gutter) + 15em); }
+.soon--notfound .soon__title { font-size: var(--size-display-l); } /* a step down from the coming-soon pages' */
+.soon__sorry { max-width: none; margin: var(--space-4) 0 0; font-size: var(--size-body-l); color: var(--plum-100); text-shadow: 0 2px 16px rgb(21 4 8 / .8); }
+.soon__ways { margin-top: var(--space-5); pointer-events: auto; }
+.soon__ways ul { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.soon__ways li { display: flex; }
+.soon__ways .btn { white-space: nowrap; }
 /* house lights up: the pale curtain, with the copy in the light register's ink */
-[data-theme="light"] .soon { background: var(--plum-100); color: var(--plum-800); }
+[data-theme="light"] .soon { background: var(--plum-100); color: var(--plum-800); --focus: var(--plum-800); }
 [data-theme="light"] .soon__stage:not(.is-live) {
   background:
     radial-gradient(ellipse 45% 55% at 50% 35%, rgb(255 255 255 / .35), rgb(255 255 255 / 0) 70%),
@@ -601,9 +612,10 @@
     repeating-linear-gradient(90deg, var(--plum-400) 0, var(--plum-300) 18px, var(--plum-200) 32px, var(--plum-300) 46px, var(--plum-400) 62px);
 }
 [data-theme="light"] .soon__sign { color: var(--plum-800); background: rgb(250 243 244 / .75); border-color: var(--gold-600); }
-[data-theme="light"] .soon__copy .eyebrow { color: var(--plum-700); }
+[data-theme="light"] .soon__copy .eyebrow { color: var(--plum-800); }
 [data-theme="light"] .soon__title { color: var(--plum-800); text-shadow: 0 2px 24px rgb(250 243 244 / .9); }
-[data-theme="light"] .soon__hint { color: var(--plum-700); }
+[data-theme="light"] .soon__sorry { color: var(--plum-800); text-shadow: 0 2px 16px rgb(250 243 244 / .9); }
+[data-theme="light"] .soon__hint { color: var(--plum-800); }
 .soon__hint {
   position: absolute;
   right: var(--stage-gutter);
@@ -771,6 +783,9 @@
   .ticket input:checked + .ticket__body .ticket__stub { border-bottom-color: var(--border-gold); }
   .soon__hint { left: var(--stage-gutter); right: auto; bottom: var(--space-5); }
   .soon__copy { bottom: calc(var(--space-5) + 40px); }
+  .soon--notfound .soon__copy { right: var(--stage-gutter); }
+  .soon__ways ul { gap: var(--space-2); }
+  .soon__ways .btn { padding-inline: 10px; }
 }
 
 /* ---- Reduced motion: the walks and tilts stop; everything is shown lit ---- */

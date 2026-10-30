@@ -8,7 +8,7 @@
 // - an email through FormSubmit (formsubmit.co), which forwards it to his inbox.
 // If neither goes through, the note offers an email link instead. No limits of the site's own: a
 // press while one is still going is ignored, nothing more.
-// The top bar is the bare pages' (bare.css): the logo and the light/dark switch, music by K.
+// The top bar is the bare pages' (bare.css): the logo, the music's button and the light/dark switch.
 import { bootPage } from '../site/boot.js';
 
 const NTFY = 'https://ntfy.sh/';

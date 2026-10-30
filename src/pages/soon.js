@@ -1,4 +1,5 @@
-// Flash plays, Workshops, Social outreach: coming soon. The house curtain is down
+// Workshops, Social outreach: coming soon; and the page not found (404.html), the same page with
+// NOT FOUND on its board (the curtain's data-sign). The house curtain is down
 // (src/scene/curtain/CurtainStage.js, loaded only where WebGL runs well); before it has loaded, and
 // wherever it does not run, the same set drawn in CSS (soon.css): the velvet, the pelmet and the
 // marquee board, in the same place and the same light, so the page looks finished from the start.
@@ -45,7 +46,7 @@ bootPage(({ reduced, onTheme, opened, sky }) => {
     opened.then(() => import('../scene/curtain/CurtainStage.js'))
       .then(async ({ CurtainStage }) => {
         if (gone) return;
-        stage = new CurtainStage(host, { variant: host.dataset.curtain, markUrl: MARK, reduced, theme: currentTheme() });
+        stage = new CurtainStage(host, { variant: host.dataset.curtain, sign: host.dataset.sign, markUrl: MARK, reduced, theme: currentTheme() });
         if (new URLSearchParams(location.search).has('debug')) window.__stage = stage;
         await stage.load();
         if (gone) return;

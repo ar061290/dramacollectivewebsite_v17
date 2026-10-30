@@ -11,6 +11,10 @@
 //   <!-- site:pubbanner --> the publication and its reading pages: the banner along the bottom
 //   <!-- site:writers --> writers.html only: the writers' cards, issue by issue (writersMonths)
 //   <!-- site:issue -->   index.html only: act three's pieces, the newest issue's (homeIssue)
+//   <!-- site:gallery --> gallery.html only: the events, a row each (gallery)
+//   <!-- site:flash-plays-side --> flash-plays.html only: beside its opening, the year's calendar, the
+//                         countdown and the most recent play's pictures, from content/flash-plays.json
+//   <!-- site:flash-plays --> flash-plays.html only: the plays on the bill (flashPlays, both)
 // It also writes the publication's reading pages whole (READING, below): each piece that is out
 // (piece-<slug>.html, from src/publication/pieces-data.js and the piece's text in
 // content/pieces/<slug>.html), the editor's note (editors-note.html, from content/editors-note.html)
@@ -103,6 +107,9 @@ export const PAGES = [
   { file: 'sponsor.html', key: 'sponsor' },
   { file: APPLY.href.slice(2), key: APPLY.key },
   { file: GALLERY.href.slice(2), key: GALLERY.key },
+  // the page not found: the coming-soon pages' curtain, NOT FOUND on its board, and four ways on;
+  // GitHub Pages serves it for any address on the site that has no page
+  { file: '404.html', key: 'notfound' },
   // each event's own page (written whole from content/gallery.json, galleryEventPage below)
   ...GALLERY_EVENTS.map((e) => ({ file: galleryHref(e).slice(2), key: `gallery-${e.key}`, galleryEvent: e })),
   // the publication's own pages, reached from it and not from the menu: its reading pages (each
@@ -863,7 +870,7 @@ const plural = (n, one) => `${n} ${one}${n === 1 ? '' : 's'}`;
 const galleryCount = (e) => [plural(e.photos.length, 'picture'), e.clips?.length && plural(e.clips.length, 'clip'), e.film && 'the film'].filter(Boolean).join(', ');
 /** A picture's tile: a link to it whole, its small picture loaded as it comes near. */
 const galleryTile = (e, m, i, cls = '') => `<li class="gal-tile${cls}"><a class="gal-tile__link" href="./${m.src}.webp" data-gal-photo data-w="${m.w}" data-h="${m.h}"><img src="./${m.src}-s.webp" alt="${esc(e.title)}: picture ${i + 1} of ${e.photos.length}${m.from === 'film' ? ', from the film' : ''}" width="${m.tw ?? m.w}" height="${m.th ?? m.h}" loading="lazy" decoding="async"></a></li>`;
-const galleryBox = `<!-- a picture whole (src/pages/gallery.js) -->
+const galleryBox = `<!-- a picture whole (src/ui/gallery.js) -->
 <dialog class="gal-box" aria-label="Picture" tabindex="-1" data-gal-box>
   <figure class="gal-box__figure">
     <img class="gal-box__img" alt="" data-gal-box-img>
@@ -878,21 +885,23 @@ const galleryBox = `<!-- a picture whole (src/pages/gallery.js) -->
 // as many of the four as the width allows (two on a phone, three on a tablet, all four on a laptop),
 // View all always last, over a fifth picture under the plum.
 const ROW = 4;
+/** An event's row: its first pictures, then View all over the next. (Also the flash plays' pictures.) */
+const galleryRow = (e) => {
+  const more = e.photos[Math.min(ROW, e.photos.length - 1)];
+  return `<ul class="gal-grid gal-grid--row">
+${e.photos.slice(0, ROW).map((m, i) => `  ${galleryTile(e, m, i)}`).join('\n')}
+  <li class="gal-tile gal-tile--more"><a class="gal-more" href="${galleryHref(e)}" aria-label="View all of ${esc(e.title)}: ${galleryCount(e)}"><img src="./${more.src}-s.webp" alt="" width="${more.tw ?? more.w}" height="${more.th ?? more.h}" loading="lazy" decoding="async"><span class="gal-more__veil" aria-hidden="true"><span class="gal-more__label">View all</span><span class="gal-more__count">${e.photos.length + (e.clips?.length ?? 0)}</span><span class="gal-more__arrow">${ARROW_R}</span></span></a></li>
+</ul>`;
+};
 function gallery(pad) {
-  const row = (e) => {
-    const more = e.photos[Math.min(ROW, e.photos.length - 1)];
-    return `<section class="act gal-event" id="${e.key}" aria-labelledby="${e.key}-title" data-gal-event>
+  const row = (e) => `<section class="act gal-event" id="${e.key}" aria-labelledby="${e.key}-title" data-gal-event>
   <header class="gal-event__head ground" data-mask>
     <p class="eyebrow"><time datetime="${e.date}">${esc(e.when)}</time></p>
     <h2 class="act__title" id="${e.key}-title"><a class="gal-event__link" href="${galleryHref(e)}">${esc(e.title)}</a></h2>
     <p class="gal-event__count">${galleryCount(e)}</p>
   </header>
-  <ul class="gal-grid gal-grid--row">
-${e.photos.slice(0, ROW).map((m, i) => `    ${galleryTile(e, m, i)}`).join('\n')}
-    <li class="gal-tile gal-tile--more"><a class="gal-more" href="${galleryHref(e)}" aria-label="View all of ${esc(e.title)}: ${galleryCount(e)}"><img src="./${more.src}-s.webp" alt="" width="${more.tw ?? more.w}" height="${more.th ?? more.h}" loading="lazy" decoding="async"><span class="gal-more__veil" aria-hidden="true"><span class="gal-more__label">View all</span><span class="gal-more__count">${e.photos.length + (e.clips?.length ?? 0)}</span><span class="gal-more__arrow">${ARROW_R}</span></span></a></li>
-  </ul>
+  ${galleryRow(e).split('\n').join('\n  ')}
 </section>`;
-  };
   const html = `<nav class="gal-jump" aria-label="The events">
   <ul>
 ${GALLERY_EVENTS.map((e) => `    <li><a class="gal-jump__link" href="#${e.key}">${esc(e.title)}</a></li>`).join('\n')}
@@ -979,6 +988,177 @@ ${others.map((o) => `        <li><a class="gal-jump__link" href="${galleryHref(o
 </html>
 `;
   return html;
+}
+
+// Flash plays (flash-plays.html), from content/flash-plays.json (checked first, as the Gallery's file
+// is). Beside the page's opening (site:flash-plays-side): the year's calendar, a month at a time (a
+// month a table, from the month of the first date to the month of the last, each day with a play lit
+// as a bulb and a link to it on the bill), the countdown to a play (the production page's own), and the
+// pictures of the most recent play that has them (its event in the Gallery) as the Gallery's row.
+// Under it (site:flash-plays): the bill, month by month, a play a ticket (its date on the stub, every
+// date to come tentative, a play with its pictures in the Gallery Played), then the plays whose dates
+// are to be announced. Today, the days and plays gone by, the month shown first, the play counted down
+// to and the next play are set from the school's own date
+// (src/pages/flash-plays.js); as written here, the countdown is to the file's countdown play (else the
+// first play), on its first date.
+function readFlashPlays() {
+  const f = readJSON('content/flash-plays.json');
+  const bad = (why) => { throw new Error(`content/flash-plays.json: ${why}`); };
+  if (typeof f.year !== 'string' || !f.year.trim()) bad('"year" (the season, like "2026–27") is missing');
+  if (!Array.isArray(f.plays) || !f.plays.length) bad('"plays" is missing');
+  const keys = new Set();
+  for (const p of f.plays) {
+    if (!/^[a-z0-9-]+$/.test(p.key ?? '') || keys.has(p.key)) bad(`each play needs its own "key", in small letters, digits and - (${JSON.stringify(p.key)})`);
+    keys.add(p.key);
+    if (typeof p.title !== 'string' || !p.title.trim()) bad(`${p.key}: "title" is missing`);
+    for (const k of ['sub', 'at', 'with']) if (p[k] != null && (typeof p[k] !== 'string' || !p[k].trim())) bad(`${p.key}: "${k}" should be text`);
+    if (!Array.isArray(p.dates)) bad(`${p.key}: "dates" should be a list (empty while they are to be announced)`);
+    for (const d of p.dates) {
+      const t = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d ?? '');
+      const day = t && new Date(Date.UTC(+t[1], t[2] - 1, +t[3]));
+      if (!day || day.getUTCMonth() !== t[2] - 1) bad(`${p.key}: a date should be written YYYY-MM-DD, not ${JSON.stringify(d)}`);
+    }
+    if (new Set(p.dates).size !== p.dates.length) bad(`${p.key}: a date is in "dates" twice`);
+    if (p.gallery != null && !GALLERY_EVENTS.some((e) => e.key === p.gallery)) bad(`${p.key}: no event "${p.gallery}" in content/gallery.json`);
+  }
+  if (f.countdown != null && !f.plays.some((p) => p.key === f.countdown && p.dates.length)) bad(`"countdown" should be the key of a play with a date, not ${JSON.stringify(f.countdown)}`);
+  return f;
+}
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const WEEK = [1, 2, 3, 4, 5, 6, 0]; // the calendar's columns: Monday first
+const two = (n) => String(n).padStart(2, '0');
+const indentBy = (s, by) => s.split('\n').join(`\n${by}`);
+function flashPlays() {
+  const { year, plays, countdown } = readFlashPlays();
+  const MONTH = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const day = (iso) => { const [y, m, d] = iso.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+  const when = (iso, withYear = true) => { const t = day(iso); return `${DAY_NAMES[t.getUTCDay()]} ${t.getUTCDate()} ${MONTH[t.getUTCMonth()]}${withYear ? ` ${t.getUTCFullYear()}` : ''}`; };
+  // a play on each of its dates: a show; the first (the earliest, in whatever order the file has them) keeps the play's own id
+  // (fp-play-<key>, the later ones fp-play-<key>_<date>: no key can make one that clashes, nor the page's fixed ids)
+  const shows = plays.flatMap((p, order) => [...p.dates].sort().map((date, n) => ({ p, date, n, order, id: n ? `fp-play-${p.key}_${date}` : `fp-play-${p.key}` })))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.order - b.order);
+  const onDay = new Map();
+  for (const s of shows) onDay.set(s.date, [...(onDay.get(s.date) ?? []), s]);
+  const months = [];
+  if (shows.length) {
+    const first = day(shows[0].date), last = day(shows.at(-1).date);
+    for (let y = first.getUTCFullYear(), m = first.getUTCMonth(); y < last.getUTCFullYear() || (y === last.getUTCFullYear() && m <= last.getUTCMonth()); m === 11 ? (y++, m = 0) : m++) months.push([y, m]);
+  }
+  const inMonth = ([y, m]) => (s) => s.date.startsWith(`${y}-${two(m + 1)}`);
+  const atLine = (s) => [s.p.at, when(s.date, false)].filter(Boolean).join(', ');
+
+  // the calendar: a month a table, the weeks its rows, its name the bar the arrows sit in
+  const month = ([y, m]) => {
+    const lead = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7;
+    const cells = [...Array(lead).fill(0), ...Array.from({ length: new Date(Date.UTC(y, m + 1, 0)).getUTCDate() }, (_, i) => i + 1)];
+    while (cells.length % 7) cells.push(0);
+    const cell = (d) => {
+      if (!d) return '<td></td>';
+      const iso = `${y}-${two(m + 1)}-${two(d)}`;
+      const on = onDay.get(iso);
+      if (!on) return `<td class="fp-day" data-day="${iso}">${d}</td>`;
+      const names = on.map((s) => s.p.title).join('; ');
+      return `<td class="fp-day fp-day--on" data-day="${iso}"><a class="fp-day__link" href="#${on[0].id}" aria-label="${esc(`${d} ${MONTH[m]}: ${names}`)}">${d}${on.length > 1 ? `<span class="fp-day__n" aria-hidden="true">${on.length}</span>` : ''}</a></td>`;
+    };
+    const weeks = Array.from({ length: cells.length / 7 }, (_, w) => `      <tr>${cells.slice(w * 7, w * 7 + 7).map(cell).join('')}</tr>`);
+    return `<div class="fp-month" data-month="${y}-${two(m + 1)}">
+  <table class="fp-month__grid">
+    <caption class="fp-month__name">${MONTH[m]} <span class="fp-month__year">${y}</span></caption>
+    <thead><tr>${WEEK.map((w) => `<th scope="col"><span aria-hidden="true">${DAY_NAMES[w][0]}</span><span class="sr-only">${DAY_NAMES[w]}</span></th>`).join('')}</tr></thead>
+    <tbody>
+${weeks.join('\n')}
+    </tbody>
+  </table>
+</div>`;
+  };
+  const span = months.length ? `${MONTH[months[0][1]]} ${months[0][0]} to ${MONTH[months.at(-1)[1]]} ${months.at(-1)[0]}` : '';
+  const chevron = (d) => `<svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const calendar = months.length ? `<section class="fp-cal" aria-labelledby="fp-cal-title" data-fp-cal>
+  <h2 class="fp-side__title eyebrow" id="fp-cal-title">The ${esc(year)} season</h2>
+  <div class="fp-cal__card">
+    <button class="fp-cal__step fp-cal__step--prev" type="button" aria-label="The month before" aria-controls="fp-months" data-fp-step="-1" hidden>${chevron('M8.5 2.5 4 7l4.5 4.5')}</button>
+    <button class="fp-cal__step fp-cal__step--next" type="button" aria-label="The month after" aria-controls="fp-months" data-fp-step="1" hidden>${chevron('M5.5 2.5 10 7l-4.5 4.5')}</button>
+    <div class="fp-cal__months" id="fp-months" role="region" aria-label="${esc(`The calendar, ${span}`)}" tabindex="0">
+      ${indentBy(months.map(month).join('\n'), '      ')}
+    </div>
+    <p class="fp-key" aria-hidden="true"><span class="fp-key__item"><span class="fp-key__on"></span>A flash play</span><span class="fp-key__item"><span class="fp-key__past"></span>Played</span><span class="fp-key__item"><span class="fp-key__today"></span>Today</span></p>
+  </div>
+  <p class="fp-note">Every date to come is tentative and may move.</p>
+</section>` : '';
+
+  // the countdown (src/sections/countdown.js), to the file's countdown play, else the first: the page's
+  // script sets it again from the school's date
+  const counted = (countdown && shows.find((s) => s.p.key === countdown)) || shows[0];
+  const UNITS = ['Days', 'Hours', 'Minutes', 'Seconds'];
+  const count = counted ? `<section class="fp-count" aria-labelledby="fp-count-title" data-fp-count${countdown ? ` data-fp-feature="${countdown}"` : ''}>
+  <h2 class="fp-count__title eyebrow" id="fp-count-title">Countdown</h2>
+  <p class="fp-count__play"><a href="#${counted.id}" data-fp-count-play>${esc(counted.p.title)}</a></p>
+  <p class="fp-count__when" data-fp-count-when>${esc(atLine(counted))}</p>
+  <dl class="count fp-count__clock" data-countdown="${counted.date}T00:00:00+05:30" aria-label="${esc(`Time until ${when(counted.date, false)}`)}">
+${UNITS.map((u) => `    <div class="count__unit"><dt>${u}</dt><dd data-unit="${u.toLowerCase()}">--</dd></div>`).join('\n')}
+  </dl>
+  <p class="fp-count__today" data-fp-count-today hidden>On stage today</p>
+</section>` : '';
+
+  // the latest pictures: the play with the most recent event in the Gallery, as its row, opening in its lightbox
+  const recent = plays.filter((p) => p.gallery).map((p) => ({ p, ev: GALLERY_EVENTS.find((e) => e.key === p.gallery) }))
+    .sort((a, b) => b.ev.date.localeCompare(a.ev.date))[0];
+  const lower = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+  const pictures = recent ? `<section class="fp-recent" aria-labelledby="fp-recent-title" data-gal-event>
+  <h2 class="fp-recent__title eyebrow" id="fp-recent-title">The latest pictures</h2>
+  <p class="fp-recent__play"><a href="${galleryHref(recent.ev)}">${esc(recent.p.title)}</a>${recent.p.at ? `, ${esc(lower(recent.p.at))}` : ''}, <time datetime="${recent.ev.date}">${esc(recent.ev.when)}</time></p>
+  ${indentBy(galleryRow(recent.ev), '  ')}
+</section>` : '';
+
+  const parts = [calendar, count, pictures].filter(Boolean);
+  const side = parts.length ? `<aside class="fp-side" aria-label="The season at a glance">
+  ${indentBy(parts.join('\n'), '  ')}
+</aside>` : '';
+
+  // a play on the bill: a ticket, its date on the stub
+  const ticket = (s, h) => {
+    const { p } = s;
+    const t = s.date ? day(s.date) : null;
+    // the first showing names the later ones; a later one, only the first
+    const others = s.date ? shows.filter((o) => o.p === p && o !== s && (!s.n || !o.n)) : [];
+    const also = others.length ? `<p class="fp-play__also">${s.n ? 'Its first showing' : 'And again'}: ${others.map((o) => `<a href="#${o.id}">${when(o.date)}</a>`).join(', ')}</p>` : '';
+    // Played where the Gallery has its pictures from that day on, else Tentative (the page's script sets it again by date)
+    const gallery = p.gallery ? GALLERY_EVENTS.find((e) => e.key === p.gallery) : null;
+    const played = !!t && !!gallery && gallery.date >= s.date;
+    const ev = s.n ? null : gallery;
+    const pics = ev ? `
+    <p class="fp-play__pics"><a href="${galleryHref(ev)}">In the Gallery: ${esc(galleryCount(ev))}${ARROW_R}</a></p>` : '';
+    const stub = t
+      ? `<p class="fp-play__stub"><time datetime="${s.date}"><span class="fp-play__wd">${DAY_NAMES[t.getUTCDay()].slice(0, 3)}</span> <span class="fp-play__d">${t.getUTCDate()}</span> <span class="fp-play__m">${MONTH[t.getUTCMonth()].slice(0, 3)}</span></time></p>`
+      : `<p class="fp-play__stub"><span class="fp-play__d fp-play__d--tba" aria-hidden="true">TBA</span><span class="sr-only">Date to be announced</span></p>`;
+    return `<li class="fp-play${t ? '' : ' fp-play--tba'}" id="${s.id}" data-play="${p.key}"${t ? ` data-date="${s.date}" data-when="${when(s.date, false)}"` : ''}>
+  ${stub}
+  <div class="fp-play__body">
+    ${t ? `<p class="fp-play__tags"><span class="tag tag--outline fp-play__state">${played ? 'Played' : 'Tentative'}</span><span class="tag fp-play__next" hidden>Next up</span></p>
+    ` : ''}<h${h} class="fp-play__title">${esc(p.title)}${p.sub ? ` <span class="fp-play__sub">${esc(p.sub)}</span>` : ''}</h${h}>${p.at ? `
+    <p class="fp-play__at">${esc(p.at)}</p>` : ''}${p.with ? `
+    <p class="fp-play__with">${esc(p.with)}</p>` : ''}${also ? `
+    ${also}` : ''}${pics}
+  </div>
+</li>`;
+  };
+  const list = (items, h = 4) => `<ol class="fp-list">
+${items.map((s) => `  ${indentBy(ticket(s, h), '  ')}`).join('\n')}
+</ol>`;
+  const tba = plays.filter((p) => !p.dates.length).map((p) => ({ p, date: null, n: 0, id: `fp-play-${p.key}` }));
+  const bill = [shows.length && `<section class="act fp-bill" aria-labelledby="fp-bill-title">
+  <h2 class="act__title fp-bill__title ground" id="fp-bill-title" data-mask>On the bill</h2>
+${months.filter(([y, m]) => shows.some(inMonth([y, m]))).map(([y, m]) => `  <div class="fp-bill__month">
+    <h3 class="fp-bill__month-name eyebrow">${MONTH[m]} ${y}</h3>
+    ${indentBy(list(shows.filter(inMonth([y, m]))), '    ')}
+  </div>`).join('\n')}
+</section>`, tba.length && `<section class="act fp-bill fp-bill--tba" aria-labelledby="fp-tba-title">
+  <h2 class="act__title fp-bill__title ground" id="fp-tba-title" data-mask>Dates to be announced</h2>
+  <div class="fp-bill__month">
+    ${indentBy(list(tba, 3), '    ')}
+  </div>
+</section>`, recent && galleryBox].filter(Boolean).join('\n');
+  return { side, bill };
 }
 
 // Aadi's IA tracker (ia.html, unlisted like To do): one column a subject, its steps from
@@ -1115,6 +1295,11 @@ export async function build(only = []) {
     if (key === 'contact') out = fill(out, 'contacts', contacts('      '), '      ');
     if (key === 'sponsor') out = fill(out, 'contacts', contacts('        '), '        ');
     if (key === 'gallery') out = fill(out, 'gallery', gallery('    '), '    ');
+    if (key === 'flash-plays') {
+      const { side, bill } = flashPlays();
+      out = fill(out, 'flash-plays-side', indentBy(side, '      '), '      ');
+      out = fill(out, 'flash-plays', indentBy(bill, '    '), '    ');
+    }
     if (key === 'ia') out = fill(out, 'ia', iaTracker('      '), '      ');
     if (key === 'ia') out = fill(out, 'ia-remind', iaRemind('    '), '    ');
     out = out.replace(/(<a [^>]*data-instagram[^>]*href=")[^"]*(")/g, `$1${INSTAGRAM.href}$2`);

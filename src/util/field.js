@@ -47,7 +47,8 @@ function send() {
     const marks = Object.fromEntries(performance.getEntriesByType('mark').filter((m) => m.name.startsWith('dc:')).map((m) => [m.name.slice(3), Math.round(m.startTime)]));
     data = {
       v: 1,
-      page: location.pathname.replace(/^.*\//, '') || 'index.html',
+      // (the page not found is served at the missing address itself: named as itself, not after it)
+      page: document.body.classList.contains('page--notfound') ? '404.html' : location.pathname.replace(/^.*\//, '') || 'index.html',
       type: nav?.type, // navigate, reload, back_forward
       ttfb: nav ? Math.round(nav.responseStart) : null,
       ...paints,

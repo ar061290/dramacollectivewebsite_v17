@@ -1,0 +1,60 @@
+{
+  "_": "The flash plays of the year (flash-plays.html, written by tools/pages/build.mjs: npm run pages). Each play: its own key (small letters, digits and -), its title (and a line under it, sub), where it is performed (at), who it is made with (with), its dates written YYYY-MM-DD (none while they are to be announced; every date is shown as tentative), and the key of its event in content/gallery.json where it has pictures (gallery). The countdown beside the calendar is to the play named in countdown, on its next date (once it has none to come, to the next play); without countdown, to the next play.",
+  "year": "2026–27",
+  "countdown": "festivals",
+  "plays": [
+    {
+      "key": "midsummer",
+      "title": "A Midsummer Night’s Dream",
+      "sub": "One key scene",
+      "with": "In collaboration with Mr. Prithvi; possibly with the other DP and IGCSE teachers now teaching the play",
+      "dates": []
+    },
+    {
+      "key": "maths",
+      "title": "Math concepts in theatrical form",
+      "at": "For the primary wing",
+      "with": "In collaboration with Ms. Shirisha",
+      "dates": []
+    },
+    {
+      "key": "festivals",
+      "title": "A short play on festivals",
+      "at": "For Diwali",
+      "with": "In collaboration with the Cultural Committee",
+      "dates": ["2026-11-10"]
+    },
+    {
+      "key": "safeguarding",
+      "title": "A play with a safeguarding theme",
+      "with": "In collaboration with the safeguarding department",
+      "dates": []
+    },
+    {
+      "key": "tok",
+      "title": "A TOK-themed play",
+      "at": "At the TOK symposium and the TOK exhibition",
+      "with": "In collaboration with the TOK department",
+      "dates": ["2026-10-31", "2027-03-31"]
+    },
+    {
+      "key": "voice-for-change",
+      "title": "Voice for Change",
+      "at": "At the interschool GP competition",
+      "dates": ["2026-11-04"]
+    },
+    {
+      "key": "cas",
+      "title": "A CAS-themed play",
+      "at": "At CAScade",
+      "dates": ["2026-10-27"],
+      "gallery": "cascade"
+    },
+    {
+      "key": "marathon",
+      "title": "A play on perseverance and collective strength",
+      "at": "At the CHIREC marathon",
+      "dates": ["2026-12-06"]
+    }
+  ]
+}

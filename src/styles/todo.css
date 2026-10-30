@@ -248,7 +248,7 @@
   .todo__item.is-new { animation: none; }
 }
 
-/* ---- The top bar: none but the logo and the light/dark switch, music without its button (the shared
+/* ---- The top bar: none but the logo, the music's button and the light/dark switch (the shared
    page--bare rules, bare.css); its scrolled ground takes this page's soft shadow ---- */
 .page--todo, :root[data-theme="light"] .page--todo { --bare-shadow: var(--todo-shadow); }
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Flash plays · The Drama Collective</title>
-  <meta name="description" content="Flash plays from the CHIREC Drama Collective: short plays about the real issues students deal with. Coming soon.">
+  <meta name="description" content="Flash plays from the CHIREC Drama Collective: short, focused plays made quickly and performed across the school. This year’s calendar, every date tentative.">
   <meta name="theme-color" content="#2a0d1c">
   <!-- site:head -->
   <link rel="icon" href="./assets/brand/mark-gold-144.png">
@@ -74,7 +74,7 @@
   </script>
   <!-- /site:head -->
 </head>
-<body class="page page--soon page--flash-plays">
+<body class="page page--flash-plays">
   <!-- site:header -->
   <a class="skip-link" href="#main">Skip to content</a>
 
@@ -156,26 +156,265 @@
   </div>
   <!-- /site:stage -->
 
-  <main id="main" class="page__main page__main--soon">
-    <section class="soon" aria-labelledby="soon-title">
-      <div class="soon__stage" data-curtain="flash-plays"></div>
-      <p class="soon__sign"><span class="soon__words"><span>Coming</span> <span>soon</span></span></p>
-      <div class="soon__copy">
-        <p class="eyebrow">The Drama Collective presents</p>
-        <h1 class="soon__title" id="soon-title">Flash plays</h1>
+  <main id="main" class="page__main">
+    <div class="fp-top">
+      <header class="act-head ground" data-mask>
+        <p class="eyebrow">Our outputs</p>
+        <h1 class="act-head__title" data-reveal>Flash plays</h1>
         <span class="rule" aria-hidden="true"></span>
-      </div>
-      <p class="eyebrow soon__hint" data-curtain-hint aria-hidden="true">Drag across the curtain</p>
-    </section>
+        <p class="lead">Short, focused plays, made in a short time and performed across the school. Here is this year’s season.</p>
+      </header>
 
-    <section class="soon-about" aria-labelledby="about-title">
-      <div class="ground" data-mask>
-        <h2 class="act__title" id="about-title" data-reveal>Awareness through performance</h2>
-        <span class="rule" aria-hidden="true"></span>
-        <p>Our productions and mini-plays won’t just be for entertainment. We will use them to address real issues students deal with: academic pressure, peer pressure, cyberbullying, environmental responsibility, and safeguarding. Theatre is a powerful medium for this, especially in a school setting.</p>
+      <!-- beside the opening, the year's calendar, the countdown to a play and the most recent play's
+           pictures: written by tools/pages/build.mjs (npm run pages) from content/flash-plays.json -->
+      <!-- site:flash-plays-side -->
+      <aside class="fp-side" aria-label="The season at a glance">
+        <section class="fp-cal" aria-labelledby="fp-cal-title" data-fp-cal>
+          <h2 class="fp-side__title eyebrow" id="fp-cal-title">The 2026–27 season</h2>
+          <div class="fp-cal__card">
+            <button class="fp-cal__step fp-cal__step--prev" type="button" aria-label="The month before" aria-controls="fp-months" data-fp-step="-1" hidden><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M8.5 2.5 4 7l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button class="fp-cal__step fp-cal__step--next" type="button" aria-label="The month after" aria-controls="fp-months" data-fp-step="1" hidden><svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M5.5 2.5 10 7l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <div class="fp-cal__months" id="fp-months" role="region" aria-label="The calendar, October 2026 to March 2027" tabindex="0">
+              <div class="fp-month" data-month="2026-10">
+                <table class="fp-month__grid">
+                  <caption class="fp-month__name">October <span class="fp-month__year">2026</span></caption>
+                  <thead><tr><th scope="col"><span aria-hidden="true">M</span><span class="sr-only">Monday</span></th><th scope="col"><span aria-hidden="true">T</span><span class="sr-only">Tuesday</span></th><th scope="col"><span aria-hidden="true">W</span><span class="sr-only">Wednesday</span></th><th scope="col"><span aria-hidden="true">T</span><span class="sr-only">Thursday</span></th><th scope="col"><span aria-hidden="true">F</span><span class="sr-only">Friday</span></th><th scope="col"><span aria-hidden="true">S</span><span class="sr-only">Saturday</span></th><th scope="col"><span aria-hidden="true">S</span><span class="sr-only">Sunday</span></th></tr></thead>
+                  <tbody>
+                    <tr><td></td><td></td><td></td><td class="fp-day" data-day="2026-10-01">1</td><td class="fp-day" data-day="2026-10-02">2</td><td class="fp-day" data-day="2026-10-03">3</td><td class="fp-day" data-day="2026-10-04">4</td></tr>
+                    <tr><td class="fp-day" data-day="2026-10-05">5</td><td class="fp-day" data-day="2026-10-06">6</td><td class="fp-day" data-day="2026-10-07">7</td><td class="fp-day" data-day="2026-10-08">8</td><td class="fp-day" data-day="2026-10-09">9</td><td class="fp-day" data-day="2026-10-10">10</td><td class="fp-day" data-day="2026-10-11">11</td></tr>
+                    <tr><td class="fp-day" data-day="2026-10-12">12</td><td class="fp-day" data-day="2026-10-13">13</td><td class="fp-day" data-day="2026-10-14">14</td><td class="fp-day" data-day="2026-10-15">15</td><td class="fp-day" data-day="2026-10-16">16</td><td class="fp-day" data-day="2026-10-17">17</td><td class="fp-day" data-day="2026-10-18">18</td></tr>
+                    <tr><td class="fp-day" data-day="2026-10-19">19</td><td class="fp-day" data-day="2026-10-20">20</td><td class="fp-day" data-day="2026-10-21">21</td><td class="fp-day" data-day="2026-10-22">22</td><td class="fp-day" data-day="2026-10-23">23</td><td class="fp-day" data-day="2026-10-24">24</td><td class="fp-day" data-day="2026-10-25">25</td></tr>
+                    <tr><td class="fp-day" data-day="2026-10-26">26</td><td class="fp-day fp-day--on" data-day="2026-10-27"><a class="fp-day__link" href="#fp-play-cas" aria-label="27 October: A CAS-themed play">27</a></td><td class="fp-day" data-day="2026-10-28">28</td><td class="fp-day" data-day="2026-10-29">29</td><td class="fp-day" data-day="2026-10-30">30</td><td class="fp-day fp-day--on" data-day="2026-10-31"><a class="fp-day__link" href="#fp-play-tok" aria-label="31 October: A TOK-themed play">31</a></td><td></td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="fp-month" data-month="2026-11">
+                <table class="fp-month__grid">
+                  <caption class="fp-month__name">November <span class="fp-month__year">2026</span></caption>
+                  <thead><tr><th scope="col"><span aria-hidden="true">M</span><span class="sr-only">Monday</span></th><th scope="col"><span aria-hidden="true">T</span><span class="sr-only">Tuesday</span></th><th scope="col"><span aria-hidden="true">W</span><span class="sr-only">Wednesday</span></th><th scope="col"><span aria-hidden="true">T</span><span class="sr-only">Thursday</span></th><th scope="col"><span aria-hidden="true">F</span><span class="sr-only">Friday</span></th><th scope="col"><span aria-hidden="true">S</span><span class="sr-only">Saturday</span></th><th scope="col"><span aria-hidden="true">S</span><span class="sr-only">Sunday</span></th></tr></thead>
+                  <tbody>
+                    <tr><td></td><td></td><td></td><td></td><td></td><td></td><td class="fp-day" data-day="2026-11-01">1</td></tr>
+                    <tr><td class="fp-day" data-day="2026-11-02">2</td><td class="fp-day" data-day="2026-11-03">3</td><td class="fp-day fp-day--on" data-day="2026-11-04"><a class="fp-day__link" href="#fp-play-voice-for-change" aria-label="4 November: Voice for Change">4</a></td><td class="fp-day" data-day="2026-11-05">5</td><td class="fp-day" data-day="2026-11-06">6</td><td class="fp-day" data-day="2026-11-07">7</td><td class="fp-day" data-day="2026-11-08">8</td></tr>
+                    <tr><td class="fp-day" data-day="2026-11-09">9</td><td class="fp-day fp-day--on" data-day="2026-11-10"><a class="fp-day__link" href="#fp-play-festivals" aria-label="10 November: A short play on festivals">10</a></td><td class="fp-day" data-day="2026-11-11">11</td><td class="fp-day" data-day="2026-11-12">12</td><td class="fp-day" data-day="2026-11-13">13</td><td class="fp-day" data-day="2026-11-14">14</td><td class="fp-day" data-day="2026-11-15">15</td></tr>
+                    <tr><td class="fp-day" data-day="2026-11-16">16</td><td class="fp-day" data-day="2026-11-17">17</td><td class="fp-day" data-day="2026-11-18">18</td><td class="fp-day" data-day="2026-11-19">19</td><td class="fp-day" data-day="2026-11-20">20</td><td class="fp-day" data-day="2026-11-21">21</td><td class="fp-day" data-day="2026-11-22">22</td></tr>
+                    <tr><td class="fp-day" data-day="2026-11-23">23</td><td class="fp-day" data-day="2026-11-24">24</td><td class="fp-day" data-day="2026-11-25">25</td><td class="fp-day" data-day="2026-11-26">26</td><td class="fp-day" data-day="2026-11-27">27</td><td class="fp-day" data-day="2026-11-28">28</td><td class="fp-day" data-day="2026-11-29">29</td></tr>
+                    <tr><td class="fp-day" data-day="2026-11-30">30</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="fp-month" data-month="2026-12">
+                <table class="fp-month__grid">
+                  <caption class="fp-month__name">December <span class="fp-month__year">2026</span></caption>
+                  <thead><tr><th scope="col"><span aria-hidden="true">M</span><span class="sr-only">Monday</span></th><th scope="col"><span aria-hidden="true">T</span><span class="sr-only">Tuesday</span></th><th scope="col"><span aria-hidden="true">W</span><span class="sr-only">Wednesday</span></th><th scope="col"><span aria-hidden="true">T</span><span class="sr-only">Thursday</span></th><th scope="col"><span aria-hidden="true">F</span><span class="sr-only">Friday</span></th><th scope="col"><span aria-hidden="true">S</span><span class="sr-only">Saturday</span></th><th scope="col"><span aria-hidden="true">S</span><span class="sr-only">Sunday</span></th></tr></thead>
+                  <tbody>
+                    <tr><td></td><td class="fp-day" data-day="2026-12-01">1</td><td class="fp-day" data-day="2026-12-02">2</td><td class="fp-day" data-day="2026-12-03">3</td><td class="fp-day" data-day="2026-12-04">4</td><td class="fp-day" data-day="2026-12-05">5</td><td class="fp-day fp-day--on" data-day="2026-12-06"><a class="fp-day__link" href="#fp-play-marathon" aria-label="6 December: A play on perseverance and collective strength">6</a></td></tr>
+                    <tr><td class="fp-day" data-day="2026-12-07">7</td><td class="fp-day" data-day="2026-12-08">8</td><td class="fp-day" data-day="2026-12-09">9</td><td class="fp-day" data-day="2026-12-10">10</td><td class="fp-day" data-day="2026-12-11">11</td><td class="fp-day" data-day="2026-12-12">12</td><td class="fp-day" data-day="2026-12-13">13</td></tr>
+                    <tr><td class="fp-day" data-day="2026-12-14">14</td><td class="fp-day" data-day="2026-12-15">15</td><td class="fp-day" data-day="2026-12-16">16</td><td class="fp-day" data-day="2026-12-17">17</td><td class="fp-day" data-day="2026-12-18">18</td><td class="fp-day" data-day="2026-12-19">19</td><td class="fp-day" data-day="2026-12-20">20</td></tr>
+                    <tr><td class="fp-day" data-day="2026-12-21">21</td><td class="fp-day" data-day="2026-12-22">22</td><td class="fp-day" data-day="2026-12-23">23</td><td class="fp-day" data-day="2026-12-24">24</td><td class="fp-day" data-day="2026-12-25">25</td><td class="fp-day" data-day="2026-12-26">26</td><td class="fp-day" data-day="2026-12-27">27</td></tr>
+                    <tr><td class="fp-day" data-day="2026-12-28">28</td><td class="fp-day" data-day="2026-12-29">29</td><td class="fp-day" data-day="2026-12-30">30</td><td class="fp-day" data-day="2026-12-31">31</td><td></td><td></td><td></td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="fp-month" data-month="2027-01">
+                <table class="fp-month__grid">
+                  <caption class="fp-month__name">January <span class="fp-month__year">2027</span></caption>
+                  <thead><tr><th scope="col"><span aria-hidden="true">M</span><span class="sr-only">Monday</span></th><th scope="col"><span aria-hidden="true">T</span><span class="sr-only">Tuesday</span></th><th scope="col"><span aria-hidden="true">W</span><span class="sr-only">Wednesday</span></th><th scope="col"><span aria-hidden="true">T</span><span class="sr-only">Thursday</span></th><th scope="col"><span aria-hidden="true">F</span><span class="sr-only">Friday</span></th><th scope="col"><span aria-hidden="true">S</span><span class="sr-only">Saturday</span></th><th scope="col"><span aria-hidden="true">S</span><span class="sr-only">Sunday</span></th></tr></thead>
+                  <tbody>
+                    <tr><td></td><td></td><td></td><td></td><td class="fp-day" data-day="2027-01-01">1</td><td class="fp-day" data-day="2027-01-02">2</td><td class="fp-day" data-day="2027-01-03">3</td></tr>
+                    <tr><td class="fp-day" data-day="2027-01-04">4</td><td class="fp-day" data-day="2027-01-05">5</td><td class="fp-day" data-day="2027-01-06">6</td><td class="fp-day" data-day="2027-01-07">7</td><td class="fp-day" data-day="2027-01-08">8</td><td class="fp-day" data-day="2027-01-09">9</td><td class="fp-day" data-day="2027-01-10">10</td></tr>
+                    <tr><td class="fp-day" data-day="2027-01-11">11</td><td class="fp-day" data-day="2027-01-12">12</td><td class="fp-day" data-day="2027-01-13">13</td><td class="fp-day" data-day="2027-01-14">14</td><td class="fp-day" data-day="2027-01-15">15</td><td class="fp-day" data-day="2027-01-16">16</td><td class="fp-day" data-day="2027-01-17">17</td></tr>
+                    <tr><td class="fp-day" data-day="2027-01-18">18</td><td class="fp-day" data-day="2027-01-19">19</td><td class="fp-day" data-day="2027-01-20">20</td><td class="fp-day" data-day="2027-01-21">21</td><td class="fp-day" data-day="2027-01-22">22</td><td class="fp-day" data-day="2027-01-23">23</td><td class="fp-day" data-day="2027-01-24">24</td></tr>
+                    <tr><td class="fp-day" data-day="2027-01-25">25</td><td class="fp-day" data-day="2027-01-26">26</td><td class="fp-day" data-day="2027-01-27">27</td><td class="fp-day" data-day="2027-01-28">28</td><td class="fp-day" data-day="2027-01-29">29</td><td class="fp-day" data-day="2027-01-30">30</td><td class="fp-day" data-day="2027-01-31">31</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="fp-month" data-month="2027-02">
+                <table class="fp-month__grid">
+                  <caption class="fp-month__name">February <span class="fp-month__year">2027</span></caption>
+                  <thead><tr><th scope="col"><span aria-hidden="true">M</span><span class="sr-only">Monday</span></th><th scope="col"><span aria-hidden="true">T</span><span class="sr-only">Tuesday</span></th><th scope="col"><span aria-hidden="true">W</span><span class="sr-only">Wednesday</span></th><th scope="col"><span aria-hidden="true">T</span><span class="sr-only">Thursday</span></th><th scope="col"><span aria-hidden="true">F</span><span class="sr-only">Friday</span></th><th scope="col"><span aria-hidden="true">S</span><span class="sr-only">Saturday</span></th><th scope="col"><span aria-hidden="true">S</span><span class="sr-only">Sunday</span></th></tr></thead>
+                  <tbody>
+                    <tr><td class="fp-day" data-day="2027-02-01">1</td><td class="fp-day" data-day="2027-02-02">2</td><td class="fp-day" data-day="2027-02-03">3</td><td class="fp-day" data-day="2027-02-04">4</td><td class="fp-day" data-day="2027-02-05">5</td><td class="fp-day" data-day="2027-02-06">6</td><td class="fp-day" data-day="2027-02-07">7</td></tr>
+                    <tr><td class="fp-day" data-day="2027-02-08">8</td><td class="fp-day" data-day="2027-02-09">9</td><td class="fp-day" data-day="2027-02-10">10</td><td class="fp-day" data-day="2027-02-11">11</td><td class="fp-day" data-day="2027-02-12">12</td><td class="fp-day" data-day="2027-02-13">13</td><td class="fp-day" data-day="2027-02-14">14</td></tr>
+                    <tr><td class="fp-day" data-day="2027-02-15">15</td><td class="fp-day" data-day="2027-02-16">16</td><td class="fp-day" data-day="2027-02-17">17</td><td class="fp-day" data-day="2027-02-18">18</td><td class="fp-day" data-day="2027-02-19">19</td><td class="fp-day" data-day="2027-02-20">20</td><td class="fp-day" data-day="2027-02-21">21</td></tr>
+                    <tr><td class="fp-day" data-day="2027-02-22">22</td><td class="fp-day" data-day="2027-02-23">23</td><td class="fp-day" data-day="2027-02-24">24</td><td class="fp-day" data-day="2027-02-25">25</td><td class="fp-day" data-day="2027-02-26">26</td><td class="fp-day" data-day="2027-02-27">27</td><td class="fp-day" data-day="2027-02-28">28</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="fp-month" data-month="2027-03">
+                <table class="fp-month__grid">
+                  <caption class="fp-month__name">March <span class="fp-month__year">2027</span></caption>
+                  <thead><tr><th scope="col"><span aria-hidden="true">M</span><span class="sr-only">Monday</span></th><th scope="col"><span aria-hidden="true">T</span><span class="sr-only">Tuesday</span></th><th scope="col"><span aria-hidden="true">W</span><span class="sr-only">Wednesday</span></th><th scope="col"><span aria-hidden="true">T</span><span class="sr-only">Thursday</span></th><th scope="col"><span aria-hidden="true">F</span><span class="sr-only">Friday</span></th><th scope="col"><span aria-hidden="true">S</span><span class="sr-only">Saturday</span></th><th scope="col"><span aria-hidden="true">S</span><span class="sr-only">Sunday</span></th></tr></thead>
+                  <tbody>
+                    <tr><td class="fp-day" data-day="2027-03-01">1</td><td class="fp-day" data-day="2027-03-02">2</td><td class="fp-day" data-day="2027-03-03">3</td><td class="fp-day" data-day="2027-03-04">4</td><td class="fp-day" data-day="2027-03-05">5</td><td class="fp-day" data-day="2027-03-06">6</td><td class="fp-day" data-day="2027-03-07">7</td></tr>
+                    <tr><td class="fp-day" data-day="2027-03-08">8</td><td class="fp-day" data-day="2027-03-09">9</td><td class="fp-day" data-day="2027-03-10">10</td><td class="fp-day" data-day="2027-03-11">11</td><td class="fp-day" data-day="2027-03-12">12</td><td class="fp-day" data-day="2027-03-13">13</td><td class="fp-day" data-day="2027-03-14">14</td></tr>
+                    <tr><td class="fp-day" data-day="2027-03-15">15</td><td class="fp-day" data-day="2027-03-16">16</td><td class="fp-day" data-day="2027-03-17">17</td><td class="fp-day" data-day="2027-03-18">18</td><td class="fp-day" data-day="2027-03-19">19</td><td class="fp-day" data-day="2027-03-20">20</td><td class="fp-day" data-day="2027-03-21">21</td></tr>
+                    <tr><td class="fp-day" data-day="2027-03-22">22</td><td class="fp-day" data-day="2027-03-23">23</td><td class="fp-day" data-day="2027-03-24">24</td><td class="fp-day" data-day="2027-03-25">25</td><td class="fp-day" data-day="2027-03-26">26</td><td class="fp-day" data-day="2027-03-27">27</td><td class="fp-day" data-day="2027-03-28">28</td></tr>
+                    <tr><td class="fp-day" data-day="2027-03-29">29</td><td class="fp-day" data-day="2027-03-30">30</td><td class="fp-day fp-day--on" data-day="2027-03-31"><a class="fp-day__link" href="#fp-play-tok_2027-03-31" aria-label="31 March: A TOK-themed play">31</a></td><td></td><td></td><td></td><td></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <p class="fp-key" aria-hidden="true"><span class="fp-key__item"><span class="fp-key__on"></span>A flash play</span><span class="fp-key__item"><span class="fp-key__past"></span>Played</span><span class="fp-key__item"><span class="fp-key__today"></span>Today</span></p>
+          </div>
+          <p class="fp-note">Every date to come is tentative and may move.</p>
+        </section>
+        <section class="fp-count" aria-labelledby="fp-count-title" data-fp-count data-fp-feature="festivals">
+          <h2 class="fp-count__title eyebrow" id="fp-count-title">Countdown</h2>
+          <p class="fp-count__play"><a href="#fp-play-festivals" data-fp-count-play>A short play on festivals</a></p>
+          <p class="fp-count__when" data-fp-count-when>For Diwali, Tuesday 10 November</p>
+          <dl class="count fp-count__clock" data-countdown="2026-11-10T00:00:00+05:30" aria-label="Time until Tuesday 10 November">
+            <div class="count__unit"><dt>Days</dt><dd data-unit="days">--</dd></div>
+            <div class="count__unit"><dt>Hours</dt><dd data-unit="hours">--</dd></div>
+            <div class="count__unit"><dt>Minutes</dt><dd data-unit="minutes">--</dd></div>
+            <div class="count__unit"><dt>Seconds</dt><dd data-unit="seconds">--</dd></div>
+          </dl>
+          <p class="fp-count__today" data-fp-count-today hidden>On stage today</p>
+        </section>
+        <section class="fp-recent" aria-labelledby="fp-recent-title" data-gal-event>
+          <h2 class="fp-recent__title eyebrow" id="fp-recent-title">The latest pictures</h2>
+          <p class="fp-recent__play"><a href="./gallery-cascade.html">A CAS-themed play</a>, at CAScade, <time datetime="2026-10-27">27 October 2026</time></p>
+          <ul class="gal-grid gal-grid--row">
+            <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/001.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/001-s.webp" alt="CAScade: Flash Play: picture 1 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+            <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/002.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/002-s.webp" alt="CAScade: Flash Play: picture 2 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+            <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/003.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/003-s.webp" alt="CAScade: Flash Play: picture 3 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+            <li class="gal-tile"><a class="gal-tile__link" href="./assets/gallery/cascade/004.webp" data-gal-photo data-w="1600" data-h="1067"><img src="./assets/gallery/cascade/004-s.webp" alt="CAScade: Flash Play: picture 4 of 36" width="660" height="440" loading="lazy" decoding="async"></a></li>
+            <li class="gal-tile gal-tile--more"><a class="gal-more" href="./gallery-cascade.html" aria-label="View all of CAScade: Flash Play: 36 pictures"><img src="./assets/gallery/cascade/005-s.webp" alt="" width="660" height="440" loading="lazy" decoding="async"><span class="gal-more__veil" aria-hidden="true"><span class="gal-more__label">View all</span><span class="gal-more__count">36</span><span class="gal-more__arrow"><svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span></a></li>
+          </ul>
+        </section>
+      </aside>
+      <!-- /site:flash-plays-side -->
+
+      <section class="act fp-about" aria-labelledby="fp-about-title">
+        <div class="ground" data-mask>
+          <h2 class="act__title" id="fp-about-title" data-reveal>What a flash play is</h2>
+          <span class="rule" aria-hidden="true"></span>
+          <p>A flash play is a short, focused piece of theatre made around a particular event, theme, idea or collaboration. It could be a scripted scene, an adaptation or a performance the students create themselves, and it is developed and performed in a relatively short time.</p>
+          <p>The CHIREC Drama Collective aims, through regular flash plays, to create opportunities for students to perform beyond the annual school production, while furthering CHIREC’s image as a school that fosters creative expression.</p>
+          <p>The idea is to make theatre more immediate, accessible and responsive to what is happening across the school, and to give students the chance to write, direct, perform and experiment with different forms of storytelling.</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- the plays on the bill: written by tools/pages/build.mjs (npm run pages) from
+         content/flash-plays.json -->
+    <!-- site:flash-plays -->
+    <section class="act fp-bill" aria-labelledby="fp-bill-title">
+      <h2 class="act__title fp-bill__title ground" id="fp-bill-title" data-mask>On the bill</h2>
+      <div class="fp-bill__month">
+        <h3 class="fp-bill__month-name eyebrow">October 2026</h3>
+        <ol class="fp-list">
+          <li class="fp-play" id="fp-play-cas" data-play="cas" data-date="2026-10-27" data-when="Tuesday 27 October">
+            <p class="fp-play__stub"><time datetime="2026-10-27"><span class="fp-play__wd">Tue</span> <span class="fp-play__d">27</span> <span class="fp-play__m">Oct</span></time></p>
+            <div class="fp-play__body">
+              <p class="fp-play__tags"><span class="tag tag--outline fp-play__state">Played</span><span class="tag fp-play__next" hidden>Next up</span></p>
+              <h4 class="fp-play__title">A CAS-themed play</h4>
+              <p class="fp-play__at">At CAScade</p>
+              <p class="fp-play__pics"><a href="./gallery-cascade.html">In the Gallery: 36 pictures<svg class="read__arrow" viewBox="0 0 14 10" aria-hidden="true" focusable="false"><path d="M1 5h11.5M9 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+            </div>
+          </li>
+          <li class="fp-play" id="fp-play-tok" data-play="tok" data-date="2026-10-31" data-when="Saturday 31 October">
+            <p class="fp-play__stub"><time datetime="2026-10-31"><span class="fp-play__wd">Sat</span> <span class="fp-play__d">31</span> <span class="fp-play__m">Oct</span></time></p>
+            <div class="fp-play__body">
+              <p class="fp-play__tags"><span class="tag tag--outline fp-play__state">Tentative</span><span class="tag fp-play__next" hidden>Next up</span></p>
+              <h4 class="fp-play__title">A TOK-themed play</h4>
+              <p class="fp-play__at">At the TOK symposium and the TOK exhibition</p>
+              <p class="fp-play__with">In collaboration with the TOK department</p>
+              <p class="fp-play__also">And again: <a href="#fp-play-tok_2027-03-31">Wednesday 31 March 2027</a></p>
+            </div>
+          </li>
+        </ol>
       </div>
-      <p class="soon-about__coda ground" data-mask>Coming soon.</p>
+      <div class="fp-bill__month">
+        <h3 class="fp-bill__month-name eyebrow">November 2026</h3>
+        <ol class="fp-list">
+          <li class="fp-play" id="fp-play-voice-for-change" data-play="voice-for-change" data-date="2026-11-04" data-when="Wednesday 4 November">
+            <p class="fp-play__stub"><time datetime="2026-11-04"><span class="fp-play__wd">Wed</span> <span class="fp-play__d">4</span> <span class="fp-play__m">Nov</span></time></p>
+            <div class="fp-play__body">
+              <p class="fp-play__tags"><span class="tag tag--outline fp-play__state">Tentative</span><span class="tag fp-play__next" hidden>Next up</span></p>
+              <h4 class="fp-play__title">Voice for Change</h4>
+              <p class="fp-play__at">At the interschool GP competition</p>
+            </div>
+          </li>
+          <li class="fp-play" id="fp-play-festivals" data-play="festivals" data-date="2026-11-10" data-when="Tuesday 10 November">
+            <p class="fp-play__stub"><time datetime="2026-11-10"><span class="fp-play__wd">Tue</span> <span class="fp-play__d">10</span> <span class="fp-play__m">Nov</span></time></p>
+            <div class="fp-play__body">
+              <p class="fp-play__tags"><span class="tag tag--outline fp-play__state">Tentative</span><span class="tag fp-play__next" hidden>Next up</span></p>
+              <h4 class="fp-play__title">A short play on festivals</h4>
+              <p class="fp-play__at">For Diwali</p>
+              <p class="fp-play__with">In collaboration with the Cultural Committee</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+      <div class="fp-bill__month">
+        <h3 class="fp-bill__month-name eyebrow">December 2026</h3>
+        <ol class="fp-list">
+          <li class="fp-play" id="fp-play-marathon" data-play="marathon" data-date="2026-12-06" data-when="Sunday 6 December">
+            <p class="fp-play__stub"><time datetime="2026-12-06"><span class="fp-play__wd">Sun</span> <span class="fp-play__d">6</span> <span class="fp-play__m">Dec</span></time></p>
+            <div class="fp-play__body">
+              <p class="fp-play__tags"><span class="tag tag--outline fp-play__state">Tentative</span><span class="tag fp-play__next" hidden>Next up</span></p>
+              <h4 class="fp-play__title">A play on perseverance and collective strength</h4>
+              <p class="fp-play__at">At the CHIREC marathon</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+      <div class="fp-bill__month">
+        <h3 class="fp-bill__month-name eyebrow">March 2027</h3>
+        <ol class="fp-list">
+          <li class="fp-play" id="fp-play-tok_2027-03-31" data-play="tok" data-date="2027-03-31" data-when="Wednesday 31 March">
+            <p class="fp-play__stub"><time datetime="2027-03-31"><span class="fp-play__wd">Wed</span> <span class="fp-play__d">31</span> <span class="fp-play__m">Mar</span></time></p>
+            <div class="fp-play__body">
+              <p class="fp-play__tags"><span class="tag tag--outline fp-play__state">Tentative</span><span class="tag fp-play__next" hidden>Next up</span></p>
+              <h4 class="fp-play__title">A TOK-themed play</h4>
+              <p class="fp-play__at">At the TOK symposium and the TOK exhibition</p>
+              <p class="fp-play__with">In collaboration with the TOK department</p>
+              <p class="fp-play__also">Its first showing: <a href="#fp-play-tok">Saturday 31 October 2026</a></p>
+            </div>
+          </li>
+        </ol>
+      </div>
     </section>
+    <section class="act fp-bill fp-bill--tba" aria-labelledby="fp-tba-title">
+      <h2 class="act__title fp-bill__title ground" id="fp-tba-title" data-mask>Dates to be announced</h2>
+      <div class="fp-bill__month">
+        <ol class="fp-list">
+          <li class="fp-play fp-play--tba" id="fp-play-midsummer" data-play="midsummer">
+            <p class="fp-play__stub"><span class="fp-play__d fp-play__d--tba" aria-hidden="true">TBA</span><span class="sr-only">Date to be announced</span></p>
+            <div class="fp-play__body">
+              <h3 class="fp-play__title">A Midsummer Night’s Dream <span class="fp-play__sub">One key scene</span></h3>
+              <p class="fp-play__with">In collaboration with Mr. Prithvi; possibly with the other DP and IGCSE teachers now teaching the play</p>
+            </div>
+          </li>
+          <li class="fp-play fp-play--tba" id="fp-play-maths" data-play="maths">
+            <p class="fp-play__stub"><span class="fp-play__d fp-play__d--tba" aria-hidden="true">TBA</span><span class="sr-only">Date to be announced</span></p>
+            <div class="fp-play__body">
+              <h3 class="fp-play__title">Math concepts in theatrical form</h3>
+              <p class="fp-play__at">For the primary wing</p>
+              <p class="fp-play__with">In collaboration with Ms. Shirisha</p>
+            </div>
+          </li>
+          <li class="fp-play fp-play--tba" id="fp-play-safeguarding" data-play="safeguarding">
+            <p class="fp-play__stub"><span class="fp-play__d fp-play__d--tba" aria-hidden="true">TBA</span><span class="sr-only">Date to be announced</span></p>
+            <div class="fp-play__body">
+              <h3 class="fp-play__title">A play with a safeguarding theme</h3>
+              <p class="fp-play__with">In collaboration with the safeguarding department</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+    <!-- a picture whole (src/ui/gallery.js) -->
+    <dialog class="gal-box" aria-label="Picture" tabindex="-1" data-gal-box>
+      <figure class="gal-box__figure">
+        <img class="gal-box__img" alt="" data-gal-box-img>
+        <figcaption class="gal-box__caption" data-gal-box-caption></figcaption>
+      </figure>
+      <button class="icon-btn gal-box__btn gal-box__btn--prev" type="button" aria-label="Previous picture" data-gal-prev><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4 6.5 10l6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="icon-btn gal-box__btn gal-box__btn--next" type="button" aria-label="Next picture" data-gal-next><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="icon-btn gal-box__btn gal-box__close" type="button" aria-label="Close" data-gal-close><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    </dialog>
+    <!-- /site:flash-plays -->
   </main>
 
   <!-- site:footer -->
@@ -229,6 +468,6 @@
   </footer>
   <!-- /site:footer -->
 
-  <script type="module" src="./src/pages/soon.js"></script>
+  <script type="module" src="./src/pages/flash-plays.js"></script>
 </body>
 </html>

@@ -8,8 +8,8 @@
 // Under the list: how many are open, and how long the open ones should take together. Another tab of
 // the page follows along (the storage event).
 // Times are on the 24-hour clock (17:30), which needs no am or pm.
-// No top bar here but the logo and the light/dark switch, which stay where they are (todo.css); the
-// music plays without its button, K and a three-finger tap turning it on and off (src/ui/music.js).
+// No top bar here but the logo, the music's button and the light/dark switch, which stay where they
+// are (todo.css); the button, K or a three-finger tap turns the music on and off (src/ui/music.js).
 // The switch brings down a quick shower of cherry blossom rather than the earrings.
 // Ticking a task done sets off a firecracker from its box (sparks, a crackle, blossom thrown up that
 // falls back down), moves the music to a new point in the playlist, and a kind word pops up by it,

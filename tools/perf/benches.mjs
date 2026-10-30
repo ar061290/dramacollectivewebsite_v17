@@ -24,7 +24,8 @@ export const PAGES = {
   pieces: { file: 'pieces.html', ready: 'parted', kind: 'reading' },
   piece: { file: 'piece-everything-changes.html', ready: 'parted', kind: 'reading' },
   'editors-note': { file: 'editors-note.html', ready: 'parted', kind: 'reading' },
-  'flash-plays': { file: 'flash-plays.html', ready: 'parted', kind: 'soon' },
+  'flash-plays': { file: 'flash-plays.html', ready: 'parted' },
+  workshops: { file: 'workshops.html', ready: 'parted', kind: 'soon' },
   newsletter: { file: 'newsletter.html', ready: 'parted', kind: 'soon' },
   planner: { file: 'stage-planner.html', ready: null, kind: 'planner' },
 };
@@ -312,7 +313,7 @@ export const BENCHES = {
 
   /** What a page holds once it is up: heap after GC, DOM, listeners, canvases, the GPU's geometry and textures. */
   memory: {
-    pages: ['home', 'publication', 'writers', 'write', 'piece', 'flash-plays', 'about'],
+    pages: ['home', 'publication', 'writers', 'write', 'piece', 'workshops', 'about'],
     async run({ page, url, pageDef }) {
       await load(page, url, pageDef);
       if (pageDef.kind === 'home') { if (!(await page.evaluate("document.documentElement.classList.contains('tier-phone')"))) await page.waitForMark('morph-ready', { timeout: 30000 }); await page.waitForMark('intro-done', { timeout: 30000 }); }

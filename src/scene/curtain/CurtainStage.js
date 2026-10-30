@@ -1,6 +1,7 @@
-// The house curtain of the coming-soon pages, down. Two velvet panels with real folds (a vertex
-// shader on a physical material with sheen), a pelmet carrying the Collective's mark, and a
-// marquee board hung in front whose bulbs spell COMING SOON. A follow-spot tracks the pointer (or
+// The house curtain of the coming-soon pages, and of the page not found (404.html), down. Two velvet
+// panels with real folds (a vertex shader on a physical material with sheen), a pelmet carrying the
+// Collective's mark, and a marquee board hung in front whose bulbs spell the page's sign (COMING
+// SOON; NOT FOUND on the page not found). A follow-spot tracks the pointer (or
 // the finger), footlights warm the hem, and only the bulbs and the light behind the curtain bloom.
 // Touch it and the cloth ripples from that point; drag across it and it parts a sliver, showing
 // the lit stage behind, then falls closed again. The cloth sways slowly; nothing else moves on its
@@ -25,7 +26,7 @@ import { onLite } from '../../util/governor.js';
 // velvet and light per page, from the plum palette (tokens.css) and the gold of the stage lamps;
 // `day` is the light theme's curtain (house lights up): a pale rose velvet in a lit house
 const VARIANTS = {
-  'flash-plays': { velvet: '#5a1f3c', sheen: '#c185ac', spot: '#fff3dc', flash: 2.2, day: { velvet: '#c99ab6', sheen: '#faf3f4' } },
+  notfound: { velvet: '#5a1f3c', sheen: '#c185ac', spot: '#fff3dc', flash: 2.2, day: { velvet: '#c99ab6', sheen: '#faf3f4' } },
   workshops: { velvet: '#4a1733', sheen: '#ddb8cf', spot: '#f3e7b8', flash: 1.4, day: { velvet: '#c492b0', sheen: '#faf3f4' } },
   outreach: { velvet: '#40142a', sheen: '#c185ac', spot: '#faf4de', flash: 1.4, day: { velvet: '#bd8aa9', sheen: '#faf3f4' } },
 };
@@ -41,7 +42,9 @@ const CAM_Z = 6;
 const MAX_PART = 0.24; // how far a drag can part the curtain (fraction of a panel)
 const PLEAT = 0.3; // world units between pleats
 // the words' set width in canvas pixels (Lato Black at 180px, 10px tracking), for one line and for
-// two: fixed, so the board has the same size here as in the still that soon.css draws
+// two: fixed, so the board has the same size here as in the still that soon.css draws (whatever the
+// words: shorter ones are set at 180px in the middle of the same board; tools/type/bulbs.mjs sets
+// them for the still)
 const SIGN_TEXT = { one: 1420, two: 814 };
 // the still's light (what soon.css draws), as a share of the full rig: the follow-spot and the
 // bulbs are low and nothing glows yet; reveal() raises them to 1 over LIGHT_UP seconds
@@ -92,13 +95,15 @@ export class CurtainStage {
   /**
    * @param {HTMLElement} container
    * @param {object} o
-   * @param {string} o.variant    the page ('flash-plays' | 'workshops' | 'outreach')
+   * @param {string} o.variant    the page ('workshops' | 'outreach' | 'notfound')
    * @param {string} o.markUrl    the gold mark (PNG with alpha) for the pelmet
+   * @param {string} [o.sign]     the board's words (COMING SOON); a word a line on a tall screen
    * @param {boolean} [o.reduced]
    * @param {'dark'|'light'} [o.theme]  the site theme (setTheme changes it)
    */
-  constructor(container, { variant, markUrl, reduced = false, theme = 'dark' }) {
+  constructor(container, { variant, markUrl, sign = 'COMING SOON', reduced = false, theme = 'dark' }) {
     this.container = container;
+    this.words = sign.toUpperCase().trim().split(/\s+/);
     this.reduced = reduced;
     this.v = VARIANTS[variant] ?? VARIANTS.workshops;
     this.markUrl = markUrl;
@@ -458,7 +463,7 @@ export class CurtainStage {
 
   _buildSign(set, viewW, viewH, hangY, goldMat) {
     const twoLines = this.camera.aspect < 0.85;
-    const lines = twoLines ? ['COMING', 'SOON'] : ['COMING SOON'];
+    const lines = twoLines ? this.words : [this.words.join(' ')];
     // rasterise the words in Lato Black and put a bulb on every lit cell of a grid
     const step = 13;
     const cv = document.createElement('canvas');
