@@ -2,8 +2,8 @@
 // beside the opening, the year's calendar a month at a time, the countdown to a play and the latest
 // pictures; under it, the bill. Here, from the school's own date (the plays are in Hyderabad: India's
 // time, UTC+05:30 all year): today ringed on the calendar, the days gone by quieter and a play gone by
-// marked Played (its bulb out, its ticket's tag); the calendar opening on today's month, with the
-// arrows at the ends of the month's name to step a month (the month kept as the layout changes); the
+// marked Played (its bulb out, its ticket's tag); the desk calendar opening on today's month, its
+// pages turned over the spiral by the arrows under it, a swipe or the arrow keys; the
 // countdown to the file's countdown play on its next date (else to the next play), to the start of that
 // day; and the next play marked on the bill. All of it set again at India's midnight, and when the page
 // comes back from the back/forward cache on another day. Without scripts the page is whole, only
@@ -72,66 +72,116 @@ function markToday(today) {
   }
 }
 
-/** The calendar a month at a time: today's month first (or the nearest of the season's), the arrows stepping a month. */
+// a page turning over the spiral: lifted up toward the reader from its foot, fading as it goes over
+// (backwards, the page before coming back down); a hair in front of the page under it. Its lift is a
+// shallow one (scaleZ): at its full depth the calendar's angle swung it far out over the text beside it
+const LIFT = [
+  { transform: 'translateZ(1px) scaleZ(.3) rotateX(0deg)', opacity: 1 },
+  { transform: 'translateZ(1px) scaleZ(.3) rotateX(58deg)', opacity: 1, offset: 0.55 },
+  { transform: 'translateZ(1px) scaleZ(.3) rotateX(96deg)', opacity: 0 },
+];
+
+/** The desk calendar's pages, one at a time: today's month first (or the nearest of the season's); the arrows under it, a swipe or the arrow keys turn a page. */
 function setupMonths(today, reduced) {
   const cal = document.querySelector('[data-fp-cal]');
-  const track = cal?.querySelector('.fp-cal__months');
-  const months = track ? [...track.querySelectorAll('.fp-month')] : [];
-  const steps = cal ? [...cal.querySelectorAll('[data-fp-step]')] : [];
-  if (months.length < 2 || steps.length !== 2) return () => {};
-  const at = () => Math.max(0, Math.min(months.length - 1, Math.round(track.scrollLeft / track.clientWidth)));
-  const go = (i, smooth) => track.scrollTo({ left: i * track.clientWidth, behavior: smooth && !reduced ? 'smooth' : 'auto' });
-  // the month a step is gliding to (a quick second press steps on from there, not from mid-glide)
-  let want = null, settle = 0;
+  const book = cal?.querySelector('.fp-cal__months');
+  const pages = book ? [...book.querySelectorAll('.fp-month')] : [];
+  const nav = cal?.querySelector('[data-fp-nav]');
+  const steps = nav ? [...nav.querySelectorAll('[data-fp-step]')] : [];
+  const live = nav?.querySelector('[data-fp-cal-live]');
+  if (pages.length < 2 || steps.length !== 2) return () => {};
+  const month = today.slice(0, 7);
+  let at = pages.findIndex((p) => p.dataset.month >= month);
+  if (at < 0) at = pages.length - 1;
+  // (the pages are stacked and the arrows' room kept from the first paint, src/styles/flash-plays.css)
+  nav.hidden = false;
   // (aria-disabled, not disabled: a button that is pressed to the end keeps the focus)
   const mark = () => {
-    const i = want ?? at();
-    steps[0].setAttribute('aria-disabled', String(i === 0));
-    steps[1].setAttribute('aria-disabled', String(i === months.length - 1));
+    pages.forEach((p, i) => p.classList.toggle('is-current', i === at));
+    steps[0].setAttribute('aria-disabled', String(at === 0));
+    steps[1].setAttribute('aria-disabled', String(at === pages.length - 1));
   };
-  const month = today.slice(0, 7);
-  const first = months.findIndex((m) => m.dataset.month >= month);
-  cal.classList.add('is-paged');
-  for (const s of steps) s.hidden = false;
-  // the month shown, and the strip's width it was shown at: when the layout changes (the opening's two
-  // columns from 1024 pixels), the browser would snap to whichever month is nearest; the same one, instead
-  let shown = first < 0 ? months.length - 1 : first, width = track.clientWidth;
-  go(shown, false);
   mark();
-  let raf = 0;
-  const onScroll = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; mark(); }); };
-  const onEnd = () => {
-    clearTimeout(settle);
-    want = null;
-    if (track.clientWidth === width) shown = at();
-    mark();
+  // the page turning, if one is: ended at once by the next turn
+  let turning = null;
+  const settle = () => {
+    if (!turning) return;
+    const { anim, page, under } = turning;
+    turning = null;
+    anim.cancel();
+    page.classList.remove('is-turning');
+    under.classList.remove('is-under');
   };
-  const onStep = (e) => {
-    const i = (want ?? at()) + Number(e.currentTarget.dataset.fpStep);
-    if (i < 0 || i >= months.length) return;
-    want = i;
-    clearTimeout(settle);
-    settle = setTimeout(onEnd, 1000); // (where there is no scrollend)
-    go(i, true);
+  const turn = (by) => {
+    const to = at + by;
+    if (to < 0 || to >= pages.length) return;
+    settle();
+    const from = at;
+    // a bulb with the focus goes with its page: the focus stays on the calendar, not lost to the page
+    const lost = pages[from].contains(document.activeElement);
+    at = to;
     mark();
+    if (lost) book.focus({ preventScroll: true });
+    if (live) live.textContent = pages[at].dataset.name ?? '';
+    if (reduced) return;
+    // forward, the page that was on top goes over; back, the one before comes down over it
+    const page = pages[by > 0 ? from : to];
+    const under = pages[by > 0 ? to : from];
+    page.classList.add('is-turning');
+    under.classList.add('is-under');
+    const anim = page.animate(LIFT, { duration: 640, easing: 'cubic-bezier(.45, 0, .25, 1)', direction: by > 0 ? 'normal' : 'reverse', fill: 'forwards' });
+    turning = { anim, page, under };
+    anim.onfinish = settle;
   };
-  const resized = new ResizeObserver(() => {
-    if (track.clientWidth === width) return;
-    width = track.clientWidth;
-    go(want ?? shown, false);
-    mark();
-  });
-  resized.observe(track);
-  track.addEventListener('scroll', onScroll, { passive: true });
-  track.addEventListener('scrollend', onEnd);
+  const onStep = (e) => turn(Number(e.currentTarget.dataset.fpStep));
+  const onKey = (e) => {
+    if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || e.altKey || e.ctrlKey || e.metaKey) return;
+    e.preventDefault();
+    turn(e.key === 'ArrowRight' ? 1 : -1);
+  };
+  // a swipe across a page with a finger or a pen: the one press followed from the page to wherever it
+  // lifts (another finger ends it: two are a pinch, the browser's); the click that ends a swipe, if it
+  // lands on a bulb, is not followed (as the pillars' cards do, src/sections/pillars.js)
+  let press = null, swipedAt = -Infinity;
+  const stop = () => {
+    press = null;
+    removeEventListener('pointerup', onUp);
+    removeEventListener('pointercancel', onCancel);
+  };
+  const onDown = (e) => {
+    stop();
+    swipedAt = -Infinity;
+    if (e.pointerType === 'mouse' || !e.isPrimary) return;
+    press = { id: e.pointerId, x0: e.clientX, y0: e.clientY };
+    addEventListener('pointerup', onUp);
+    addEventListener('pointercancel', onCancel);
+  };
+  const onUp = (e) => {
+    if (e.pointerId !== press?.id) return;
+    const dx = e.clientX - press.x0, dy = e.clientY - press.y0;
+    stop();
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    swipedAt = performance.now();
+    turn(dx < 0 ? 1 : -1);
+  };
+  const onCancel = (e) => { if (e.pointerId === press?.id) stop(); };
+  const onClick = (e) => {
+    if (performance.now() - swipedAt >= 400) return;
+    swipedAt = -Infinity;
+    e.preventDefault();
+    e.stopPropagation();
+  };
   for (const s of steps) s.addEventListener('click', onStep);
+  book.addEventListener('keydown', onKey);
+  book.addEventListener('pointerdown', onDown);
+  book.addEventListener('click', onClick, true);
   return () => {
-    cancelAnimationFrame(raf);
-    clearTimeout(settle);
-    resized.disconnect();
-    track.removeEventListener('scroll', onScroll);
-    track.removeEventListener('scrollend', onEnd);
+    settle();
+    stop();
     for (const s of steps) s.removeEventListener('click', onStep);
+    book.removeEventListener('keydown', onKey);
+    book.removeEventListener('pointerdown', onDown);
+    book.removeEventListener('click', onClick, true);
   };
 }
 

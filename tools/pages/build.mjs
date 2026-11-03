@@ -1047,11 +1047,13 @@ function flashPlays() {
   const inMonth = ([y, m]) => (s) => s.date.startsWith(`${y}-${two(m + 1)}`);
   const atLine = (s) => [s.p.at, when(s.date, false)].filter(Boolean).join(', ');
 
-  // the calendar: a month a table, the weeks its rows, its name the bar the arrows sit in
+  // the calendar: a month a table, the weeks its rows (six to every page, as a printed calendar has them:
+  // every page as tall as the next, its name at the same foot; a week with no days is left blank, and
+  // passed over by a screen reader)
   const month = ([y, m]) => {
     const lead = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7;
     const cells = [...Array(lead).fill(0), ...Array.from({ length: new Date(Date.UTC(y, m + 1, 0)).getUTCDate() }, (_, i) => i + 1)];
-    while (cells.length % 7) cells.push(0);
+    while (cells.length < 42) cells.push(0);
     const cell = (d) => {
       if (!d) return '<td></td>';
       const iso = `${y}-${two(m + 1)}-${two(d)}`;
@@ -1060,10 +1062,16 @@ function flashPlays() {
       const names = on.map((s) => s.p.title).join('; ');
       return `<td class="fp-day fp-day--on" data-day="${iso}"><a class="fp-day__link" href="#${on[0].id}" aria-label="${esc(`${d} ${MONTH[m]}: ${names}`)}">${d}${on.length > 1 ? `<span class="fp-day__n" aria-hidden="true">${on.length}</span>` : ''}</a></td>`;
     };
-    const weeks = Array.from({ length: cells.length / 7 }, (_, w) => `      <tr>${cells.slice(w * 7, w * 7 + 7).map(cell).join('')}</tr>`);
-    return `<div class="fp-month" data-month="${y}-${two(m + 1)}">
+    const weeks = Array.from({ length: 6 }, (_, w) => {
+      const week = cells.slice(w * 7, w * 7 + 7);
+      return `      <tr${week.some(Boolean) ? '' : ' aria-hidden="true"'}>${week.map(cell).join('')}</tr>`;
+    });
+    // its name printed at the foot of the page, the year stacked beside it (20 over 26); read as "October
+    // 2026" (the printed one, with its full stop, is for the eye only)
+    const yy = String(y);
+    return `<div class="fp-month" data-month="${y}-${two(m + 1)}" data-name="${MONTH[m]} ${y}">
   <table class="fp-month__grid">
-    <caption class="fp-month__name">${MONTH[m]} <span class="fp-month__year">${y}</span></caption>
+    <caption class="fp-month__name"><span class="sr-only">${MONTH[m]} ${y}</span><span class="fp-month__label" aria-hidden="true"><span class="fp-month__m">${MONTH[m]}</span><span class="fp-month__year"><span>${yy.slice(0, 2)}</span><span>${yy.slice(2)}</span></span></span></caption>
     <thead><tr>${WEEK.map((w) => `<th scope="col"><span aria-hidden="true">${DAY_NAMES[w][0]}</span><span class="sr-only">${DAY_NAMES[w]}</span></th>`).join('')}</tr></thead>
     <tbody>
 ${weeks.join('\n')}
@@ -1073,15 +1081,31 @@ ${weeks.join('\n')}
   };
   const span = months.length ? `${MONTH[months[0][1]]} ${months[0][0]} to ${MONTH[months.at(-1)[1]]} ${months.at(-1)[0]}` : '';
   const chevron = (d) => `<svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  // the arrows (shown by the page's script; a season of one month has none, and no room kept for them)
+  const nav = months.length > 1 ? `
+    <div class="fp-cal__nav" data-fp-nav hidden>
+      <button class="fp-cal__step" type="button" aria-label="The month before" aria-controls="fp-months" data-fp-step="-1">${chevron('M8.5 2.5 4 7l4.5 4.5')}</button>
+      <button class="fp-cal__step" type="button" aria-label="The month after" aria-controls="fp-months" data-fp-step="1">${chevron('M5.5 2.5 10 7l-4.5 4.5')}</button>
+      <p class="sr-only" aria-live="polite" data-fp-cal-live></p>
+    </div>` : '';
+  // a desk calendar standing on the desk (its stand behind, its spiral along the top), turned to face the
+  // page's text; the months its pages, turned over the spiral by the arrows under it (the page's script;
+  // without it, the pages are a strip to scroll)
   const calendar = months.length ? `<section class="fp-cal" aria-labelledby="fp-cal-title" data-fp-cal>
   <h2 class="fp-side__title eyebrow" id="fp-cal-title">The ${esc(year)} season</h2>
-  <div class="fp-cal__card">
-    <button class="fp-cal__step fp-cal__step--prev" type="button" aria-label="The month before" aria-controls="fp-months" data-fp-step="-1" hidden>${chevron('M8.5 2.5 4 7l4.5 4.5')}</button>
-    <button class="fp-cal__step fp-cal__step--next" type="button" aria-label="The month after" aria-controls="fp-months" data-fp-step="1" hidden>${chevron('M5.5 2.5 10 7l-4.5 4.5')}</button>
-    <div class="fp-cal__months" id="fp-months" role="region" aria-label="${esc(`The calendar, ${span}`)}" tabindex="0">
-      ${indentBy(months.map(month).join('\n'), '      ')}
+  <div class="fp-desk">
+    <div class="fp-desk__body">
+      <span class="fp-desk__stand" aria-hidden="true"></span>
+      <div class="fp-desk__face">
+        <span class="fp-desk__rings" aria-hidden="true"></span>
+        <div class="fp-cal__months" id="fp-months" role="region" aria-label="${esc(`The calendar, ${span}`)}" tabindex="0">
+          ${indentBy(months.map(month).join('\n'), '          ')}
+        </div>
+      </div>
     </div>
-    <p class="fp-key" aria-hidden="true"><span class="fp-key__item"><span class="fp-key__on"></span>A flash play</span><span class="fp-key__item"><span class="fp-key__past"></span>Played</span><span class="fp-key__item"><span class="fp-key__today"></span>Today</span></p>
+  </div>
+  <div class="fp-cal__foot">
+    <p class="fp-key" aria-hidden="true"><span class="fp-key__item"><span class="fp-key__on"></span>A flash play</span><span class="fp-key__item"><span class="fp-key__past"></span>Played</span><span class="fp-key__item"><span class="fp-key__today"></span>Today</span></p>${nav}
   </div>
   <p class="fp-note">Every date to come is tentative and may move.</p>
 </section>` : '';

@@ -1,9 +1,9 @@
 /* Flash plays (flash-plays.html, src/pages/flash-plays.js). Beside the opening, on a laptop (under
-   its heading, elsewhere): the year's calendar a month at a time, each day with a play lit as a marquee
-   bulb (a link to it on the bill), the arrows on either side of the month's name; the countdown to a
-   play (the production page's, src/sections/countdown.js); the most recent play's pictures as the
-   Gallery's row. Then the bill, a play a ticket with its date on the stub. Today is ringed, the days
-   gone by are quieter and the next play is outlined in the accent (all set from the school's date). */
+   its heading, elsewhere): the year's calendar as a desk calendar, a month a page, each day with a play
+   lit as a marquee bulb (a link to it on the bill), the arrows under it turning its pages; the countdown
+   to a play (the production page's, src/sections/countdown.js); the latest pictures as the Gallery's
+   row. Then the bill, a play a ticket with its date on the stub. Today is ringed, the days gone by are
+   quieter and the next play is outlined in the accent (all set from the school's date). */
 
 .fp-about .ground p:last-child { margin-bottom: 0; }
 
@@ -19,9 +19,102 @@
 .fp-side__title { margin: 0 0 var(--space-3); }
 .fp-note { margin: var(--space-3) 0 0; font-size: var(--size-caption); color: var(--fg-muted); }
 
-/* ---- the calendar: a card, a month at a time (a strip to scroll or swipe; the script adds the arrows,
-   steps by a month, and opens on this month) ---- */
-.fp-cal__card { position: relative; background: var(--card-bg); border: var(--border-width) solid var(--line); }
+/* ---- the calendar: a desk calendar standing on the desk, turned to face the page's text (its stand
+   showing beside it, its spiral along the top), in the site's colours; the months its pages. With
+   scripts one page shows, today's month first, and the arrows under it turn a page up and over the
+   spiral (a swipe or the arrow keys too); without, the pages are a strip to scroll. The pages and the
+   arrows' row are laid out as they will be from the first paint (html.has-js, set in the head), so
+   nothing moves when the script picks the page ---- */
+.fp-desk {
+  --desk-face: var(--card-bg);
+  --desk-face-hi: color-mix(in srgb, var(--card-bg), var(--plum-100) 7%);
+  --desk-stand: var(--plum-800);
+  --desk-stand-hi: var(--plum-700);
+  --desk-sheet: var(--plum-700);
+  --desk-edge: var(--plum-900);
+  --desk-wire-1: var(--gold-300);
+  --desk-wire-2: var(--gold-700);
+  --desk-hole: var(--black);
+  --desk-shade: rgb(10 2 6 / .6);
+  position: relative;
+  padding: 22px 38px 34px 2px; /* (the spiral above, the stand beside, the shadow under) */
+  perspective: 1800px;
+  perspective-origin: 50% 0%; /* (seen from a little above, as a calendar on a desk is) */
+}
+/* (a page turning under the perspective has no bounds the browser can work out: it took everything
+   painted after the calendar for under it, and gave each a layer of its own for the turn. Bounded here,
+   with room for the page's swing) */
+@supports (overflow-clip-margin: 1px) {
+  .fp-desk { overflow: clip; overflow-clip-margin: 128px; }
+}
+:root[data-theme="light"] .fp-desk {
+  --desk-face-hi: var(--white);
+  --desk-stand: var(--plum-300);
+  --desk-stand-hi: var(--plum-200);
+  --desk-sheet: var(--plum-50);
+  --desk-edge: var(--plum-200);
+  --desk-wire-1: var(--plum-500);
+  --desk-wire-2: var(--plum-900);
+  --desk-hole: var(--plum-800);
+  --desk-shade: rgb(64 20 42 / .32);
+}
+/* its shadow on the desk */
+.fp-desk::after {
+  content: "";
+  position: absolute;
+  left: 2%;
+  right: 6%;
+  bottom: 8px;
+  height: 34px;
+  z-index: -1;
+  background: radial-gradient(closest-side, var(--desk-shade), transparent);
+  pointer-events: none;
+}
+.fp-desk__body { position: relative; transform-style: preserve-3d; transform: rotateY(-14deg); }
+/* the stand: the calendar's back, leaning away from the page */
+.fp-desk__stand {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 0;
+  transform: rotateX(-22deg);
+  background: linear-gradient(180deg, var(--desk-stand-hi), var(--desk-stand));
+}
+/* the page side, leaning back a little; the sheets under the page show at its foot */
+.fp-desk__face {
+  position: relative;
+  padding-top: 14px;
+  transform-origin: 50% 0;
+  transform: rotateX(7deg);
+  transform-style: preserve-3d;
+  /* (the paper's colour on its own as well: a browser without color-mix() loses only the sheen) */
+  background-color: var(--desk-face);
+  background-image: linear-gradient(170deg, var(--desk-face-hi), var(--desk-face) 40%);
+  border: var(--border-width) solid var(--line);
+  box-shadow: 0 2px 0 var(--desk-sheet), 0 3px 0 var(--desk-edge), 0 5px 0 var(--desk-sheet), 0 6px 0 var(--desk-edge);
+}
+/* the spiral: a loop of wire through each hole along the top */
+.fp-desk__face::before {
+  content: "";
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 2px;
+  height: 7px;
+  background: radial-gradient(2.6px 2.2px at 50% 50%, var(--desk-hole) 90%, transparent) center / 16px 7px space no-repeat;
+}
+.fp-desk__rings {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: -18px;
+  height: 28px;
+  z-index: 2;
+  background: linear-gradient(180deg, var(--desk-wire-1), var(--desk-wire-2) 75%);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 28'%3E%3Cellipse cx='8' cy='13.5' rx='3.2' ry='10.6' transform='rotate(-14 8 13.5)' fill='none' stroke='%23000' stroke-width='2.3'/%3E%3C/svg%3E") center / 16px 28px space no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 28'%3E%3Cellipse cx='8' cy='13.5' rx='3.2' ry='10.6' transform='rotate(-14 8 13.5)' fill='none' stroke='%23000' stroke-width='2.3'/%3E%3C/svg%3E") center / 16px 28px space no-repeat;
+  pointer-events: none;
+}
+/* the pages: a strip to scroll (without scripts), else one on top of another */
 .fp-cal__months {
   display: flex;
   align-items: flex-start;
@@ -29,60 +122,55 @@
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
 }
-.fp-cal.is-paged .fp-cal__months { scrollbar-width: none; }
-.fp-cal.is-paged .fp-cal__months::-webkit-scrollbar { display: none; }
-.fp-cal__months:focus-visible { outline-offset: -2px; }
-.fp-month { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; padding: 0 4px var(--space-2); } /* (room for a bulb's focus ring at the edges) */
+.fp-cal__months:focus-visible { outline-offset: 4px; }
+.fp-month { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; }
+/* (sideways swipes are the script's, up and down the page's scroll, and a pinch still zooms; the first
+   value is for browsers without pinch-zoom in touch-action) */
+html.has-js .fp-cal .fp-cal__months { display: grid; overflow: visible; transform-style: preserve-3d; touch-action: pan-y; touch-action: pan-y pinch-zoom; }
+/* (each page in the paper's plane, a 3D transform from the start: a turn changes its value rather than
+   adding one, which had the page laid out again at both ends of every turn) */
+html.has-js .fp-cal .fp-month {
+  grid-area: 1 / 1;
+  visibility: hidden;
+  transform: translateZ(0);
+  transform-origin: 50% 0;
+  backface-visibility: hidden;
+  background-color: var(--desk-face);
+  background-image: linear-gradient(170deg, var(--desk-face-hi), var(--desk-face) 40%);
+}
+/* (the page under one turning stays in the paper's plane, the turning one a hair in front of it; until
+   the script has picked today's month, the season's first shows) */
+html.has-js .fp-cal .fp-month:is(.is-current, .is-under) { visibility: visible; }
+html.has-js .fp-cal__months:not(:has(.is-current)) .fp-month:first-child { visibility: visible; }
+html.has-js .fp-cal .fp-month.is-turning { visibility: visible; transform: translateZ(1px); }
+/* (with reduced motion every transition is near-instant, layout.css, but still one: a page shown or
+   hidden took a frame a level of its markup, so the month gone was still there, clickable, for a few;
+   the pages have none, and turn at once) */
+@media (prefers-reduced-motion: reduce) {
+  html.has-js .fp-cal .fp-month, html.has-js .fp-cal .fp-month *, html.has-js .fp-cal .fp-month *::after { transition-property: none; }
+}
 .fp-month__grid { width: 100%; border-collapse: collapse; table-layout: fixed; font-family: var(--font-ui); }
-/* the month's name: the card's top bar, the arrows at its ends */
-.fp-month__name {
-  height: 52px;
-  padding: 0 52px;
-  margin: 0 -4px var(--space-2);
-  border-bottom: var(--border-width) solid var(--line);
-  line-height: 52px;
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: clamp(20px, 6.4vw, 24px); /* (the longest, November 2026, between the arrows on the smallest phones) */
-  color: var(--fg-strong);
-  white-space: nowrap;
-}
-.fp-month__year { color: var(--fg-muted); }
-.fp-cal__step {
-  position: absolute;
-  top: 0;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-strong);
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-curtain), opacity var(--dur-fast) var(--ease-curtain);
-}
-.fp-cal__step[hidden] { display: none; }
-.fp-cal__step svg { width: 16px; height: 16px; }
-.fp-cal__step--prev { left: 0; }
-.fp-cal__step--next { right: 0; }
-.fp-cal__step:hover { color: var(--accent); }
-.fp-cal__step:focus-visible { outline-offset: -6px; }
-.fp-cal__step[aria-disabled="true"] { cursor: default; }
-.fp-cal__step[aria-disabled="true"] svg { opacity: .3; }
-.fp-cal__step[aria-disabled="true"]:hover { color: var(--fg-strong); }
+/* the days of the week: a band in the accent */
 .fp-month__grid th {
-  padding: 0 0 var(--space-2);
+  height: 28px;
+  padding: 0;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
   font-size: var(--size-micro);
-  font-weight: var(--weight-bold);
+  font-weight: var(--weight-black);
   letter-spacing: .1em;
   text-align: center;
-  color: var(--fg-muted);
 }
+.fp-month__grid tbody tr:first-child td { border-top: 6px solid transparent; }
+/* the month's name, printed at the page's foot, the year stacked beside it */
+.fp-month__name { caption-side: bottom; padding: var(--space-2) var(--space-4) var(--space-4); text-align: left; }
+.fp-month__label { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-3); padding-top: var(--space-3); border-top: var(--border-width) solid var(--line); }
+.fp-month__m { font-family: var(--font-display); font-size: clamp(30px, 3vw, 40px); line-height: 1; color: var(--accent); white-space: nowrap; }
+.fp-month__m::after { content: "."; }
+.fp-month__year { display: grid; justify-items: end; font-family: var(--font-display); font-size: clamp(22px, 2.2vw, 28px); line-height: .92; color: var(--accent); }
+/* every week a row as tall, a blank one too */
+.fp-month__grid tbody td { height: 38px; padding: 0; }
 .fp-day {
-  height: 40px;
-  padding: 0;
   text-align: center;
   vertical-align: middle;
   font-size: var(--size-body-s);
@@ -99,8 +187,8 @@
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--btn-bg);
   color: var(--btn-fg);
@@ -129,11 +217,43 @@
   line-height: 1;
 }
 .fp-month__grid td:last-child .fp-day__n { right: auto; left: -7px; }
-.fp-key { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); max-width: none; margin: 0; padding: var(--space-3) var(--space-4); border-top: var(--border-width) solid var(--line); font-family: var(--font-ui); font-size: var(--size-caption); color: var(--fg-muted); }
+/* under the calendar: the key, and the arrows that turn its pages */
+.fp-cal__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.fp-key { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); max-width: none; margin: 0; font-family: var(--font-ui); font-size: var(--size-caption); color: var(--fg-muted); }
 .fp-key__item { display: inline-flex; align-items: center; gap: 8px; }
 .fp-key__on { width: 14px; height: 14px; border-radius: 50%; background: var(--btn-bg); box-shadow: 0 0 8px rgb(var(--spot-rgb) / .6); }
 .fp-key__today { width: 14px; height: 14px; box-shadow: inset 0 0 0 1.5px var(--fg-strong); }
 .fp-key__past { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--fg-muted); }
+.fp-cal__nav { display: flex; gap: var(--space-2); }
+.fp-cal__nav[hidden] { display: none; }
+/* (with scripts, its room kept until the script shows it, so nothing under it moves then; no arrows
+   that do nothing meanwhile) */
+html.has-js .fp-cal__nav[hidden] { display: flex; visibility: hidden; }
+.fp-cal__step {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: var(--border-width) solid var(--line);
+  background: var(--card-bg);
+  color: var(--fg-strong);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-curtain), border-color var(--dur-fast) var(--ease-curtain);
+}
+.fp-cal__step svg { width: 16px; height: 16px; }
+.fp-cal__step:hover { color: var(--accent); border-color: var(--accent); }
+.fp-cal__step[aria-disabled="true"] { cursor: default; }
+.fp-cal__step[aria-disabled="true"] svg { opacity: .3; }
+.fp-cal__step[aria-disabled="true"]:hover { color: var(--fg-strong); border-color: var(--line); }
+@media (max-width: 639px) {
+  .fp-desk { padding-right: 28px; }
+  .fp-desk__body { transform: rotateY(-16deg); }
+  .fp-month__name { padding-inline: var(--space-3); }
+}
+@media (max-width: 359px) {
+  .fp-day__link { width: 26px; height: 26px; }
+}
 
 /* ---- the countdown: the production page's digits, smaller, four to a row ---- */
 .fp-count { container-type: inline-size; padding: var(--space-5); background: var(--card-bg); border: var(--border-width) solid var(--line); }
@@ -213,10 +333,6 @@
 .fp-play__pics svg { width: 14px; height: 10px; transition: transform var(--dur-fast) var(--ease-curtain); }
 .fp-play__pics a:hover svg { transform: translateX(3px); }
 
-@media (max-width: 339px) {
-  .fp-month__name { font-size: clamp(16px, 6.4vw, 24px); padding: 0 44px; }
-  .fp-cal__step { width: 44px; }
-}
 @container (max-width: 230px) {
   .fp-recent .gal-more__label { font-size: 11px; letter-spacing: .06em; white-space: nowrap; }
 }
