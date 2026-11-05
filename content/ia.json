@@ -68,7 +68,7 @@
         },
         {
           "label": "Background",
-          "done": false
+          "done": true
         },
         {
           "label": "Personal story",
@@ -98,7 +98,7 @@
         },
         {
           "label": "Data collection",
-          "done": false
+          "done": true
         },
         {
           "label": "Background",
