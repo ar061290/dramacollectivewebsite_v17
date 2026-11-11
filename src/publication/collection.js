@@ -6,10 +6,10 @@
 // curtain goes up on a set. The issue leads; the two beside it follow. No bounce, no overshoot.
 // Opacity, never visibility: a card not yet revealed still takes the keyboard's focus, and focusing
 // it scrolls it into view, which reveals it. With reduced motion they only fade in.
-// "Read the October issue" opens the issue at its first piece: the page's markup says which, and
-// this keeps it in step with src/publication/pieces-data.js should the pieces change.
+// "Read the October issue" opens the issue's own page (its pieces round a spotlight, the first in
+// it): the page's markup says which, and this keeps it in step with src/publication/pieces-data.js.
 import gsap from 'gsap';
-import { FIRST_OF_ISSUE, pieceHref } from './pieces-data.js';
+import { issueHref } from './pieces-data.js';
 
 /** @param {{ reduced: boolean, sky: any, onTheme: Function, opened: Promise }} ctx  bootPage's context */
 export function setupCollection({ reduced }) {
@@ -27,11 +27,8 @@ export function setupCollection({ reduced }) {
     else img.addEventListener('error', bare, { once: true });
   });
 
-  // the issue's first piece, from the data
-  grid.querySelectorAll('[data-first-of-issue]').forEach((a) => {
-    const first = FIRST_OF_ISSUE(a.dataset.firstOfIssue);
-    if (first) a.href = pieceHref(first);
-  });
+  // the issue's own page, from the data
+  grid.querySelectorAll('[data-issue]').forEach((a) => { a.href = issueHref(a.dataset.issue); });
 
   const scrollTrigger = { trigger: grid, start: 'top 84%', once: true };
   const tl = gsap.timeline({ scrollTrigger, defaults: { ease: 'curtain' } });

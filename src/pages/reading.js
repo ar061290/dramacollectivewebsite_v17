@@ -5,17 +5,19 @@
 // publication below its opening, there is no star sky and the cursor's glow is everywhere
 // (html.is-glow-everywhere, set in the page's own markup so it holds from the first move); the top
 // bar waits out of sight until it is wanted (src/publication/peekbar.js). Beside a piece stand two
-// stone masks, lit by the cursor's glow (src/publication/masks.js).
+// stone masks, lit by the cursor's glow (src/publication/masks.js). All the pieces open in a ring
+// (src/publication/ring.js), with its grid and filters a switch away.
 import gsap from 'gsap';
 import { bootPage } from '../site/boot.js';
 import { setupTicker } from '../publication/ticker.js';
 import { setupPeekBar } from '../publication/peekbar.js';
 import { setupMasks } from '../publication/masks.js';
 import { setupIndexFilters } from '../publication/index-filters.js';
+import { setupRing } from '../publication/ring.js';
 
 bootPage((ctx) => {
   document.documentElement.classList.add('is-glow-everywhere');
-  const cleanups = [setupTicker(ctx), setupPeekBar(), setupMasks(ctx), footnotes(ctx), setupIndexFilters(ctx)];
+  const cleanups = [setupTicker(ctx), setupPeekBar(), setupMasks(ctx), footnotes(ctx), setupIndexFilters(ctx), setupRing(ctx)];
   return () => cleanups.forEach((c) => c());
 });
 

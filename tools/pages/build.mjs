@@ -17,9 +17,10 @@
 //   <!-- site:flash-plays --> flash-plays.html only: the plays on the bill (flashPlays, both)
 // It also writes the publication's reading pages whole (READING, below): each piece that is out
 // (piece-<slug>.html, from src/publication/pieces-data.js and the piece's text in
-// content/pieces/<slug>.html), the editor's note (editors-note.html, from content/editors-note.html)
-// and all the pieces (pieces.html); and each writer's own page (writer-<slug>.html, from
-// content/writers.json, content/team.json and the pieces' data).
+// content/pieces/<slug>.html), the editor's note (editors-note.html, from content/editors-note.html),
+// all the pieces (pieces.html) and each issue's own page (issue-<month>-<year>.html); and each
+// writer's own page (writer-<slug>.html, from content/writers.json, content/team.json and the
+// pieces' data).
 // Run after editing this file, content/team.json, content/writers.json, content/pieces/,
 // content/editors-note.html or the pieces' data:  npm run pages
 // Each file keeps its own line endings.
@@ -27,7 +28,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
-import { PIECES, PUBLISHED, pieceHref, FIRST_OF_ISSUE, EDITORS_NOTE } from '../../src/publication/pieces-data.js';
+import { PIECES, PUBLISHED, pieceHref, issueHref, EDITORS_NOTE } from '../../src/publication/pieces-data.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const readJSON = (path) => JSON.parse(readFileSync(join(ROOT, path), 'utf8'));
@@ -89,12 +90,15 @@ export const CONTACTS = [
 ];
 
 // The publication's reading pages, written whole by build() (readingPage, below): one per piece that
-// is out, in reading order, then the editor's note and the page of all the pieces. Each key is the
-// page's own (vite.config.js keys its inputs by them, so they must not repeat).
+// is out, in reading order, then the editor's note and the page of all the pieces, and each issue's
+// own page (its pieces round a spotlight: issuePage). Each key is the page's own (vite.config.js keys
+// its inputs by them, so they must not repeat).
+const ISSUES = [...new Set(PUBLISHED.map((p) => p.issue))];
 const READING = [
   ...PUBLISHED.map((p) => ({ file: pieceHref(p).slice(2), key: `piece-${p.slug}`, piece: p })),
   { file: 'editors-note.html', key: 'editors-note' },
   { file: 'pieces.html', key: 'pieces' },
+  ...ISSUES.map((issue) => ({ file: issueHref(issue).slice(2), key: issueHref(issue).slice(2, -5), issue })),
 ];
 
 // the Gallery's events (content/gallery.json, checked by readGallery below), each with its own page
@@ -440,6 +444,7 @@ const pubBanner = (page) => `<aside class="pub-ticker" data-pub-ticker aria-labe
     </aside>`;
 
 const MONTHS = { Jan: 'January', Feb: 'February', Mar: 'March', Apr: 'April', May: 'May', Jun: 'June', Jul: 'July', Aug: 'August', Sep: 'September', Oct: 'October', Nov: 'November', Dec: 'December' };
+const NUMBER_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 /** "Oct 2026" as said in a sentence: "October 2026". */
 const issueName = (issue) => issue.replace(/^([A-Z][a-z]{2})\b/, (m) => MONTHS[m] ?? m);
 /** "Oct 2026" as a machine-readable month: "2026-10". */
@@ -453,12 +458,13 @@ const content = (path, pad) => readFileSync(join(ROOT, 'content', path), 'utf8')
   .split('\n').map((l) => (l ? pad + l : l)).join('\n');
 
 // ---- The home page's act three, this month's publication (<!-- site:issue --> in index.html) ----
-// The newest issue's pieces in their order, each a link to its own page, laid out after a magazine's
-// front page: the first is the lead, on the issue's stage photo; the next four are a list, each on
-// the logo mark in its card's colours on the publication (.issue__tile in src/styles/layout.css);
-// any more are named under them, beside the issue's cover, over the link to the publication. An
-// issue's pictures go in ISSUE_ART; an issue without them has the mark on a tile for its lead, and
-// no cover.
+// The newest issue's pieces in their order, laid out after a magazine's front page: the first is the
+// lead, on the issue's stage photo, the way into the issue's own page (issue-<month>-<year>.html,
+// opened on that piece); the next four are a list, each a link to its own page, on the logo mark in
+// its card's colours on the publication (.issue__tile in src/styles/layout.css); any more are named
+// under them, beside the issue's cover (the issue's page again), over the links to the issue and the
+// publication. An issue's pictures go in ISSUE_ART; an issue without them has the mark on a tile for
+// its lead, and no cover.
 const ISSUE_ART = {
   'Oct 2026': { photo: 'assets/publication/stage-photo-october-2026.webp', cover: 'assets/publication/cover-october-2026.webp' },
 };
@@ -486,21 +492,22 @@ function homeIssue({ toneOf, byline }, pad = '          ') {
     `<span class="issue__by">${esc(byline(p))}</span>`,
   ]), '</span>'];
   const lines = [
-    `<a class="issue__lead" href="${pieceHref(lead)}">`,
+    `<a class="issue__lead" href="${issueHref(issue)}#${lead.slug}">`,
     ...indent([art.photo ? `<span class="issue__art issue__art--photo" aria-hidden="true">${img(art.photo)}</span>` : tile(lead, 'issue__art--lead'), ...text(lead)]),
     '</a>',
     '<ol class="issue__list" data-stagger>',
     ...listed.flatMap((p) => indent(['<li>', ...indent([`<a class="issue__item" href="${pieceHref(p)}">`, ...indent([tile(p, 'issue__art--sm'), ...text(p)]), '</a>']), '</li>'])),
     '</ol>',
-    // (the cover repeats the link under it, so it is left out of the tab order and the reading)
+    // (the cover repeats the issue's link under it, so it is left out of the tab order and the reading)
     '<div class="issue__foot" data-stagger>',
     ...indent([
-      ...(art.cover ? [`<a class="issue__cover" href="./publication.html" tabindex="-1" aria-hidden="true">${img(art.cover)}</a>`] : []),
+      ...(art.cover ? [`<a class="issue__cover" href="${issueHref(issue)}" tabindex="-1" aria-hidden="true">${img(art.cover)}</a>`] : []),
       '<div class="issue__also">',
       ...indent([
         ...(more.length ? [`<p class="issue__kicker">Also in the ${issueName(issue)} issue</p>`, '<ul class="issue__also-list">',
           ...indent(more.map((p) => `<li><a href="${pieceHref(p)}"><span class="issue__title"${lang(p)}>${esc(p.title)}</span> <span class="issue__by">${esc(byline(p))}</span></a></li>`)),
           '</ul>'] : []),
+        `<a class="issue__more" href="${issueHref(issue)}">Read the ${MONTHS[issue.slice(0, 3)] ?? issue} issue</a>`,
         '<a class="issue__more" href="./publication.html">The publication</a>',
       ]),
       '</div>',
@@ -577,24 +584,95 @@ function piecePage(p) {
   };
 }
 
-/** The editor's note (content/editors-note.html), ending on the way into the issue. */
+/** The editor's note (content/editors-note.html), ending on the way into the issue (its own page). */
 function editorsNotePage() {
-  const first = FIRST_OF_ISSUE('Oct 2026');
+  const n = PUBLISHED.filter((p) => p.issue === 'Oct 2026').length;
   return {
     title: 'Editor’s note',
     description: 'The editor’s note for the October 2026 issue of The Drama Collective’s publication, by Kodela Gautam.',
     source: 'content/editors-note.html',
     main: article(readHead({ issue: 'Oct 2026', kind: 'Editorial', title: 'Editor’s note', author: 'Kodela Gautam' }), '',
       content('editors-note.html', '        '),
-      readEnd(PUBLICATION, { href: pieceHref(first), label: 'Read the October issue', sub: first.title, rel: 'next' })),
+      readEnd(PUBLICATION, { href: issueHref('Oct 2026'), label: 'Read the October issue', sub: `Its ${NUMBER_WORDS[n] ?? n} pieces`, rel: 'next' })),
   };
 }
 
-/** All the pieces: a heading and the grid of every piece that is out, the newest issue first. */
-function piecesPage(pieceCard) {
+/** A piece's reading time in minutes: its words (content/pieces/<slug>.html) at 200 a minute, at least one. */
+function readMinutes(p) {
+  const text = readFileSync(join(ROOT, 'content', 'pieces', `${p.slug}.html`), 'utf8').replace(/<[^>]*>/g, ' ').replace(/&[#a-z0-9]+;/gi, ' ');
+  return Math.max(1, Math.round(text.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length / 200));
+}
+
+/**
+ * An issue's own page (issue-<month>-<year>.html), after Bureau Nine's front page: its pieces round
+ * a spotlight, one at a time, the first of them in it. Each piece is its grid card (cards.js), with
+ * its reading time; the page's script (src/pages/issue.js, src/publication/issue.js) stacks them in
+ * the spotlight, rings their pictures round it and turns the ring a piece at a time as the page
+ * scrolls. Without scripts the cards are a grid. #<slug> opens on that piece. The way back goes to
+ * the page the reader came from (the publication, without one). The issue's stage photo is not
+ * here: it stays where the issue is opened from (the home page's lead, the publication's card).
+ */
+function issuePage(issue, pieceCard) {
+  const pieces = PUBLISHED.filter((p) => p.issue === issue);
+  const month = MONTHS[issue.slice(0, 3)] ?? issue;
+  const two = (n) => String(n).padStart(2, '0');
+  const chev = (d) => `<svg viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const cards = pieces.map((p) => pieceCard(p, { level: 2, minutes: readMinutes(p) })
+    .replace('<li class="pub-piece"', `<li class="pub-piece iss__piece" data-iss-piece="${esc(p.slug)}"`)
+    .split('\n').map((l) => `            ${l}`).join('\n'));
+  return {
+    title: `The ${issueName(issue)} issue`,
+    description: `The ${issueName(issue)} issue of The Drama Collective’s theatre publication: its ${NUMBER_WORDS[pieces.length] ?? pieces.length} pieces, one at a time.`,
+    source: 'src/publication/pieces-data.js and content/pieces/',
+    kind: 'issue',
+    script: 'issue',
+    main: `    <section class="iss" aria-labelledby="iss-title" data-iss style="--iss-n: ${pieces.length}">
+      <div class="iss__stage">
+        <header class="iss__head">
+          <a class="read__back iss__back" href="./publication.html" data-iss-back>${ARROW_L}<span data-iss-back-label>The publication</span></a>
+          <h1 class="pub-label iss__title" id="iss-title">The ${esc(month)} issue <span class="iss__year">${esc(issue.slice(4))}</span></h1>
+          <div class="iss__nav" data-iss-nav hidden>
+            <button class="iss__step" type="button" aria-label="The piece before" data-iss-step="-1">${chev('M5 1 1 5l4 4')}</button>
+            <p class="pub-label iss__count" aria-hidden="true"><span data-iss-at>01</span> / ${two(pieces.length)}</p>
+            <button class="iss__step" type="button" aria-label="The piece after" data-iss-step="1">${chev('M1 1l4 4-4 4')}</button>
+            <p class="sr-only" aria-live="polite" data-iss-live></p>
+          </div>
+        </header>
+        <div class="iss__scene">
+          <div class="iss__ring" data-iss-ring aria-hidden="true"></div>
+          <ol class="pub-pieces__grid iss__pieces" data-iss-pieces>
+${cards.join('\n')}
+          </ol>
+        </div>
+        <p class="pub-label iss__hint" aria-hidden="true">Scroll</p>
+      </div>
+    </section>`,
+  };
+}
+
+// the ring of all the pieces: its cards at least, round it as many times as fill it (fewer on a phone
+// and a slow device: publication-issue.css)
+const RING_FILL = 28;
+const RING_FEW = 21;
+
+/** All the pieces: a heading and every piece that is out, the newest issue first, in a ring (turned
+ * by the page's script, src/publication/ring.js) or as the grid (without scripts, the grid alone). */
+function piecesPage({ pieceCard, pieceMedia, byline, toneOf }) {
   const issues = [...new Set(PUBLISHED.map((p) => p.issue))].reverse();
+  const ordered = issues.flatMap((issue) => PUBLISHED.filter((p) => p.issue === issue));
+  // the ring's cards, written here so the ring stands from the first paint: each piece round it again
+  // and again; the first of each in the tab order (named for its title and writer), the rest hidden
+  // from screen readers and out of the tab order; those past a phone's share marked
+  const reps = Math.max(1, Math.ceil(RING_FILL / ordered.length));
+  const all = reps * ordered.length;
+  const few = Math.min(all, Math.max(1, Math.ceil(RING_FEW / ordered.length)) * ordered.length);
+  const ring = Array.from({ length: reps }, (_, r) => ordered.map((p, i) => {
+    const k = r * ordered.length + i;
+    const named = r ? ' aria-hidden="true" tabindex="-1"' : ` aria-label="${esc(`${p.title}, ${byline(p)}`)}"`;
+    return `                <a class="pub-piece ring__card${k >= few ? ' ring__card--more' : ''}" data-tone="${toneOf(p)}" data-piece="${i}" href="${pieceHref(p)}" style="--i: ${k}"${named}>${pieceMedia(p)}</a>`;
+  })).flat().join('\n');
   // each card carries its form and its month (the issue, as "2026-10"), for the filters
-  const cards = issues.flatMap((issue) => PUBLISHED.filter((p) => p.issue === issue))
+  const cards = ordered
     .map((p) => pieceCard(p, { level: 2 })
       .replace('<li class="pub-piece"', `<li class="pub-piece" data-form="${esc(p.form ?? '')}" data-month="${issueDate(p.issue)}" data-month-name="${esc(issueName(p.issue))}"`)
       .split('\n').map((l) => `          ${l}`).join('\n'));
@@ -608,6 +686,14 @@ function piecesPage(pieceCard) {
           ${BACK}
           <h1 class="read__title" id="read-title" data-reveal>All the pieces</h1>
           <span class="rule read__rule" aria-hidden="true"></span>
+          <!-- the view: the pieces in a ring (off) or as the grid (on); src/publication/ring.js. Shown
+               once scripts run (without them, the grid) -->
+          <div class="pub-pieces__switch read__views" data-index-views>
+            <span class="pub-label pub-pieces__side is-on" data-view-side="circle" aria-hidden="true">Circle</span>
+            <input class="pub-pieces__toggle" type="checkbox" role="switch" autocomplete="off" aria-label="Grid view" aria-describedby="index-view-hint" data-index-view>
+            <span class="pub-label pub-pieces__side" data-view-side="grid" aria-hidden="true">Grid</span>
+            <span class="sr-only" id="index-view-hint">Off: the pieces in a ring. On: the pieces as a grid, with filters.</span>
+          </div>
           <!-- two filters, by form and by month (src/publication/index-filters.js fills their chips
                from the cards below); hidden without scripts, which show every piece -->
           <div class="read__filters" data-index-filters hidden>
@@ -630,6 +716,19 @@ function piecesPage(pieceCard) {
           </div>
         </header>
         <p class="sr-only" aria-live="polite" data-index-status></p>
+        <!-- the ring: every piece's picture (its title on its colour) round and round, filled from the
+             cards below (src/publication/ring.js); the one pointed at shows large beside it -->
+        <div class="ring" data-ring>
+          <div class="ring__scene" data-ring-scene>
+            <div class="ring__tilt" data-ring-tilt>
+              <div class="ring__wheel" data-ring-wheel style="--m-all: ${all}; --m-few: ${few}">
+${ring}
+              </div>
+            </div>
+          </div>
+          <button class="pub-btn pub-btn--lg ring__grid" type="button" data-ring-grid>Open in grid view</button>
+          <div class="ring__peek" data-ring-peek aria-hidden="true"></div>
+        </div>
         <ul class="pub-pieces__grid read__grid" data-index-grid>
 ${cards.join('\n')}
         </ul>
@@ -1282,7 +1381,8 @@ function iaRemind(pad) {
 export async function build(only = []) {
   // the grid's card is the publication's own (src/publication/cards.js: plain strings, no DOM),
   // loaded here rather than at the top so that importing the page list (vite.config.js) needs it not
-  const { pieceCard, pieceRow } = await import('../../src/publication/cards.js');
+  const cardsKit = await import('../../src/publication/cards.js');
+  const { pieceCard, pieceRow } = cardsKit;
   // (a piece's writer is found by the name printed on it: one missing from content/writers.json
   // has no page, and no card on Meet our writers)
   if (!only.length) {
@@ -1300,7 +1400,7 @@ export async function build(only = []) {
     let out;
     if (reading) {
       const r = READING.find((p) => p.key === key);
-      out = readingPage(key, r.piece ? piecePage(r.piece) : key === 'pieces' ? piecesPage(pieceCard) : editorsNotePage());
+      out = readingPage(key, r.piece ? piecePage(r.piece) : r.issue ? issuePage(r.issue, pieceCard) : key === 'pieces' ? piecesPage(cardsKit) : editorsNotePage());
     } else if (writer) out = readingPage(key, writerPage(writer, { pieceCard, pieceRow }));
     else if (galleryEvent) out = galleryEventPage(galleryEvent);
     else if (src === null) { console.warn(`skip ${file}: not found`); continue; }

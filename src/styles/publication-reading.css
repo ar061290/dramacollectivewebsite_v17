@@ -401,8 +401,6 @@
   .read__filters .pub-pieces__filter-btn { width: 100%; min-width: 0; gap: 8px; padding: 0 10px 0 12px; }
   .read__filters .pub-pieces__filter-value { max-width: none; min-width: 0; }
   .read__filters .pub-pieces__forms { right: 0; width: auto; max-width: none; }
-  /* (the publication shows three cards on a phone; here, every one) */
-  .read__grid > .pub-piece:nth-child(n + 4):not([hidden]) { display: block; }
 }
 
 /* ---- phones ---- */

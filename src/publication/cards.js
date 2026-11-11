@@ -7,6 +7,8 @@
 //   pieceCard(p, { level })  an <li class="pub-piece"> for a <ul class="pub-pieces__grid">;
 //                            `level` is its title's heading level (3 by default: under the
 //                            section's h2; 2 on a page whose h1 is the grid's own heading)
+//   pieceMedia(p, tag)       the card's picture alone (the mark and the title large): the rings of
+//                            all the pieces (pieces.html) and of an issue
 //   pieceRow(p, { next, remind })  an <li class="pub-row"> for a <ul class="pub-pieces__list">;
 //                            `next` marks the first one (its dot lit); `remind` is where
 //                            "Remind me" goes (the newsletter on the same page, #news, by default;
@@ -26,26 +28,34 @@ export const byline = (p) => (p.author ? `By ${p.author}` : 'Writer to be announ
 const chevron = '<svg class="pub-pieces__chev" viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 /**
+ * A piece's picture: the mark at the top left, its title set large and at a tilt (a heading in the
+ * card, `tag`; a plain line on the rings of all the pieces and of an issue). The title's size goes by
+ * its length (short, medium, long), so every card's title fills its picture alike.
+ */
+export function pieceMedia(p, tag = 'span') {
+  const n = [...p.title].length;
+  const len = n <= 20 ? 's' : n <= 32 ? 'm' : 'l';
+  return `<div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><${tag} class="pub-piece__title" data-len="${len}">${esc(p.title)}</${tag}></div>`;
+}
+
+/**
  * A piece that is out, as a card (houseofheat's Latest News card): the mark at the top left, the
  * title set large and at a tilt in the card's colours where the picture was, then the writer and the
  * form, and the row of issue and "Read now". The whole card is the one link (no link inside a link).
+ * `minutes`, where given, is its reading time, beside the issue (the issue's own page shows it).
  */
-export function pieceCard(p, { level = 3 } = {}) {
+export function pieceCard(p, { level = 3, minutes = 0 } = {}) {
   const h = `h${Math.min(6, Math.max(2, level | 0 || 3))}`;
-  // the title's size goes by its length (short, medium, long), so every card's title fills its
-  // picture alike
-  const n = [...p.title].length;
-  const len = n <= 20 ? 's' : n <= 32 ? 'm' : 'l';
   return `<li class="pub-piece" data-tone="${toneOf(p)}">
   <a class="pub-piece__link" href="${esc(pieceHref(p))}">
-    <div class="pub-piece__media"><span class="pub-mark pub-piece__brand" aria-hidden="true"></span><${h} class="pub-piece__title" data-len="${len}">${esc(p.title)}</${h}></div>
+    ${pieceMedia(p, h)}
     <div class="pub-piece__body">
       <div class="pub-piece__head">
         <p class="pub-piece__by">${esc(byline(p))}</p>
         <p class="pub-label pub-piece__form">${esc(p.form)}</p>
       </div>
       <div class="pub-piece__meta">
-        <span class="pub-label pub-piece__issue">${esc(p.issue)}</span>
+        <span class="pub-label pub-piece__issue">${esc(p.issue)}${minutes ? `<span class="pub-piece__time"><span class="pub-piece__sep" aria-hidden="true"></span><span class="sr-only">, </span>${minutes} min read</span>` : ''}</span>
         <span class="pub-btn pub-piece__read"><span class="pub-piece__dot" aria-hidden="true"></span>Read now${chevron}</span>
       </div>
     </div>

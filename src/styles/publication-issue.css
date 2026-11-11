@@ -1,0 +1,212 @@
+/* An issue's own page and the ring of all the pieces: the publication's pictures (each piece's title
+   set large on its colour, the grid's cards: publication-pieces.css) on the move.
+
+   The issue's page (issue-<month>-<year>.html: tools/pages/build.mjs issuePage, src/publication/
+   issue.js), after Bureau Nine's front page: the pieces as small cards on a ring round a spotlight,
+   the one at the ring's front in it as its grid card, a little squarer, with its reading time.
+   Without scripts: its heading over the cards as a grid. With them (html.has-js, from the first
+   paint, so nothing moves when the script starts): the stage, held on the screen (sticky) while the
+   section scrolls by, a stretch a piece; the spotlight shows the first piece until the script picks.
+
+   All the pieces (pieces.html, src/publication/ring.js), after sebneil.com: the pieces' pictures
+   standing round a circle seen from a little above, turning; "Open in grid view" in its middle, the
+   one pointed at large in the corner. Without scripts the page is the grid alone. */
+
+/* ---- the reading time beside a card's issue (whole: on to a line of its own where it must) ---- */
+.pub-piece__time { white-space: nowrap; }
+.pub-piece__sep { display: inline-block; width: 3px; height: 3px; margin: 0 8px 2px; border-radius: 50%; background: currentColor; vertical-align: middle; opacity: .7; }
+
+/* ---- a piece's picture, small: on the issue's ring, round all the pieces, and pointed at ---- */
+:is(.iss__tile, .ring__card, .ring__peek-card) { display: block; background: var(--card); color: var(--ink); text-decoration: none; }
+:is(.iss__tile, .ring__card, .ring__peek-card) .pub-piece__media { height: 100%; aspect-ratio: auto; padding: 26% 9% 8% 10%; }
+:is(.iss__tile, .ring__card, .ring__peek-card) .pub-piece__brand { top: 9%; left: 9%; width: 15%; }
+:is(.iss__tile, .ring__card, .ring__peek-card) .pub-piece__title { transition: none; }
+:is(.iss__tile, .ring__card, .ring__peek-card) .pub-piece__title[data-len="s"] { font-size: 16cqw; }
+:is(.iss__tile, .ring__card, .ring__peek-card) .pub-piece__title[data-len="m"] { font-size: 13.5cqw; }
+:is(.iss__tile, .ring__card, .ring__peek-card) .pub-piece__title[data-len="l"] { font-size: 11cqw; }
+/* where a card's colour is close to the stage's, a hairline keeps its edge (as the grid's does) */
+:root:not([data-theme="light"]) :is(.iss__tile, .ring__card, .ring__peek-card)[data-tone="1"] { box-shadow: inset 0 0 0 1px var(--line); }
+:root[data-theme="light"] :is(.iss__tile, .ring__card, .ring__peek-card)[data-tone="4"] { box-shadow: inset 0 0 0 1px var(--border-soft); }
+
+/* ==== the issue's page ==== */
+.iss { padding: clamp(40px, 6vw, 80px) var(--pub-gutter) clamp(72px, 9vw, 120px); }
+.iss__stage { max-width: var(--pub-max); margin-inline: auto; }
+.iss__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; margin-bottom: clamp(32px, 4vw, 48px); }
+.iss__back { margin: 0; }
+.iss__title { margin: 0; color: var(--fg-strong); }
+.iss__year { color: var(--fg-muted); }
+.iss__ring, .iss__hint { display: none; }
+/* the spotlight's card a little squarer than the grid's, as Bureau Nine's is; its issue and reading
+   time run on to a second line where the card is narrow, rather than under Read now */
+.iss__piece .pub-piece__media { aspect-ratio: 5 / 4; }
+.iss__piece .pub-piece__meta .pub-label { white-space: normal; }
+/* where it is in the issue: the piece before, 01 / 07, the piece after */
+.iss__nav { display: flex; align-items: center; gap: 12px; }
+.iss__nav[hidden] { display: none; }
+.iss__count { margin: 0; min-width: 6ch; text-align: center; font-variant-numeric: tabular-nums; color: var(--fg-strong); }
+.iss__step {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: none;
+  color: var(--fg-strong);
+  cursor: pointer;
+  transition: border-color var(--dur-base) var(--ease-curtain), background-color var(--dur-base) var(--ease-curtain);
+}
+.iss__step svg { width: 6px; height: 10px; }
+.iss__step:hover { border-color: var(--fg-strong); }
+.iss__step[aria-disabled="true"] { opacity: .35; cursor: default; }
+.iss__step[aria-disabled="true"]:hover { border-color: var(--line); }
+.iss__step:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ---- with scripts: the stage ---- */
+html.has-js .iss {
+  --iss-step: 72svh;                                         /* the scroll a piece takes */
+  --iss-spot-w: min(420px, calc((100svh - 390px) * 1.25));   /* the spotlight, as tall as the screen allows */
+  --iss-tile-w: 112px;
+  height: calc(100svh + (var(--iss-n) - 1) * var(--iss-step));
+  padding: 0;
+}
+html.has-js .iss__stage {
+  position: sticky;
+  top: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100svh;
+  max-width: none;
+  /* (the head row under the top bar, which comes down over the top 64px when it is called; clear of
+     the banner along the bottom) */
+  padding: 80px var(--pub-gutter) 60px;
+  overflow: clip;
+}
+html.has-js .iss__head { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); margin: 0; }
+/* (the count's room kept until the script shows it, so the stage does not move then) */
+html.has-js .iss__nav[hidden] { display: flex; visibility: hidden; }
+html.has-js .iss__title { grid-column: 2; text-align: center; }
+html.has-js .iss__nav { grid-column: 3; justify-self: end; }
+html.has-js .iss__scene { position: relative; display: grid; place-items: center; min-height: 0; perspective: 1200px; }
+/* the ring, behind the spotlight: its cards moved by the scroll (src/publication/issue.js), standing
+   in depth, the front ones larger; the whole of it leaning with the mouse */
+html.has-js .iss__ring { display: block; position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .7s var(--ease-curtain); }
+.iss__tile {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--iss-tile-w);
+  aspect-ratio: 3 / 4;
+  margin: calc(var(--iss-tile-w) * -2 / 3) 0 0 calc(var(--iss-tile-w) / -2);
+  cursor: pointer;
+  box-shadow: 0 16px 34px -14px rgb(0 0 0 / .55);
+}
+/* the spotlight: the pieces' cards in one place, the current one showing (the one coming in over the
+   one going). No transition of their own (reduced motion's near-instant ones, layout.css, made the
+   one coming in still hidden when the focus went to it) */
+html.has-js .iss__pieces { position: relative; z-index: 200; grid-template-columns: minmax(0, 1fr); gap: 0; width: var(--iss-spot-w); }
+html.has-js .iss__piece { grid-area: 1 / 1; visibility: hidden; transition-property: none; }
+html.has-js .iss__piece:is(.is-current, .is-leaving) { visibility: visible; }
+html.has-js .iss__piece.is-current { position: relative; z-index: 1; }
+html.has-js .iss__pieces:not(:has(.is-current)) > .iss__piece:first-child { visibility: visible; }
+html.has-js .iss__piece .pub-piece__link { box-shadow: 0 44px 90px -34px rgb(0 0 0 / .65); }
+:root[data-theme="light"] .iss__piece .pub-piece__link { box-shadow: 0 40px 80px -36px rgb(64 20 42 / .45); }
+/* the hint, gone once the ring has moved */
+html.has-js .iss__hint { display: block; justify-self: center; margin: 14px 0 0; color: var(--fg-muted); transition: opacity .5s var(--ease-curtain); }
+html.has-js .iss.is-moved .iss__hint { opacity: 0; }
+
+@media (max-width: 767px) {
+  html.has-js .iss { --iss-step: 62svh; --iss-spot-w: min(74vw, 320px, calc((100svh - 400px) * 1.25)); --iss-tile-w: 50px; }
+  /* (on a phone the top bar comes down only as the page is scrolled back up, and not while the stage
+     is held past its first piece: src/pages/issue.js) */
+  html.has-js .iss__stage { padding-top: 16px; }
+  /* the way back and the count on a row, the issue's name under them */
+  html.has-js .iss__head { grid-template-columns: minmax(0, 1fr) auto; row-gap: 14px; }
+  html.has-js .iss__title { grid-column: 1 / -1; grid-row: 2; }
+  html.has-js .iss__nav { grid-column: 2; grid-row: 1; gap: 8px; }
+  .iss__step { width: 32px; height: 32px; }
+  /* a tighter shadow: a wide one made each small card's layer five times its size */
+  .iss__tile { box-shadow: 0 6px 10px -6px rgb(0 0 0 / .55); }
+}
+/* a narrow window with a mouse (half a laptop's screen): the pointer at the top edge calls the bar, so
+   the head row stands under it, as on a laptop */
+@media (max-width: 767px) and (hover: hover) and (pointer: fine) {
+  html.has-js .iss { --iss-spot-w: min(74vw, 320px, calc((100svh - 464px) * 1.25)); }
+  html.has-js .iss__stage { padding-top: 80px; }
+}
+/* the narrowest phones: the spotlight's issue and reading time over Read now, not beside it */
+@media (max-width: 359px) {
+  .iss__piece .pub-piece__meta { grid-template-columns: minmax(0, 1fr); }
+  .iss__piece .pub-piece__read { justify-self: start; }
+}
+
+/* ==== all the pieces, in a ring ==== */
+.read__views { margin-top: 28px; }
+html:not(.has-js) .read__views, .ring { display: none; }
+html.has-js .read--index:not([data-view="grid"]) .ring { display: block; }
+html.has-js .read--index:not([data-view="grid"]) :is(.read__grid, .read__filters) { display: none; }
+.ring {
+  --ring-w: 132px;
+  --ring-h: 104px;
+  --ring-r: min(380px, 30vw, 40svh);
+  position: relative;
+  height: clamp(440px, calc(100svh - 340px), 660px);
+}
+/* on a laptop the ring rises beside the heading (its back is narrow, clear of the title on the left),
+   so the whole of it is on the screen above the banner */
+@media (min-width: 1024px) and (min-height: 640px) {
+  .ring { height: clamp(300px, calc(100svh - 335px), 680px); margin-top: -150px; }
+}
+.ring__scene { position: absolute; inset: 0; display: grid; place-items: center; perspective: 1800px; touch-action: pan-y; cursor: grab; -webkit-user-select: none; user-select: none; }
+.ring__scene.is-dragging { cursor: grabbing; }
+/* the circle seen from a little above, leaning with the mouse (src/publication/ring.js sets its
+   transform); the wheel in it turns */
+.ring__tilt { position: relative; width: 0; height: 0; transform-style: preserve-3d; transform: rotateX(-22deg); transition: transform .8s var(--ease-curtain); }
+.ring__wheel { --m: var(--m-all); position: relative; width: 0; height: 0; transform-style: preserve-3d; }
+/* each card a fin standing on the circle, its face across it: seen whole at the sides, edge-on at
+   the front and the back */
+.ring__card {
+  position: absolute;
+  left: calc(var(--ring-w) / -2);
+  top: calc(var(--ring-h) / -2);
+  width: var(--ring-w);
+  height: var(--ring-h);
+  transform: rotateY(calc(var(--i) * 360deg / var(--m))) translateZ(var(--ring-r)) rotateY(90deg);
+  -webkit-user-drag: none;
+}
+.ring__card:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+/* in its middle, the way to the grid */
+.ring__grid { position: absolute; left: 50%; top: 50%; z-index: 2; translate: -50% -50%; }
+/* the one pointed at (or reached from the keyboard), large in the corner, with its writer and form */
+.ring__peek {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  width: min(300px, 26vw);
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity .25s var(--ease-curtain), transform .4s var(--ease-curtain);
+}
+.ring__peek.is-on { opacity: 1; transform: none; }
+.ring__peek-card { aspect-ratio: 4 / 3; box-shadow: 0 30px 70px -30px rgb(0 0 0 / .6); }
+.ring__peek.is-focus .ring__peek-card { outline: 3px solid var(--focus); outline-offset: 3px; }
+.ring__peek-cap { margin: 12px 0 0; font-family: var(--font-ui); font-size: 13px; color: var(--fg-muted); }
+@media (hover: none) { .ring__peek:not(.is-focus) { display: none; } }
+/* a phone and a slow device: fewer cards round it (the rest are left out of the ring) */
+@media (max-width: 767px) {
+  .ring__wheel { --m: var(--m-few); }
+  .ring__card--more { display: none; }
+  /* larger cards on a ring that fits the width, and the way to the grid small, in its middle, on the
+     stage's colour so the cards behind it do not show through its label */
+  .ring { --ring-w: 84px; --ring-h: 68px; --ring-r: calc(50vw - 64px); height: clamp(280px, 46svh, 400px); }
+  .ring__grid { min-height: 0; padding: 7px 12px; font-size: 11px; background: var(--bg); }
+}
+html.tier-lite .ring__wheel { --m: var(--m-few); }
+html.tier-lite .ring__card--more { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ring__peek, .iss__hint, .iss__step, .iss__ring, .ring__tilt { transition: none; }
+}

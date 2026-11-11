@@ -1,8 +1,8 @@
 // The pieces: houseofheat.co's Upcoming Releases and Latest News in one section, switched by one
-// toggle. Dropped (the default, on every load) shows the latest pieces as a grid of cards (at most
-// LATEST_SHOWN of them, then "All the pieces", pieces.html), each one link to its own page; Upcoming
-// shows the pieces still to come as a list beside the live statue, standing on the page in a beam
-// of the stage's light. The heading turns between "Latest pieces" and "Upcoming pieces" as the
+// toggle. Dropped (the default, on every load) shows the latest pieces as a grid of cards (three on a
+// laptop, four on a tablet, three on a phone, then "All the pieces", pieces.html), each one link to
+// its own page; Upcoming shows the pieces still to come as a list beside the live statue, standing
+// on the page in a beam of the stage's light. The heading turns between "Latest pieces" and "Upcoming pieces" as the
 // font's own outlines, the About us page's morph (src/type/morphHeading.js) played in time, while
 // the old layout sinks away and the new one rises into place. A filter by form (essay, one-act
 // play, ...) applies to both.
@@ -22,7 +22,10 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
 import HEADS from '../../assets/type/publication-heads.js';
 import { PIECES, PUBLISHED, LATEST_SHOWN } from './pieces-data.js';
-const PHONE_SHOWN = 3; // the latest pieces a phone's grid shows before All the pieces
+// the latest pieces a laptop's grid and a phone's show before All the pieces (a tablet's two
+// columns show all LATEST_SHOWN): publication-pieces.css
+const LAPTOP_SHOWN = 3;
+const PHONE_SHOWN = 3;
 import { pieceCard, pieceRow, esc } from './cards.js';
 import { morphHeading } from '../type/morphHeading.js';
 import { mountStatue } from './statue.js';
@@ -101,8 +104,8 @@ export function setupPieces({ reduced, onTheme, opened }) {
   };
   const say = () => {
     const n = shownIn(mode).length;
-    // (on a phone the grid shows three: publication-pieces.css)
-    const most = matchMedia('(max-width: 767px)').matches ? PHONE_SHOWN : LATEST_SHOWN;
+    // (a laptop's grid and a phone's show three: publication-pieces.css)
+    const most = matchMedia('(max-width: 767px)').matches ? PHONE_SHOWN : matchMedia('(min-width: 1100px)').matches ? LAPTOP_SHOWN : LATEST_SHOWN;
     const shown = mode === 'latest' ? Math.min(n, most) : n;
     status.textContent = `Showing ${shown < n ? `${shown} of ${n}` : n} ${MODES[mode].word} ${n === 1 ? 'piece' : 'pieces'}${form ? `: ${form}` : ''}.`;
   };
@@ -280,6 +283,8 @@ export function setupPieces({ reduced, onTheme, opened }) {
   cleanups.push(() => { stopGlide(); stopOn(false); });
 
   say();
+  // (the grid shows another number of cards across a breakpoint: said again)
+  for (const q of ['(max-width: 767px)', '(min-width: 1100px)']) on(matchMedia(q), 'change', say);
 
   return () => {
     cleanups.forEach((c) => c());

@@ -17,8 +17,12 @@
 const EDGE = 56; // px from the top of the screen that call the bar down
 const LINGER = 450; // ms the bar stays after the pointer has left it
 
-/** @returns {() => void} cleanup */
-export function setupPeekBar() {
+/**
+ * @param {{ calm?: () => boolean }} [opts]  `calm`: while it says so, a finger's scroll back up does not
+ * bring the bar (an issue's page, while its stage is held: the bar would cover its way back and arrows)
+ * @returns {() => void} cleanup
+ */
+export function setupPeekBar({ calm = () => false } = {}) {
   const bar = document.querySelector('[data-topbar]');
   if (!bar) return () => {};
   const fine = matchMedia('(hover: hover) and (pointer: fine)');
@@ -89,7 +93,7 @@ export function setupPeekBar() {
     const dy = y - lastY;
     lastY = y;
     if (fine.matches) return;
-    if (dy < -6) show();
+    if (dy < -6 && !calm()) show();
     else if (dy > 6 && !menuOpen()) { pointerIn = false; hideSoon(0); }
   };
 

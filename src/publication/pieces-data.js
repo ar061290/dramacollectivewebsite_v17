@@ -146,8 +146,14 @@ export const EDITORS_NOTE = {
 /** A piece's own page (relative to the site's root, where every page lives). */
 export const pieceHref = (p) => p.href ?? `./piece-${p.slug}.html`;
 
-/** How many of the latest pieces the publication's grid shows; the rest are on pieces.html. */
-export const LATEST_SHOWN = 6;
+/** How many of the latest pieces the publication's grid holds; the rest are on pieces.html. A laptop
+ * shows three of them, a tablet's two columns all four, a phone three (publication-pieces.css). */
+export const LATEST_SHOWN = 4;
 
-/** The first piece of the newest issue: where "Read the October issue" goes. */
-export const FIRST_OF_ISSUE = (issue) => PUBLISHED.find((p) => p.issue === issue) ?? PUBLISHED[0];
+const MONTH_NAMES = { Jan: 'january', Feb: 'february', Mar: 'march', Apr: 'april', May: 'may', Jun: 'june', Jul: 'july', Aug: 'august', Sep: 'september', Oct: 'october', Nov: 'november', Dec: 'december' };
+/** An issue's own page ("Read the October issue"): its pieces round its spotlight, the first in it
+ * (issue-october-2026.html, written by tools/pages/build.mjs; #<slug> opens on that piece). */
+export const issueHref = (issue) => {
+  const [m, y] = issue.split(' ');
+  return `./issue-${MONTH_NAMES[m] ?? m.toLowerCase()}-${y}.html`;
+};
