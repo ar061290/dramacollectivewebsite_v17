@@ -136,11 +136,11 @@
         },
         {
           "label": "Tool 2",
-          "done": false
+          "done": true
         },
         {
           "label": "Tool 3",
-          "done": false
+          "done": true
         },
         {
           "label": "Conclusion",
