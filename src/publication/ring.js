@@ -3,8 +3,11 @@
 // as many times as fill it (the cards are in the page, written by tools/pages/build.mjs, so the ring
 // stands from the first paint; a phone and a slow device show fewer of them). The circle leans with
 // a mouse's height over the screen, as sebneil's does. The card pointed at slows the turn and shows
-// large in the corner, with its writer and form; a click opens it. A drag turns the ring by hand. In
-// its middle, "Open in grid view"; the switch over it swaps the ring and the grid (with its filters).
+// large in the corner, with its writer and form; a click opens its issue's page on it. Each card has
+// a face on either side, so it reads the right way round from the back too. The wheel turns the ring
+// (the page does not scroll while the ring is up and the page at its top; "Footer" under it goes on
+// down), and a drag either way turns it by hand. In its middle, "Open in grid view"; the switch over
+// it (Ring / Grid) swaps the ring and the grid (with its filters).
 // The ring is where the page opens; the grid is kept in the address (?view=grid, and a filter in it
 // opens on the grid unless the address says ?view=circle), so the way back from a piece comes back
 // to it.
@@ -21,6 +24,7 @@ const LAP = 2600;    // ms a card takes to go one card's place round, at full sp
 const DRAG = 0.22;   // degrees of turn a pixel of drag
 const FRONT = 0.15;  // where a card reached from the keyboard is turned to: the front left, face on
 const TILT = [-22, -12]; // the circle's lean, in degrees: the pointer at the top of the screen, at the foot
+const WHEEL_CARDS = 1.5; // cards the ring turns by for a notch of the wheel (100px)
 
 /** @param {{ reduced: boolean }} ctx  bootPage's context (only `reduced` is used) */
 export function setupRing({ reduced }) {
@@ -120,20 +124,47 @@ export function setupRing({ reduced }) {
     unpeek();
   });
 
-  // ---- a drag: the ring turned by hand (sideways; up and down is still the page's scroll). The
-  // press takes no focus, starts no drag of the link and selects nothing ----
+  // ---- the wheel: while the ring is up and the page at its top, it turns the ring (eased, a frame
+  // at a time, and on as the turn was going), and the page does not scroll; Footer under the ring
+  // goes on down ----
+  let pending = 0, wheelFrame = 0;
+  const ease = () => {
+    wheelFrame = 0;
+    const step = pending * 0.16;
+    pending -= step;
+    const l = lap();
+    spin.currentTime = (((spin.currentTime ?? 0) + step) % l + l) % l;
+    if (Math.abs(pending) > 2) wheelFrame = requestAnimationFrame(ease);
+    else pending = 0;
+  };
+  on(window, 'wheel', (e) => {
+    if (e.ctrlKey || page.dataset.view === 'grid' || scrollY > 4) return;
+    const dy = e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? innerHeight : 1);
+    const dx = e.deltaX * (e.deltaMode === 1 ? 40 : 1);
+    const d = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+    if (!d) return;
+    e.preventDefault();
+    unpeek();
+    pending += d * (WHEEL_CARDS * LAP) / 100;
+    wheelFrame ||= requestAnimationFrame(ease);
+  }, { passive: false });
+  cleanups.push(() => cancelAnimationFrame(wheelFrame));
+
+  // ---- a drag: the ring turned by hand, either way across or up and down (the ring takes no scroll
+  // of its own). The press takes no focus, starts no drag of the link and selects nothing ----
   on(scene, 'mousedown', (e) => { if (e.button === 0) e.preventDefault(); });
   on(scene, 'pointerdown', (e) => {
     if (e.button !== 0 || !e.isPrimary) return;
-    drag = { id: e.pointerId, x: e.clientX, t: spin.currentTime ?? 0, moved: false };
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, t: spin.currentTime ?? 0, moved: false };
   });
   on(window, 'pointermove', (e) => {
     if (!drag || e.pointerId !== drag.id) return;
-    const dx = e.clientX - drag.x;
-    if (!drag.moved && Math.abs(dx) < 6) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    const d = Math.abs(dx) >= Math.abs(dy) ? dx : -dy;
+    if (!drag.moved && Math.abs(d) < 6) return;
     if (!drag.moved) { drag.moved = true; scene.classList.add('is-dragging'); unpeek(); }
     const l = lap();
-    spin.currentTime = ((drag.t - (dx * DRAG / 360) * l) % l + l) % l;
+    spin.currentTime = ((drag.t - (d * DRAG / 360) * l) % l + l) % l;
   }, { passive: true });
   const drop = (e) => {
     if (!drag || e.pointerId !== drag.id) return;

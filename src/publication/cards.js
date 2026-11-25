@@ -1,5 +1,5 @@
 // The pieces' card and row, as strings of markup: the grid's card (a piece that is out: one link,
-// the whole card, to its own page) and the list's row (a piece still to come). One template for
+// the whole card, to its issue's page, opened on it) and the list's row (a piece still to come). One template for
 // every place they show: the publication's pieces section (src/publication/pieces.js) and the page
 // of all the pieces (pieces.html, written by tools/pages/build.mjs at build time). So this file is
 // plain string work, safe to import in Node: nothing here touches the DOM.
@@ -15,7 +15,7 @@
 //                            a writer's page sends it to the publication's)
 //
 // Their looks are in src/styles/publication-pieces.css.
-import { pieceHref } from './pieces-data.js';
+import { ringHref } from './pieces-data.js';
 
 export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -47,7 +47,7 @@ export function pieceMedia(p, tag = 'span') {
 export function pieceCard(p, { level = 3, minutes = 0 } = {}) {
   const h = `h${Math.min(6, Math.max(2, level | 0 || 3))}`;
   return `<li class="pub-piece" data-tone="${toneOf(p)}">
-  <a class="pub-piece__link" href="${esc(pieceHref(p))}">
+  <a class="pub-piece__link" href="${esc(ringHref(p))}">
     ${pieceMedia(p, h)}
     <div class="pub-piece__body">
       <div class="pub-piece__head">
