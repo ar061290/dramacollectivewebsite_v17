@@ -1,7 +1,7 @@
 {
-  "_readme": "Aadi's IA tracker (ia.html, unlisted: linked from nowhere). To tick a step, set its \"done\" to true (no quotes) and \"updated\" to today's date, written YYYY-MM-DD, then push: the Pages deploy writes the page again (`npm run pages` does it locally). Nothing on the page can change a tick, and the build stops with the reason if something here would not show. A subject's reminder speaks of its \"name\" plus \" IA\" unless it has a \"what\" (the Extended Essay). Mathematics lists Personal story, Background, Math and Conclusion twice on purpose: once for the first idea, once for the new one after \"Idea scrapped\".",
+  "_readme": "Aadi's IA tracker (ia.html, unlisted: linked from nowhere). To tick a step, set its \"done\" to true (no quotes) and \"updated\" to today's date, written YYYY-MM-DD, then push: the Pages deploy writes the page again (`npm run pages` does it locally). Nothing on the page can change a tick, and the build stops with the reason if something here would not show. A subject's reminder speaks of its \"name\" plus \" IA\" unless it has a \"what\" (the Extended Essay). The Physics IA became the Extended Essay on 27 Nov 2026: its progress moved there, and the Physics IA starts again from New idea research. Mathematics lists Personal story, Background, Math and Conclusion twice on purpose: once for the first idea, once for the new one after \"Idea scrapped\".",
   "person": "Aadi",
-  "updated": "2026-10-27",
+  "updated": "2026-11-27",
   "subjects": [
     {
       "key": "math",
@@ -34,15 +34,15 @@
         },
         {
           "label": "New idea research",
-          "done": false
+          "done": true
         },
         {
           "label": "Personal story",
-          "done": false
+          "done": true
         },
         {
           "label": "Background",
-          "done": false
+          "done": true
         },
         {
           "label": "Math",
@@ -59,8 +59,12 @@
       "name": "Physics",
       "steps": [
         {
+          "label": "New idea research",
+          "done": false
+        },
+        {
           "label": "Prelab",
-          "done": true
+          "done": false
         },
         {
           "label": "Data collection",
@@ -68,11 +72,11 @@
         },
         {
           "label": "Background",
-          "done": true
+          "done": false
         },
         {
           "label": "Personal story",
-          "done": true
+          "done": false
         },
         {
           "label": "Data analysis",
@@ -110,7 +114,7 @@
         },
         {
           "label": "Data analysis",
-          "done": false
+          "done": true
         },
         {
           "label": "Conclusion",
@@ -158,7 +162,31 @@
       "what": "Extended Essay",
       "steps": [
         {
-          "label": "Finish the Physics IA first",
+          "label": "Prelab",
+          "done": true
+        },
+        {
+          "label": "Data collection",
+          "done": false
+        },
+        {
+          "label": "Background",
+          "done": true
+        },
+        {
+          "label": "Personal story",
+          "done": true
+        },
+        {
+          "label": "Data analysis",
+          "done": false
+        },
+        {
+          "label": "Conclusion",
+          "done": false
+        },
+        {
+          "label": "Evaluation",
           "done": false
         }
       ]
