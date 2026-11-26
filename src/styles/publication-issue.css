@@ -125,10 +125,11 @@ html.has-js .iss__piece.is-current { position: relative; z-index: 1; }
 html.has-js .iss__pieces:not(:has(.is-current)) > .iss__piece:first-child { visibility: visible; }
 html.has-js .iss__card { box-shadow: 0 44px 90px -34px rgb(0 0 0 / .65); }
 html.has-js[data-theme="light"] .iss__card { box-shadow: 0 40px 80px -36px rgb(64 20 42 / .45); }
-/* under it: the hint (gone once the ring has moved) and the way on down to the footer */
-html.has-js .iss__foot { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 14px; }
-html.has-js .iss__hint { margin: 0; color: var(--fg-muted); transition: opacity .5s var(--ease-curtain); }
-html.has-js .iss.is-moved .iss__hint { opacity: 0; }
+/* under it: the hint and the way on down to the footer, side by side; once the ring has moved the hint
+   fades and folds away, and Footer glides to the middle */
+html.has-js .iss__foot { display: flex; align-items: center; justify-content: center; margin-top: 14px; }
+html.has-js .iss__hint { max-width: 14em; margin: 0 20px 0 0; overflow: hidden; white-space: nowrap; color: var(--fg-muted); transition: opacity .35s var(--ease-curtain), max-width .7s var(--ease-curtain), margin-right .7s var(--ease-curtain); }
+html.has-js .iss.is-moved .iss__hint { max-width: 0; margin-right: 0; opacity: 0; }
 .iss__footer { padding: 6px 12px; min-height: 30px; font-size: 11px; }
 
 @media (max-width: 767px) {

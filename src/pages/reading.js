@@ -2,11 +2,11 @@
 // (editors-note.html) and all the pieces (pieces.html), written by tools/pages/build.mjs. They are
 // made to be read, so little moves: the curtain between pages, the title rising into place (the
 // site's [data-reveal]), and the banner along the bottom (src/publication/ticker.js). As on the
-// publication below its opening, there is no star sky and the cursor's glow is everywhere
+// publication below its opening, there is no star sky (but on all the pieces) and the cursor's glow is everywhere
 // (html.is-glow-everywhere, set in the page's own markup so it holds from the first move); the top
 // bar waits out of sight until it is wanted (src/publication/peekbar.js). Beside a piece stand two
 // stone masks, lit by the cursor's glow (src/publication/masks.js). All the pieces open in a ring
-// (src/publication/ring.js), with its grid and filters a switch away.
+// (src/publication/ring.js), with its grid and filters a switch away, on the star sky.
 import gsap from 'gsap';
 import { bootPage } from '../site/boot.js';
 import { setupTicker } from '../publication/ticker.js';

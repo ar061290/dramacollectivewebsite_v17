@@ -283,7 +283,8 @@ ${[CONTACT, APPLY, CTA].map((n) => `        <li>${link(n, page)}</li>`).join('\n
 };
 
 // The star sky and the drawn cursor. The reading pages have no sky (nothing to keep it going on a
-// page made to be read): only the cursor, with its glow everywhere (html.is-glow-everywhere).
+// page made to be read): only the cursor, with its glow everywhere (html.is-glow-everywhere); all the
+// pieces and an issue's page, their rings among the stars, have the sky.
 const stage = (stars = true) => `${stars ? `<div class="stage" aria-hidden="true">
     <canvas class="stage__stars"></canvas>
   </div>
@@ -1420,7 +1421,7 @@ export async function build(only = []) {
     out = out.replace(/\r\n/g, '\n');
     out = fill(out, 'head', head());
     out = fill(out, 'header', header(key));
-    if (key !== 'home') out = fill(out, 'stage', stage(!reading && !writer));
+    if (key !== 'home') out = fill(out, 'stage', stage((!reading && !writer) || key === 'pieces' || key.startsWith('issue-')));
     out = fill(out, 'pubbanner', pubBanner(key), '    ');
     out = fill(out, 'footer', footer(key));
     if (key === 'home') out = fill(out, 'links', pageLinks('home', '        ', 'curtain__links--dock', true), '        ');
