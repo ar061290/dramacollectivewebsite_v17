@@ -157,7 +157,3 @@ export const issueHref = (issue) => {
   const [m, y] = issue.split(' ');
   return `./issue-${MONTH_NAMES[m] ?? m.toLowerCase()}-${y}.html`;
 };
-
-/** Where a piece's card goes: its issue's page, opened on it (a page of its own, such as the editor's
- * note, goes there instead); the issue's spotlight is the way on to the piece itself. */
-export const ringHref = (p) => p.href ?? `${issueHref(p.issue)}#${p.slug}`;

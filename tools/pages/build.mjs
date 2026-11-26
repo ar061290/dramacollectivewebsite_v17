@@ -28,7 +28,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
-import { PIECES, PUBLISHED, pieceHref, issueHref, ringHref, EDITORS_NOTE } from '../../src/publication/pieces-data.js';
+import { PIECES, PUBLISHED, pieceHref, issueHref, EDITORS_NOTE } from '../../src/publication/pieces-data.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const readJSON = (path) => JSON.parse(readFileSync(join(ROOT, path), 'utf8'));
@@ -462,9 +462,9 @@ const content = (path, pad) => readFileSync(join(ROOT, 'content', path), 'utf8')
 // lead, on the issue's stage photo; the next four are a list, on the logo mark in
 // its card's colours on the publication (.issue__tile in src/styles/layout.css); any more are named
 // under them, beside the issue's cover (the issue's page again), over the links to the issue and the
-// publication. Each piece opens the issue's own page (issue-<month>-<year>.html), on that piece. An
-// issue's pictures go in ISSUE_ART; an issue without them has the mark on a tile for its lead, and no
-// cover.
+// publication. Each piece in the list opens its own page; the lead, the cover and the issue's link
+// open the issue's own page (issue-<month>-<year>.html), on the lead. An issue's pictures go in
+// ISSUE_ART; an issue without them has the mark on a tile for its lead, and no cover.
 const ISSUE_ART = {
   'Oct 2026': { photo: 'assets/publication/stage-photo-october-2026.webp', cover: 'assets/publication/cover-october-2026.webp' },
 };
@@ -496,7 +496,7 @@ function homeIssue({ toneOf, byline }, pad = '          ') {
     ...indent([art.photo ? `<span class="issue__art issue__art--photo" aria-hidden="true">${img(art.photo)}</span>` : tile(lead, 'issue__art--lead'), ...text(lead)]),
     '</a>',
     '<ol class="issue__list" data-stagger>',
-    ...listed.flatMap((p) => indent(['<li>', ...indent([`<a class="issue__item" href="${ringHref(p)}">`, ...indent([tile(p, 'issue__art--sm'), ...text(p)]), '</a>']), '</li>'])),
+    ...listed.flatMap((p) => indent(['<li>', ...indent([`<a class="issue__item" href="${pieceHref(p)}">`, ...indent([tile(p, 'issue__art--sm'), ...text(p)]), '</a>']), '</li>'])),
     '</ol>',
     // (the cover repeats the issue's link under it, so it is left out of the tab order and the reading)
     '<div class="issue__foot" data-stagger>',
@@ -505,7 +505,7 @@ function homeIssue({ toneOf, byline }, pad = '          ') {
       '<div class="issue__also">',
       ...indent([
         ...(more.length ? [`<p class="issue__kicker">Also in the ${issueName(issue)} issue</p>`, '<ul class="issue__also-list">',
-          ...indent(more.map((p) => `<li><a href="${ringHref(p)}"><span class="issue__title"${lang(p)}>${esc(p.title)}</span> <span class="issue__by">${esc(byline(p))}</span></a></li>`)),
+          ...indent(more.map((p) => `<li><a href="${pieceHref(p)}"><span class="issue__title"${lang(p)}>${esc(p.title)}</span> <span class="issue__by">${esc(byline(p))}</span></a></li>`)),
           '</ul>'] : []),
         `<a class="issue__more" href="${issueHref(issue)}">Read the ${MONTHS[issue.slice(0, 3)] ?? issue} issue</a>`,
         '<a class="issue__more" href="./publication.html">The publication</a>',
@@ -683,7 +683,7 @@ function piecesPage({ pieceCard, pieceMedia, byline, toneOf }) {
   })).flat().join('\n');
   // each card carries its form and its month (the issue, as "2026-10"), for the filters
   const cards = ordered
-    .map((p) => pieceCard(p, { level: 2, direct: true })
+    .map((p) => pieceCard(p, { level: 2 })
       .replace('<li class="pub-piece"', `<li class="pub-piece" data-form="${esc(p.form ?? '')}" data-month="${issueDate(p.issue)}" data-month-name="${esc(issueName(p.issue))}"`)
       .split('\n').map((l) => `          ${l}`).join('\n'));
   return {
