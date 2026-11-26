@@ -638,6 +638,7 @@ function issuePage(issue, { pieceMedia, toneOf, byline }) {
         <header class="iss__head">
           <a class="read__back iss__back" href="./publication.html" data-iss-back>${ARROW_L}<span data-iss-back-label>The publication</span></a>
           <h1 class="pub-label iss__title" id="iss-title">The ${esc(month)} issue <span class="iss__year">${esc(issue.slice(4))}</span></h1>
+          <a class="pub-btn pub-btn--lg iss__first" href="${pieceHref(pieces[0])}">Read the first piece${chev('M1 1l4 4-4 4')}</a>
           <div class="iss__nav" data-iss-nav hidden>
             <button class="iss__step" type="button" aria-label="The piece before" data-iss-step="-1">${chev('M5 1 1 5l4 4')}</button>
             <p class="pub-label iss__count" aria-hidden="true"><span data-iss-at>01</span> / ${two(pieces.length)}</p>

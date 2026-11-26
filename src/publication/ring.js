@@ -183,12 +183,55 @@ export function setupRing({ reduced }) {
   }, true);
 
   // ---- the view: the ring, or the grid; kept in the address where it is not the ring by default ----
-  const setView = (view, { keep = true } = {}) => {
+  // the change between them, quick: the ring's cards fly to their places in the grid, or the grid's
+  // to their places round the ring as it comes up (at once with reduced motion)
+  const MOVE = { duration: 420, easing: 'cubic-bezier(.22, .61, .36, 1)' };
+  const frontOf = (i) => cards.filter((c) => c.dataset.piece === String(i) && getComputedStyle(c).display !== 'none')
+    .map((c) => c.getBoundingClientRect()).sort((a, b) => b.width * b.height - a.width * a.height)[0];
+  const fly = (to) => {
+    if (reduced) return;
+    const shown = pieces.filter((c) => !c.hidden);
+    if (to === 'grid') {
+      // (measured on the ring, before the change)
+      const from = shown.map((c) => frontOf(pieces.indexOf(c)));
+      return () => shown.forEach((c, j) => {
+        const a = from[j], b = c.getBoundingClientRect();
+        if (!a || !b.width) return;
+        c.animate([
+          { transform: `translate(${a.left - b.left}px, ${a.top - b.top}px) scale(${a.width / b.width}, ${a.height / b.height})`, transformOrigin: '0 0', opacity: 0.5 },
+          { transform: 'none', transformOrigin: '0 0', opacity: 1 },
+        ], { ...MOVE, delay: j * 18 });
+      });
+    }
+    // to the ring: a picture of each grid card flies from where it stood to its card on the ring
+    const from = shown.map((c) => ({ i: pieces.indexOf(c), r: c.querySelector('.pub-piece__media').getBoundingClientRect(), tone: c.dataset.tone, media: c.querySelector('.pub-piece__media') }));
+    return () => {
+      ring.animate([{ opacity: 0 }, { opacity: 1 }], { duration: MOVE.duration, easing: 'ease-out' });
+      from.forEach(({ i, r, tone, media }, j) => {
+        const b = frontOf(i);
+        if (!b || r.bottom < 0 || r.top > innerHeight) return;
+        const ghost = document.createElement('div');
+        ghost.className = 'pub-piece ring__ghost';
+        ghost.dataset.tone = tone;
+        ghost.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
+        ghost.append(media.cloneNode(true));
+        document.body.append(ghost);
+        ghost.animate([
+          { transform: 'none', opacity: 1 },
+          { transform: `translate(${b.left - r.left}px, ${b.top - r.top}px) scale(${b.width / r.width}, ${b.height / r.height})`, opacity: 0 },
+        ], { ...MOVE, delay: j * 18, fill: 'forwards' }).onfinish = () => ghost.remove();
+      });
+    };
+  };
+  const setView = (view, { keep = true, move = false } = {}) => {
+    const landed = move && page.dataset.view !== view ? fly(view) : null;
+    if (view === 'circle' && scrollY > 4) window.scrollTo({ top: 0, behavior: 'instant' });
     page.dataset.view = view;
     toggle.checked = view === 'grid';
     sides.forEach((s) => s.classList.toggle('is-on', s.dataset.viewSide === view));
     held = view === 'grid' ? held | 4 : held & ~4;
     play();
+    landed?.();
     if (!keep) return;
     const q = new URLSearchParams(location.search);
     if (view === 'grid' || q.has('form') || q.has('month')) q.set('view', view); else q.delete('view');
@@ -198,10 +241,10 @@ export function setupRing({ reduced }) {
   const asked = new URLSearchParams(location.search);
   const v = asked.get('view');
   setView(v === 'grid' || v === 'circle' ? v : asked.has('form') || asked.has('month') ? 'grid' : 'circle', { keep: false });
-  on(toggle, 'change', () => setView(toggle.checked ? 'grid' : 'circle'));
-  sides.forEach((s) => on(s, 'click', () => setView(s.dataset.viewSide)));
+  on(toggle, 'change', () => setView(toggle.checked ? 'grid' : 'circle', { move: true }));
+  sides.forEach((s) => on(s, 'click', () => setView(s.dataset.viewSide, { move: true })));
   on(ring.querySelector('[data-ring-grid]'), 'click', () => {
-    setView('grid');
+    setView('grid', { move: true });
     toggle.focus({ preventScroll: true });
   });
 
