@@ -1005,22 +1005,47 @@ ${e.photos.slice(0, ROW).map((m, i) => `  ${galleryTile(e, m, i)}`).join('\n')}
   <li class="gal-tile gal-tile--more"><a class="gal-more" href="${galleryHref(e)}" aria-label="View all of ${esc(e.title)}: ${galleryCount(e)}"><img src="./${more.src}-s.webp" alt="" width="${more.tw ?? more.w}" height="${more.th ?? more.h}" loading="lazy" decoding="async"><span class="gal-more__veil" aria-hidden="true"><span class="gal-more__label">View all</span><span class="gal-more__count">${e.photos.length + (e.clips?.length ?? 0)}</span><span class="gal-more__arrow">${ARROW_R}</span></span></a></li>
 </ul>`;
 };
+/**
+ * The Gallery (gallery.html): the events side by side, a column each, after SpiralGallery: each
+ * event's pictures wound round its column as a ribbon, which the page's scroll turns, every column's
+ * at once (src/pages/gallery.js, src/ui/spiral.js), while the columns stand on the screen; across,
+ * the columns scroll from event to event (a swipe, the trackpad, Shift and the wheel, the arrows over
+ * them or the events' names). A picture opens whole in the lightbox, stepping through its event.
+ * Without scripts each column is its pictures in a plain grid.
+ */
 function gallery(pad) {
-  const row = (e) => `<section class="act gal-event" id="${e.key}" aria-labelledby="${e.key}-title" data-gal-event>
-  <header class="gal-event__head ground" data-mask>
+  const most = Math.max(...GALLERY_EVENTS.map((e) => e.photos.length));
+  const col = (e) => `<section class="gal-col gal-event" id="${e.key}" aria-labelledby="${e.key}-title" data-gal-event data-gal-col>
+  <header class="gal-col__head">
     <p class="eyebrow"><time datetime="${e.date}">${esc(e.when)}</time></p>
-    <h2 class="act__title" id="${e.key}-title"><a class="gal-event__link" href="${galleryHref(e)}">${esc(e.title)}</a></h2>
+    <h2 class="gal-col__title" id="${e.key}-title"><a class="gal-event__link" href="${galleryHref(e)}">${esc(e.title)}</a></h2>
     <p class="gal-event__count">${galleryCount(e)}</p>
   </header>
-  ${galleryRow(e).split('\n').join('\n  ')}
+  <div class="gal-spiral">
+    <ul class="gal-spiral__ribbon" data-gal-ribbon>
+${e.photos.map((m, j) => `      ${galleryTile(e, m, j, ' gal-spiral__tile').replace('<li class=', `<li style="--j: ${j}" class=`)}`).join('\n')}
+    </ul>
+  </div>
 </section>`;
-  const html = `<nav class="gal-jump" aria-label="The events">
-  <ul>
-${GALLERY_EVENTS.map((e) => `    <li><a class="gal-jump__link" href="#${e.key}">${esc(e.title)}</a></li>`).join('\n')}
-  </ul>
-</nav>
-
-${GALLERY_EVENTS.map(row).join('\n\n')}
+  const chev = (d) => `<svg viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const html = `<div class="gal-track" data-gal-track style="--gal-most: ${most}">
+  <div class="gal-stage">
+    <div class="gal-bar">
+      <nav class="gal-jump" aria-label="The events">
+        <ul>
+${GALLERY_EVENTS.map((e) => `          <li><a class="gal-jump__link" href="#${e.key}" data-gal-to="${e.key}">${esc(e.title)}</a></li>`).join('\n')}
+        </ul>
+      </nav>
+      <div class="gal-bar__steps" data-gal-steps hidden>
+        <button class="gal-bar__step" type="button" aria-label="The event before" data-gal-step="-1">${chev('M5 1 1 5l4 4')}</button>
+        <button class="gal-bar__step" type="button" aria-label="The event after" data-gal-step="1">${chev('M1 1l4 4-4 4')}</button>
+      </div>
+    </div>
+    <div class="gal-cols" role="region" aria-label="The events, side by side" tabindex="0" data-gal-cols>
+${GALLERY_EVENTS.map(col).join('\n').split('\n').map((l) => `      ${l}`).join('\n')}
+    </div>
+  </div>
+</div>
 
 ${galleryBox}`;
   return html.split('\n').map((l, i) => (i && l ? pad + l : l)).join('\n');
