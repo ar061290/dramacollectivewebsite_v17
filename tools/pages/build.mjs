@@ -740,7 +740,10 @@ ${ring}
           </div>
           <button class="pub-btn pub-btn--lg ring__grid" type="button" data-ring-grid>Open in grid view</button>
           <div class="ring__peek" data-ring-peek aria-hidden="true"></div>
-          <a class="pub-btn ring__footer" href="#contact">Footer</a>
+          <div class="ring__foot">
+            <p class="pub-label ring__hint" aria-hidden="true">Scroll to turn</p>
+            <a class="pub-btn ring__footer" href="#contact">Footer</a>
+          </div>
         </div>
         <ul class="pub-pieces__grid read__grid" data-index-grid>
 ${cards.join('\n')}

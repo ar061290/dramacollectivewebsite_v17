@@ -202,7 +202,11 @@ html.has-js .read--index:not([data-view="grid"]) :is(.read__grid, .read__filters
 /* in its middle, the way to the grid */
 .ring__grid { position: absolute; left: 50%; top: 50%; z-index: 2; translate: -50% -50%; }
 /* under it, the way on down to the footer (the wheel turns the ring) */
-.ring__footer { position: absolute; left: 50%; bottom: 0; z-index: 2; translate: -50% 0; padding: 6px 12px; min-height: 30px; font-size: 11px; background: var(--bg); }
+.ring__foot { position: absolute; left: 50%; bottom: 0; z-index: 2; display: flex; align-items: center; translate: -50% 0; }
+.ring__footer { padding: 6px 12px; min-height: 30px; font-size: 11px; background: var(--bg); }
+/* the hint beside it, folding away once the ring has been turned, Footer gliding to the middle */
+.ring__hint { max-width: 14em; margin: 0 18px 0 0; overflow: hidden; white-space: nowrap; color: var(--fg-muted); transition: opacity .35s var(--ease-curtain), max-width .7s var(--ease-curtain), margin-right .7s var(--ease-curtain); }
+.ring.is-moved .ring__hint { max-width: 0; margin-right: 0; opacity: 0; }
 /* the one pointed at (or reached from the keyboard), large in the corner, with its writer and form */
 .ring__peek {
   position: absolute;
@@ -233,7 +237,7 @@ html.tier-lite .ring__wheel { --m: var(--m-few); }
 html.tier-lite .ring__card--more { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ring__peek, .iss__hint, .iss__step, .iss__ring, .ring__tilt { transition: none; }
+  .ring__peek, .iss__hint, .ring__hint, .iss__step, .iss__ring, .ring__tilt { transition: none; }
 }
 
 /* a grid card's picture flying to its place on the ring, as the view changes (src/publication/ring.js) */

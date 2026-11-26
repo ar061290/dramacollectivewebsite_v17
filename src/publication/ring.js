@@ -145,6 +145,7 @@ export function setupRing({ reduced }) {
     if (!d) return;
     e.preventDefault();
     unpeek();
+    ring.classList.add('is-moved');
     pending += d * (WHEEL_CARDS * LAP) / 100;
     wheelFrame ||= requestAnimationFrame(ease);
   }, { passive: false });
@@ -162,7 +163,7 @@ export function setupRing({ reduced }) {
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     const d = Math.abs(dx) >= Math.abs(dy) ? dx : -dy;
     if (!drag.moved && Math.abs(d) < 6) return;
-    if (!drag.moved) { drag.moved = true; scene.classList.add('is-dragging'); unpeek(); }
+    if (!drag.moved) { drag.moved = true; scene.classList.add('is-dragging'); ring.classList.add('is-moved'); unpeek(); }
     const l = lap();
     spin.currentTime = ((drag.t - (d * DRAG / 360) * l) % l + l) % l;
   }, { passive: true });
