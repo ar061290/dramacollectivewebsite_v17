@@ -1009,15 +1009,16 @@ ${e.photos.slice(0, ROW).map((m, i) => `  ${galleryTile(e, m, i)}`).join('\n')}
 </ul>`;
 };
 /**
- * The Gallery (gallery.html): the events side by side, a column each, after SpiralGallery: each
- * event's pictures wound round its column as a ribbon, which the page's scroll turns, every column's
- * at once (src/pages/gallery.js, src/ui/spiral.js), while the columns stand on the screen; across,
- * the columns scroll from event to event (a swipe, the trackpad, Shift and the wheel, the arrows over
- * them or the events' names). A picture opens whole in the lightbox, stepping through its event.
- * Without scripts each column is its pictures in a plain grid.
+ * The Gallery (gallery.html), on one screen: its name and the events' names over the events side by
+ * side, a column each, after SpiralGallery: each event's pictures, bent round its column as a ribbon
+ * that winds on without end, which the wheel or a swipe turns, every column's at once (src/pages/
+ * gallery.js, src/ui/spiral.js: drawn with WebGL); across, the columns scroll from event to event (a
+ * swipe, the trackpad, Shift and the wheel, the arrows under them or the events' names); under them,
+ * what to do and Footer, the way on down. A picture opens whole in the lightbox, stepping through its
+ * event (the pictures are in each column as links, for the lightbox, screen readers and the keyboard).
+ * Without scripts (or WebGL) each column is its pictures in a plain grid.
  */
 function gallery(pad) {
-  const most = Math.max(...GALLERY_EVENTS.map((e) => e.photos.length));
   const col = (e) => `<section class="gal-col gal-event" id="${e.key}" aria-labelledby="${e.key}-title" data-gal-event data-gal-col>
   <header class="gal-col__head">
     <p class="eyebrow"><time datetime="${e.date}">${esc(e.when)}</time></p>
@@ -1026,26 +1027,36 @@ function gallery(pad) {
   </header>
   <div class="gal-spiral">
     <ul class="gal-spiral__ribbon" data-gal-ribbon>
-${e.photos.map((m, j) => `      ${galleryTile(e, m, j, ' gal-spiral__tile').replace('<li class=', `<li style="--j: ${j}" class=`)}`).join('\n')}
+${e.photos.map((m, j) => `      ${galleryTile(e, m, j, ' gal-spiral__tile')}`).join('\n')}
     </ul>
   </div>
 </section>`;
   const chev = (d) => `<svg viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  const html = `<div class="gal-track" data-gal-track style="--gal-most: ${most}">
+  const html = `<div class="gal-track" data-gal-track>
   <div class="gal-stage">
-    <div class="gal-bar">
+    <header class="gal-head">
+      <div class="gal-head__title">
+        <p class="eyebrow">The Collective</p>
+        <h1 class="gal-head__h1">Gallery</h1>
+      </div>
       <nav class="gal-jump" aria-label="The events">
         <ul>
 ${GALLERY_EVENTS.map((e) => `          <li><a class="gal-jump__link" href="#${e.key}" data-gal-to="${e.key}">${esc(e.title)}</a></li>`).join('\n')}
         </ul>
       </nav>
-      <div class="gal-bar__steps" data-gal-steps hidden>
+    </header>
+    <div class="gal-view" data-gal-view>
+      <div class="gal-cols" role="region" aria-label="The events, side by side" tabindex="0" data-gal-cols>
+${GALLERY_EVENTS.map(col).join('\n').split('\n').map((l) => `        ${l}`).join('\n')}
+      </div>
+    </div>
+    <div class="gal-foot" data-gal-foot hidden>
+      <p class="pub-label gal-foot__hint"><span>Scroll to turn</span><span class="gal-foot__across" data-gal-across> · swipe across for more events</span></p>
+      <div class="gal-foot__steps" data-gal-steps>
         <button class="gal-bar__step" type="button" aria-label="The event before" data-gal-step="-1">${chev('M5 1 1 5l4 4')}</button>
         <button class="gal-bar__step" type="button" aria-label="The event after" data-gal-step="1">${chev('M1 1l4 4-4 4')}</button>
       </div>
-    </div>
-    <div class="gal-cols" role="region" aria-label="The events, side by side" tabindex="0" data-gal-cols>
-${GALLERY_EVENTS.map(col).join('\n').split('\n').map((l) => `      ${l}`).join('\n')}
+      <a class="pub-btn gal-foot__footer" href="#contact">Footer</a>
     </div>
   </div>
 </div>

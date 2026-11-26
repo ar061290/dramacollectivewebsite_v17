@@ -185,19 +185,50 @@
 }
 @keyframes gal-box-in { from { opacity: 0; transform: scale(.97); } }
 
-/* ==== the Gallery: the events side by side, a column each (tools/pages/build.mjs gallery(),
-   src/ui/spiral.js), each event's pictures wound round its column as a ribbon, after SpiralGallery.
-   Across, the columns scroll (snapping to a column); down, the page's scroll turns the ribbons while
-   the columns stand on the screen. Without scripts each column is its pictures in a plain grid. ==== */
-.gal-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3) var(--space-5); }
-.gal-bar .gal-jump { margin-top: 0; }
-.gal-bar__steps { display: flex; gap: var(--space-2); }
-.gal-bar__steps[hidden] { display: none; }
+/* ==== the Gallery, on one screen (tools/pages/build.mjs gallery(), src/ui/spiral.js): its name and
+   the events' names, then the events side by side, a column each, each event's pictures bent round
+   its column as a ribbon winding on without end (drawn with WebGL over the columns), then what to do
+   and Footer. Across, the columns scroll (snapping to a column); the wheel or a swipe turns the
+   ribbons. Without scripts (or WebGL) each column is its pictures in a plain grid, and the page
+   scrolls as any other. ==== */
+.gal-stage { padding-top: calc(var(--topbar-h) + var(--space-5)); }
+.gal-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-3) var(--space-6); }
+.gal-head__title .eyebrow { margin: 0; }
+.gal-head__h1 { margin: var(--space-1) 0 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 5vw, 72px); line-height: .95; color: var(--fg-strong); }
+.gal-head .gal-jump { margin-top: 0; }
+.gal-head .gal-jump ul { justify-content: flex-end; }
+
+.gal-view { position: relative; margin-top: var(--space-5); }
+.gal-cols {
+  display: flex;
+  gap: var(--space-5);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.gal-cols::-webkit-scrollbar { display: none; }
+.gal-cols:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+/* a column: the event's date, name and count over its pictures; four to the width on a laptop */
+.gal-col { flex: 0 0 max(260px, calc((100% - 3 * var(--space-5)) / 4)); min-width: 0; scroll-snap-align: start; }
+.gal-col__head { padding-bottom: var(--space-3); border-bottom: var(--border-width) solid var(--line); }
+.gal-col__title { margin: var(--space-1) 0 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(22px, 2vw, 30px); line-height: 1.1; color: var(--fg-strong); }
+.gal-spiral__ribbon { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: var(--space-4) 0 0; padding: 0; list-style: none; }
+.gal-spiral__tile { aspect-ratio: 3 / 2; }
+
+/* what to do, the arrows, and Footer: under the columns */
+.gal-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-3) var(--space-5); }
+.gal-foot[hidden] { display: none; }
+.gal-foot__hint { margin: 0; color: var(--fg-muted); }
+.gal-foot__across[hidden] { display: none; }
+.gal-foot__steps { display: flex; gap: var(--space-2); }
+.gal-foot__steps[hidden] { display: none; }
+.gal-foot__footer { padding: 6px 12px; min-height: 30px; font-size: 11px; }
 .gal-bar__step {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   padding: 0;
   border: var(--border-width) solid var(--line);
   border-radius: 50%;
@@ -210,83 +241,35 @@
 .gal-bar__step:hover { border-color: var(--accent); color: var(--accent); }
 .gal-bar__step:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
-.gal-track { margin-top: var(--space-7); }
-.gal-cols {
-  display: flex;
-  gap: var(--space-5);
-  margin-top: var(--space-5);
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: 2px;
-  scrollbar-width: thin;
-}
-.gal-cols:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
-/* a column: the event's date, name and count over its pictures */
-.gal-col {
-  /* the ribbon: the pictures' size, its radius, and per picture its turn (degrees) and rise (px) */
-  --tw: 132; --th: 88; --r: 150; --dt: 47; --dy: 17.5;
-  flex: 0 0 clamp(300px, 30vw, 400px);
-  min-width: 0;
-  scroll-snap-align: start;
-}
-.gal-col__head { padding-bottom: var(--space-3); border-bottom: var(--border-width) solid var(--line); }
-.gal-col__title { margin: var(--space-1) 0 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(24px, 2.4vw, 32px); line-height: 1.1; color: var(--fg-strong); }
-/* without scripts: the pictures in a plain grid */
-.gal-spiral__ribbon { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: var(--space-4) 0 0; padding: 0; list-style: none; }
-.gal-spiral__tile { aspect-ratio: 3 / 2; }
-
-/* with them (html.has-js, from the first paint): the section as tall as the longest ribbon's turn, the
-   columns held on the screen meanwhile, each ribbon wound in the middle of its column */
-html.has-js .gal-track { height: calc(100svh + var(--gal-most) * 22px); }
-html.has-js .gal-stage {
-  position: sticky;
-  top: 0;
-  display: flex;
-  flex-direction: column;
-  height: 100svh;
-  padding-top: calc(var(--topbar-h) + var(--space-3));
-}
-html.has-js .gal-cols { flex: 1; min-height: 0; }
-html.has-js .gal-col { display: flex; flex-direction: column; }
-html.has-js .gal-spiral { position: relative; flex: 1; min-height: 0; overflow: clip; perspective: 1000px; }
-html.has-js .gal-spiral__ribbon {
+/* the spirals live (.is-live: src/ui/spiral.js): the stage the screen's height, the columns filling
+   what is left of it, each column's pictures kept for the lightbox and the keyboard but drawn on the
+   canvas over them (the wheel and a swipe up or down are the ribbons', a swipe across the columns') */
+.gal-track.is-live .gal-stage { display: flex; flex-direction: column; height: 100svh; padding-bottom: var(--space-4); }
+.gal-track.is-live .gal-view { flex: 1; min-height: 0; touch-action: pan-x; }
+.gal-track.is-live .gal-cols { height: 100%; }
+.gal-track.is-live .gal-col { display: flex; flex-direction: column; }
+.gal-track.is-live .gal-spiral { position: relative; flex: 1; min-height: 0; cursor: grab; }
+.gal-track.is-live .gal-spiral.is-pointing { cursor: pointer; }
+.gal-track.is-live .gal-spiral__ribbon {
   position: absolute;
-  left: 50%;
-  top: 50%;
+  inset: 0;
   display: block;
-  width: 0;
-  height: 0;
   margin: 0;
-  transform-style: preserve-3d;
-  transform: rotateX(-14deg) rotateZ(-4deg);
+  overflow: hidden;
+  clip-path: inset(50%);
 }
-html.has-js .gal-spiral__tile {
-  position: absolute;
-  left: calc(var(--tw) * -.5px);
-  top: calc(var(--th) * -.5px);
-  display: none;
-  width: calc(var(--tw) * 1px);
-  height: calc(var(--th) * 1px);
-  aspect-ratio: auto;
-  overflow: visible;
-  transform: translateY(calc(var(--j) * var(--dy) * 1px)) rotateY(calc(var(--j) * var(--dt) * 1deg)) translateZ(calc(var(--r) * 1px));
-  /* (the ribbon's far side is left out: only the pictures facing the reader show) */
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-/* (until the script turns them, the ribbon's first turns; then the pictures near the front) */
-html.has-js .gal-track:not(.is-live) .gal-spiral__tile:nth-child(-n + 25),
-html.has-js .gal-spiral__tile.is-near { display: block; }
-html.has-js .gal-spiral__tile img { box-shadow: 0 10px 26px -12px rgb(0 0 0 / .6); }
+.gal-track.is-live .gal-spiral__tile { position: absolute; width: 1px; height: 1px; }
+.gal-track.is-live .gal-foot { margin-top: var(--space-3); }
+.gal-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 
 @media (max-width: 767px) {
+  .gal-head { align-items: flex-start; flex-direction: column; }
+  .gal-head .gal-jump ul { justify-content: flex-start; }
+  .gal-jump__link { min-height: 32px; padding: 6px 10px; font-size: 11px; }
   .gal-cols { gap: var(--space-4); }
-  .gal-col { --tw: 108; --th: 72; --r: 116; --dt: 53; --dy: 15.5; flex-basis: 84vw; }
-  /* the events' names on one row, swiped across */
-  .gal-bar { flex-wrap: nowrap; }
-  .gal-bar .gal-jump { min-width: 0; overflow-x: auto; scrollbar-width: none; }
-  .gal-bar .gal-jump ul { flex-wrap: nowrap; }
-  .gal-bar .gal-jump__link { white-space: nowrap; }
-  html.has-js .gal-track { height: calc(100svh + var(--gal-most) * 18px); }
+  .gal-col { flex-basis: 84vw; }
 }
+/* a picture's link with the keyboard's focus (it is turned to the front of its ribbon): its column ringed */
+.gal-track.is-live .gal-spiral.is-focus { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* (the page's own room for the top bar is the stage's here, so the stage is the screen's height) */
+.page__main:has(> .gal-track.is-live) { padding-top: 0; padding-bottom: 0; }
