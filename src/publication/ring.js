@@ -3,7 +3,7 @@
 // as many times as fill it (the cards are in the page, written by tools/pages/build.mjs, so the ring
 // stands from the first paint; a phone and a slow device show fewer of them). The circle leans with
 // a mouse's height over the screen, as sebneil's does. The card pointed at slows the turn and shows
-// large in the corner, with its writer and form; a click opens its issue's page on it. Each card has
+// large in the corner, with its writer and form; a click opens the piece. Each card has
 // a face on either side, so it reads the right way round from the back too. The wheel turns the ring
 // (the page does not scroll while the ring is up and the page at its top; "Footer" under it goes on
 // down), and a drag either way turns it by hand. In its middle, "Open in grid view"; the switch over

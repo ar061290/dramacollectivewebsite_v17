@@ -15,7 +15,7 @@
 //                            a writer's page sends it to the publication's)
 //
 // Their looks are in src/styles/publication-pieces.css.
-import { ringHref } from './pieces-data.js';
+import { pieceHref, ringHref } from './pieces-data.js';
 
 export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -43,11 +43,12 @@ export function pieceMedia(p, tag = 'span') {
  * title set large and at a tilt in the card's colours where the picture was, then the writer and the
  * form, and the row of issue and "Read now". The whole card is the one link (no link inside a link).
  * `minutes`, where given, is its reading time, beside the issue (the issue's own page shows it).
+ * `direct` sends it to the piece's own page rather than its issue's ring (all the pieces does).
  */
-export function pieceCard(p, { level = 3, minutes = 0 } = {}) {
+export function pieceCard(p, { level = 3, minutes = 0, direct = false } = {}) {
   const h = `h${Math.min(6, Math.max(2, level | 0 || 3))}`;
   return `<li class="pub-piece" data-tone="${toneOf(p)}">
-  <a class="pub-piece__link" href="${esc(ringHref(p))}">
+  <a class="pub-piece__link" href="${esc(direct ? pieceHref(p) : ringHref(p))}">
     ${pieceMedia(p, h)}
     <div class="pub-piece__body">
       <div class="pub-piece__head">

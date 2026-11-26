@@ -679,11 +679,11 @@ function piecesPage({ pieceCard, pieceMedia, byline, toneOf }) {
   const ring = Array.from({ length: reps }, (_, r) => ordered.map((p, i) => {
     const k = r * ordered.length + i;
     const named = r ? ' aria-hidden="true" tabindex="-1"' : ` aria-label="${esc(`${p.title}, ${byline(p)}`)}"`;
-    return `                <a class="pub-piece ring__card${k >= few ? ' ring__card--more' : ''}" data-tone="${toneOf(p)}" data-piece="${i}" href="${ringHref(p)}" style="--i: ${k}"${named}><span class="ring__face">${pieceMedia(p)}</span><span class="ring__face ring__face--back" aria-hidden="true">${pieceMedia(p)}</span></a>`;
+    return `                <a class="pub-piece ring__card${k >= few ? ' ring__card--more' : ''}" data-tone="${toneOf(p)}" data-piece="${i}" href="${pieceHref(p)}" style="--i: ${k}"${named}><span class="ring__face">${pieceMedia(p)}</span><span class="ring__face ring__face--back" aria-hidden="true">${pieceMedia(p)}</span></a>`;
   })).flat().join('\n');
   // each card carries its form and its month (the issue, as "2026-10"), for the filters
   const cards = ordered
-    .map((p) => pieceCard(p, { level: 2 })
+    .map((p) => pieceCard(p, { level: 2, direct: true })
       .replace('<li class="pub-piece"', `<li class="pub-piece" data-form="${esc(p.form ?? '')}" data-month="${issueDate(p.issue)}" data-month-name="${esc(issueName(p.issue))}"`)
       .split('\n').map((l) => `          ${l}`).join('\n'));
   return {
