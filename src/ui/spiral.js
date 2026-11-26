@@ -23,6 +23,8 @@ const RISE = (H + 0.36) / PER_TURN;       // the ribbon's rise a picture (its tu
 const WHEEL = 1.5 / 100;                  // pictures a pixel of wheel turns
 const SWIPE = 1 / 30;                     // pictures a pixel of finger or mouse turns
 const FOLLOW = 0.12;                      // how far the ribbons catch up with where they are going, a frame
+const ZOOM = 1.06;                        // the ribbon's width to its column's, at its middle
+const FADE_PICK = 36;                     // pixels at a column's top and bottom where a click opens nothing (faded)
 
 /** @param {{ reduced: boolean }} ctx  bootPage's context @returns {() => void} cleanup */
 export function setupSpirals({ reduced }) {
@@ -34,7 +36,7 @@ export function setupSpirals({ reduced }) {
   const gl = probeWebGL();
   if (!gl.ok || prefersStatic(gl.renderer)) return () => {}; // (the plain grids stay)
   const lite = liteTier();
-  const NEAR = lite ? 13 : 19;            // pictures either side of the front drawn
+  const NEAR = lite ? 10 : 13;            // pictures either side of the front drawn (two turns or so)
   const TEX = lite ? 200 : 280;           // a picture's width on the ribbon, in texture pixels
   const foot = track.querySelector('[data-gal-foot]');
   const steps = track.querySelector('[data-gal-steps]');
@@ -62,9 +64,28 @@ export function setupSpirals({ reduced }) {
   const aspect = (ARC - GAP) / H; // a picture's width to its height on the ribbon
   const TEX_H = Math.round(TEX / aspect);
   // the ribbon's inside (its far side, seen through the turn): its pictures dimmed, so the front
-  // stands out and the far side reads as depth, as the reference's does
-  const shadeInside = (shader) => {
-    shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', '#include <map_fragment>\n\tif (!gl_FrontFacing) diffuseColor.rgb *= 0.38;');
+  // stands out and the far side reads as depth, as the reference's does; and every picture fading out
+  // towards the edges of its column's part of the canvas (uBox: its corner and size, uFade: how far
+  // the fade reaches up and down, and across; device pixels), rather than cut off there
+  const boxU = { value: new THREE.Vector4(0, 0, 1, 1) };
+  const fadeU = { value: new THREE.Vector2(1, 1) };
+  const shade = (shader) => {
+    shader.uniforms.uBox = boxU;
+    shader.uniforms.uFade = fadeU;
+    shader.fragmentShader = `uniform vec4 uBox;\nuniform vec2 uFade;\n${shader.fragmentShader.replace('#include <map_fragment>', [
+      '#include <map_fragment>',
+      'if (!gl_FrontFacing) diffuseColor.rgb *= 0.38;',
+      'vec2 q = gl_FragCoord.xy - uBox.xy;',
+      'diffuseColor.a *= smoothstep(0.0, uFade.x, q.y) * smoothstep(0.0, uFade.x, uBox.w - q.y) * smoothstep(0.0, uFade.y, q.x) * smoothstep(0.0, uFade.y, uBox.z - q.x);',
+    ].join('\n\t'))}`;
+  };
+  // a picture is two meshes: its inside (drawn first) and its outside (drawn over it), neither
+  // writing depth, so where the front fades the far side shows through it
+  const material = (side) => {
+    const m = new THREE.MeshBasicMaterial({ map: null, side, transparent: true, depthWrite: false, depthTest: false });
+    m.onBeforeCompile = shade;
+    m.customProgramCacheKey = () => 'gal-ribbon';
+    return m;
   };
   // a picture not yet in: the card colour
   const blank = new THREE.DataTexture(new Uint8Array([64, 20, 42, 255]), 1, 1);
@@ -75,21 +96,25 @@ export function setupSpirals({ reduced }) {
     const box = col.querySelector('.gal-spiral');
     const links = [...col.querySelectorAll('[data-gal-photo]')];
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 60);
+    const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 60);
     const group = new THREE.Group();
     group.rotation.z = -0.12; // (aslant, as the reference's is)
     scene.add(group);
     const slots = Array.from({ length: NEAR * 2 + 1 }, () => {
-      const material = new THREE.MeshBasicMaterial({ map: blank, side: THREE.DoubleSide });
-      material.onBeforeCompile = shadeInside;
-      material.customProgramCacheKey = () => 'gal-ribbon';
-      const mesh = new THREE.Mesh(geo, material);
-      mesh.userData.k = NaN;
-      group.add(mesh);
-      return mesh;
+      const slot = { k: NaN, idx: -1, meshes: [] };
+      for (const [side, order] of [[THREE.BackSide, 0], [THREE.FrontSide, 1]]) {
+        const mesh = new THREE.Mesh(geo, material(side));
+        mesh.material.map = blank;
+        mesh.renderOrder = order;
+        mesh.userData.slot = slot;
+        group.add(mesh);
+        slot.meshes.push(mesh);
+      }
+      return slot;
     });
-    return { col, box, links, n: links.length, scene, camera, group, slots, textures: new Map() };
+    return { col, box, links, n: links.length, scene, camera, group, slots, meshes: slots.flatMap((x) => x.meshes), textures: new Map() };
   });
+  const paint = (slot, tex) => slot.meshes.forEach((m) => { m.material.map = tex; });
 
   // ---- a picture's texture: its small picture, cut to the ribbon's shape and made smaller ----
   let kick = () => {};
@@ -113,7 +138,7 @@ export function setupSpirals({ reduced }) {
       tex.minFilter = THREE.LinearFilter;
       tex.needsUpdate = true;
       c.textures.set(idx, tex);
-      c.slots.forEach((m) => { if (m.userData.idx === idx) m.material.map = tex; });
+      c.slots.forEach((x) => { if (x.idx === idx) paint(x, tex); });
       kick();
     }).catch(() => {});
   };
@@ -129,7 +154,7 @@ export function setupSpirals({ reduced }) {
     for (const [, idx] of far.slice(0, c.textures.size - KEEP)) {
       const tex = c.textures.get(idx);
       c.textures.delete(idx);
-      if (tex) { c.slots.forEach((m) => { if (m.material.map === tex) m.material.map = blank; }); tex.image?.close?.(); tex.dispose(); }
+      if (tex) { c.slots.forEach((x) => { if (x.idx === idx) paint(x, blank); }); tex.image?.close?.(); tex.dispose(); }
     }
   };
 
@@ -140,15 +165,16 @@ export function setupSpirals({ reduced }) {
     c.group.position.y = pos * RISE;
     const base = Math.round(pos);
     for (let k = base - NEAR; k <= base + NEAR; k++) {
-      const m = c.slots[mod(k, c.slots.length)];
-      if (m.userData.k === k) continue;
-      const idx = mod(k, c.n);
-      m.userData.k = k;
-      m.userData.idx = idx;
-      m.rotation.y = k * ARC;
-      m.position.y = -k * RISE;
-      load(c, idx);
-      m.material.map = c.textures.get(idx) || blank;
+      const x = c.slots[mod(k, c.slots.length)];
+      if (x.k === k) continue;
+      x.k = k;
+      x.idx = mod(k, c.n);
+      for (const m of x.meshes) {
+        m.rotation.y = k * ARC;
+        m.position.y = -k * RISE;
+      }
+      load(c, x.idx);
+      paint(x, c.textures.get(x.idx) || blank);
     }
     tidy(c, mod(Math.round(pos), c.n));
   };
@@ -163,25 +189,31 @@ export function setupSpirals({ reduced }) {
   };
   const draw = () => {
     const vr = view.getBoundingClientRect();
+    const pr = renderer.getPixelRatio();
+    // each column's part reaches halfway into the gaps beside it, where its ribbon's sides fade out
+    const reach = (parseFloat(getComputedStyle(row).columnGap) || 0) / 2;
     renderer.setScissor(0, 0, size.w, size.h);
     renderer.setViewport(0, 0, size.w, size.h);
     renderer.clear();
     for (const c of columns) {
       const r = c.box.getBoundingClientRect();
-      const x = r.left - vr.left, y = r.top - vr.top;
-      if (x + r.width <= 0 || x >= size.w || r.width < 2 || r.height < 2) continue;
+      const x = r.left - vr.left - reach, y = r.top - vr.top, w = r.width + reach * 2, h = r.height;
+      if (x + w <= 0 || x >= size.w || r.width < 2 || h < 2) continue;
       place(c);
-      // the camera a little above the ribbon, near enough that the ribbon fills the column's width
+      // the camera a little above the ribbon, near enough that the ribbon is the column's width at
+      // its middle and its front comes out larger (ZOOM), as the reference's fills the screen
       const cam = c.camera;
-      cam.aspect = r.width / r.height;
+      cam.aspect = w / h;
       const half = Math.tan((cam.fov * Math.PI) / 360) * cam.aspect;
-      const d = 1.08 / half + 0.2;
-      cam.position.set(0, d * 0.2, d);
+      const d = (w / 2) / (half * ZOOM * (r.width / 2));
+      cam.position.set(0, d * 0.13, d);
       cam.lookAt(0, 0, 0);
       cam.updateProjectionMatrix();
-      const vy = size.h - (y + r.height);
-      renderer.setViewport(x, vy, r.width, r.height);
-      renderer.setScissor(x, vy, r.width, r.height);
+      const vy = size.h - (y + h);
+      boxU.value.set(x * pr, vy * pr, w * pr, h * pr);
+      fadeU.value.set(Math.min(90, h * 0.2) * pr, reach * 2.5 * pr);
+      renderer.setViewport(x, vy, w, h);
+      renderer.setScissor(x, vy, w, h);
       renderer.render(c.scene, cam);
     }
   };
@@ -225,8 +257,9 @@ export function setupSpirals({ reduced }) {
   const pick = (e, c) => {
     const r = c.box.getBoundingClientRect();
     ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), c.camera);
-    const hit = ray.intersectObjects(c.slots, false)[0];
-    return hit ? hit.object.userData.idx : -1;
+    if (e.clientY < r.top + FADE_PICK || e.clientY > r.bottom - FADE_PICK) return -1; // (the faded edges)
+    const hit = ray.intersectObjects(c.meshes, false)[0];
+    return hit ? hit.object.userData.slot.idx : -1;
   };
   const columnAt = (e) => columns.find((c) => c.box.contains(e.target));
   on(view, 'pointerdown', (e) => {
@@ -292,9 +325,13 @@ export function setupSpirals({ reduced }) {
     if (!col || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     e.stopPropagation(); // ours, not the site's in-page glide (src/animations/nav.js)
-    row.scrollTo({ left: col.offsetLeft - row.offsetLeft, behavior });
+    const pad = parseFloat(getComputedStyle(row).scrollPaddingLeft) || 0;
+    row.scrollTo({ left: row.scrollLeft + col.getBoundingClientRect().left - row.getBoundingClientRect().left - pad, behavior });
   }));
   on(row, 'scroll', kick, { passive: true });
+  // the arrows and the word for across only where the columns are more than the width (the word for
+  // a mouse or a trackpad, or for a finger)
+  across.textContent = matchMedia('(pointer: fine)').matches ? ' · scroll sideways for more events' : ' · swipe across for more events';
   // the arrows and the word for across only where the columns are more than the width
   const fits = () => {
     const more = row.scrollWidth > row.clientWidth + 2;
@@ -316,7 +353,7 @@ export function setupSpirals({ reduced }) {
     cleanups.forEach((c) => c());
     columns.forEach((c) => {
       c.textures.forEach((t) => { t?.image?.close?.(); t?.dispose(); });
-      c.slots.forEach((m) => m.material.dispose());
+      c.meshes.forEach((m) => m.material.dispose());
     });
     geo.dispose();
     blank.dispose();

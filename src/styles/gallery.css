@@ -198,10 +198,14 @@
 .gal-head .gal-jump { margin-top: 0; }
 .gal-head .gal-jump ul { justify-content: flex-end; }
 
-.gal-view { position: relative; margin-top: var(--space-5); }
+/* the columns run the screen's whole width (from the page's column on the left to past the screen's
+   right edge), so the last on the screen is cut by the screen's edge: more of them, across */
+.gal-view { --gal-in: max(var(--stage-gutter), (100vw - var(--container)) / 2); position: relative; width: 100vw; margin: var(--space-5) 0 0 calc(50% - 50vw); }
 .gal-cols {
   display: flex;
-  gap: var(--space-5);
+  gap: clamp(24px, 3vw, 44px);
+  padding-inline: var(--gal-in);
+  scroll-padding-inline: var(--gal-in);
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
@@ -209,8 +213,10 @@
 }
 .gal-cols::-webkit-scrollbar { display: none; }
 .gal-cols:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
-/* a column: the event's date, name and count over its pictures; four to the width on a laptop */
-.gal-col { flex: 0 0 max(260px, calc((100% - 3 * var(--space-5)) / 4)); min-width: 0; scroll-snap-align: start; }
+/* a column: the event's date, name and count over its pictures; two and a half to the page's width
+   on a laptop, one and a half on a tablet (the half saying there are more) */
+.gal-col { flex: 0 0 calc((min(100vw - 2 * var(--stage-gutter), var(--container)) - 2 * clamp(24px, 3vw, 44px)) / 2.5); min-width: 0; scroll-snap-align: start; }
+@media (max-width: 1023px) { .gal-col { flex-basis: calc((100vw - 2 * var(--stage-gutter) - clamp(24px, 3vw, 44px)) / 1.5); } }
 .gal-col__head { padding-bottom: var(--space-3); border-bottom: var(--border-width) solid var(--line); }
 .gal-col__title { margin: var(--space-1) 0 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(22px, 2vw, 30px); line-height: 1.1; color: var(--fg-strong); }
 .gal-spiral__ribbon { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: var(--space-4) 0 0; padding: 0; list-style: none; }
@@ -248,6 +254,7 @@
 .gal-track.is-live .gal-view { flex: 1; min-height: 0; touch-action: pan-x; }
 .gal-track.is-live .gal-cols { height: 100%; }
 .gal-track.is-live .gal-col { display: flex; flex-direction: column; }
+.gal-track.is-live .gal-col__head { border-bottom: 0; padding-bottom: 0; }
 .gal-track.is-live .gal-spiral { position: relative; flex: 1; min-height: 0; cursor: grab; }
 .gal-track.is-live .gal-spiral.is-pointing { cursor: pointer; }
 .gal-track.is-live .gal-spiral__ribbon {
@@ -266,8 +273,7 @@
   .gal-head { align-items: flex-start; flex-direction: column; }
   .gal-head .gal-jump ul { justify-content: flex-start; }
   .gal-jump__link { min-height: 32px; padding: 6px 10px; font-size: 11px; }
-  .gal-cols { gap: var(--space-4); }
-  .gal-col { flex-basis: 84vw; }
+  .gal-col { flex-basis: calc(100vw - 2 * var(--stage-gutter) - 28px); }
 }
 /* a picture's link with the keyboard's focus (it is turned to the front of its ribbon): its column ringed */
 .gal-track.is-live .gal-spiral.is-focus { outline: 2px solid var(--focus); outline-offset: 2px; }
