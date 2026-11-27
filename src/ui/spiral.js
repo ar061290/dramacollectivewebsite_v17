@@ -53,7 +53,7 @@ const WHEEL = 0.0011;           // the push a pixel of wheel
 const KEY = 0.12;               // the push an arrow key
 const DRAG = 0.011;             // ribbon a pixel of a mouse or a finger dragged
 const FRICTION = 0.9;
-const EASE = 0.25;
+const EASE = 0.38;
 const MAX_V = 0.5;
 const LEAN = 0.8, MAX_LEAN = 0.18;
 // left alone, the pictures drift on along the ribbon, slowly, the way the wheel turned down takes them
@@ -711,6 +711,9 @@ export function setupSpirals(ctx) {
   // a push along the ribbon (with reduced motion, as far as it would have run, at once)
   const push = (v) => {
     seek = null;
+    // (the drift's own speed handed on to the push, so the pictures do not stall as the reader takes
+    // over from it, nor the two pull against each other)
+    if (drift && drifting()) { const dv = -(AUTO * drift) / 60; cur += dv; tgt += dv; }
     drift = 0;
     if (reduced) off += v / (1 - FRICTION);
     else tgt = clamp(tgt + v, MAX_V);
@@ -955,6 +958,9 @@ export function setupSpirals(ctx) {
   io.observe(view);
   cleanups.push(() => io.disconnect());
   on(document, 'visibilitychange', () => { if (document.visibilityState === 'visible') kick(); });
+  // (for the lab, tools/perf, and the console, as the sky is: how far the pictures have come)
+  window.dramaCollective = Object.assign(window.dramaCollective || {}, { spirals: { get off() { return off; } } });
+  cleanups.push(() => { if (window.dramaCollective) delete window.dramaCollective.spirals; });
   // the theme's change: the page's colour the pictures fade in from
   ctx.onTheme?.(() => { readBg(); kick(); });
 
