@@ -268,25 +268,46 @@ export function setupSpirals(ctx) {
   gl.clearColor(0, 0, 0, 0);
   gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
   // the page's colour, which a picture coming in fades in from (and again when the theme changes)
+  // (and the top's fade: a gradient from the page's colour over the canvas, under the events' names; a
+  // plain layer, cheap to composite, where a mask on the canvas cost an extra surface a frame)
+  const fade = document.createElement('div');
+  fade.className = 'gal-fade';
+  fade.setAttribute('aria-hidden', 'true');
   const readBg = () => {
     for (const el of [document.body, document.documentElement]) {
       const m = getComputedStyle(el).backgroundColor.match(/[\d.]+/g);
       if (m && (m[3] === undefined || +m[3] > 0)) {
         gl.useProgram(ribbonP);
         gl.uniform3f(U.uBg, m[0] / 255, m[1] / 255, m[2] / 255);
+        fade.style.background = `linear-gradient(to bottom, rgb(${m[0]} ${m[1]} ${m[2]}), rgb(${m[0]} ${m[1]} ${m[2]} / 0))`;
         return;
       }
     }
   };
   readBg();
 
-  view.append(canvas);
+  view.append(canvas, fade);
   track.classList.add('is-live');
   // (the columns' own small pictures are never shown or fetched while the spirals run, gallery.css: each
   // picture's link named by its picture's words instead)
+  // (and each small picture's file kept aside, its <img> without it: an image waiting to be loaded
+  // lazily is watched by the browser every frame until it is, and these never are; put back on cleanup)
+  const thumbs = [];
   originals.forEach((col) => col.querySelectorAll('[data-gal-photo]').forEach((a) => {
     const img = a.querySelector('img');
-    if (img?.alt) a.setAttribute('aria-label', img.alt);
+    if (!img) return;
+    if (img.alt) a.setAttribute('aria-label', img.alt);
+    const at = img.getAttribute('src');
+    if (!at) return;
+    thumbs.push([img, at, img.getAttribute('loading')]);
+    img.dataset.src = at;
+    img.removeAttribute('src'); // (first: without its lazy loading first, it would be fetched at once)
+    img.removeAttribute('loading');
+  }));
+  cleanups.push(() => thumbs.forEach(([img, at, lazy]) => {
+    if (lazy) img.setAttribute('loading', lazy);
+    img.setAttribute('src', at);
+    delete img.dataset.src;
   }));
   // (a lost context: the plain grids instead)
   let lost = false;
@@ -466,7 +487,7 @@ export function setupSpirals(ctx) {
   const load = (ev, idx) => {
     ensureArray(ev);
     const src = ev.links[idx].querySelector('img');
-    return toImage(src.currentSrc || src.src, ev.lw, ev.lh)
+    return toImage(new URL(src.dataset.src || src.getAttribute('src'), location.href).href, ev.lw, ev.lh)
       .then((img) => {
         if (ev.textures.get(idx) !== null) { img.close?.(); return; } // (let go meanwhile)
         incoming.push({ ev, idx, img });
@@ -523,13 +544,19 @@ export function setupSpirals(ctx) {
 
   // ---- drawing: each column on the screen, in its own part of the canvas ----
   let size = { w: 0, h: 0 }, ratio = 1, fadeAt = '';
+  // (the canvas's resolution: at most DPR_CAP device pixels a CSS pixel, times the governor's share,
+  // `quality`: lowered while frames come slower than the screen's, raised again when they keep up)
+  const DPR_CAP = lite ? 1 : 1.5;
+  let quality = 1, shadowOn = true;
   const resize = () => {
     const w = view.clientWidth, h = view.clientHeight;
     size = { w, h };
-    ratio = pixelRatio(2, w, h);
+    ratio = Math.max(0.6, pixelRatio(DPR_CAP, w, h) * quality);
     canvas.width = Math.max(1, Math.round(w * ratio));
     canvas.height = Math.max(1, Math.round(h * ratio));
   };
+  const near = [];
+  const byNear = (a, b) => b.near - a.near;
   const draw = () => {
     if (lost) return;
     now = performance.now();
@@ -566,14 +593,19 @@ export function setupSpirals(ctx) {
       const d = Math.max((w / 2) / (tan * aspect * ZOOM * (r.width / 2)), (MIN_TURNS * PITCH) / (2 * tan), MIN_D);
       // the layers as tall as the pictures come out at the front of the ribbon, on this screen
       texH = Math.max(texH, Math.min(LAYER_MAX, Math.ceil((H * ZOOM * (r.width / 2) * (d / (d - 1)) * pr) / 40) * 40));
-      // as much ribbon as the column shows, and most of a turn more either way
-      place(c, ((d * tan) / PITCH + 0.8) * TAU * R);
+      // as much ribbon as the column shows, and half a turn more either way
+      place(c, ((d * tan) / PITCH + 0.5) * TAU * R);
       c.mvp = mul(perspective(FOV, aspect, 0.1, 60), mul(lookAtOrigin(0, d * Math.sin(ELEVATION), d * Math.cos(ELEVATION)), tilt));
-      // the pictures that are in, as instances (where each starts, its length, its layer, its fading in)
+      // the pictures that are in, as instances (where each starts, its length, its layer, its fading in),
+      // the nearest the camera first: the depth test then throws away the far side they cover before it
+      // is painted (a picture's nearness: how far round to the front its middle is)
       const ev = c.ev;
+      near.length = 0;
+      for (const s of c.active.values()) if (s.layer >= 0) { s.near = Math.cos((s.start + s.len / 2) / R); near.push(s); }
+      near.sort(byNear);
       let n = 0;
-      for (const s of c.active.values()) {
-        if (s.layer < 0 || n >= MAX_INST) continue;
+      for (const s of near) {
+        if (n >= MAX_INST) break;
         inst[n * 4] = s.start;
         inst[n * 4 + 1] = s.len;
         inst[n * 4 + 2] = s.layer;
@@ -597,7 +629,7 @@ export function setupSpirals(ctx) {
       gl.disable(gl.CULL_FACE);
       gl.drawElementsInstanced(gl.TRIANGLES, tris.length, gl.UNSIGNED_SHORT, 0, n);
       // the near side's shadow over the far side
-      if (shadowP) {
+      if (shadowP && shadowOn) {
         gl.useProgram(shadowP);
         gl.uniformMatrix4fv(S.uMVP, false, c.mvp);
         gl.depthMask(false);
@@ -611,13 +643,13 @@ export function setupSpirals(ctx) {
       }
     }
     gl.bindVertexArray(null);
-    // the top's fade: a mask on the canvas, from the spirals' top down (gallery.css)
+    // the top's fade: the overlay at the spirals' top
     if (top !== Infinity) {
-      const at = `${Math.round(top)}px ${Math.round(top + fadeH)}px`;
+      const at = `${Math.round(top)} ${Math.round(fadeH)}`;
       if (at !== fadeAt) {
         fadeAt = at;
-        canvas.style.setProperty('--gal-fade-a', `${Math.round(top)}px`);
-        canvas.style.setProperty('--gal-fade-b', `${Math.round(top + fadeH)}px`);
+        fade.style.top = `${Math.round(top)}px`;
+        fade.style.height = `${Math.round(fadeH)}px`;
       }
     }
     asks.sort((a, b) => a[0] - b[0]).forEach(([, ev, idx]) => want(ev, idx));
@@ -687,9 +719,36 @@ export function setupSpirals(ctx) {
   let drag = null; // a mouse or a finger dragging up or down: { y, moved, v, t }
   const gate = frameGate(30); // (on a tier-lite device, a steady 30 frames a second: the drift runs on)
   const drifting = () => !reduced && inView && document.visibilityState === 'visible';
+  // the governor: over each 40 frames drawn one after another, their average spacing against the
+  // screen's own (the shortest seen): a quarter slower, the resolution down a step (to 60% at least),
+  // then the shadow off; five such windows in step with the screen, the resolution up a step
+  const gov = { n: 0, sum: 0, min: Infinity, fine: 0 };
+  const govern = (dt) => {
+    if (lite || dt <= 0 || dt > 120) return; // (tier-lite runs at its own 30; a pause is not a slow frame)
+    gov.n++;
+    gov.sum += dt;
+    gov.min = Math.min(gov.min, dt);
+    if (gov.n < 40) return;
+    const avg = gov.sum / gov.n, period = Math.max(6, gov.min);
+    gov.n = 0;
+    gov.sum = 0;
+    gov.min = Infinity;
+    if (avg > period * 1.25) {
+      gov.fine = 0;
+      if (quality > 0.61) { quality = Math.max(0.6, quality * 0.85); resize(); }
+      else shadowOn = false;
+    } else if (avg < period * 1.08) {
+      if (++gov.fine >= 5 && (quality < 1 || !shadowOn)) {
+        gov.fine = 0;
+        if (!shadowOn) shadowOn = true;
+        else { quality = Math.min(1, quality / 0.85); resize(); }
+      }
+    } else gov.fine = 0;
+  };
   const frame = (t) => {
     raf = 0;
     if (!gate(t)) { raf = requestAnimationFrame(frame); return; }
+    if (last) govern(t - last);
     const k = last ? Math.min(3, (t - last) / (1000 / 60)) : 1;
     last = t;
     if (seek !== null) {
@@ -973,7 +1032,7 @@ export function setupSpirals(ctx) {
   cleanups.push(() => io.disconnect());
   on(document, 'visibilitychange', () => { if (document.visibilityState === 'visible') kick(); });
   // (for the lab, tools/perf, and the console, as the sky is: how far the pictures have come)
-  window.dramaCollective = Object.assign(window.dramaCollective || {}, { spirals: { get off() { return off; } } });
+  window.dramaCollective = Object.assign(window.dramaCollective || {}, { spirals: { get off() { return off; }, get quality() { return quality; }, get ratio() { return ratio; }, get shadow() { return shadowOn; } } });
   cleanups.push(() => { if (window.dramaCollective) delete window.dramaCollective.spirals; });
   // the theme's change: the page's colour the pictures fade in from
   ctx.onTheme?.(() => { readBg(); kick(); });
@@ -1020,6 +1079,7 @@ export function setupSpirals(ctx) {
     if (shadowP) gl.deleteProgram(shadowP);
     gl.getExtension('WEBGL_lose_context')?.loseContext();
     canvas.remove();
+    fade.remove();
     track.classList.remove('is-live');
   };
 }

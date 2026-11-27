@@ -47,7 +47,7 @@ export function setupBox() {
     const a = links[at];
     const thumb = a.querySelector('img');
     // the tile's own small picture stands in at once (it is loaded), and the whole one replaces it
-    img.src = thumb.currentSrc || thumb.src;
+    img.src = thumb.currentSrc || thumb.src || thumb.dataset.src || ''; // (the Gallery's spirals keep its file aside: data-src)
     img.width = +a.dataset.w;
     img.height = +a.dataset.h;
     img.alt = thumb.alt;
