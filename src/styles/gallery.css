@@ -261,6 +261,12 @@ html.has-js .gal-track:not(.is-static) .gal-spiral__tile img { display: none; }
 }
 .gal-track.is-live .gal-spiral__tile { position: absolute; width: 1px; height: 1px; }
 .gal-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+/* (the spirals fading in from their top, under the events' names: a mask on the canvas, from the top of
+   the spirals down, set by src/ui/spiral.js) */
+.gal-canvas {
+  -webkit-mask-image: linear-gradient(to bottom, transparent var(--gal-fade-a, 0px), #000 var(--gal-fade-b, 0px));
+  mask-image: linear-gradient(to bottom, transparent var(--gal-fade-a, 0px), #000 var(--gal-fade-b, 0px));
+}
 /* over the spirals: at the right, what to do with an arrow pointing on (a button: the next event); at
    the bottom right, Footer, filled as the top bar's Become a sponsor is, under it */
 .gal-cue, .gal-footer { display: none; }

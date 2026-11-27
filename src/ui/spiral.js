@@ -1,26 +1,31 @@
 // The Gallery's spirals (gallery.html, written by tools/pages/build.mjs gallery()), after SpiralGallery:
-// in each event's column a ribbon wound round as a spiral, a little narrower as it goes down and seen a
+// in each event's column a ribbon wound round as a spiral, a little narrower towards the top and seen a
 // little from above, that stays where it is while the event's pictures flow along it, edge to edge,
-// each as wide as its own shape (none cut to another's), on and on without end (the pictures over and
-// over). Drawn with WebGL on one canvas over the columns, each column its own view of its own ribbon:
-// the ribbon is placed by the vertex shader (each picture a flat strip of a few dozen quads that the
-// shader bends round the spiral from where along it the picture starts), so moving the pictures is a
-// number a picture a frame, nothing rebuilt.
-// The wheel, a swipe or a mouse dragged up or down on the columns, or the arrow keys up and down give
-// every column's pictures a push along their ribbons, which runs on and slows, the spirals leaning a
-// little with the speed; while the page is at its top the wheel is the spirals' alone ("Footer" under
-// them goes on down). Across, the columns scroll as ever (a swipe, the trackpad, Shift and the wheel,
-// the arrows under them, or an event's name). A picture clicked opens whole in the lightbox
-// (src/ui/gallery.js), through its link, which stays in its column, unseen: the keyboard's focus on
-// one brings it to the front and rings its column. The pictures fade in from the top of their column
-// (under the event's name); down, they run to the bottom of the screen.
+// each as wide as its own shape (none cut to another's), on and on without end, in an order of their
+// own for every appearance of the event.
+// Drawn with WebGL 2 on one canvas over the columns, each column its own view of its own ribbon, and
+// cheaply, as the reference draws its one: a column's ribbon is one instanced draw (each picture an
+// instance of one strip of quads, which the vertex shader bends round the spiral from where along it
+// the picture starts; its picture a layer of its event's texture array), solid, with the depth test
+// (its inside dimmed in the same draw), and one more for the near side's soft shadow; so a frame is a
+// couple of draws a column and a few numbers a picture, nothing rebuilt. The top's fade is a CSS mask
+// on the canvas (gallery.css); a picture coming in fades in from the page's colour.
+// Left alone, the pictures drift slowly on down the ribbons. The wheel, a swipe or a mouse dragged up
+// or down on the columns, or the arrow keys up and down give every column's pictures a push along
+// their ribbons (the drift stopping a moment), which runs on and slows, the spirals leaning a
+// little with the speed; while the page is at its top the wheel is the spirals' alone ("Footer" goes on
+// down). Across, the events go round and round either way (a trackpad's swipe, Shift and the wheel, a
+// swipe or drag, the left and right keys, the arrow at the right, or an event's name), the row moved by
+// this script in step with the drawing. A picture clicked opens whole in the lightbox
+// (src/ui/gallery.js), through its link, which stays in its column, unseen: the keyboard's focus on one
+// brings it to the front and rings its column.
 // For a low-end device: only the pictures on a column's stretch of ribbon are drawn, their pictures
-// fetched as they come near, made small for the purpose (and let go as they leave), only the columns
-// on the screen, and only while something moves. Without WebGL, or where the device would rather not
-// (prefersStatic), the columns stay plain grids and the page scrolls as any other. With reduced motion
-// the pictures move as far as the wheel says at once, without running on or leaning.
-import * as THREE from 'three';
-import { liteTier, phoneTier, pixelRatio, probeWebGL, prefersStatic } from '../util/env.js';
+// fetched as they come near (a few at a time, nearest the front first, decoded and resized away from
+// the page's own thread), as small as the screen draws them, the least lately drawn let go when an
+// event's layers are full; only the columns on the screen, only while something moves. Without WebGL 2,
+// or where the device would rather not (prefersStatic), the columns stay plain grids and the page
+// scrolls as any other. With reduced motion the pictures move as far as the wheel says at once.
+import { frameGate, liteTier, phoneTier, pixelRatio, probeWebGL, prefersStatic } from '../util/env.js';
 
 const TAU = Math.PI * 2;
 // the ribbon (world units; its radius 1)
@@ -31,8 +36,9 @@ const CONE = -0.04;             // a little narrower towards the top: its radius
 const GAP = 0.012;              // between pictures along it (all but edge to edge)
 const INSIDE = 0.42;            // the inside's brightness (its far side, seen over and beside the turn in front:
                                 // well dimmed, so it reads as behind and the front stands clear of it)
-const TONE = { sat: 0.7, dim: 0.84, plum: 0.1 }; // the pictures toned down (see FRAG)
+const TONE = { sat: 0.7, dim: 0.84, plum: 0.1 }; // the pictures toned down to sit with the page (see FRAG)
 const SHADOW = 0.5;             // how dark the near side's shadow on the far side is, at most
+const FOV = (38 * Math.PI) / 180; // the camera's lens (near and wide, as the reference's)
 const ELEVATION = 0.2;          // the camera's angle above it (radians); with its wide lens the top turn is
                                 // seen all but level and the lower ones from above, as the reference's are
 const LEAN_Z = 0.12;            // aslant, its top to the left, as the reference's is (radians)
@@ -40,6 +46,7 @@ const ZOOM = 0.92;              // its width to its column's, at its middle
 const MIN_TURNS = 1.25;         // and at least this many of its turns down a column (a wide, short one)
 const MIN_D = 3.2;              // and the camera never nearer than this (in a short window, the near side not blown up)
 const FADE_PICK = 40;           // pixels at a column's top where a click opens nothing (faded)
+const MAX_INST = 160;           // pictures a column draws at most
 // the motion: a push along the ribbon (ribbon a frame) that runs on, slowing by FRICTION a frame, and
 // comes in eased (EASE); the spirals lean with the speed
 const WHEEL = 0.0011;           // the push a pixel of wheel
@@ -49,70 +56,84 @@ const FRICTION = 0.9;
 const EASE = 0.25;
 const MAX_V = 0.5;
 const LEAN = 0.8, MAX_LEAN = 0.18;
+// left alone, the pictures drift on along the ribbon, slowly, the way the wheel turned down takes them
+// (AUTO, ribbon a second); a push, a drag or a finger stops the drift, which comes back in over
+// AUTO_BACK frames once the spirals have come to rest (not with reduced motion; not while the spirals
+// are off the screen or the tab hidden)
+const AUTO = 0.22, AUTO_BACK = 90;
 // across: the row glides to rest on an event, easing out (ACROSS_EASE of the way left, a frame; no
 // spring, nothing run past); a let-go swipe carries on by its speed times FLING before it settles
 const ACROSS_EASE = 0.15, FLING = 10;
 
-const VERT = `
-uniform float uStart; // where along the ribbon the picture starts, from the front (world units)
-uniform float uLen;   // its length along the ribbon
-uniform vec4 uRibbon; // the radius, the drop a turn, the height, the cone
-varying vec2 vUv;
-void main() {
-  float u = uStart + uv.x * uLen;
+// ---- the shaders: a picture's strip bent round the spiral (the instance: where along the ribbon it
+// starts from the front, its length, its layer, how far it has faded in) ----
+const BEND = `
+  float u = aInst.x + aUv.x * aInst.y;
   float ang = u / uRibbon.x;
   float y = ang / ${TAU.toFixed(8)} * uRibbon.y;
-  float r = uRibbon.x * (1.0 + uRibbon.w * y);
-  vec3 p = vec3(sin(ang) * r, y + (uv.y - 0.5) * uRibbon.z, cos(ang) * r);
-  vUv = uv;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  float r = uRibbon.x * (1.0 + uRibbon.w * y);`;
+const VERT = `#version 300 es
+layout(location = 0) in vec2 aUv;
+layout(location = 1) in vec4 aInst;
+uniform mat4 uMVP;
+uniform vec4 uRibbon; // the radius, the rise a turn, the height, the cone
+out vec2 vUv;
+flat out float vLayer;
+out float vShow;
+void main() {${BEND}
+  vUv = aUv;
+  vLayer = aInst.z;
+  vShow = aInst.w;
+  gl_Position = uMVP * vec4(sin(ang) * r, y + (aUv.y - 0.5) * uRibbon.z, cos(ang) * r, 1.0);
 }`;
-// (the pictures' colours toned down to sit with the page: a little less saturated (TONE.sat), a little
-// dimmer (TONE.dim), and a touch of the page's plum over them (TONE.plum), so the brightest of them
-// do not glare out of it; sRGB in and out. uBox: the column's part of the canvas, its corner and
-// size, uFade: how far down from its top the pictures fade in; device pixels)
-const FRAG = `
-uniform sampler2D uMap;
-uniform vec4 uBox;
-uniform float uFade;
+// (the pictures' colours toned down: a little less saturated, a little dimmer, a touch of the page's
+// plum over them, so the brightest do not glare out of it; the inside dimmed; a picture coming in
+// faded in from the page's colour; sRGB in and out)
+const FRAG = `#version 300 es
+precision mediump float;
+precision mediump sampler2DArray;
+in vec2 vUv;
+flat in float vLayer;
+in float vShow;
+uniform sampler2DArray uTex;
 uniform float uInside;
-uniform float uShow;
-varying vec2 vUv;
+uniform vec3 uBg;
+out vec4 outColor;
 void main() {
-  vec4 c = texture2D(uMap, vUv);
-  float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-  c.rgb = mix(vec3(l), c.rgb, ${TONE.sat.toFixed(2)}) * ${TONE.dim.toFixed(2)};
-  c.rgb = mix(c.rgb, vec3(0.25, 0.08, 0.16), ${TONE.plum.toFixed(2)});
-  if (!gl_FrontFacing) c.rgb *= uInside;
-  float a = uShow * smoothstep(0.0, uFade, uBox.y + uBox.w - gl_FragCoord.y);
-  gl_FragColor = vec4(c.rgb, a);
+  vec3 c = texture(uTex, vec3(vUv, vLayer)).rgb;
+  float l = dot(c, vec3(0.299, 0.587, 0.114));
+  c = mix(vec3(l), c, ${TONE.sat.toFixed(2)}) * ${TONE.dim.toFixed(2)};
+  c = mix(c, vec3(0.25, 0.08, 0.16), ${TONE.plum.toFixed(2)});
+  if (!gl_FrontFacing) c *= uInside;
+  outColor = vec4(mix(uBg, c, vShow), 1.0);
 }`;
-// a picture's shadow: its strip on the near side of the spiral, a little taller and a little lower,
-// soft at its top and bottom, drawn dark over the far side before the picture is drawn over it, so
-// the near side stands a little in front (seamless from one picture to the next)
-const SHADOW_VERT = `
-uniform float uStart;
-uniform float uLen;
+// a picture's shadow: its strip on the near side (front faces only), a little taller, a little lower
+// and a hair inside the ribbon, soft at its top and bottom, drawn after the ribbon with the depth test:
+// hidden behind the near side, it darkens the far side under it (seamless from picture to picture)
+const SHADOW_VERT = `#version 300 es
+layout(location = 0) in vec2 aUv;
+layout(location = 1) in vec4 aInst;
+uniform mat4 uMVP;
 uniform vec4 uRibbon;
-varying vec2 vUv;
+out vec2 vUv;
+out float vShow;
 void main() {
-  float u = uStart - ${(GAP / 2).toFixed(4)} + uv.x * (uLen + ${GAP.toFixed(4)});
+  float u = aInst.x - ${(GAP / 2).toFixed(4)} + aUv.x * (aInst.y + ${GAP.toFixed(4)});
   float ang = u / uRibbon.x;
   float y = ang / ${TAU.toFixed(8)} * uRibbon.y;
-  float r = uRibbon.x * (1.0 + uRibbon.w * y);
-  vec3 p = vec3(sin(ang) * r, y - 0.07 + (uv.y - 0.5) * uRibbon.z * 1.32, cos(ang) * r);
-  vUv = uv;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  float r = uRibbon.x * (1.0 + uRibbon.w * y) * 0.993;
+  vUv = aUv;
+  vShow = aInst.w;
+  gl_Position = uMVP * vec4(sin(ang) * r, y - 0.07 + (aUv.y - 0.5) * uRibbon.z * 1.32, cos(ang) * r, 1.0);
 }`;
-const SHADOW_FRAG = `
-uniform vec4 uBox;
-uniform float uFade;
-uniform float uShow;
-varying vec2 vUv;
+const SHADOW_FRAG = `#version 300 es
+precision mediump float;
+in vec2 vUv;
+in float vShow;
+out vec4 outColor;
 void main() {
   float soft = smoothstep(0.0, 0.26, vUv.y) * smoothstep(0.0, 0.26, 1.0 - vUv.y);
-  float a = ${SHADOW.toFixed(2)} * uShow * soft * smoothstep(0.0, uFade, uBox.y + uBox.w - gl_FragCoord.y);
-  gl_FragColor = vec4(0.03, 0.0, 0.02, a);
+  outColor = vec4(0.03, 0.0, 0.02, ${SHADOW.toFixed(2)} * vShow * soft);
 }`;
 
 /** A point on the ribbon (as the vertex shader places it): `u` along it from the front, `v` up it (0-1). */
@@ -120,11 +141,43 @@ function ribbonAt(u, v, out) {
   const ang = u / R;
   const y = (ang / TAU) * PITCH;
   const r = R * (1 + CONE * y);
-  return out.set(Math.sin(ang) * r, y + (v - 0.5) * H, Math.cos(ang) * r);
+  out[0] = Math.sin(ang) * r;
+  out[1] = y + (v - 0.5) * H;
+  out[2] = Math.cos(ang) * r;
+  return out;
 }
 
-/** @param {{ reduced: boolean }} ctx  bootPage's context @returns {() => void} cleanup */
-export function setupSpirals({ reduced }) {
+// ---- 4x4 matrices, column-major, as WebGL takes them ----
+const mul = (a, b) => {
+  const o = new Float32Array(16);
+  for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
+    let s = 0;
+    for (let k = 0; k < 4; k++) s += a[k * 4 + r] * b[c * 4 + k];
+    o[c * 4 + r] = s;
+  }
+  return o;
+};
+const perspective = (fovy, aspect, near, far) => {
+  const f = 1 / Math.tan(fovy / 2), nf = 1 / (near - far);
+  return new Float32Array([f / aspect, 0, 0, 0, 0, f, 0, 0, 0, 0, (far + near) * nf, -1, 0, 0, 2 * far * near * nf, 0]);
+};
+// (a camera at e looking at the middle of the ribbon, upright)
+const lookAtOrigin = (ex, ey, ez) => {
+  let zl = Math.hypot(ex, ey, ez);
+  const zx = ex / zl, zy = ey / zl, zz = ez / zl;
+  let xx = zz, xy = 0, xz = -zx; // up (0,1,0) x z
+  zl = Math.hypot(xx, xy, xz);
+  xx /= zl; xz /= zl;
+  const yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
+  return new Float32Array([xx, yx, zx, 0, xy, yy, zy, 0, xz, yz, zz, 0,
+    -(xx * ex + xy * ey + xz * ez), -(yx * ex + yy * ey + yz * ez), -(zx * ex + zy * ey + zz * ez), 1]);
+};
+const rotX = (a) => { const c = Math.cos(a), s = Math.sin(a); return new Float32Array([1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1]); };
+const rotZ = (a) => { const c = Math.cos(a), s = Math.sin(a); return new Float32Array([c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); };
+
+/** @param {{ reduced: boolean, onTheme?: (fn: () => void) => void }} ctx  bootPage's context @returns {() => void} cleanup */
+export function setupSpirals(ctx) {
+  const { reduced } = ctx;
   const track = document.querySelector('[data-gal-track]');
   const view = track?.querySelector('[data-gal-view]');
   const row = view?.querySelector('[data-gal-cols]');
@@ -132,12 +185,14 @@ export function setupSpirals({ reduced }) {
   if (!track || !view || !row || !originals.length) return () => {};
   // (where the spirals do not run, the plain grids stay, their pictures shown: .is-static, gallery.css)
   const still = () => { track.classList.add('is-static'); return () => track.classList.remove('is-static'); };
-  const gl = probeWebGL();
-  if (!gl.ok || prefersStatic(gl.renderer)) return still();
+  const probe = probeWebGL();
+  if (!probe.ok || prefersStatic(probe.renderer)) return still();
   const lite = liteTier();
-  // a picture's height on the ribbon, in texture pixels: as tall as the spirals draw their pictures on
-  // the screen (grown to it in draw; at most TEX_MAX, the small pictures' own height on a laptop)
-  const TEX_MAX = lite ? 200 : phoneTier() ? 320 : 440;
+  // a picture's layer: as tall as the spirals draw their pictures on the screen (texH, grown to it in
+  // draw), at most LAYER_MAX, and half as wide again (each picture stretched to it, and back by its
+  // strip's own length); an event's layers, LAYERS at most (its pictures on the screen and near it)
+  const LAYER_MAX = lite ? 200 : phoneTier() ? 320 : 400;
+  const LAYERS = lite ? 40 : 48;
   let texH = lite ? 160 : 240;
   const SEG = lite ? 14 : 24;      // the quads a picture is bent in
   const cleanups = [];
@@ -145,19 +200,87 @@ export function setupSpirals({ reduced }) {
   const clamp = (v, a) => Math.max(-a, Math.min(a, v));
   const mod = (a, b) => ((a % b) + b) % b;
 
-  let renderer;
+  // ---- WebGL 2: the canvas, the two programs, the strip, the instances ----
   const canvas = document.createElement('canvas');
   canvas.className = 'gal-canvas';
   canvas.setAttribute('aria-hidden', 'true');
-  try {
-    renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !lite, powerPreference: 'low-power' });
-  } catch {
-    return still();
-  }
+  const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: !lite, depth: true, stencil: false, powerPreference: 'low-power' });
+  if (!gl) return still();
+  const compile = (type, src) => {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (gl.getShaderParameter(sh, gl.COMPILE_STATUS)) return sh;
+    console.warn('Gallery spiral shader:', gl.getShaderInfoLog(sh));
+    gl.deleteShader(sh);
+    return null;
+  };
+  const program = (vsrc, fsrc) => {
+    const vs = compile(gl.VERTEX_SHADER, vsrc), fs = compile(gl.FRAGMENT_SHADER, fsrc);
+    if (!vs || !fs) return null;
+    const p = gl.createProgram();
+    gl.attachShader(p, vs);
+    gl.attachShader(p, fs);
+    gl.linkProgram(p);
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    if (gl.getProgramParameter(p, gl.LINK_STATUS)) return p;
+    gl.deleteProgram(p);
+    return null;
+  };
+  const ribbonP = program(VERT, FRAG);
+  const shadowP = lite ? null : program(SHADOW_VERT, SHADOW_FRAG);
+  if (!ribbonP || (!lite && !shadowP)) return still();
+  const loc = (p, names) => Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(p, n)]));
+  const U = loc(ribbonP, ['uMVP', 'uRibbon', 'uTex', 'uInside', 'uBg']);
+  const S = shadowP ? loc(shadowP, ['uMVP', 'uRibbon']) : null;
+  // the strip: SEG quads, two vertices (bottom, top) at each step along it
+  const uvs = new Float32Array((SEG + 1) * 4);
+  for (let i = 0; i <= SEG; i++) uvs.set([i / SEG, 0, i / SEG, 1], i * 4);
+  const tris = new Uint16Array(SEG * 6);
+  for (let i = 0; i < SEG; i++) { const a = i * 2; tris.set([a, a + 2, a + 1, a + 1, a + 2, a + 3], i * 6); }
+  const vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+  const uvBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, uvBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  const instBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, instBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, MAX_INST * 16, gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(1);
+  gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribDivisor(1, 1);
+  const ibo = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, tris, gl.STATIC_DRAW);
+  gl.bindVertexArray(null);
+  const inst = new Float32Array(MAX_INST * 4);
+  gl.useProgram(ribbonP);
+  gl.uniform4f(U.uRibbon, R, PITCH, H, CONE);
+  gl.uniform1i(U.uTex, 0);
+  gl.uniform1f(U.uInside, INSIDE);
+  if (S) { gl.useProgram(shadowP); gl.uniform4f(S.uRibbon, R, PITCH, H, CONE); }
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+  gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
+  gl.clearColor(0, 0, 0, 0);
+  gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  // the page's colour, which a picture coming in fades in from (and again when the theme changes)
+  const readBg = () => {
+    for (const el of [document.body, document.documentElement]) {
+      const m = getComputedStyle(el).backgroundColor.match(/[\d.]+/g);
+      if (m && (m[3] === undefined || +m[3] > 0)) {
+        gl.useProgram(ribbonP);
+        gl.uniform3f(U.uBg, m[0] / 255, m[1] / 255, m[2] / 255);
+        return;
+      }
+    }
+  };
+  readBg();
+
   view.append(canvas);
-  renderer.setScissorTest(true);
-  renderer.autoClear = false; // (cleared once a frame, in draw: the columns' parts overlap, so one must not clear another's)
-  renderer.setClearColor(0x000000, 0);
   track.classList.add('is-live');
   // (the columns' own small pictures are never shown or fetched while the spirals run, gallery.css: each
   // picture's link named by its picture's words instead)
@@ -165,10 +288,13 @@ export function setupSpirals({ reduced }) {
     const img = a.querySelector('img');
     if (img?.alt) a.setAttribute('aria-label', img.alt);
   }));
+  // (a lost context: the plain grids instead)
+  let lost = false;
+  on(canvas, 'webglcontextlost', (e) => { e.preventDefault(); lost = true; track.classList.remove('is-live'); track.classList.add('is-static'); });
 
   // the events round and round, across: the columns twice more, a set before them and a set after
   // (copies without their pictures' links, hidden from screen readers and the keyboard), and the row
-  // kept on the middle set (wrap, below), so that going on either way they come round again
+  // kept on the middle set (keepRound, below), so that going on either way they come round again
   const N = originals.length;
   // (made without the column's pictures at all: an image made, even out of the page, is fetched)
   const copy = (col) => {
@@ -187,23 +313,12 @@ export function setupSpirals({ reduced }) {
   cleanups.push(() => [...before, ...after].forEach((c) => c.remove()));
   const cols = [...before, ...originals, ...after];
 
-  // ---- what every picture shares: its strip, the ribbon's shape, the column's part of the canvas ----
-  const strip = new THREE.PlaneGeometry(1, 1, SEG, 1);
-  const stripUv = strip.attributes.uv;
-  const ribbonU = { value: new THREE.Vector4(R, PITCH, H, CONE) };
-  const boxU = { value: new THREE.Vector4(0, 0, 1, 1) };
-  const fadeU = { value: 1 };
-  const insideU = { value: INSIDE };
-  // a picture not yet in: drawn as nothing (uShow 0), this only in its place
-  const blank = new THREE.DataTexture(new Uint8Array([64, 20, 42, 255]), 1, 1);
-  blank.needsUpdate = true;
-  const pickMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
-
   // an event: its pictures (the links in its own column), each one's length along the ribbon (its own
-  // shape at the ribbon's height), and their textures, shared by every column showing the event
+  // shape at the ribbon's height); which of them are in (textures: picture -> its layer, null while
+  // fetched), and its texture array (made when its first picture is fetched: ensureArray)
   const events = originals.map((col) => {
     const links = [...col.querySelectorAll('[data-gal-photo]')];
-    return { links, n: links.length, lenOf: links.map((a) => H * ((+a.dataset.w || 3) / (+a.dataset.h || 2))), textures: new Map(), fails: new Map() };
+    return { links, n: links.length, lenOf: links.map((a) => H * ((+a.dataset.w || 3) / (+a.dataset.h || 2))), textures: new Map(), fails: new Map(), tex: null };
   });
   // a showing of an event: its pictures in an order of their own, by its place in the endless run of
   // events (j: the run's ... A B C D A B C D ..., the middle set's first column 0 + N), shuffled the
@@ -223,7 +338,7 @@ export function setupSpirals({ reduced }) {
   const orderFor = (j) => {
     let o = orders.get(j);
     if (!o) {
-      const ev = events[((j % N) + N) % N];
+      const ev = events[mod(j, N)];
       const order = shuffled(ev.n);
       const posOf = [];
       order.forEach((idx, p) => { posOf[idx] = p; });
@@ -238,11 +353,8 @@ export function setupSpirals({ reduced }) {
   };
   let loop = 0;
   const columns = cols.map((col, i) => {
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 60); // (near and wide, as the reference's)
-    const group = new THREE.Group();
-    scene.add(group);
-    return { ...events[i % N], i, j: null, col, box: col.querySelector('.gal-spiral'), scene, camera, group, active: new Map(), pool: [], vp: null };
+    const ev = events[i % N];
+    return { ev, links: ev.links, n: ev.n, textures: ev.textures, i, j: null, col, box: col.querySelector('.gal-spiral'), active: new Map(), vp: null, mvp: null };
   });
   // (a column given the order of the place in the run it now shows; its pictures placed anew)
   const assign = (c) => {
@@ -250,65 +362,42 @@ export function setupSpirals({ reduced }) {
     if (c.j === j) return;
     c.j = j;
     Object.assign(c, orderFor(j));
-    for (const sl of c.active.values()) { sl.meshes.forEach((m) => { m.visible = false; }); c.pool.push(sl); }
     c.active.clear();
   };
   columns.forEach(assign);
-  // every column showing an event (the event's own and its copies)
-  const showing = (c) => columns.filter((x) => x.textures === c.textures);
 
-  // a picture on the ribbon: its inside (drawn first), its shadow (where it is on the near side; not on
-  // a tier-lite device), and its outside (drawn over them), none writing depth, so where the front
-  // fades the far side shows through it; and, unseen, its shape for clicks
-  const layers = [[THREE.BackSide, 0, VERT, FRAG], ...(lite ? [] : [[THREE.FrontSide, 1, SHADOW_VERT, SHADOW_FRAG]]), [THREE.FrontSide, 2, VERT, FRAG]];
-  const makeSlot = (c) => {
-    const u = { uStart: { value: 0 }, uLen: { value: 1 }, uMap: { value: blank }, uShow: { value: 0 } };
-    const slot = { k: NaN, idx: -1, u, meshes: [], pick: null };
-    for (const [side, order, vertexShader, fragmentShader] of layers) {
-      const mesh = new THREE.Mesh(strip, new THREE.ShaderMaterial({
-        uniforms: { ...u, uRibbon: ribbonU, uBox: boxU, uFade: fadeU, uInside: insideU },
-        vertexShader,
-        fragmentShader,
-        side,
-        transparent: true,
-        depthTest: false,
-        depthWrite: false,
-      }));
-      mesh.renderOrder = order;
-      mesh.frustumCulled = false; // (the shader moves it)
-      c.group.add(mesh);
-      slot.meshes.push(mesh);
+  // ---- an event's texture array: a layer a picture, the least lately drawn let go when it is full ----
+  let frameNo = 0;
+  const ensureArray = (ev) => {
+    if (ev.tex) return;
+    ev.lh = Math.max(64, Math.min(LAYER_MAX, Math.round(texH / 8) * 8));
+    ev.lw = Math.round((ev.lh * 1.5) / 4) * 4;
+    ev.depth = Math.max(1, Math.min(ev.n, LAYERS));
+    ev.tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, ev.tex);
+    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 1, gl.RGBA8, ev.lw, ev.lh, ev.depth);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    ev.layerIdx = new Int32Array(ev.depth).fill(-1); // the picture in each layer
+    ev.used = new Float64Array(ev.depth);            // the drawing it was last drawn in
+    ev.shownAt = new Float64Array(ev.depth);         // when it came in (its fading in)
+  };
+  // (a free layer, or the one least lately drawn that this drawing did not draw; none: -1)
+  const freeLayer = (ev) => {
+    let best = -1, oldest = Infinity;
+    for (let l = 0; l < ev.depth; l++) {
+      if (ev.layerIdx[l] < 0) return l;
+      if (ev.used[l] < frameNo && ev.used[l] < oldest) { best = l; oldest = ev.used[l]; }
     }
-    const shape = strip.clone();
-    slot.pick = new THREE.Mesh(shape, pickMaterial);
-    slot.pick.visible = false;
-    slot.pick.userData.slot = slot;
-    c.group.add(slot.pick);
-    return slot;
+    return best;
   };
 
-  // ---- a picture's texture: its small picture, made smaller still ----
+  // ---- a picture fetched: its file as a blob, which the browser decodes and resizes away from the
+  // page's own thread to its layer's size, upside down and neither premultiplied nor colour-converted,
+  // as the layer's upload wants it (where a browser will not, drawn on a canvas instead) ----
   let kick = () => {};
-  // (textures in, waiting to go to the GPU: a few a frame, so that no frame stalls on a crowd of them)
-  const incoming = [];
-  const UPLOADS = lite ? 1 : 2;
-  const SHOW_MS = reduced ? 0 : 260; // a picture's fading in, once its texture is in
-  let showUntil = 0;
-  const upload = () => {
-    for (let i = 0; i < UPLOADS && incoming.length; i++) {
-      const { c, idx, tex } = incoming.shift();
-      if (c.textures.get(idx) !== null) { tex.image?.close?.(); tex.dispose(); continue; } // (let go meanwhile)
-      renderer.initTexture(tex);
-      tex.userData.at = performance.now();
-      showUntil = Math.max(showUntil, tex.userData.at + SHOW_MS);
-      c.textures.set(idx, tex);
-      showing(c).forEach((x) => x.active.forEach((sl) => { if (sl.idx === idx) sl.u.uMap.value = tex; }));
-    }
-    return incoming.length > 0;
-  };
-  // (its file fetched as a blob, which the browser decodes and resizes away from the page's own thread,
-  // upside down and neither premultiplied nor colour-converted, as the texture's upload wants it; where
-  // a browser will not, the picture drawn on a canvas instead)
   const BITMAP = { resizeQuality: 'medium', imageOrientation: 'flipY', premultiplyAlpha: 'none', colorSpaceConversion: 'none' };
   const viaCanvas = async (url, w, h) => {
     const img = new Image();
@@ -321,78 +410,81 @@ export function setupSpirals({ reduced }) {
     g.translate(0, h);
     g.scale(1, -1);
     g.drawImage(img, 0, 0, w, h);
-    return new THREE.CanvasTexture(cv);
+    return cv;
   };
-  const toTexture = async (url, w, h) => {
+  const toImage = async (url, w, h) => {
     try {
       const blob = await (await fetch(url)).blob();
-      return new THREE.Texture(await createImageBitmap(blob, { ...BITMAP, resizeWidth: w, resizeHeight: h }));
+      return await createImageBitmap(blob, { ...BITMAP, resizeWidth: w, resizeHeight: h });
     } catch {
       return viaCanvas(url, w, h);
     }
+  };
+  // (pictures in, waiting to go to the GPU: a few a frame, so that no frame stalls on a crowd of them)
+  const incoming = [];
+  const UPLOADS = lite ? 1 : 2;
+  const SHOW_MS = reduced ? 0 : 260; // a picture's fading in, once it is in
+  let showUntil = 0;
+  const upload = () => {
+    for (let i = 0; i < UPLOADS && incoming.length; i++) {
+      const { ev, idx, img } = incoming.shift();
+      if (ev.textures.get(idx) !== null) { img.close?.(); continue; } // (let go meanwhile)
+      const layer = freeLayer(ev);
+      if (layer < 0) { img.close?.(); ev.textures.delete(idx); continue; } // (every layer drawn: asked for again later)
+      const old = ev.layerIdx[layer];
+      if (old >= 0) ev.textures.delete(old);
+      gl.bindTexture(gl.TEXTURE_2D_ARRAY, ev.tex);
+      gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, layer, ev.lw, ev.lh, 1, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      img.close?.();
+      const at = performance.now();
+      ev.layerIdx[layer] = idx;
+      ev.shownAt[layer] = at;
+      ev.used[layer] = frameNo;
+      ev.textures.set(idx, layer);
+      showUntil = Math.max(showUntil, at + SHOW_MS);
+    }
+    return incoming.length > 0;
   };
   // the pictures wanted, fetched a few at a time (LOADS) in the order asked, nearest the front first:
   // a column coming in does not fetch and decode its whole stretch of ribbon in one go
   const queue = [];
   let loading = 0;
   const LOADS = lite ? 6 : 16;
-  const want = (c, idx) => {
-    if (c.textures.has(idx)) return;
-    c.textures.set(idx, null);
-    queue.push({ c, idx });
+  const want = (ev, idx) => {
+    if (ev.textures.has(idx)) return;
+    ev.textures.set(idx, null);
+    queue.push({ ev, idx });
   };
   const pump = () => {
     while (loading < LOADS && queue.length) {
-      const { c, idx } = queue.shift();
-      if (c.textures.get(idx) !== null) continue; // (let go before its turn)
+      const { ev, idx } = queue.shift();
+      if (ev.textures.get(idx) !== null) continue; // (let go before its turn)
       loading++;
-      load(c, idx).finally(() => { loading--; pump(); kick(); });
+      load(ev, idx).finally(() => { loading--; pump(); kick(); });
     }
   };
-  const load = (c, idx) => {
-    const src = c.links[idx].querySelector('img');
-    // (its size: the small picture's, as written on it, at most as tall as the spirals want)
-    const sw = +src.getAttribute('width') || 660, sh = +src.getAttribute('height') || 440;
-    const h = Math.min(texH, sh), w = Math.max(1, Math.round((h * sw) / sh));
-    return toTexture(src.currentSrc || src.src, w, h)
-      .then((tex) => {
-        if (c.textures.get(idx) !== null) { tex.image?.close?.(); tex.dispose(); return; } // (let go meanwhile)
-        tex.flipY = false;
-        tex.premultiplyAlpha = false;
-        tex.generateMipmaps = false;
-        tex.minFilter = THREE.LinearFilter;
-        tex.needsUpdate = true;
-        incoming.push({ c, idx, tex });
+  const load = (ev, idx) => {
+    ensureArray(ev);
+    const src = ev.links[idx].querySelector('img');
+    return toImage(src.currentSrc || src.src, ev.lw, ev.lh)
+      .then((img) => {
+        if (ev.textures.get(idx) !== null) { img.close?.(); return; } // (let go meanwhile)
+        incoming.push({ ev, idx, img });
         kick();
       })
       .catch(() => {
         // (a picture that would not come: let go, so that it is asked for again, a few times at most,
-        // rather than left blank)
-        const n = (c.fails.get(idx) || 0) + 1;
-        c.fails.set(idx, n);
-        if (n < 4 && c.textures.get(idx) === null) c.textures.delete(idx);
+        // rather than left out)
+        const n = (ev.fails.get(idx) || 0) + 1;
+        ev.fails.set(idx, n);
+        if (n < 4 && ev.textures.get(idx) === null) ev.textures.delete(idx);
       });
-  };
-  // pictures far from the front let go (a column keeps those on its ribbon, and a few more)
-  const tidy = (c, mid) => {
-    const keep = c.active.size + 16;
-    if (c.textures.size <= keep) return;
-    const far = [...c.textures.keys()]
-      .map((idx) => [Math.min(mod(c.posOf[idx] - mid, c.n), mod(mid - c.posOf[idx], c.n)), idx])
-      .sort((a, b) => b[0] - a[0]);
-    for (const [, idx] of far.slice(0, c.textures.size - keep)) {
-      const tex = c.textures.get(idx);
-      c.textures.delete(idx);
-      if (tex) {
-        showing(c).forEach((x) => x.active.forEach((s) => { if (s.idx === idx) s.u.uMap.value = blank; }));
-        tex.image?.close?.();
-        tex.dispose();
-      }
-    }
   };
 
   // ---- the pictures at `off` (how far they have come along the ribbon, on and on) ----
   let off = 0.45, cur = 0, tgt = 0, seek = null, lean = 0;
+  let drift = reduced ? 0 : 1; // (the drift's share of its speed: 0 just after the reader moved them)
+  let inView = true;
   // the picture (its number in the endless run) at `s` along a column's run, and where one starts
   const pictureAt = (c, s) => {
     const round = Math.floor(s / c.T);
@@ -405,94 +497,129 @@ export function setupSpirals({ reduced }) {
     return round * c.n + lo;
   };
   const startOf = (c, k) => Math.floor(k / c.n) * c.T + c.start[mod(k, c.n)];
-  // the column's stretch of ribbon (`reach` along it either way from the front) filled with pictures
   let now = 0;
   // (the pictures a drawing lacks, by how far each is from its column's front: asked for nearest first
   // across all the columns, so every spiral's front fills in before any spiral's far turns)
   const asks = [];
+  // the column's stretch of ribbon (`reach` along it either way from the front) filled with pictures
   const place = (c, reach) => {
     const kLo = pictureAt(c, off - reach);
-    const kHi = Math.min(pictureAt(c, off + reach), kLo + 120);
-    for (const [k, s] of c.active) {
-      if (k >= kLo && k <= kHi) continue;
-      c.active.delete(k);
-      s.meshes.forEach((m) => { m.visible = false; });
-      c.pool.push(s);
-    }
-    const missing = [];
+    const kHi = Math.min(pictureAt(c, off + reach), kLo + MAX_INST - 1);
+    for (const k of c.active.keys()) if (k < kLo || k > kHi) c.active.delete(k);
+    const front = pictureAt(c, off);
     for (let k = kLo; k <= kHi; k++) {
       let s = c.active.get(k);
       if (!s) {
-        s = c.pool.pop() || makeSlot(c);
-        s.k = k;
-        s.idx = c.order[mod(k, c.n)];
-        s.u.uLen.value = c.len[mod(k, c.n)];
-        s.meshes.forEach((m) => { m.visible = true; });
+        const p = mod(k, c.n);
+        s = { k, idx: c.order[p], len: c.len[p], start: 0, layer: -1 };
         c.active.set(k, s);
       }
-      // (its texture, asked for if it is not in: another column of the event may have let it go)
-      const tex = c.textures.get(s.idx);
-      if (tex === undefined) missing.push(k);
-      s.u.uMap.value = tex || blank;
-      s.u.uShow.value = !tex ? 0 : SHOW_MS ? Math.min(1, (now - (tex.userData.at || 0)) / SHOW_MS) : 1;
-      s.u.uStart.value = startOf(c, k) - off;
+      s.start = startOf(c, k) - off;
+      const layer = c.textures.get(s.idx);
+      s.layer = typeof layer === 'number' ? layer : -1;
+      if (layer === undefined) asks.push([Math.abs(k - front), c.ev, s.idx]);
     }
-    if (missing.length) {
-      const front = pictureAt(c, off);
-      missing.forEach((k) => asks.push([Math.abs(k - front), c, c.order[mod(k, c.n)]]));
-    }
-    tidy(c, mod(pictureAt(c, off), c.n));
   };
 
   // ---- drawing: each column on the screen, in its own part of the canvas ----
-  let size = { w: 0, h: 0 };
+  let size = { w: 0, h: 0 }, ratio = 1, fadeAt = '';
   const resize = () => {
     const w = view.clientWidth, h = view.clientHeight;
     size = { w, h };
-    renderer.setPixelRatio(pixelRatio(2, w, h));
-    renderer.setSize(w, h, false);
+    ratio = pixelRatio(2, w, h);
+    canvas.width = Math.max(1, Math.round(w * ratio));
+    canvas.height = Math.max(1, Math.round(h * ratio));
   };
   const draw = () => {
+    if (lost) return;
     now = performance.now();
+    frameNo++;
     asks.length = 0;
     const vr = view.getBoundingClientRect();
-    const pr = renderer.getPixelRatio();
-    // each column's part reaches well past its sides (its ribbon is not cut there; neighbours' parts
-    // overlap, drawn over one another as they come)
-    const gap = colGap;
-    renderer.setScissor(0, 0, size.w, size.h);
-    renderer.setViewport(0, 0, size.w, size.h);
-    renderer.clear();
+    const pr = ratio;
+    gl.disable(gl.SCISSOR_TEST);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.SCISSOR_TEST);
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, instBuf);
+    gl.activeTexture(gl.TEXTURE0);
+    const tilt = mul(rotX(lean), rotZ(LEAN_Z + lean * 0.4)); // (as the spirals lean with the speed)
+    let top = Infinity, fadeH = 0;
     for (const c of columns) {
       assign(c);
       const r = c.box.getBoundingClientRect();
-      const side = gap / 2 + r.width * 0.3;
+      // (each column's part reaches well past its sides: its ribbon is not cut there; neighbours' parts
+      // overlap, drawn over one another as they come)
+      const side = colGap / 2 + r.width * 0.3;
       const x = r.left - vr.left - side, y = r.top - vr.top, w = r.width + side * 2, h = r.height;
       c.vp = null;
       if (x + w <= 0 || x >= size.w || r.width < 2 || h < 2) continue;
       c.vp = { left: r.left - side, top: r.top, w, h };
+      top = Math.min(top, y);
+      fadeH = Math.max(fadeH, Math.min(110, h * 0.22));
       // the camera above the ribbon, near enough that the ribbon is the column's width at its middle,
       // but far enough that a turn and a quarter of it shows down the column
-      const cam = c.camera;
-      cam.aspect = w / h;
-      const tan = Math.tan((cam.fov * Math.PI) / 360);
-      const d = Math.max((w / 2) / (tan * cam.aspect * ZOOM * (r.width / 2)), (MIN_TURNS * PITCH) / (2 * tan), MIN_D);
-      cam.position.set(0, d * Math.sin(ELEVATION), d * Math.cos(ELEVATION));
-      cam.lookAt(0, 0, 0);
-      cam.updateProjectionMatrix();
-      c.group.rotation.set(lean, 0, LEAN_Z + lean * 0.4);
-      // the textures as tall as the pictures come out at the front of the ribbon, on this screen
-      texH = Math.max(texH, Math.min(TEX_MAX, Math.ceil((H * ZOOM * (r.width / 2) * (d / (d - 1)) * pr) / 40) * 40));
+      const aspect = w / h;
+      const tan = Math.tan(FOV / 2);
+      const d = Math.max((w / 2) / (tan * aspect * ZOOM * (r.width / 2)), (MIN_TURNS * PITCH) / (2 * tan), MIN_D);
+      // the layers as tall as the pictures come out at the front of the ribbon, on this screen
+      texH = Math.max(texH, Math.min(LAYER_MAX, Math.ceil((H * ZOOM * (r.width / 2) * (d / (d - 1)) * pr) / 40) * 40));
       // as much ribbon as the column shows, and most of a turn more either way
       place(c, ((d * tan) / PITCH + 0.8) * TAU * R);
-      const vy = size.h - (y + h);
-      boxU.value.set(x * pr, vy * pr, w * pr, h * pr);
-      fadeU.value = Math.min(110, h * 0.22) * pr;
-      renderer.setViewport(x, vy, w, h);
-      renderer.setScissor(x, vy, w, h);
-      renderer.render(c.scene, cam);
+      c.mvp = mul(perspective(FOV, aspect, 0.1, 60), mul(lookAtOrigin(0, d * Math.sin(ELEVATION), d * Math.cos(ELEVATION)), tilt));
+      // the pictures that are in, as instances (where each starts, its length, its layer, its fading in)
+      const ev = c.ev;
+      let n = 0;
+      for (const s of c.active.values()) {
+        if (s.layer < 0 || n >= MAX_INST) continue;
+        inst[n * 4] = s.start;
+        inst[n * 4 + 1] = s.len;
+        inst[n * 4 + 2] = s.layer;
+        inst[n * 4 + 3] = SHOW_MS ? Math.min(1, (now - ev.shownAt[s.layer]) / SHOW_MS) : 1;
+        ev.used[s.layer] = frameNo;
+        n++;
+      }
+      if (!n) continue;
+      const X = Math.round(x * pr), Y = Math.round((size.h - y - h) * pr), W = Math.round(w * pr), HH = Math.round(h * pr);
+      gl.viewport(X, Y, W, HH);
+      gl.scissor(X, Y, W, HH);
+      gl.clear(gl.DEPTH_BUFFER_BIT); // (a column's depth its own: its part overlaps its neighbours')
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, inst, 0, n * 4);
+      // the ribbon, solid, both its sides (the inside dimmed by the shader)
+      gl.useProgram(ribbonP);
+      gl.uniformMatrix4fv(U.uMVP, false, c.mvp);
+      gl.bindTexture(gl.TEXTURE_2D_ARRAY, ev.tex);
+      gl.enable(gl.DEPTH_TEST);
+      gl.depthMask(true);
+      gl.disable(gl.BLEND);
+      gl.disable(gl.CULL_FACE);
+      gl.drawElementsInstanced(gl.TRIANGLES, tris.length, gl.UNSIGNED_SHORT, 0, n);
+      // the near side's shadow over the far side
+      if (shadowP) {
+        gl.useProgram(shadowP);
+        gl.uniformMatrix4fv(S.uMVP, false, c.mvp);
+        gl.depthMask(false);
+        gl.enable(gl.BLEND);
+        gl.enable(gl.CULL_FACE);
+        gl.cullFace(gl.BACK);
+        gl.drawElementsInstanced(gl.TRIANGLES, tris.length, gl.UNSIGNED_SHORT, 0, n);
+        gl.depthMask(true);
+        gl.disable(gl.BLEND);
+        gl.disable(gl.CULL_FACE);
+      }
     }
-    asks.sort((a, b) => a[0] - b[0]).forEach(([, c, idx]) => want(c, idx));
+    gl.bindVertexArray(null);
+    // the top's fade: a mask on the canvas, from the spirals' top down (gallery.css)
+    if (top !== Infinity) {
+      const at = `${Math.round(top)}px ${Math.round(top + fadeH)}px`;
+      if (at !== fadeAt) {
+        fadeAt = at;
+        canvas.style.setProperty('--gal-fade-a', `${Math.round(top)}px`);
+        canvas.style.setProperty('--gal-fade-b', `${Math.round(top + fadeH)}px`);
+      }
+    }
+    asks.sort((a, b) => a[0] - b[0]).forEach(([, ev, idx]) => want(ev, idx));
     pump(); // (the pictures this drawing asked for fetched at once, not on a later frame)
   };
 
@@ -544,13 +671,16 @@ export function setupSpirals({ reduced }) {
   };
 
   // ---- a frame, only while something moves: the push running on, a picture coming to the front, the
-  // lean settling, the row coming to rest, textures going in ----
+  // lean settling, the row coming to rest, pictures going in or fading in ----
   let raf = 0, last = 0;
   let drag = null; // a mouse or a finger dragging up or down: { y, moved, v, t }
-  const frame = (now) => {
+  const gate = frameGate(30); // (on a tier-lite device, a steady 30 frames a second: the drift runs on)
+  const drifting = () => !reduced && inView && document.visibilityState === 'visible';
+  const frame = (t) => {
     raf = 0;
-    const k = last ? Math.min(3, (now - last) / (1000 / 60)) : 1;
-    last = now;
+    if (!gate(t)) { raf = requestAnimationFrame(frame); return; }
+    const k = last ? Math.min(3, (t - last) / (1000 / 60)) : 1;
+    last = t;
     if (seek !== null) {
       off += reduced ? seek - off : (seek - off) * (1 - Math.pow(0.84, k));
       if (Math.abs(seek - off) < 0.001) { off = seek; seek = null; }
@@ -560,6 +690,12 @@ export function setupSpirals({ reduced }) {
       off += cur * k;
       if (Math.abs(cur) < 1e-4 && Math.abs(tgt) < 1e-4) cur = tgt = 0;
     }
+    // the drift: on, slowly, down the ribbon's way as the wheel turned down goes (coming back in once
+    // the reader's push has died away)
+    if (drifting() && !drag && seek === null) {
+      if (!cur && !tgt) drift = Math.min(1, drift + k / AUTO_BACK);
+      off -= ((AUTO * drift) / 60) * k;
+    }
     const goal = reduced ? 0 : clamp((drag ? drag.v : cur) * LEAN, MAX_LEAN);
     lean += (goal - lean) * (1 - Math.pow(0.88, k));
     if (Math.abs(goal - lean) < 1e-4) lean = goal;
@@ -567,14 +703,15 @@ export function setupSpirals({ reduced }) {
     const uploading = upload();
     draw();
     const fading = performance.now() < showUntil;
-    if (seek !== null || cur || tgt || lean || drag || moving || uploading || fading) raf = requestAnimationFrame(frame);
+    if (seek !== null || cur || tgt || lean || drag || moving || uploading || fading || drifting()) raf = requestAnimationFrame(frame);
     else last = 0;
   };
-  kick = () => { raf ||= requestAnimationFrame(frame); };
+  kick = () => { if (!lost) raf ||= requestAnimationFrame(frame); };
   cleanups.push(() => cancelAnimationFrame(raf));
   // a push along the ribbon (with reduced motion, as far as it would have run, at once)
   const push = (v) => {
     seek = null;
+    drift = 0;
     if (reduced) off += v / (1 - FRICTION);
     else tgt = clamp(tgt + v, MAX_V);
     track.classList.add('is-moved');
@@ -608,6 +745,7 @@ export function setupSpirals({ reduced }) {
 
   // a drag up or down: the pictures follow it, and run on from it when let go
   const dragTo = (y) => {
+    drift = 0;
     const dy = y - drag.y;
     drag.y = y;
     const by = dy * DRAG; // (the pictures following the pointer)
@@ -626,8 +764,8 @@ export function setupSpirals({ reduced }) {
     columns.forEach((c) => c.box.classList.remove('is-dragging'));
     kick();
   };
-  // a drag across: the row follows it, and when let go glides to rest on the event its speed carries it
-  // to
+  // a drag across: the row follows it, and when let go glides to rest on the event its speed carries
+  // it to
   const acrossFrom = (x) => { hx.drag = { x, v: 0, t: performance.now() }; hx.target = null; };
   const acrossTo = (x) => {
     const dx = x - hx.drag.x;
@@ -708,31 +846,50 @@ export function setupSpirals({ reduced }) {
     else if (hx.drag) { dragged = true; acrossLetGo(); }
   });
 
-  // ---- a click: the picture under it (the nearest surface, not in the faded top) ----
-  const ray = new THREE.Raycaster();
-  const ndc = new THREE.Vector2();
-  const p = new THREE.Vector3();
+  // ---- a click: the picture under it (the nearest surface, not in the faded top), found by putting
+  // each drawn picture's strip on the screen as the shader does and seeing which quad holds it ----
+  const P3 = [0, 0, 0];
+  const pts = new Float32Array((SEG + 1) * 2 * 3);
+  const ok = new Uint8Array((SEG + 1) * 2);
+  const project = (m, o) => {
+    const x = P3[0], y = P3[1], z = P3[2];
+    const w = m[3] * x + m[7] * y + m[11] * z + m[15];
+    if (w <= 0) return 0;
+    pts[o * 3] = (m[0] * x + m[4] * y + m[8] * z + m[12]) / w;
+    pts[o * 3 + 1] = (m[1] * x + m[5] * y + m[9] * z + m[13]) / w;
+    pts[o * 3 + 2] = (m[2] * x + m[6] * y + m[10] * z + m[14]) / w;
+    return 1;
+  };
+  // (the depth at (px, py) if it falls in the triangle a b c, else Infinity)
+  const inTri = (px, py, a, b, c) => {
+    const ax = pts[a * 3], ay = pts[a * 3 + 1], bx = pts[b * 3], by = pts[b * 3 + 1], cx = pts[c * 3], cy = pts[c * 3 + 1];
+    const d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+    if (Math.abs(d) < 1e-12) return Infinity;
+    const l1 = ((by - cy) * (px - cx) + (cx - bx) * (py - cy)) / d;
+    const l2 = ((cy - ay) * (px - cx) + (ax - cx) * (py - cy)) / d;
+    const l3 = 1 - l1 - l2;
+    if (l1 < 0 || l2 < 0 || l3 < 0) return Infinity;
+    return l1 * pts[a * 3 + 2] + l2 * pts[b * 3 + 2] + l3 * pts[c * 3 + 2];
+  };
   const pick = (e, c) => {
     const v = c.vp;
-    if (!v || e.clientY < v.top + FADE_PICK || e.clientY > v.top + v.h) return -1;
-    // (the unseen shapes bent as the shader bends the pictures)
-    const shapes = [];
-    for (const sl of c.active.values()) {
-      const pos = sl.pick.geometry.attributes.position;
-      for (let i = 0; i < pos.count; i++) {
-        ribbonAt(sl.u.uStart.value + stripUv.getX(i) * sl.u.uLen.value, stripUv.getY(i), p);
-        pos.setXYZ(i, p.x, p.y, p.z);
+    if (!v || !c.mvp || e.clientY < v.top + FADE_PICK || e.clientY > v.top + v.h) return -1;
+    const px = ((e.clientX - v.left) / v.w) * 2 - 1, py = -((e.clientY - v.top) / v.h) * 2 + 1;
+    let best = -1, nearest = Infinity;
+    for (const s of c.active.values()) {
+      if (s.layer < 0) continue;
+      for (let i = 0; i <= SEG; i++) for (let j = 0; j < 2; j++) {
+        ribbonAt(s.start + (i / SEG) * s.len, j, P3);
+        ok[i * 2 + j] = project(c.mvp, i * 2 + j);
       }
-      pos.needsUpdate = true;
-      sl.pick.geometry.computeBoundingSphere();
-      shapes.push(sl.pick);
+      for (let i = 0; i < SEG; i++) {
+        const a = i * 2, b = i * 2 + 2, t = i * 2 + 1, q = i * 2 + 3;
+        if (!(ok[a] && ok[b] && ok[t] && ok[q])) continue;
+        const z = Math.min(inTri(px, py, a, b, t), inTri(px, py, t, b, q));
+        if (z < nearest) { nearest = z; best = s.idx; }
+      }
     }
-    c.group.updateMatrixWorld();
-    c.camera.updateMatrixWorld();
-    ndc.set(((e.clientX - v.left) / v.w) * 2 - 1, -((e.clientY - v.top) / v.h) * 2 + 1);
-    ray.setFromCamera(ndc, c.camera);
-    const hit = ray.intersectObjects(shapes, false)[0];
-    return hit ? hit.object.userData.slot.idx : -1;
+    return best;
   };
   on(view, 'click', (e) => {
     if (dragged) { dragged = false; e.preventDefault(); e.stopPropagation(); return; }
@@ -747,8 +904,8 @@ export function setupSpirals({ reduced }) {
   on(window, 'keydown', (e) => {
     if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || !atTop()) return;
     if (e.target.closest?.('input, textarea, select, [contenteditable="true"], dialog')) return;
-    const across = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-    if (across) { e.preventDefault(); step(across); return; }
+    const sideways = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+    if (sideways) { e.preventDefault(); step(sideways); return; }
     const dir = { ArrowDown: 1, ArrowUp: -1, PageDown: 3, PageUp: -3 }[e.key];
     if (!dir) return;
     e.preventDefault();
@@ -781,16 +938,25 @@ export function setupSpirals({ reduced }) {
     e.stopPropagation(); // ours, not the site's in-page glide (src/animations/nav.js)
     bring(N + which);
   }));
-  // the arrow at the right: the next event (its words for a mouse or a finger)
+  // the arrow at the right: the next event; the one at the bottom: the spirals turned on, as a few turns
+  // of the wheel would (their words for a mouse, or for a finger)
+  const fine = matchMedia('(pointer: fine)').matches;
   const next = track.querySelector('[data-gal-next]');
   if (next) on(next, 'click', () => step(1));
   const cue = track.querySelector('[data-gal-cue]');
-  if (cue && !matchMedia('(pointer: fine)').matches) cue.textContent = 'Swipe to see more';
-  // the one at the bottom: the spirals turned on, as a few turns of the wheel would
+  if (cue && !fine) cue.textContent = 'Swipe to see more';
   const down = track.querySelector('[data-gal-down]');
   if (down) on(down, 'click', () => push(-KEY * 3));
   const downWord = track.querySelector('[data-gal-cue-down]');
-  if (downWord && !matchMedia('(pointer: fine)').matches) downWord.textContent = 'Swipe up to see more';
+  if (downWord && !fine) downWord.textContent = 'Swipe up to see more';
+  // the drift stops while the spirals are off the screen (the page gone on down) or the tab hidden, and
+  // goes on when they are back
+  const io = new IntersectionObserver(([en]) => { inView = en.isIntersecting; if (inView) kick(); });
+  io.observe(view);
+  cleanups.push(() => io.disconnect());
+  on(document, 'visibilitychange', () => { if (document.visibilityState === 'visible') kick(); });
+  // the theme's change: the page's colour the pictures fade in from
+  ctx.onTheme?.(() => { readBg(); kick(); });
 
   // a change of the window's size: the same event kept in the same place
   let resizeFrame = 0;
@@ -819,18 +985,15 @@ export function setupSpirals({ reduced }) {
   return () => {
     cleanups.forEach((c) => c());
     row.style.transform = '';
-    incoming.forEach(({ tex }) => { tex.image?.close?.(); tex.dispose(); });
-    events.forEach((ev) => ev.textures.forEach((t) => { t?.image?.close?.(); t?.dispose(); }));
-    columns.forEach((c) => {
-      [...c.active.values(), ...c.pool].forEach((sl) => {
-        sl.meshes.forEach((m) => m.material.dispose());
-        sl.pick.geometry.dispose();
-      });
-    });
-    strip.dispose();
-    pickMaterial.dispose();
-    blank.dispose();
-    renderer.dispose();
+    incoming.forEach(({ img }) => img.close?.());
+    events.forEach((ev) => { if (ev.tex) gl.deleteTexture(ev.tex); });
+    gl.deleteBuffer(uvBuf);
+    gl.deleteBuffer(instBuf);
+    gl.deleteBuffer(ibo);
+    gl.deleteVertexArray(vao);
+    gl.deleteProgram(ribbonP);
+    if (shadowP) gl.deleteProgram(shadowP);
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
     canvas.remove();
     track.classList.remove('is-live');
   };
