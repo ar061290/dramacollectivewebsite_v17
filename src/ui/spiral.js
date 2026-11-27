@@ -49,10 +49,9 @@ const FRICTION = 0.9;
 const EASE = 0.25;
 const MAX_V = 0.5;
 const LEAN = 0.8, MAX_LEAN = 0.18;
-// across: the row comes to rest on an event on a spring, its pull and its damping a frame (a little
-// under-damped: it runs a few pixels past and comes back, a slight spring); a let-go swipe carries on
-// by its speed times FLING before it settles
-const ACROSS_K = 0.048, ACROSS_C = 0.29, FLING = 10;
+// across: the row glides to rest on an event, easing out (ACROSS_EASE of the way left, a frame; no
+// spring, nothing run past); a let-go swipe carries on by its speed times FLING before it settles
+const ACROSS_EASE = 0.15, FLING = 10;
 
 const VERT = `
 uniform float uStart; // where along the ribbon the picture starts, from the front (world units)
@@ -292,7 +291,7 @@ export function setupSpirals({ reduced }) {
   let kick = () => {};
   // (textures in, waiting to go to the GPU: a few a frame, so that no frame stalls on a crowd of them)
   const incoming = [];
-  const UPLOADS = lite ? 2 : 4;
+  const UPLOADS = lite ? 1 : 2;
   const SHOW_MS = reduced ? 0 : 260; // a picture's fading in, once its texture is in
   let showUntil = 0;
   const upload = () => {
@@ -503,7 +502,7 @@ export function setupSpirals({ reduced }) {
   // column further on; at 0 the first column, a copy of the first event, in the first place, as
   // gallery.css lays it out), round and round: kept on the middle set (keepRound) ----
   let spacing = 1, setW = 1, colGap = 0, shown = NaN;
-  const hx = { pos: 0, vel: 0, target: null, drag: null };
+  const hx = { pos: 0, target: null, drag: null };
   const measure = () => {
     const a = cols[0].getBoundingClientRect().left;
     spacing = cols[1].getBoundingClientRect().left - a || 1;
@@ -518,14 +517,13 @@ export function setupSpirals({ reduced }) {
     loop += by > 0 ? -1 : 1; // (the columns now show the run a set further on, or back)
     if (hx.target !== null) hx.target += by;
   };
-  // a frame's move: on its spring to where it comes to rest (or there at once with reduced motion)
+  // a frame's move: easing out to where it comes to rest (or there at once with reduced motion)
   const across = (k) => {
     if (hx.target !== null && !hx.drag) {
-      if (reduced) { hx.pos = hx.target; hx.vel = 0; hx.target = null; }
+      if (reduced) { hx.pos = hx.target; hx.target = null; }
       else {
-        hx.vel += (ACROSS_K * (hx.target - hx.pos) - ACROSS_C * hx.vel) * k;
-        hx.pos += hx.vel * k;
-        if (Math.abs(hx.target - hx.pos) < 0.25 && Math.abs(hx.vel) < 0.25) { hx.pos = hx.target; hx.vel = 0; hx.target = null; }
+        hx.pos += (hx.target - hx.pos) * (1 - Math.pow(1 - ACROSS_EASE, k));
+        if (Math.abs(hx.target - hx.pos) < 0.25) { hx.pos = hx.target; hx.target = null; }
       }
     }
     keepRound();
@@ -597,7 +595,6 @@ export function setupSpirals({ reduced }) {
       if (!by) return;
       e.preventDefault();
       hx.target = null;
-      hx.vel = 0;
       hx.pos += by;
       clearTimeout(wheelRest);
       wheelRest = setTimeout(() => step(0), 120);
@@ -629,9 +626,9 @@ export function setupSpirals({ reduced }) {
     columns.forEach((c) => c.box.classList.remove('is-dragging'));
     kick();
   };
-  // a drag across: the row follows it, and when let go comes to rest on the event its speed carries it
-  // to, on its spring
-  const acrossFrom = (x) => { hx.drag = { x, v: 0, t: performance.now() }; hx.target = null; hx.vel = 0; };
+  // a drag across: the row follows it, and when let go glides to rest on the event its speed carries it
+  // to
+  const acrossFrom = (x) => { hx.drag = { x, v: 0, t: performance.now() }; hx.target = null; };
   const acrossTo = (x) => {
     const dx = x - hx.drag.x;
     hx.drag.x = x;
@@ -644,7 +641,6 @@ export function setupSpirals({ reduced }) {
     if (!hx.drag) return;
     const v = !reduced && performance.now() - hx.drag.t < 90 ? hx.drag.v : 0;
     hx.drag = null;
-    hx.vel = clamp(v, 60);
     columns.forEach((c) => c.box.classList.remove('is-dragging'));
     restOn(Math.round((hx.pos + v * FLING) / spacing));
   };
@@ -806,7 +802,6 @@ export function setupSpirals({ reduced }) {
       measure();
       hx.pos = place * spacing;
       hx.target = null;
-      hx.vel = 0;
       across(1);
       draw();
       kick();
