@@ -535,8 +535,8 @@ export function setupSpirals(ctx) {
     now = performance.now();
     frameNo++;
     asks.length = 0;
-    const vr = view.getBoundingClientRect();
     const pr = ratio;
+    const moved = Number.isNaN(shown) ? 0 : shown;
     gl.disable(gl.SCISSOR_TEST);
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -548,14 +548,15 @@ export function setupSpirals(ctx) {
     let top = Infinity, fadeH = 0;
     for (const c of columns) {
       assign(c);
-      const r = c.box.getBoundingClientRect();
+      // (its box, as measured, less the row's move since: no layout read in a frame)
+      const r = { left: c.bx - moved, width: c.bw, height: c.bh };
       // (each column's part reaches well past its sides: its ribbon is not cut there; neighbours' parts
       // overlap, drawn over one another as they come)
       const side = colGap / 2 + r.width * 0.3;
-      const x = r.left - vr.left - side, y = r.top - vr.top, w = r.width + side * 2, h = r.height;
+      const x = r.left - side, y = c.by, w = r.width + side * 2, h = r.height;
       c.vp = null;
       if (x + w <= 0 || x >= size.w || r.width < 2 || h < 2) continue;
-      c.vp = { left: r.left - side, top: r.top, w, h };
+      c.vp = { x, y, w, h }; // (in the view)
       top = Math.min(top, y);
       fadeH = Math.max(fadeH, Math.min(110, h * 0.22));
       // the camera above the ribbon, near enough that the ribbon is the column's width at its middle,
@@ -634,6 +635,16 @@ export function setupSpirals(ctx) {
     const a = cols[0].getBoundingClientRect().left;
     spacing = cols[1].getBoundingClientRect().left - a || 1;
     setW = cols[N].getBoundingClientRect().left - a || spacing * N;
+    // each column's spiral box in the view, the row's move (as now shown) taken out
+    const vr = view.getBoundingClientRect();
+    const moved = Number.isNaN(shown) ? 0 : shown;
+    for (const c of columns) {
+      const r = c.box.getBoundingClientRect();
+      c.bx = r.left - vr.left + moved;
+      c.by = r.top - vr.top;
+      c.bw = r.width;
+      c.bh = r.height;
+    }
     colGap = parseFloat(getComputedStyle(row).columnGap) || 0;
   };
   const keepRound = () => {
@@ -875,8 +886,11 @@ export function setupSpirals(ctx) {
     return l1 * pts[a * 3 + 2] + l2 * pts[b * 3 + 2] + l3 * pts[c * 3 + 2];
   };
   const pick = (e, c) => {
-    const v = c.vp;
-    if (!v || !c.mvp || e.clientY < v.top + FADE_PICK || e.clientY > v.top + v.h) return -1;
+    const vp = c.vp;
+    if (!vp || !c.mvp) return -1;
+    const vr = view.getBoundingClientRect();
+    const v = { left: vr.left + vp.x, top: vr.top + vp.y, w: vp.w, h: vp.h };
+    if (e.clientY < v.top + FADE_PICK || e.clientY > v.top + v.h) return -1;
     const px = ((e.clientX - v.left) / v.w) * 2 - 1, py = -((e.clientY - v.top) / v.h) * 2 + 1;
     let best = -1, nearest = Infinity;
     for (const s of c.active.values()) {
@@ -981,6 +995,11 @@ export function setupSpirals(ctx) {
   }, { passive: true });
   cleanups.push(() => cancelAnimationFrame(resizeFrame));
 
+  const remeasure = () => { measure(); hx.pos = Math.round((hx.target ?? hx.pos) / spacing) * spacing; hx.target = null; across(1); kick(); };
+  document.fonts?.ready.then(() => { if (!lost) remeasure(); });
+  const ro = new ResizeObserver(() => remeasure());
+  ro.observe(originals[0].querySelector('.gal-spiral'));
+  cleanups.push(() => ro.disconnect());
   resize();
   measure();
   // to begin with, the first event's own column in the first place (cut at the left on a laptop)
