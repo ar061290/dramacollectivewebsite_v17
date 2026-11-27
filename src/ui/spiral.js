@@ -77,6 +77,7 @@ uniform sampler2D uMap;
 uniform vec4 uBox;
 uniform float uFade;
 uniform float uInside;
+uniform float uShow;
 varying vec2 vUv;
 void main() {
   vec4 c = texture2D(uMap, vUv);
@@ -84,7 +85,7 @@ void main() {
   c.rgb = mix(vec3(l), c.rgb, ${TONE.sat.toFixed(2)}) * ${TONE.dim.toFixed(2)};
   c.rgb = mix(c.rgb, vec3(0.25, 0.08, 0.16), ${TONE.plum.toFixed(2)});
   if (!gl_FrontFacing) c.rgb *= uInside;
-  float a = smoothstep(0.0, uFade, uBox.y + uBox.w - gl_FragCoord.y);
+  float a = uShow * smoothstep(0.0, uFade, uBox.y + uBox.w - gl_FragCoord.y);
   gl_FragColor = vec4(c.rgb, a);
 }`;
 // a picture's shadow: its strip on the near side of the spiral, a little taller and a little lower,
@@ -107,10 +108,11 @@ void main() {
 const SHADOW_FRAG = `
 uniform vec4 uBox;
 uniform float uFade;
+uniform float uShow;
 varying vec2 vUv;
 void main() {
   float soft = smoothstep(0.0, 0.26, vUv.y) * smoothstep(0.0, 0.26, 1.0 - vUv.y);
-  float a = ${SHADOW.toFixed(2)} * soft * smoothstep(0.0, uFade, uBox.y + uBox.w - gl_FragCoord.y);
+  float a = ${SHADOW.toFixed(2)} * uShow * soft * smoothstep(0.0, uFade, uBox.y + uBox.w - gl_FragCoord.y);
   gl_FragColor = vec4(0.03, 0.0, 0.02, a);
 }`;
 
@@ -193,7 +195,7 @@ export function setupSpirals({ reduced }) {
   const boxU = { value: new THREE.Vector4(0, 0, 1, 1) };
   const fadeU = { value: 1 };
   const insideU = { value: INSIDE };
-  // a picture not yet in: the card colour
+  // a picture not yet in: drawn as nothing (uShow 0), this only in its place
   const blank = new THREE.DataTexture(new Uint8Array([64, 20, 42, 255]), 1, 1);
   blank.needsUpdate = true;
   const pickMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
@@ -202,7 +204,7 @@ export function setupSpirals({ reduced }) {
   // shape at the ribbon's height), and their textures, shared by every column showing the event
   const events = originals.map((col) => {
     const links = [...col.querySelectorAll('[data-gal-photo]')];
-    return { links, n: links.length, lenOf: links.map((a) => H * ((+a.dataset.w || 3) / (+a.dataset.h || 2))), textures: new Map() };
+    return { links, n: links.length, lenOf: links.map((a) => H * ((+a.dataset.w || 3) / (+a.dataset.h || 2))), textures: new Map(), fails: new Map() };
   });
   // a showing of an event: its pictures in an order of their own, by its place in the endless run of
   // events (j: the run's ... A B C D A B C D ..., the middle set's first column 0 + N), shuffled the
@@ -261,7 +263,7 @@ export function setupSpirals({ reduced }) {
   // fades the far side shows through it; and, unseen, its shape for clicks
   const layers = [[THREE.BackSide, 0, VERT, FRAG], ...(lite ? [] : [[THREE.FrontSide, 1, SHADOW_VERT, SHADOW_FRAG]]), [THREE.FrontSide, 2, VERT, FRAG]];
   const makeSlot = (c) => {
-    const u = { uStart: { value: 0 }, uLen: { value: 1 }, uMap: { value: blank } };
+    const u = { uStart: { value: 0 }, uLen: { value: 1 }, uMap: { value: blank }, uShow: { value: 0 } };
     const slot = { k: NaN, idx: -1, u, meshes: [], pick: null };
     for (const [side, order, vertexShader, fragmentShader] of layers) {
       const mesh = new THREE.Mesh(strip, new THREE.ShaderMaterial({
@@ -290,12 +292,16 @@ export function setupSpirals({ reduced }) {
   let kick = () => {};
   // (textures in, waiting to go to the GPU: a few a frame, so that no frame stalls on a crowd of them)
   const incoming = [];
-  const UPLOADS = lite ? 1 : 2;
+  const UPLOADS = lite ? 2 : 4;
+  const SHOW_MS = reduced ? 0 : 260; // a picture's fading in, once its texture is in
+  let showUntil = 0;
   const upload = () => {
     for (let i = 0; i < UPLOADS && incoming.length; i++) {
       const { c, idx, tex } = incoming.shift();
       if (c.textures.get(idx) !== null) { tex.image?.close?.(); tex.dispose(); continue; } // (let go meanwhile)
       renderer.initTexture(tex);
+      tex.userData.at = performance.now();
+      showUntil = Math.max(showUntil, tex.userData.at + SHOW_MS);
       c.textures.set(idx, tex);
       showing(c).forEach((x) => x.active.forEach((sl) => { if (sl.idx === idx) sl.u.uMap.value = tex; }));
     }
@@ -330,7 +336,7 @@ export function setupSpirals({ reduced }) {
   // a column coming in does not fetch and decode its whole stretch of ribbon in one go
   const queue = [];
   let loading = 0;
-  const LOADS = lite ? 2 : 3;
+  const LOADS = lite ? 6 : 16;
   const want = (c, idx) => {
     if (c.textures.has(idx)) return;
     c.textures.set(idx, null);
@@ -360,7 +366,13 @@ export function setupSpirals({ reduced }) {
         incoming.push({ c, idx, tex });
         kick();
       })
-      .catch(() => {});
+      .catch(() => {
+        // (a picture that would not come: let go, so that it is asked for again, a few times at most,
+        // rather than left blank)
+        const n = (c.fails.get(idx) || 0) + 1;
+        c.fails.set(idx, n);
+        if (n < 4 && c.textures.get(idx) === null) c.textures.delete(idx);
+      });
   };
   // pictures far from the front let go (a column keeps those on its ribbon, and a few more)
   const tidy = (c, mid) => {
@@ -395,6 +407,10 @@ export function setupSpirals({ reduced }) {
   };
   const startOf = (c, k) => Math.floor(k / c.n) * c.T + c.start[mod(k, c.n)];
   // the column's stretch of ribbon (`reach` along it either way from the front) filled with pictures
+  let now = 0;
+  // (the pictures a drawing lacks, by how far each is from its column's front: asked for nearest first
+  // across all the columns, so every spiral's front fills in before any spiral's far turns)
+  const asks = [];
   const place = (c, reach) => {
     const kLo = pictureAt(c, off - reach);
     const kHi = Math.min(pictureAt(c, off + reach), kLo + 120);
@@ -419,11 +435,12 @@ export function setupSpirals({ reduced }) {
       const tex = c.textures.get(s.idx);
       if (tex === undefined) missing.push(k);
       s.u.uMap.value = tex || blank;
+      s.u.uShow.value = !tex ? 0 : SHOW_MS ? Math.min(1, (now - (tex.userData.at || 0)) / SHOW_MS) : 1;
       s.u.uStart.value = startOf(c, k) - off;
     }
     if (missing.length) {
       const front = pictureAt(c, off);
-      missing.sort((a, b) => Math.abs(a - front) - Math.abs(b - front)).forEach((k) => want(c, c.order[mod(k, c.n)]));
+      missing.forEach((k) => asks.push([Math.abs(k - front), c, c.order[mod(k, c.n)]]));
     }
     tidy(c, mod(pictureAt(c, off), c.n));
   };
@@ -437,6 +454,8 @@ export function setupSpirals({ reduced }) {
     renderer.setSize(w, h, false);
   };
   const draw = () => {
+    now = performance.now();
+    asks.length = 0;
     const vr = view.getBoundingClientRect();
     const pr = renderer.getPixelRatio();
     // each column's part reaches well past its sides (its ribbon is not cut there; neighbours' parts
@@ -474,6 +493,7 @@ export function setupSpirals({ reduced }) {
       renderer.setScissor(x, vy, w, h);
       renderer.render(c.scene, cam);
     }
+    asks.sort((a, b) => a[0] - b[0]).forEach(([, c, idx]) => want(c, idx));
     pump(); // (the pictures this drawing asked for fetched at once, not on a later frame)
   };
 
@@ -548,7 +568,8 @@ export function setupSpirals({ reduced }) {
     const moving = across(k);
     const uploading = upload();
     draw();
-    if (seek !== null || cur || tgt || lean || drag || moving || uploading) raf = requestAnimationFrame(frame);
+    const fading = performance.now() < showUntil;
+    if (seek !== null || cur || tgt || lean || drag || moving || uploading || fading) raf = requestAnimationFrame(frame);
     else last = 0;
   };
   kick = () => { raf ||= requestAnimationFrame(frame); };
@@ -769,6 +790,11 @@ export function setupSpirals({ reduced }) {
   if (next) on(next, 'click', () => step(1));
   const cue = track.querySelector('[data-gal-cue]');
   if (cue && !matchMedia('(pointer: fine)').matches) cue.textContent = 'Swipe to see more';
+  // the one at the bottom: the spirals turned on, as a few turns of the wheel would
+  const down = track.querySelector('[data-gal-down]');
+  if (down) on(down, 'click', () => push(-KEY * 3));
+  const downWord = track.querySelector('[data-gal-cue-down]');
+  if (downWord && !matchMedia('(pointer: fine)').matches) downWord.textContent = 'Swipe up to see more';
 
   // a change of the window's size: the same event kept in the same place
   let resizeFrame = 0;

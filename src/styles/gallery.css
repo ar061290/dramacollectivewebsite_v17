@@ -290,6 +290,13 @@ html.has-js .gal-track:not(.is-static) .gal-spiral__tile img { display: none; }
   .gal-cue__arrow { animation: gal-cue 1.6s var(--ease-curtain) infinite; }
 }
 @keyframes gal-cue { 0%, 100% { transform: translateX(-2px); } 50% { transform: translateX(3px); } }
+/* the one at the bottom, in the middle (on a phone, at the left, Footer at the right): its arrow down */
+.gal-track.is-live .gal-cue--down { right: auto; left: 50%; top: auto; bottom: var(--space-5); translate: -50% 0; }
+.gal-cue--down .gal-cue__arrow { width: 11px; height: 16px; }
+@media (prefers-reduced-motion: no-preference) {
+  .gal-cue--down .gal-cue__arrow { animation-name: gal-cue-down; }
+}
+@keyframes gal-cue-down { 0%, 100% { transform: translateY(-2px); } 50% { transform: translateY(3px); } }
 .gal-track.is-live .gal-footer { position: absolute; right: calc((100% - 100vw) / 2 + var(--stage-gutter)); bottom: var(--space-5); z-index: 2; display: inline-flex; } /* (under the top bar's Become a sponsor) */
 /* a laptop's or a tablet's screen: a spiral a little under a third of the screen's width (a tablet's,
    a little under half), each event's name centred over its own spiral; the first spiral's middle near
@@ -316,6 +323,7 @@ html.has-js .gal-track:not(.is-static) .gal-spiral__tile img { display: none; }
   .gal-jump__link { min-height: 32px; padding: 6px 10px; font-size: 11px; }
   .gal-col { flex-basis: min(100vw - 2 * var(--stage-gutter) - 28px, 440px); }
   .gal-track.is-live .gal-cue { padding: 8px 12px; font-size: 10px; }
+  .gal-track.is-live .gal-cue--down { left: 0; translate: none; }
 }
 /* a picture's link with the keyboard's focus (it is brought to the front of its ribbon): its column ringed */
 .gal-track.is-live .gal-spiral.is-focus { outline: 2px solid var(--focus); outline-offset: 2px; }
