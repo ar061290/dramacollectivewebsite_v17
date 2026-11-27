@@ -113,7 +113,8 @@ async function start(setup) {
       themeListeners.forEach((fn) => fn(theme, opts));
     },
   }));
-  const canvas = document.querySelector('.stage__stars');
+  // (a page may do without the sky: <body data-no-sky>, the Gallery, its spirals on the plain page)
+  const canvas = document.body.hasAttribute('data-no-sky') ? null : document.querySelector('.stage__stars');
   if (canvas) {
     sky = new ConstellationField({ canvas, theme: skyTheme(), reducedMotion: reduced });
     sky.start();

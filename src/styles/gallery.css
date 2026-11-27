@@ -185,25 +185,32 @@
 }
 @keyframes gal-box-in { from { opacity: 0; transform: scale(.97); } }
 
-/* ==== the Gallery, on one screen (tools/pages/build.mjs gallery(), src/ui/spiral.js): its name and
-   the events' names, then the events side by side, a column each, each event's pictures bent round
-   its column as a ribbon winding on without end (drawn with WebGL over the columns), then what to do
-   and Footer. Across, the columns scroll (snapping to a column); the wheel or a swipe turns the
-   ribbons. Without scripts (or WebGL) each column is its pictures in a plain grid, and the page
-   scrolls as any other. ==== */
+/* ==== the Gallery, on one screen (tools/pages/build.mjs gallery(), src/ui/spiral.js): its name, the
+   events' names, what to do, the arrows and Footer along the top; then the events side by side, a
+   column each, each event's pictures flowing along a spiral ribbon (drawn with WebGL over the
+   columns) that runs down to the screen's bottom. Across, the columns scroll; the wheel or a swipe
+   moves the pictures. Without scripts (or WebGL) each column is its pictures in a plain grid, and the
+   page scrolls as any other. ==== */
 .gal-stage { padding-top: calc(var(--topbar-h) + var(--space-5)); }
-.gal-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-3) var(--space-6); }
+/* the heading: the Gallery's name on the left, the events' names on the right */
+.gal-head { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "title jump"; align-items: end; gap: var(--space-3) var(--space-6); }
+.gal-head__title { grid-area: title; }
 .gal-head__title .eyebrow { margin: 0; }
 .gal-head__h1 { margin: var(--space-1) 0 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 5vw, 72px); line-height: .95; color: var(--fg-strong); }
-.gal-head .gal-jump { margin-top: 0; }
+.gal-head .gal-jump { grid-area: jump; margin-top: 0; }
 .gal-head .gal-jump ul { justify-content: flex-end; }
 
-/* the columns run the screen's whole width (from the page's column on the left to past the screen's
-   right edge), so the last on the screen is cut by the screen's edge: more of them, across */
-.gal-view { --gal-in: max(var(--stage-gutter), (100vw - var(--container)) / 2); position: relative; width: 100vw; margin: var(--space-5) 0 0 calc(50% - 50vw); }
+/* the columns run the screen's whole width, past both its edges */
+.gal-view {
+  --gal-in: max(var(--stage-gutter), (100vw - var(--container)) / 2); /* where the page's column starts */
+  --gal-gap: clamp(24px, 3vw, 44px);
+  position: relative;
+  width: 100vw;
+  margin: var(--space-5) 0 0 calc(50% - 50vw);
+}
 .gal-cols {
   display: flex;
-  gap: clamp(24px, 3vw, 44px);
+  gap: var(--gal-gap);
   padding-inline: var(--gal-in);
   scroll-padding-inline: var(--gal-in);
   overflow-x: auto;
@@ -213,46 +220,32 @@
 }
 .gal-cols::-webkit-scrollbar { display: none; }
 .gal-cols:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
-/* a column: the event's date, name and count over its pictures; two and a half to the page's width
-   on a laptop, one and a half on a tablet (the half saying there are more) */
-.gal-col { flex: 0 0 calc((min(100vw - 2 * var(--stage-gutter), var(--container)) - 2 * clamp(24px, 3vw, 44px)) / 2.5); min-width: 0; scroll-snap-align: start; }
-@media (max-width: 1023px) { .gal-col { flex-basis: calc((100vw - 2 * var(--stage-gutter) - clamp(24px, 3vw, 44px)) / 1.5); } }
-.gal-col__head { padding-bottom: var(--space-3); border-bottom: var(--border-width) solid var(--line); }
-.gal-col__title { margin: var(--space-1) 0 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(22px, 2vw, 30px); line-height: 1.1; color: var(--fg-strong); }
+/* a column: the event's date (a small calendar) and name over its pictures */
+.gal-col { flex: 0 0 calc((min(100vw - 2 * var(--stage-gutter), var(--container)) - 2 * var(--gal-gap)) / 2.5); min-width: 0; scroll-snap-align: start; }
+.gal-col__head { display: flex; align-items: center; gap: 14px; padding-bottom: var(--space-3); border-bottom: var(--border-width) solid var(--line); }
+/* the calendar: its month on a gold band, its day under it, two rings at its top */
+.gal-cal { position: relative; flex: none; display: flex; flex-direction: column; min-width: 48px; border: var(--border-width) solid var(--line); background: rgb(255 255 255 / .04); text-align: center; line-height: 1; }
+.gal-cal::before, .gal-cal::after { content: ""; position: absolute; top: -4px; width: 4px; height: 9px; border-radius: 2px; background: var(--fg-strong); }
+.gal-cal::before { left: 11px; }
+.gal-cal::after { right: 11px; }
+.gal-cal__month { padding: 5px 6px 4px; background: var(--gold-500); color: var(--plum-900); font-family: var(--font-ui); font-weight: var(--weight-bold); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
+.gal-cal__day { padding: 6px 6px 5px; font-family: var(--font-display); font-size: 21px; color: var(--fg-strong); white-space: nowrap; }
+.gal-col__title { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(22px, 2vw, 30px); line-height: 1.1; color: var(--fg-strong); }
 .gal-spiral__ribbon { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: var(--space-4) 0 0; padding: 0; list-style: none; }
 .gal-spiral__tile { aspect-ratio: 3 / 2; }
-
-/* what to do, the arrows, and Footer: under the columns */
-.gal-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-3) var(--space-5); }
-.gal-foot[hidden] { display: none; }
-.gal-foot__hint { margin: 0; color: var(--fg-muted); }
-.gal-foot__across[hidden] { display: none; }
-.gal-foot__steps { display: flex; gap: var(--space-2); }
-.gal-foot__steps[hidden] { display: none; }
-.gal-foot__footer { padding: 6px 12px; min-height: 30px; font-size: 11px; }
-.gal-bar__step {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  padding: 0;
-  border: var(--border-width) solid var(--line);
-  border-radius: 50%;
-  background: none;
-  color: var(--fg-strong);
-  cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease-curtain), color var(--dur-fast) var(--ease-curtain);
-}
-.gal-bar__step svg { width: 6px; height: 10px; }
-.gal-bar__step:hover { border-color: var(--accent); color: var(--accent); }
-.gal-bar__step:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* (with scripts, the columns' own small pictures are neither shown nor fetched: the spirals draw them,
+   fetching only those near their fronts; where the spirals do not run, .is-static, they are the grid) */
+html.has-js .gal-track:not(.is-static) .gal-spiral__tile img { display: none; }
 
 /* the spirals live (.is-live: src/ui/spiral.js): the stage the screen's height, the columns filling
-   what is left of it, each column's pictures kept for the lightbox and the keyboard but drawn on the
-   canvas over them (the wheel and a swipe up or down are the ribbons', a swipe across the columns') */
-.gal-track.is-live .gal-stage { display: flex; flex-direction: column; height: 100svh; padding-bottom: var(--space-4); }
-.gal-track.is-live .gal-view { flex: 1; min-height: 0; touch-action: pan-x; }
-.gal-track.is-live .gal-cols { height: 100%; }
+   what is left of it down to the screen's bottom, each column's pictures kept for the lightbox and the
+   keyboard but drawn on the canvas over them (the wheel and a swipe up or down are the spirals', a
+   swipe across the columns') */
+.gal-track.is-live .gal-stage { display: flex; flex-direction: column; height: 100svh; }
+/* (the row is moved by src/ui/spiral.js, a transform in step with the spirals' drawing, not scrolled:
+   the view clips it and never scrolls; a finger's swipe either way is the script's) */
+.gal-track.is-live .gal-view { flex: 1; min-height: 0; overflow: hidden; overflow: clip; touch-action: none; }
+.gal-track.is-live .gal-cols { height: 100%; overflow: visible; scroll-snap-type: none; will-change: transform; }
 .gal-track.is-live .gal-col { display: flex; flex-direction: column; }
 .gal-track.is-live .gal-col__head { border-bottom: 0; padding-bottom: 0; }
 .gal-track.is-live .gal-spiral { position: relative; flex: 1; min-height: 0; cursor: grab; }
@@ -267,16 +260,64 @@
   clip-path: inset(50%);
 }
 .gal-track.is-live .gal-spiral__tile { position: absolute; width: 1px; height: 1px; }
-.gal-track.is-live .gal-foot { margin-top: var(--space-3); }
 .gal-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+/* over the spirals: at the right, what to do with an arrow pointing on (a button: the next event); at
+   the bottom right, Footer, filled as the top bar's Become a sponsor is, under it */
+.gal-cue, .gal-footer { display: none; }
+.gal-track.is-live .gal-stage { position: relative; }
+.gal-track.is-live .gal-cue {
+  position: absolute;
+  right: calc((100% - 100vw) / 2 + var(--stage-gutter));
+  top: 58%;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 16px;
+  border: var(--border-width) solid var(--line);
+  border-radius: 999px;
+  background: rgb(42 13 28 / .82);
+  color: var(--plum-100);
+  translate: 0 -50%;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-curtain), background-color var(--dur-fast) var(--ease-curtain);
+}
+.gal-track.is-live .gal-cue:hover { border-color: var(--gold-500); background: rgb(42 13 28 / .94); }
+.gal-track.is-live .gal-cue:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.gal-cue__arrow { width: 16px; height: 11px; color: var(--gold-500); }
+@media (prefers-reduced-motion: no-preference) {
+  .gal-cue__arrow { animation: gal-cue 1.6s var(--ease-curtain) infinite; }
+}
+@keyframes gal-cue { 0%, 100% { transform: translateX(-2px); } 50% { transform: translateX(3px); } }
+.gal-track.is-live .gal-footer { position: absolute; right: calc((100% - 100vw) / 2 + var(--stage-gutter)); bottom: var(--space-5); z-index: 2; display: inline-flex; } /* (under the top bar's Become a sponsor) */
+/* a laptop's or a tablet's screen: a spiral a little under a third of the screen's width (a tablet's,
+   a little under half), each event's name centred over its own spiral; the first spiral's middle near
+   the screen's left edge (--gal-c1), so it runs a little off that edge, and the last one shown runs
+   off the right edge, its name with it: more of them, either way. (The columns snap so that a
+   column's middle comes to where the first one's is: the snapport is the screen's left 2 x --gal-c1.) */
+@media (min-width: 768px) {
+  .gal-track.is-live .gal-view { --gal-w: calc(100vw / 3.15 - var(--gal-gap)); --gal-c1: calc(5vw + 56px); }
+  .gal-track.is-live .gal-cols { padding-left: 0; scroll-padding: 0 calc(100vw - 2 * var(--gal-c1)) 0 0; }
+  .gal-track.is-live .gal-col { flex-basis: var(--gal-w); scroll-snap-align: center; }
+  .gal-track.is-live .gal-col__head { justify-content: center; text-align: left; }
+  /* (the first column, a copy of the last set's first event, in the first place: the row's 0) */
+  .gal-track.is-live .gal-col:first-child { margin-left: calc(var(--gal-c1) - var(--gal-w) / 2); }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .gal-track.is-live .gal-view { --gal-w: calc(100vw / 2.2 - var(--gal-gap)); }
+}
 
+/* a phone: the heading's name with the arrows and Footer beside it, the events' names under them; a
+   column a screen, but for the next one's edge */
 @media (max-width: 767px) {
-  .gal-head { align-items: flex-start; flex-direction: column; }
+  .gal-head { grid-template-columns: 1fr; grid-template-areas: "title" "jump"; gap: var(--space-3); }
   .gal-head .gal-jump ul { justify-content: flex-start; }
   .gal-jump__link { min-height: 32px; padding: 6px 10px; font-size: 11px; }
-  .gal-col { flex-basis: calc(100vw - 2 * var(--stage-gutter) - 28px); }
+  .gal-col { flex-basis: min(100vw - 2 * var(--stage-gutter) - 28px, 440px); }
+  .gal-track.is-live .gal-cue { padding: 8px 12px; font-size: 10px; }
 }
-/* a picture's link with the keyboard's focus (it is turned to the front of its ribbon): its column ringed */
+/* a picture's link with the keyboard's focus (it is brought to the front of its ribbon): its column ringed */
 .gal-track.is-live .gal-spiral.is-focus { outline: 2px solid var(--focus); outline-offset: 2px; }
 /* (the page's own room for the top bar is the stage's here, so the stage is the screen's height) */
 .page__main:has(> .gal-track.is-live) { padding-top: 0; padding-bottom: 0; }

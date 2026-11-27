@@ -1019,11 +1019,18 @@ ${e.photos.slice(0, ROW).map((m, i) => `  ${galleryTile(e, m, i)}`).join('\n')}
  * Without scripts (or WebGL) each column is its pictures in a plain grid.
  */
 function gallery(pad) {
+  // an event's date as a small calendar: its month over its day (or days: "8 and 9" as 8–9), the whole
+  // date for screen readers
+  const cal = (e) => {
+    const m = /^(.*?)\s+([A-Za-z]+)\s+\d{4}$/.exec(e.when);
+    const days = m ? m[1].replace(/\s+and\s+/g, '–') : String(Number(e.date.slice(8)));
+    const month = (m ? m[2] : new Date(e.date).toLocaleString('en', { month: 'short' })).slice(0, 3);
+    return `<time class="gal-cal" datetime="${e.date}"><span class="sr-only">${esc(e.when)}</span><span class="gal-cal__month" aria-hidden="true">${esc(month)}</span><span class="gal-cal__day" aria-hidden="true">${esc(days)}</span></time>`;
+  };
   const col = (e) => `<section class="gal-col gal-event" id="${e.key}" aria-labelledby="${e.key}-title" data-gal-event data-gal-col>
   <header class="gal-col__head">
-    <p class="eyebrow"><time datetime="${e.date}">${esc(e.when)}</time></p>
+    ${cal(e)}
     <h2 class="gal-col__title" id="${e.key}-title"><a class="gal-event__link" href="${galleryHref(e)}">${esc(e.title)}</a></h2>
-    <p class="gal-event__count">${galleryCount(e)}</p>
   </header>
   <div class="gal-spiral">
     <ul class="gal-spiral__ribbon" data-gal-ribbon>
@@ -1031,7 +1038,6 @@ ${e.photos.map((m, j) => `      ${galleryTile(e, m, j, ' gal-spiral__tile')}`).j
     </ul>
   </div>
 </section>`;
-  const chev = (d) => `<svg viewBox="0 0 6 10" aria-hidden="true" focusable="false"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   const html = `<div class="gal-track" data-gal-track>
   <div class="gal-stage">
     <header class="gal-head">
@@ -1050,14 +1056,8 @@ ${GALLERY_EVENTS.map((e) => `          <li><a class="gal-jump__link" href="#${e.
 ${GALLERY_EVENTS.map(col).join('\n').split('\n').map((l) => `        ${l}`).join('\n')}
       </div>
     </div>
-    <div class="gal-foot" data-gal-foot hidden>
-      <p class="pub-label gal-foot__hint"><span>Scroll to turn</span><span class="gal-foot__across" data-gal-across> · swipe across for more events</span></p>
-      <div class="gal-foot__steps" data-gal-steps>
-        <button class="gal-bar__step" type="button" aria-label="The event before" data-gal-step="-1">${chev('M5 1 1 5l4 4')}</button>
-        <button class="gal-bar__step" type="button" aria-label="The event after" data-gal-step="1">${chev('M1 1l4 4-4 4')}</button>
-      </div>
-      <a class="pub-btn gal-foot__footer" href="#contact">Footer</a>
-    </div>
+    <button class="pub-label gal-cue" type="button" aria-label="The next event" data-gal-next><span data-gal-cue>Scroll to see more</span><svg class="gal-cue__arrow" viewBox="0 0 18 12" aria-hidden="true" focusable="false"><path d="M1 6h15M11 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <a class="btn btn--inverse btn--sm gal-footer" href="#contact">Footer</a>
   </div>
 </div>
 

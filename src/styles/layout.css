@@ -6,6 +6,7 @@
    vector logo (the only part of the logo in front of the footer), then the content. */
 .stage { position: fixed; inset: 0; z-index: var(--z-stars); pointer-events: none; }
 .stage__stars { position: absolute; inset: 0; width: 100%; height: 100%; }
+body[data-no-sky] .stage__stars { display: none; } /* (src/site/boot.js draws no sky there) */
 .stage__gl { position: fixed; inset: 0; z-index: var(--z-stage); pointer-events: none; }
 /* the logo's flat vector stand-in, laid over the 3D logo by the stage (src/scene/vectorLogo.js);
    in front of the footer, or behind it on phones until it starts to dock */
