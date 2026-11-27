@@ -257,6 +257,7 @@
 .gal-track.is-live .gal-col__head { border-bottom: 0; padding-bottom: 0; }
 .gal-track.is-live .gal-spiral { position: relative; flex: 1; min-height: 0; cursor: grab; }
 .gal-track.is-live .gal-spiral.is-pointing { cursor: pointer; }
+.gal-track.is-live .gal-spiral.is-dragging { cursor: grabbing; }
 .gal-track.is-live .gal-spiral__ribbon {
   position: absolute;
   inset: 0;
